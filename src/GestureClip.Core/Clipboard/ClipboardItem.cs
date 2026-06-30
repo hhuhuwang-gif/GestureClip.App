@@ -1,0 +1,18 @@
+namespace GestureClip.Core.Clipboard;
+
+public sealed record ClipboardItem(
+    Guid Id,
+    string ContentType,
+    string? TextContent,
+    string? PreviewText,
+    string Hash,
+    string? PlainTextHash,
+    string? SourceApp,
+    string? SourceProcess,
+    bool IsPinned,
+    bool IsFavorite,
+    bool IsSensitive,
+    int UseCount,
+    DateTimeOffset CreatedAt,
+    DateTimeOffset UpdatedAt,
+    DateTimeOffset? LastUsedAt);

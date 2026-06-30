@@ -1,0 +1,14 @@
+<Window x:Class="GestureClip.App.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="GestureClip"
+        Width="420"
+        Height="240"
+        ShowInTaskbar="False">
+    <Grid Margin="24">
+        <TextBlock Text="GestureClip 正在后台运行。请从托盘打开设置。"
+                   TextWrapping="Wrap"
+                   VerticalAlignment="Center"
+                   HorizontalAlignment="Center" />
+    </Grid>
+</Window>

@@ -1,0 +1,42 @@
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.0.31903.59
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GestureClip.App", "src\GestureClip.App\GestureClip.App.csproj", "{8C5F8D84-9929-4B9E-AFC5-14F334684A51}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GestureClip.Core", "src\GestureClip.Core\GestureClip.Core.csproj", "{0DAD22D3-29C7-48BD-A6F9-B7EC3EA775AF}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GestureClip.Infrastructure", "src\GestureClip.Infrastructure\GestureClip.Infrastructure.csproj", "{05F1A8C2-AB1C-4BB2-8A66-2CE7129B9558}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GestureClip.Features", "src\GestureClip.Features\GestureClip.Features.csproj", "{56D280A8-E523-4F21-9C7F-7C5FB45F1F58}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GestureClip.Tests", "tests\GestureClip.Tests\GestureClip.Tests.csproj", "{855D04EC-DC4B-4047-9F98-81826AB9B572}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{8C5F8D84-9929-4B9E-AFC5-14F334684A51}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{8C5F8D84-9929-4B9E-AFC5-14F334684A51}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{8C5F8D84-9929-4B9E-AFC5-14F334684A51}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{8C5F8D84-9929-4B9E-AFC5-14F334684A51}.Release|Any CPU.Build.0 = Release|Any CPU
+		{0DAD22D3-29C7-48BD-A6F9-B7EC3EA775AF}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{0DAD22D3-29C7-48BD-A6F9-B7EC3EA775AF}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{0DAD22D3-29C7-48BD-A6F9-B7EC3EA775AF}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{0DAD22D3-29C7-48BD-A6F9-B7EC3EA775AF}.Release|Any CPU.Build.0 = Release|Any CPU
+		{05F1A8C2-AB1C-4BB2-8A66-2CE7129B9558}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{05F1A8C2-AB1C-4BB2-8A66-2CE7129B9558}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{05F1A8C2-AB1C-4BB2-8A66-2CE7129B9558}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{05F1A8C2-AB1C-4BB2-8A66-2CE7129B9558}.Release|Any CPU.Build.0 = Release|Any CPU
+		{56D280A8-E523-4F21-9C7F-7C5FB45F1F58}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{56D280A8-E523-4F21-9C7F-7C5FB45F1F58}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{56D280A8-E523-4F21-9C7F-7C5FB45F1F58}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{56D280A8-E523-4F21-9C7F-7C5FB45F1F58}.Release|Any CPU.Build.0 = Release|Any CPU
+		{855D04EC-DC4B-4047-9F98-81826AB9B572}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{855D04EC-DC4B-4047-9F98-81826AB9B572}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{855D04EC-DC4B-4047-9F98-81826AB9B572}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{855D04EC-DC4B-4047-9F98-81826AB9B572}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+EndGlobal
