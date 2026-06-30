@@ -46,10 +46,122 @@ public sealed class ClipboardRepositoryTests
         Assert.False(string.IsNullOrWhiteSpace(stored.LastUsedAt));
     }
 
+    [Fact]
+    public async Task GetCountAsync_returns_clipboard_item_count()
+    {
+        using var database = await TestDatabase.CreateAsync();
+        var repository = new ClipboardRepository(database.ConnectionFactory);
+        await repository.InsertAsync(CreateItem("one", "one", isPinned: false, minutesAgo: 1), CancellationToken.None);
+        await repository.InsertAsync(CreateItem("two", "two", isPinned: false, minutesAgo: 2), CancellationToken.None);
+
+        var count = await repository.GetCountAsync(CancellationToken.None);
+
+        Assert.Equal(2, count);
+    }
+
+    [Fact]
+    public async Task ClearAllAsync_deletes_all_items_and_returns_deleted_count()
+    {
+        using var database = await TestDatabase.CreateAsync();
+        var repository = new ClipboardRepository(database.ConnectionFactory);
+        await repository.InsertAsync(CreateItem("pinned", "pinned", isPinned: true, minutesAgo: 1), CancellationToken.None);
+        await repository.InsertAsync(CreateItem("normal", "normal", isPinned: false, minutesAgo: 2), CancellationToken.None);
+
+        var deleted = await repository.ClearAllAsync(CancellationToken.None);
+
+        Assert.Equal(2, deleted);
+        Assert.Equal(0, await repository.GetCountAsync(CancellationToken.None));
+    }
+
+    [Fact]
+    public async Task ClearUnpinnedAsync_deletes_only_unpinned_items()
+    {
+        using var database = await TestDatabase.CreateAsync();
+        var repository = new ClipboardRepository(database.ConnectionFactory);
+        await repository.InsertAsync(CreateItem("pinned", "pinned", isPinned: true, minutesAgo: 1), CancellationToken.None);
+        await repository.InsertAsync(CreateItem("normal1", "normal1", isPinned: false, minutesAgo: 2), CancellationToken.None);
+        await repository.InsertAsync(CreateItem("normal2", "normal2", isPinned: false, minutesAgo: 3), CancellationToken.None);
+
+        var deleted = await repository.ClearUnpinnedAsync(CancellationToken.None);
+        var results = await repository.SearchAsync("", 10, CancellationToken.None);
+
+        Assert.Equal(2, deleted);
+        Assert.Single(results);
+        Assert.True(results[0].IsPinned);
+    }
+
+    [Fact]
+    public async Task CleanupAsync_keeps_latest_unpinned_items_by_max_count()
+    {
+        using var database = await TestDatabase.CreateAsync();
+        var repository = new ClipboardRepository(database.ConnectionFactory);
+        await repository.InsertAsync(CreateItem("old", "old", isPinned: false, minutesAgo: 30), CancellationToken.None);
+        await repository.InsertAsync(CreateItem("middle", "middle", isPinned: false, minutesAgo: 20), CancellationToken.None);
+        await repository.InsertAsync(CreateItem("new", "new", isPinned: false, minutesAgo: 10), CancellationToken.None);
+        await repository.InsertAsync(CreateItem("pinned", "pinned", isPinned: true, minutesAgo: 40), CancellationToken.None);
+
+        var deleted = await repository.CleanupAsync(maxItems: 2, retentionDays: 0, CancellationToken.None);
+        var results = await repository.SearchAsync("", 10, CancellationToken.None);
+
+        Assert.Equal(1, deleted);
+        Assert.Equal(["pinned", "new", "middle"], results.Select(item => item.TextContent ?? "").ToArray());
+    }
+
+    [Fact]
+    public async Task CleanupAsync_deletes_old_unpinned_items_by_retention_days()
+    {
+        using var database = await TestDatabase.CreateAsync();
+        var repository = new ClipboardRepository(database.ConnectionFactory);
+        await repository.InsertAsync(CreateItemDaysAgo("old", "old", isPinned: false, daysAgo: 40), CancellationToken.None);
+        await repository.InsertAsync(CreateItemDaysAgo("recent", "recent", isPinned: false, daysAgo: 5), CancellationToken.None);
+        await repository.InsertAsync(CreateItemDaysAgo("pinned-old", "pinned-old", isPinned: true, daysAgo: 60), CancellationToken.None);
+
+        var deleted = await repository.CleanupAsync(maxItems: 1000, retentionDays: 30, CancellationToken.None);
+        var results = await repository.SearchAsync("", 10, CancellationToken.None);
+
+        Assert.Equal(1, deleted);
+        Assert.Equal(["pinned-old", "recent"], results.Select(item => item.TextContent ?? "").ToArray());
+    }
+
+    [Fact]
+    public async Task CleanupAsync_retention_zero_does_not_delete_by_age()
+    {
+        using var database = await TestDatabase.CreateAsync();
+        var repository = new ClipboardRepository(database.ConnectionFactory);
+        await repository.InsertAsync(CreateItemDaysAgo("old", "old", isPinned: false, daysAgo: 400), CancellationToken.None);
+
+        var deleted = await repository.CleanupAsync(maxItems: 1000, retentionDays: 0, CancellationToken.None);
+
+        Assert.Equal(0, deleted);
+        Assert.Equal(1, await repository.GetCountAsync(CancellationToken.None));
+    }
+
+    [Fact]
+    public async Task CleanupAsync_invalid_values_fall_back_to_safe_defaults()
+    {
+        using var database = await TestDatabase.CreateAsync();
+        var repository = new ClipboardRepository(database.ConnectionFactory);
+        await repository.InsertAsync(CreateItemDaysAgo("old", "old", isPinned: false, daysAgo: 40), CancellationToken.None);
+        await repository.InsertAsync(CreateItemDaysAgo("recent", "recent", isPinned: false, daysAgo: 1), CancellationToken.None);
+
+        var deleted = await repository.CleanupAsync(maxItems: -1, retentionDays: -1, CancellationToken.None);
+
+        Assert.Equal(1, deleted);
+        Assert.Equal(["recent"], (await repository.SearchAsync("", 10, CancellationToken.None)).Select(item => item.TextContent ?? "").ToArray());
+    }
+
     private static ClipboardItem CreateItem(string hashSeed, string text, bool isPinned, int minutesAgo)
     {
-        var createdAt = DateTimeOffset.UtcNow.AddMinutes(-minutesAgo);
+        return CreateItem(hashSeed, text, isPinned, DateTimeOffset.UtcNow.AddMinutes(-minutesAgo));
+    }
 
+    private static ClipboardItem CreateItemDaysAgo(string hashSeed, string text, bool isPinned, int daysAgo)
+    {
+        return CreateItem(hashSeed, text, isPinned, DateTimeOffset.UtcNow.AddDays(-daysAgo));
+    }
+
+    private static ClipboardItem CreateItem(string hashSeed, string text, bool isPinned, DateTimeOffset createdAt)
+    {
         return new ClipboardItem(
             Guid.NewGuid(),
             "text",

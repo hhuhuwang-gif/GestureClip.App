@@ -135,17 +135,25 @@ public sealed class GestureOverlayService : IGestureOverlayService
         _window.Height = SystemParameters.VirtualScreenHeight;
     }
 
-    private static PointCollection ToPointCollection(IReadOnlyList<GesturePoint> points)
+    private PointCollection ToPointCollection(IReadOnlyList<GesturePoint> points)
     {
         var collection = new PointCollection(points.Count);
-        var left = SystemParameters.VirtualScreenLeft;
-        var top = SystemParameters.VirtualScreenTop;
         foreach (var point in points)
         {
-            collection.Add(new System.Windows.Point(point.X - left, point.Y - top));
+            collection.Add(ToOverlayPoint(point));
         }
 
         return collection;
+    }
+
+    private System.Windows.Point ToOverlayPoint(GesturePoint point)
+    {
+        if (_window is null)
+        {
+            return new System.Windows.Point(point.X, point.Y);
+        }
+
+        return _window.PointFromScreen(new System.Windows.Point(point.X, point.Y));
     }
 
     private async Task HideLaterAsync(CancellationToken cancellationToken)

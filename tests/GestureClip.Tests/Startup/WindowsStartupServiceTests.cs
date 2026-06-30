@@ -23,6 +23,22 @@ public sealed class WindowsStartupServiceTests
         Assert.Null(registry.Value);
     }
 
+    [Fact]
+    public void GetStartupCommand_always_quotes_full_exe_path()
+    {
+        var service = new WindowsStartupService(new FakeStartupRegistry(), @"C:\GestureClip\GestureClip.exe");
+
+        Assert.Equal("\"C:\\GestureClip\\GestureClip.exe\"", service.GetStartupCommand());
+    }
+
+    [Fact]
+    public void Enable_throws_for_dotnet_development_host()
+    {
+        var service = new WindowsStartupService(new FakeStartupRegistry(), @"C:\Program Files\dotnet\dotnet.exe");
+
+        Assert.Throws<InvalidOperationException>(() => service.Enable());
+    }
+
     [Theory]
     [InlineData(@"C:\Program Files\dotnet\dotnet.exe", true)]
     [InlineData(@"C:\repo\GestureClip\src\GestureClip.App\bin\Debug\net8.0-windows\GestureClip.App.exe", true)]

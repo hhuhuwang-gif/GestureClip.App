@@ -74,6 +74,7 @@ public sealed class GestureBuiltInActionExecutorTests
     private sealed class FakeClipboardOverlayService : IClipboardOverlayService
     {
         public Task ShowAsync() => Task.CompletedTask;
+        public Task RefreshAsync() => Task.CompletedTask;
     }
 
     private sealed class FakeClipboardService : IClipboardService

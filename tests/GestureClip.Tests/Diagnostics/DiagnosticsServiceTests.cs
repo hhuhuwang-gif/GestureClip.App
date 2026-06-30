@@ -20,13 +20,16 @@ public sealed class DiagnosticsServiceTests
             new FakeClipboardService(),
             new FakeMouseGestureService(),
             new FakeGlobalHotkeyService(),
-            new FakeKeyboardInputSender());
+            new FakeKeyboardInputSender(),
+            new FakeAppEnvironment());
 
         var report = await service.BuildReportAsync(CancellationToken.None);
 
         Assert.Contains("GestureClip Diagnostics", report);
         Assert.Contains(paths.DatabasePath, report);
         Assert.Contains(paths.LogDirectory, report);
+        Assert.Contains("ApplicationPath:", report);
+        Assert.Contains(@"C:\Program Files\GestureClip\GestureClip.exe", report);
         Assert.Contains("Ctrl+Alt+V", report);
         Assert.Contains("U", report);
         Assert.DoesNotContain("secret clipboard text", report, StringComparison.OrdinalIgnoreCase);
@@ -71,5 +74,10 @@ public sealed class DiagnosticsServiceTests
         public string? LastStatus => "Sent 4/4";
         public void SendShortcut(params ushort[] keys) { }
         public void SendKey(ushort key) { }
+    }
+
+    private sealed class FakeAppEnvironment : IAppEnvironment
+    {
+        public string ApplicationPath => @"C:\Program Files\GestureClip\GestureClip.exe";
     }
 }

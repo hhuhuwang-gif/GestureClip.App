@@ -1,0 +1,27 @@
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <SolidColorBrush x:Key="BrushBackground" Color="{StaticResource ColorBackgroundDark}" />
+    <SolidColorBrush x:Key="BrushSurface" Color="{StaticResource ColorSurfaceDark}" />
+    <SolidColorBrush x:Key="BrushGlass" Color="{StaticResource ColorGlassDark}" />
+    <SolidColorBrush x:Key="BrushGlassStrong" Color="{StaticResource ColorGlassStrongDark}" />
+    <SolidColorBrush x:Key="BrushGlassLight" Color="{StaticResource ColorGlassLight}" />
+    <SolidColorBrush x:Key="BrushBorder" Color="{StaticResource ColorBorderDark}" />
+    <SolidColorBrush x:Key="BrushPrimary" Color="{StaticResource ColorPrimary}" />
+    <SolidColorBrush x:Key="BrushPrimarySoft" Color="{StaticResource ColorPrimarySoft}" />
+    <SolidColorBrush x:Key="BrushPrimaryBright" Color="{StaticResource ColorPrimaryBright}" />
+    <SolidColorBrush x:Key="BrushDanger" Color="{StaticResource ColorDanger}" />
+    <SolidColorBrush x:Key="BrushDangerSoft" Color="{StaticResource ColorDangerSoft}" />
+    <SolidColorBrush x:Key="BrushTextPrimary" Color="{StaticResource ColorTextPrimaryDark}" />
+    <SolidColorBrush x:Key="BrushTextSecondary" Color="{StaticResource ColorTextSecondaryDark}" />
+    <SolidColorBrush x:Key="BrushTextMuted" Color="#7FAAB0BC" />
+    <LinearGradientBrush x:Key="BrushAppBackground" StartPoint="0,0" EndPoint="1,1">
+        <GradientStop Color="#10131A" Offset="0" />
+        <GradientStop Color="#171B25" Offset="0.48" />
+        <GradientStop Color="#0E1728" Offset="1" />
+    </LinearGradientBrush>
+    <LinearGradientBrush x:Key="BrushPrimaryGradient" StartPoint="0,0" EndPoint="1,1">
+        <GradientStop Color="#7DB7FF" Offset="0" />
+        <GradientStop Color="#5B8CFF" Offset="0.52" />
+        <GradientStop Color="#6D6BFF" Offset="1" />
+    </LinearGradientBrush>
+</ResourceDictionary>

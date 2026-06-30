@@ -2,6 +2,7 @@ namespace GestureClip.Core.Diagnostics;
 
 public sealed record DiagnosticsSnapshot(
     string AppVersion,
+    string ApplicationPath,
     string DatabasePath,
     string LogDirectory,
     bool IsAdministrator,

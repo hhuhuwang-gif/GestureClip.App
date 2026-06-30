@@ -15,6 +15,7 @@ public sealed class DiagnosticsService : IDiagnosticsService
     private readonly IMouseGestureService _mouseGestureService;
     private readonly IGlobalHotkeyService _globalHotkeyService;
     private readonly IKeyboardInputSender _keyboardInputSender;
+    private readonly IAppEnvironment _appEnvironment;
 
     public DiagnosticsService(
         AppPathProvider paths,
@@ -22,7 +23,8 @@ public sealed class DiagnosticsService : IDiagnosticsService
         IClipboardService clipboardService,
         IMouseGestureService mouseGestureService,
         IGlobalHotkeyService globalHotkeyService,
-        IKeyboardInputSender keyboardInputSender)
+        IKeyboardInputSender keyboardInputSender,
+        IAppEnvironment appEnvironment)
     {
         _paths = paths;
         _permissionService = permissionService;
@@ -30,6 +32,7 @@ public sealed class DiagnosticsService : IDiagnosticsService
         _mouseGestureService = mouseGestureService;
         _globalHotkeyService = globalHotkeyService;
         _keyboardInputSender = keyboardInputSender;
+        _appEnvironment = appEnvironment;
     }
 
     public Task<DiagnosticsSnapshot> GetSnapshotAsync(CancellationToken cancellationToken)
@@ -37,6 +40,7 @@ public sealed class DiagnosticsService : IDiagnosticsService
         var gestureDiagnostics = _mouseGestureService.Diagnostics;
         var snapshot = new DiagnosticsSnapshot(
             GetVersion(),
+            _appEnvironment.ApplicationPath,
             _paths.DatabasePath,
             _paths.LogDirectory,
             _permissionService.GetCurrentStatus() == PermissionStatus.Administrator,
@@ -58,6 +62,7 @@ public sealed class DiagnosticsService : IDiagnosticsService
         var builder = new StringBuilder();
         builder.AppendLine("GestureClip Diagnostics");
         builder.AppendLine($"Version: {snapshot.AppVersion}");
+        builder.AppendLine($"ApplicationPath: {snapshot.ApplicationPath}");
         builder.AppendLine($"DatabasePath: {snapshot.DatabasePath}");
         builder.AppendLine($"LogDirectory: {snapshot.LogDirectory}");
         builder.AppendLine($"IsAdministrator: {snapshot.IsAdministrator}");

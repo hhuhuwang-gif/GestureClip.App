@@ -26,6 +26,7 @@ public static class InfrastructureServiceCollectionExtensions
         services.AddSingleton<DatabaseInitializer>();
         services.AddSingleton<ISettingsService, SqliteSettingsService>();
         services.AddSingleton<ISystemPermissionService, SystemPermissionService>();
+        services.AddSingleton<IAppEnvironment, AppEnvironment>();
         services.AddSingleton<IClipboardListener, WindowsClipboardListener>();
         services.AddSingleton<IClipboardTextReader, WpfClipboardTextReader>();
         services.AddSingleton<IClipboardWriter, WpfClipboardWriter>();

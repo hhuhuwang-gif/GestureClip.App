@@ -26,6 +26,7 @@ logs/
 *.db
 *.db-shm
 *.db-wal
+artifacts/
 
 # OS files
 Thumbs.db

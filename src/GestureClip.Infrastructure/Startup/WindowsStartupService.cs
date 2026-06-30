@@ -28,6 +28,11 @@ public sealed class WindowsStartupService : IStartupService
 
     public void Enable()
     {
+        if (IsDotNetHost())
+        {
+            throw new InvalidOperationException("Cannot enable startup while running under dotnet.exe.");
+        }
+
         _registry.SetValue(StartupName, GetStartupCommand());
     }
 
@@ -38,16 +43,19 @@ public sealed class WindowsStartupService : IStartupService
 
     public string GetStartupCommand()
     {
-        return _executablePath.Contains(' ')
-            ? $"\"{_executablePath}\""
-            : _executablePath;
+        return $"\"{_executablePath}\"";
     }
 
     public bool IsDevelopmentRunMode()
     {
         var fileName = Path.GetFileName(_executablePath);
-        return string.Equals(fileName, "dotnet.exe", StringComparison.OrdinalIgnoreCase) ||
+        return IsDotNetHost() ||
             _executablePath.Contains(@"\bin\Debug\", StringComparison.OrdinalIgnoreCase) ||
             _executablePath.Contains(@"\bin\Release\", StringComparison.OrdinalIgnoreCase);
+    }
+
+    private bool IsDotNetHost()
+    {
+        return string.Equals(Path.GetFileName(_executablePath), "dotnet.exe", StringComparison.OrdinalIgnoreCase);
     }
 }

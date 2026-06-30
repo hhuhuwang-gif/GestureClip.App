@@ -132,6 +132,29 @@ public sealed class ClipboardServiceTests
                 string.Equals(processName, BlockedProcessName, StringComparison.OrdinalIgnoreCase));
         }
 
+        public Task<int> GetCountAsync(CancellationToken cancellationToken)
+        {
+            return Task.FromResult(Items.Count);
+        }
+
+        public Task<int> ClearAllAsync(CancellationToken cancellationToken)
+        {
+            var count = Items.Count;
+            Items.Clear();
+            return Task.FromResult(count);
+        }
+
+        public Task<int> ClearUnpinnedAsync(CancellationToken cancellationToken)
+        {
+            var deleted = Items.RemoveAll(item => !item.IsPinned);
+            return Task.FromResult(deleted);
+        }
+
+        public Task<int> CleanupAsync(int maxItems, int retentionDays, CancellationToken cancellationToken)
+        {
+            return Task.FromResult(0);
+        }
+
         public Task<IReadOnlyList<ClipboardItem>> SearchAsync(string keyword, int limit, CancellationToken cancellationToken)
         {
             return Task.FromResult<IReadOnlyList<ClipboardItem>>(Items);

@@ -20,6 +20,7 @@ public static class AppServiceCollectionExtensions
         services.AddSingleton<AppLifecycleService>();
         services.AddSingleton<IAppLifecycleService>(provider => provider.GetRequiredService<AppLifecycleService>());
         services.AddSingleton<TrayIconService>();
+        services.AddSingleton<IConfirmationService, WpfConfirmationService>();
         services.AddSingleton<ClipboardOverlayService>();
         services.AddSingleton<IClipboardOverlayService>(provider => provider.GetRequiredService<ClipboardOverlayService>());
         services.AddSingleton<GestureOverlayService>();

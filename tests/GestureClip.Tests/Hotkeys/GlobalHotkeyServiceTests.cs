@@ -102,10 +102,17 @@ public sealed class GlobalHotkeyServiceTests
     private sealed class FakeClipboardOverlayService : IClipboardOverlayService
     {
         public int ShowCount { get; private set; }
+        public int RefreshCount { get; private set; }
 
         public Task ShowAsync()
         {
             ShowCount++;
+            return Task.CompletedTask;
+        }
+
+        public Task RefreshAsync()
+        {
+            RefreshCount++;
             return Task.CompletedTask;
         }
     }

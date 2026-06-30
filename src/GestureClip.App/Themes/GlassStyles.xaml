@@ -1,0 +1,64 @@
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <Style x:Key="GlassCardStyle" TargetType="Border">
+        <Setter Property="CornerRadius" Value="18" />
+        <Setter Property="Padding" Value="18" />
+        <Setter Property="Background" Value="{DynamicResource BrushGlass}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource BrushBorder}" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="SnapsToDevicePixels" Value="True" />
+        <Setter Property="Effect">
+            <Setter.Value>
+                <DropShadowEffect Color="#99000000"
+                                  BlurRadius="28"
+                                  ShadowDepth="10"
+                                  Opacity="0.28" />
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <Style x:Key="GlassPanelStyle" TargetType="Border" BasedOn="{StaticResource GlassCardStyle}">
+        <Setter Property="CornerRadius" Value="24" />
+        <Setter Property="Padding" Value="24" />
+        <Setter Property="Background" Value="{DynamicResource BrushGlassStrong}" />
+    </Style>
+
+    <Style x:Key="SectionTitleStyle" TargetType="TextBlock">
+        <Setter Property="Foreground" Value="{DynamicResource BrushTextPrimary}" />
+        <Setter Property="FontSize" Value="17" />
+        <Setter Property="FontWeight" Value="SemiBold" />
+        <Setter Property="Margin" Value="0,0,0,12" />
+    </Style>
+
+    <Style x:Key="MutedTextStyle" TargetType="TextBlock">
+        <Setter Property="Foreground" Value="{DynamicResource BrushTextSecondary}" />
+        <Setter Property="FontSize" Value="13" />
+        <Setter Property="TextWrapping" Value="Wrap" />
+    </Style>
+
+    <Style x:Key="GlassGroupBoxStyle" TargetType="GroupBox">
+        <Setter Property="Foreground" Value="{DynamicResource BrushTextPrimary}" />
+        <Setter Property="FontSize" Value="14" />
+        <Setter Property="FontWeight" Value="SemiBold" />
+        <Setter Property="Padding" Value="0" />
+        <Setter Property="Margin" Value="0,0,0,16" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="GroupBox">
+                    <Border Style="{StaticResource GlassCardStyle}">
+                        <StackPanel>
+                            <ContentPresenter ContentSource="Header"
+                                              TextElement.Foreground="{DynamicResource BrushTextPrimary}"
+                                              TextElement.FontSize="17"
+                                              TextElement.FontWeight="SemiBold"
+                                              Margin="0,0,0,14" />
+                            <ContentPresenter />
+                        </StackPanel>
+                    </Border>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <Style TargetType="GroupBox" BasedOn="{StaticResource GlassGroupBoxStyle}" />
+</ResourceDictionary>

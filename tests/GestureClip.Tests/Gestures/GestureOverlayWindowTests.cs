@@ -27,7 +27,8 @@ public sealed class GestureOverlayWindowTests
 
         Assert.Contains("VerticalAlignment=\"Bottom\"", xaml);
         Assert.Contains("HorizontalAlignment=\"Center\"", xaml);
-        Assert.Contains("MinWidth=\"320\"", xaml);
+        Assert.Contains("MinWidth=\"420\"", xaml);
+        Assert.Contains("Style=\"{StaticResource GlassPanelStyle}\"", xaml);
         Assert.DoesNotContain("Canvas.Left=\"24\"", xaml);
         Assert.DoesNotContain("Canvas.Top=\"24\"", xaml);
     }
@@ -43,6 +44,16 @@ public sealed class GestureOverlayWindowTests
         Assert.Contains("ActionName", xaml);
         Assert.Contains("ShortcutText", xaml);
         Assert.Contains("PresetName", xaml);
+    }
+
+    [Fact]
+    public void GestureOverlayService_converts_screen_points_to_overlay_coordinates()
+    {
+        var path = FindRepositoryFile("src", "GestureClip.App", "Services", "GestureOverlayService.cs");
+
+        var source = File.ReadAllText(path);
+
+        Assert.Contains("PointFromScreen", source);
     }
 
     private static string FindRepositoryFile(params string[] segments)

@@ -30,4 +30,15 @@ public sealed class ClipboardOverlayService : IClipboardOverlayService
             _window.FocusSearchBox();
         });
     }
+
+    public async Task RefreshAsync()
+    {
+        await System.Windows.Application.Current.Dispatcher.InvokeAsync(async () =>
+        {
+            if (_window is not null)
+            {
+                await _window.LoadHistoryAsync();
+            }
+        });
+    }
 }

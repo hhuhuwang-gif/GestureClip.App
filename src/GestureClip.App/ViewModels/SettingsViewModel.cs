@@ -27,6 +27,9 @@ public sealed class SettingsViewModel : INotifyPropertyChanged
     private readonly IDiagnosticsService _diagnosticsService;
     private readonly IClipboardService _clipboardService;
     private readonly IClipboardWriter _clipboardWriter;
+    private readonly IClipboardRepository _clipboardRepository;
+    private readonly IClipboardOverlayService _clipboardOverlayService;
+    private readonly IConfirmationService _confirmationService;
     private bool _clipboardCaptureEnabled;
     private bool _gestureEnabled;
     private bool _gestureShowOverlay;
@@ -38,6 +41,9 @@ public sealed class SettingsViewModel : INotifyPropertyChanged
     private DiagnosticsSnapshot? _diagnostics;
     private string _newBlacklistProcessName = "";
     private bool _startWithWindows;
+    private int _clipboardItemCount;
+    private int _clipboardMaxItems;
+    private int _clipboardRetentionDays;
     private readonly DispatcherTimer _diagnosticsTimer;
 
     public SettingsViewModel(
@@ -52,7 +58,10 @@ public sealed class SettingsViewModel : INotifyPropertyChanged
         IStartupService startupService,
         IDiagnosticsService diagnosticsService,
         IClipboardService clipboardService,
-        IClipboardWriter clipboardWriter)
+        IClipboardWriter clipboardWriter,
+        IClipboardRepository clipboardRepository,
+        IClipboardOverlayService clipboardOverlayService,
+        IConfirmationService confirmationService)
     {
         _settingsService = settingsService;
         _mouseGestureService = mouseGestureService;
@@ -64,6 +73,9 @@ public sealed class SettingsViewModel : INotifyPropertyChanged
         _diagnosticsService = diagnosticsService;
         _clipboardService = clipboardService;
         _clipboardWriter = clipboardWriter;
+        _clipboardRepository = clipboardRepository;
+        _clipboardOverlayService = clipboardOverlayService;
+        _confirmationService = confirmationService;
         DatabasePath = paths.DatabasePath;
         LogDirectory = paths.LogDirectory;
         AppDataPath = paths.RootDirectory;
@@ -76,6 +88,8 @@ public sealed class SettingsViewModel : INotifyPropertyChanged
         _gestureCloseWindowEnabled = _settingsService.Get(SettingKeys.GestureCloseWindowEnabled, false);
         _selectedGesturePreset = _settingsService.Get(SettingKeys.GesturePreset, GesturePreset.EditEnhanced);
         _gestureTriggerThreshold = _settingsService.Get(SettingKeys.GestureTriggerThreshold, 20);
+        _clipboardMaxItems = _settingsService.Get(SettingKeys.ClipboardMaxItems, 1000);
+        _clipboardRetentionDays = _settingsService.Get(SettingKeys.ClipboardRetentionDays, 30);
         _gestureDiagnostics = _mouseGestureService.Diagnostics;
         _startWithWindows = _startupService.IsEnabled();
         StartupModeWarning = _startupService.IsDevelopmentRunMode()
@@ -84,6 +98,10 @@ public sealed class SettingsViewModel : INotifyPropertyChanged
         AddBlacklistItemCommand = new AsyncRelayCommand(_ => AddBlacklistItemAsync());
         RefreshDiagnosticsCommand = new AsyncRelayCommand(_ => RefreshDiagnosticsAsync());
         CopyDiagnosticsCommand = new AsyncRelayCommand(_ => CopyDiagnosticsAsync());
+        RefreshClipboardStatsCommand = new AsyncRelayCommand(_ => RefreshClipboardStatsAsync());
+        ClearAllClipboardItemsCommand = new AsyncRelayCommand(_ => ClearAllClipboardItemsAsync());
+        ClearUnpinnedClipboardItemsCommand = new AsyncRelayCommand(_ => ClearUnpinnedClipboardItemsAsync());
+        ApplyClipboardCleanupCommand = new AsyncRelayCommand(_ => ApplyClipboardCleanupAsync());
         OpenLogDirectoryCommand = new RelayCommand(_ => OpenDirectory(LogDirectory));
         OpenDataDirectoryCommand = new RelayCommand(_ => OpenDirectory(AppDataPath));
         _diagnosticsTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(500) };
@@ -91,6 +109,7 @@ public sealed class SettingsViewModel : INotifyPropertyChanged
         _diagnosticsTimer.Start();
         _ = LoadBlacklistAsync();
         _ = RefreshDiagnosticsAsync();
+        _ = RefreshClipboardStatsAsync();
     }
 
     public event PropertyChangedEventHandler? PropertyChanged;
@@ -122,6 +141,90 @@ public sealed class SettingsViewModel : INotifyPropertyChanged
     public ICommand OpenLogDirectoryCommand { get; }
 
     public ICommand OpenDataDirectoryCommand { get; }
+
+    public ICommand RefreshClipboardStatsCommand { get; }
+
+    public ICommand ClearAllClipboardItemsCommand { get; }
+
+    public ICommand ClearUnpinnedClipboardItemsCommand { get; }
+
+    public ICommand ApplyClipboardCleanupCommand { get; }
+
+    public int ClipboardItemCount
+    {
+        get => _clipboardItemCount;
+        private set
+        {
+            if (_clipboardItemCount == value)
+            {
+                return;
+            }
+
+            _clipboardItemCount = value;
+            OnPropertyChanged();
+            OnPropertyChanged(nameof(ClipboardItemCountText));
+        }
+    }
+
+    public string ClipboardItemCountText => $"当前历史数量：{ClipboardItemCount} 条";
+
+    public IReadOnlyList<int> ClipboardMaxItemOptions { get; } = [100, 500, 1000, 5000];
+
+    public int ClipboardMaxItems
+    {
+        get => _clipboardMaxItems;
+        set
+        {
+            if (_clipboardMaxItems == value)
+            {
+                return;
+            }
+
+            _clipboardMaxItems = value;
+            OnPropertyChanged();
+            _ = _settingsService.SetAsync(SettingKeys.ClipboardMaxItems, value, CancellationToken.None);
+        }
+    }
+
+    public int ClipboardRetentionDays
+    {
+        get => _clipboardRetentionDays;
+        private set
+        {
+            if (_clipboardRetentionDays == value)
+            {
+                return;
+            }
+
+            _clipboardRetentionDays = value;
+            OnPropertyChanged();
+            OnPropertyChanged(nameof(SelectedClipboardRetentionOption));
+        }
+    }
+
+    public IReadOnlyList<RetentionOption> ClipboardRetentionOptions { get; } =
+    [
+        new("7 天", 7),
+        new("30 天", 30),
+        new("90 天", 90),
+        new("永久", 0)
+    ];
+
+    public RetentionOption? SelectedClipboardRetentionOption
+    {
+        get => ClipboardRetentionOptions.FirstOrDefault(option => option.Days == ClipboardRetentionDays);
+        set
+        {
+            if (value is null || ClipboardRetentionDays == value.Days)
+            {
+                return;
+            }
+
+            ClipboardRetentionDays = value.Days;
+            OnPropertyChanged();
+            _ = _settingsService.SetAsync(SettingKeys.ClipboardRetentionDays, value.Days, CancellationToken.None);
+        }
+    }
 
     public string NewBlacklistProcessName
     {
@@ -346,10 +449,70 @@ public sealed class SettingsViewModel : INotifyPropertyChanged
         await _featureToggleService.SetClipboardCaptureEnabledAsync(enabled, CancellationToken.None);
     }
 
+    public async Task RefreshClipboardStatsAsync()
+    {
+        ClipboardItemCount = await _clipboardRepository.GetCountAsync(CancellationToken.None);
+    }
+
+    public async Task ClearAllClipboardItemsAsync()
+    {
+        if (!_confirmationService.Confirm(
+            "清空全部剪贴板历史",
+            "这会删除所有剪贴板历史，包括固定项。是否继续？"))
+        {
+            await RefreshClipboardStatsAsync();
+            return;
+        }
+
+        await _clipboardRepository.ClearAllAsync(CancellationToken.None);
+        await RefreshAfterClipboardCleanupAsync();
+    }
+
+    public async Task ClearUnpinnedClipboardItemsAsync()
+    {
+        if (!_confirmationService.Confirm(
+            "清空非固定项",
+            "这会删除所有非固定剪贴板历史，固定项会保留。是否继续？"))
+        {
+            await RefreshClipboardStatsAsync();
+            return;
+        }
+
+        await _clipboardRepository.ClearUnpinnedAsync(CancellationToken.None);
+        await RefreshAfterClipboardCleanupAsync();
+    }
+
+    public async Task ApplyClipboardCleanupAsync()
+    {
+        if (!_confirmationService.Confirm(
+            "立即执行剪贴板清理",
+            "这会根据最大保存数量和保留天数删除旧的非固定剪贴板记录。是否继续？"))
+        {
+            await RefreshClipboardStatsAsync();
+            return;
+        }
+
+        await _clipboardRepository.CleanupAsync(ClipboardMaxItems, ClipboardRetentionDays, CancellationToken.None);
+        await RefreshAfterClipboardCleanupAsync();
+    }
+
+    private async Task RefreshAfterClipboardCleanupAsync()
+    {
+        await RefreshClipboardStatsAsync();
+        await _clipboardOverlayService.RefreshAsync();
+    }
+
     private async Task ApplyStartWithWindowsAsync(bool enabled)
     {
         if (enabled)
         {
+            if (_startupService.IsDevelopmentRunMode())
+            {
+                _startWithWindows = false;
+                OnPropertyChanged(nameof(StartWithWindows));
+                return;
+            }
+
             _startupService.Enable();
         }
         else
@@ -453,4 +616,6 @@ public sealed class SettingsViewModel : INotifyPropertyChanged
     }
 
     public sealed record GesturePresetOption(GesturePreset Value, string DisplayName);
+
+    public sealed record RetentionOption(string Label, int Days);
 }

@@ -46,7 +46,7 @@ public sealed class TrayIconService : IDisposable
         _notifyIcon = new Forms.NotifyIcon
         {
             Text = "GestureClip",
-            Icon = SystemIcons.Application,
+            Icon = LoadAppIcon(),
             ContextMenuStrip = _menu,
             Visible = true
         };
@@ -111,5 +111,20 @@ public sealed class TrayIconService : IDisposable
         {
             _logger.LogError(ex, "Failed to open directory from tray menu.");
         }
+    }
+
+    private static Icon LoadAppIcon()
+    {
+        var resource = System.Windows.Application.GetResourceStream(
+            new Uri("pack://application:,,,/Assets/GestureClip.ico"));
+
+        if (resource is null)
+        {
+            return SystemIcons.Application;
+        }
+
+        using var stream = resource.Stream;
+        using var icon = new Icon(stream);
+        return (Icon)icon.Clone();
     }
 }
