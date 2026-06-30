@@ -71,6 +71,14 @@ Run from source:
 dotnet run --project .\src\GestureClip.App\GestureClip.App.csproj
 ```
 
+One-click launch from a downloaded repository:
+
+```text
+Start-GestureClip.bat
+```
+
+The launcher starts `artifacts/release/GestureClip/GestureClip.exe`. If the release executable is missing, it runs `scripts/publish-win-x64.ps1` first.
+
 ## Release
 
 Create a Windows x64 self-contained single-file release:
