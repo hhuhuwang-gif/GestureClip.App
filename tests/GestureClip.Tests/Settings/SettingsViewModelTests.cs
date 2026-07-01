@@ -122,6 +122,16 @@ public sealed class SettingsViewModelTests
     }
 
     [Fact]
+    public void Gesture_action_options_render_as_readable_text()
+    {
+        var viewModel = CreateViewModel();
+        var option = viewModel.GestureActionOptions.Single(item => item.Action == BuiltInGestureAction.StartMenu);
+
+        Assert.Equal(option.DisplayName, option.ToString());
+        Assert.DoesNotContain(nameof(GestureActionOptionViewModel), option.ToString(), StringComparison.Ordinal);
+    }
+
+    [Fact]
     public void Gesture_trigger_modes_include_side_and_edge_placeholders()
     {
         var viewModel = CreateViewModel();

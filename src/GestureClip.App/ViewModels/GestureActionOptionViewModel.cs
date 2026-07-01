@@ -7,4 +7,6 @@ public sealed record GestureActionOptionViewModel(BuiltInGestureAction Action, s
     public string DisplayName => string.IsNullOrWhiteSpace(Shortcut)
         ? Name
         : $"{Name}  ·  {Shortcut}";
+
+    public override string ToString() => DisplayName;
 }

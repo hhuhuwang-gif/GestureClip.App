@@ -109,6 +109,21 @@ public sealed class ThemeResourceTests
         Assert.DoesNotContain("TabItem Header=\"数据与清理\"", xaml);
     }
 
+    [Fact]
+    public void SettingsWindow_keeps_gesture_page_simple_with_advanced_settings_collapsed()
+    {
+        var path = FindRepositoryFile("src", "GestureClip.App", "SettingsWindow.xaml");
+        var xaml = File.ReadAllText(path);
+
+        Assert.Contains("按住右键，往一个方向划一下，松开右键就会执行动作。", xaml);
+        Assert.Contains("Header=\"高级设置\"", xaml);
+        Assert.Contains("IsExpanded=\"False\"", xaml);
+        Assert.Contains("划多远才算手势", xaml);
+        Assert.Contains("防误触间隔", xaml);
+        Assert.DoesNotContain("停留 ms", xaml);
+        Assert.DoesNotContain("冷却 ms", xaml);
+    }
+
     private static string FindRepositoryFile(params string[] segments)
     {
         var directory = new DirectoryInfo(AppContext.BaseDirectory);

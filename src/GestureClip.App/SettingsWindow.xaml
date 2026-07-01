@@ -232,64 +232,119 @@
                 <TabItem Header="鼠标手势">
                     <ScrollViewer VerticalScrollBarVisibility="Auto">
                         <StackPanel Margin="18">
-                            <GroupBox Header="全局允许的触发方式" Padding="12">
-                                <ItemsControl ItemsSource="{Binding GestureTriggerModes}">
-                                    <ItemsControl.ItemTemplate>
-                                        <DataTemplate>
-                                            <Border Background="#223D526B"
-                                                    BorderBrush="#33768AA8"
-                                                    BorderThickness="1"
-                                                    CornerRadius="14"
-                                                    Padding="12,8"
-                                                    Margin="0,0,0,8">
-                                                <DockPanel>
-                                                    <TextBlock DockPanel.Dock="Right"
-                                                               Text="{Binding Status}"
-                                                               Foreground="{DynamicResource BrushPrimaryBright}"
-                                                               FontWeight="SemiBold" />
-                                                    <TextBlock Text="{Binding Name}"
-                                                               FontWeight="SemiBold" />
-                                                </DockPanel>
-                                            </Border>
-                                        </DataTemplate>
-                                    </ItemsControl.ItemTemplate>
-                                </ItemsControl>
-                            </GroupBox>
-
                             <GroupBox Header="鼠标手势" Padding="12">
                                 <StackPanel>
-                                    <CheckBox Content="启用鼠标手势" IsChecked="{Binding GestureEnabled, Mode=TwoWay}" />
-                                    <CheckBox Content="启用鼠标中键手势" Margin="0,8,0,0" IsChecked="{Binding GestureMiddleButtonEnabled, Mode=TwoWay}" />
-                                    <CheckBox Content="启用鼠标侧键 1 手势" Margin="0,8,0,0" IsChecked="{Binding GestureXButton1Enabled, Mode=TwoWay}" />
-                                    <CheckBox Content="启用鼠标侧键 2 手势" Margin="0,8,0,0" IsChecked="{Binding GestureXButton2Enabled, Mode=TwoWay}" />
-                                    <CheckBox Content="显示手势提示" Margin="0,8,0,0" IsChecked="{Binding GestureShowOverlay, Mode=TwoWay}" />
-                                    <CheckBox Content="启用手势调试日志" Margin="0,8,0,0" IsChecked="{Binding GestureDebugEnabled, Mode=TwoWay}" />
-                                    <StackPanel Orientation="Horizontal" Margin="0,8,0,0">
-                                        <TextBlock Text="手势预设" VerticalAlignment="Center" />
-                                        <ComboBox Width="180" Margin="12,0,0,0" ItemsSource="{Binding GesturePresetOptions}" SelectedItem="{Binding SelectedGesturePresetOption, Mode=TwoWay}" DisplayMemberPath="DisplayName" />
-                                    </StackPanel>
-                                    <StackPanel Orientation="Horizontal" Margin="0,8,0,0">
-                                        <TextBlock Text="触发阈值" VerticalAlignment="Center" />
-                                        <TextBox Width="70" Margin="12,0,0,0" Text="{Binding GestureTriggerThreshold, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
-                                        <TextBlock Text="px" Margin="6,0,0,0" VerticalAlignment="Center" />
-                                    </StackPanel>
-                                    <StackPanel Orientation="Horizontal" Margin="0,8,0,0">
-                                        <TextBlock Text="轨迹颜色" VerticalAlignment="Center" />
-                                        <ComboBox Width="180"
-                                                  Margin="12,0,0,0"
-                                                  ItemsSource="{Binding GestureStrokeColorOptions}"
-                                                  SelectedItem="{Binding SelectedGestureStrokeColorOption, Mode=TwoWay}"
-                                                  DisplayMemberPath="DisplayName" />
-                                    </StackPanel>
-                                    <CheckBox Content="启用 UD 关闭窗口手势" Margin="0,8,0,0" IsChecked="{Binding GestureCloseWindowEnabled, Mode=TwoWay}" />
+                                    <Border Style="{StaticResource SettingRowStyle}">
+                                        <StackPanel>
+                                            <TextBlock Text="按住右键，往一个方向划一下，松开右键就会执行动作。"
+                                                       FontWeight="SemiBold"
+                                                       TextWrapping="Wrap" />
+                                            <TextBlock Text="上划复制，下划粘贴，左划后退，右划前进，上下划回车，下上划 Esc。"
+                                                       Style="{StaticResource MutedTextStyle}"
+                                                       Margin="0,6,0,0"
+                                                       TextWrapping="Wrap" />
+                                        </StackPanel>
+                                    </Border>
+
+                                    <Border Style="{StaticResource SettingRowStyle}">
+                                        <Grid>
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="150" />
+                                                <ColumnDefinition Width="*" />
+                                            </Grid.ColumnDefinitions>
+                                            <TextBlock Text="常用开关" FontWeight="SemiBold" VerticalAlignment="Center" />
+                                            <WrapPanel Grid.Column="1">
+                                                <CheckBox Content="启用鼠标手势"
+                                                          Margin="0,0,20,0"
+                                                          IsChecked="{Binding GestureEnabled, Mode=TwoWay}" />
+                                                <CheckBox Content="显示划线和提示"
+                                                          IsChecked="{Binding GestureShowOverlay, Mode=TwoWay}" />
+                                            </WrapPanel>
+                                        </Grid>
+                                    </Border>
+
+                                    <Border Style="{StaticResource SettingRowStyle}">
+                                        <Grid>
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="150" />
+                                                <ColumnDefinition Width="*" />
+                                            </Grid.ColumnDefinitions>
+                                            <TextBlock Text="使用模式" FontWeight="SemiBold" VerticalAlignment="Center" />
+                                            <ComboBox Grid.Column="1"
+                                                      Width="220"
+                                                      HorizontalAlignment="Left"
+                                                      ItemsSource="{Binding GesturePresetOptions}"
+                                                      SelectedItem="{Binding SelectedGesturePresetOption, Mode=TwoWay}"
+                                                      DisplayMemberPath="DisplayName" />
+                                        </Grid>
+                                    </Border>
+
+                                    <Border Style="{StaticResource SettingRowStyle}">
+                                        <Grid>
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="150" />
+                                                <ColumnDefinition Width="*" />
+                                            </Grid.ColumnDefinitions>
+                                            <TextBlock Text="划线颜色" FontWeight="SemiBold" VerticalAlignment="Center" />
+                                            <ComboBox Grid.Column="1"
+                                                      Width="220"
+                                                      HorizontalAlignment="Left"
+                                                      ItemsSource="{Binding GestureStrokeColorOptions}"
+                                                      SelectedItem="{Binding SelectedGestureStrokeColorOption, Mode=TwoWay}"
+                                                      DisplayMemberPath="DisplayName" />
+                                        </Grid>
+                                    </Border>
                                 </StackPanel>
                             </GroupBox>
 
-                            <GroupBox Header="屏幕角落触发" Padding="12" Margin="0,12,0,0">
-                                <StackPanel>
-                                    <CheckBox Content="启用屏幕四角热区"
-                                              IsChecked="{Binding EdgeTriggerEnabled, Mode=TwoWay}" />
-                                    <TextBlock Text="进入屏幕角落并短暂停留后执行动作。默认关闭，用于避免误触。"
+                            <Expander Header="高级设置"
+                                      Margin="0,12,0,0"
+                                      IsExpanded="False">
+                                <StackPanel Margin="0,10,0,0">
+                                    <GroupBox Header="触发方式" Padding="12">
+                                        <ItemsControl ItemsSource="{Binding GestureTriggerModes}">
+                                            <ItemsControl.ItemTemplate>
+                                                <DataTemplate>
+                                                    <Border Background="{DynamicResource BrushGlass}"
+                                                            BorderBrush="{DynamicResource BrushBorder}"
+                                                            BorderThickness="1"
+                                                            CornerRadius="14"
+                                                            Padding="12,8"
+                                                            Margin="0,0,0,8">
+                                                        <DockPanel>
+                                                            <TextBlock DockPanel.Dock="Right"
+                                                                       Text="{Binding Status}"
+                                                                       Foreground="{DynamicResource BrushPrimaryBright}"
+                                                                       FontWeight="SemiBold" />
+                                                            <TextBlock Text="{Binding Name}"
+                                                                       FontWeight="SemiBold" />
+                                                        </DockPanel>
+                                                    </Border>
+                                                </DataTemplate>
+                                            </ItemsControl.ItemTemplate>
+                                        </ItemsControl>
+                                    </GroupBox>
+
+                                    <GroupBox Header="高级手势开关" Padding="12" Margin="0,12,0,0">
+                                        <StackPanel>
+                                            <CheckBox Content="启用鼠标中键手势" IsChecked="{Binding GestureMiddleButtonEnabled, Mode=TwoWay}" />
+                                            <CheckBox Content="启用鼠标侧键 1 手势" Margin="0,8,0,0" IsChecked="{Binding GestureXButton1Enabled, Mode=TwoWay}" />
+                                            <CheckBox Content="启用鼠标侧键 2 手势" Margin="0,8,0,0" IsChecked="{Binding GestureXButton2Enabled, Mode=TwoWay}" />
+                                            <CheckBox Content="启用手势调试日志" Margin="0,8,0,0" IsChecked="{Binding GestureDebugEnabled, Mode=TwoWay}" />
+                                            <CheckBox Content="启用 UD 关闭窗口手势" Margin="0,8,0,0" IsChecked="{Binding GestureCloseWindowEnabled, Mode=TwoWay}" />
+                                            <StackPanel Orientation="Horizontal" Margin="0,8,0,0">
+                                                <TextBlock Text="划多远才算手势" VerticalAlignment="Center" />
+                                                <TextBox Width="70" Margin="12,0,0,0" Text="{Binding GestureTriggerThreshold, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                                                <TextBlock Text="像素" Margin="6,0,0,0" VerticalAlignment="Center" />
+                                            </StackPanel>
+                                        </StackPanel>
+                                    </GroupBox>
+
+                                    <GroupBox Header="屏幕角落和边缘" Padding="12" Margin="0,12,0,0">
+                                        <StackPanel>
+                                            <CheckBox Content="启用屏幕角落触发"
+                                                      IsChecked="{Binding EdgeTriggerEnabled, Mode=TwoWay}" />
+                                            <TextBlock Text="把鼠标移到屏幕角落或边缘时执行动作。默认关闭，不需要就不用管。"
                                                Style="{StaticResource MutedTextStyle}"
                                                Margin="0,8,0,10"
                                                TextWrapping="Wrap" />
@@ -317,13 +372,13 @@
                                             <ColumnDefinition Width="100" />
                                             <ColumnDefinition Width="90" />
                                         </Grid.ColumnDefinitions>
-                                        <TextBlock Text="热区 px" VerticalAlignment="Center" />
+                                        <TextBlock Text="触发范围" VerticalAlignment="Center" />
                                         <TextBox Grid.Column="1" Text="{Binding EdgeTriggerHotZoneSize, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
-                                        <TextBlock Grid.Column="2" Text="停留 ms" Margin="10,0,0,0" VerticalAlignment="Center" />
+                                        <TextBlock Grid.Column="2" Text="停留多久" Margin="10,0,0,0" VerticalAlignment="Center" />
                                         <TextBox Grid.Column="3" Text="{Binding EdgeTriggerDwellMs, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
-                                        <TextBlock Grid.Column="4" Text="冷却 ms" Margin="10,0,0,0" VerticalAlignment="Center" />
+                                        <TextBlock Grid.Column="4" Text="防误触间隔" Margin="10,0,0,0" VerticalAlignment="Center" />
                                         <TextBox Grid.Column="5" Text="{Binding EdgeTriggerCooldownMs, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
-                                        <TextBlock Grid.Column="6" Text="滑动 px" Margin="10,0,0,0" VerticalAlignment="Center" />
+                                        <TextBlock Grid.Column="6" Text="滑多远触发" Margin="10,0,0,0" VerticalAlignment="Center" />
                                         <TextBox Grid.Column="7" Text="{Binding EdgeTriggerSlideThreshold, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
                                     </Grid>
                                     <Grid>
@@ -501,8 +556,10 @@
                                                   SelectedValuePath="Action"
                                                   SelectedValue="{Binding EdgeTriggerSlideBottomAction, Mode=TwoWay}" />
                                     </Grid>
+                                        </StackPanel>
+                                    </GroupBox>
                                 </StackPanel>
-                            </GroupBox>
+                            </Expander>
 
                             <GroupBox Header="手势测试" Padding="12" Margin="0,12,0,0">
                                 <Grid>
