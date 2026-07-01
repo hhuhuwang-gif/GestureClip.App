@@ -4,6 +4,7 @@ using GestureClip.Core.Gestures;
 using GestureClip.Core.Settings;
 using GestureClip.Infrastructure.Win32;
 using Microsoft.Extensions.Logging;
+using System.Diagnostics;
 
 namespace GestureClip.Features.Gestures;
 
@@ -76,6 +77,11 @@ public sealed class GestureBuiltInActionExecutor : IMouseGestureActionExecutor
                 _keyboardInputSender.SendKey(KeyboardInputNativeMethods.VkBack);
                 break;
 
+            case BuiltInGestureAction.PasteAndEnter:
+                _keyboardInputSender.SendShortcut(KeyboardInputNativeMethods.VkControl, KeyboardInputNativeMethods.VkV);
+                _keyboardInputSender.SendKey(KeyboardInputNativeMethods.VkReturn);
+                break;
+
             case BuiltInGestureAction.OpenClipboardOverlay:
                 await _clipboardOverlayService.ShowAsync();
                 break;
@@ -94,6 +100,122 @@ public sealed class GestureBuiltInActionExecutor : IMouseGestureActionExecutor
 
             case BuiltInGestureAction.SendAltRight:
                 _keyboardInputSender.SendShortcut(KeyboardInputNativeMethods.VkMenu, KeyboardInputNativeMethods.VkRight);
+                break;
+
+            case BuiltInGestureAction.NewTab:
+                _keyboardInputSender.SendShortcut(KeyboardInputNativeMethods.VkControl, KeyboardInputNativeMethods.VkT);
+                break;
+
+            case BuiltInGestureAction.ReopenClosedTab:
+                _keyboardInputSender.SendShortcut(KeyboardInputNativeMethods.VkControl, KeyboardInputNativeMethods.VkShift, KeyboardInputNativeMethods.VkT);
+                break;
+
+            case BuiltInGestureAction.Refresh:
+                _keyboardInputSender.SendKey(KeyboardInputNativeMethods.VkF5);
+                break;
+
+            case BuiltInGestureAction.CloseTab:
+                _keyboardInputSender.SendShortcut(KeyboardInputNativeMethods.VkControl, KeyboardInputNativeMethods.VkW);
+                break;
+
+            case BuiltInGestureAction.StartMenu:
+                _keyboardInputSender.SendKey(KeyboardInputNativeMethods.VkLWin);
+                break;
+
+            case BuiltInGestureAction.ShowDesktop:
+                _keyboardInputSender.SendShortcut(KeyboardInputNativeMethods.VkLWin, KeyboardInputNativeMethods.VkD);
+                break;
+
+            case BuiltInGestureAction.SwitchApp:
+                _keyboardInputSender.SendShortcut(KeyboardInputNativeMethods.VkMenu, KeyboardInputNativeMethods.VkTab);
+                break;
+
+            case BuiltInGestureAction.TaskSwitcher:
+                _keyboardInputSender.SendShortcut(KeyboardInputNativeMethods.VkControl, KeyboardInputNativeMethods.VkMenu, KeyboardInputNativeMethods.VkTab);
+                break;
+
+            case BuiltInGestureAction.PlayPause:
+                _keyboardInputSender.SendKey(KeyboardInputNativeMethods.VkMediaPlayPause);
+                break;
+
+            case BuiltInGestureAction.VolumeUp:
+                _keyboardInputSender.SendKey(KeyboardInputNativeMethods.VkVolumeUp);
+                break;
+
+            case BuiltInGestureAction.VolumeDown:
+                _keyboardInputSender.SendKey(KeyboardInputNativeMethods.VkVolumeDown);
+                break;
+
+            case BuiltInGestureAction.Mute:
+                _keyboardInputSender.SendKey(KeyboardInputNativeMethods.VkVolumeMute);
+                break;
+
+            case BuiltInGestureAction.PreviousTrack:
+                _keyboardInputSender.SendKey(KeyboardInputNativeMethods.VkMediaPrevTrack);
+                break;
+
+            case BuiltInGestureAction.NextTrack:
+                _keyboardInputSender.SendKey(KeyboardInputNativeMethods.VkMediaNextTrack);
+                break;
+
+            case BuiltInGestureAction.TaskManager:
+                StartProcess("taskmgr.exe");
+                break;
+
+            case BuiltInGestureAction.SystemSettings:
+                StartProcess("ms-settings:");
+                break;
+
+            case BuiltInGestureAction.Sleep:
+                StartProcess("rundll32.exe", "powrprof.dll,SetSuspendState 0,1,0");
+                break;
+
+            case BuiltInGestureAction.ZoomIn:
+                _keyboardInputSender.SendShortcut(KeyboardInputNativeMethods.VkControl, KeyboardInputNativeMethods.VkOemPlus);
+                break;
+
+            case BuiltInGestureAction.ZoomOut:
+                _keyboardInputSender.SendShortcut(KeyboardInputNativeMethods.VkControl, KeyboardInputNativeMethods.VkOemMinus);
+                break;
+
+            case BuiltInGestureAction.ResetZoom:
+                _keyboardInputSender.SendShortcut(KeyboardInputNativeMethods.VkControl, KeyboardInputNativeMethods.Vk0);
+                break;
+
+            case BuiltInGestureAction.Home:
+                _keyboardInputSender.SendKey(KeyboardInputNativeMethods.VkHome);
+                break;
+
+            case BuiltInGestureAction.End:
+                _keyboardInputSender.SendKey(KeyboardInputNativeMethods.VkEnd);
+                break;
+
+            case BuiltInGestureAction.PageUp:
+                _keyboardInputSender.SendKey(KeyboardInputNativeMethods.VkPageUp);
+                break;
+
+            case BuiltInGestureAction.PageDown:
+                _keyboardInputSender.SendKey(KeyboardInputNativeMethods.VkPageDown);
+                break;
+
+            case BuiltInGestureAction.Screenshot:
+                _keyboardInputSender.SendShortcut(KeyboardInputNativeMethods.VkLWin, KeyboardInputNativeMethods.VkShift, KeyboardInputNativeMethods.VkS);
+                break;
+
+            case BuiltInGestureAction.NextVirtualDesktop:
+                _keyboardInputSender.SendShortcut(KeyboardInputNativeMethods.VkControl, KeyboardInputNativeMethods.VkLWin, KeyboardInputNativeMethods.VkRight);
+                break;
+
+            case BuiltInGestureAction.PreviousVirtualDesktop:
+                _keyboardInputSender.SendShortcut(KeyboardInputNativeMethods.VkControl, KeyboardInputNativeMethods.VkLWin, KeyboardInputNativeMethods.VkLeft);
+                break;
+
+            case BuiltInGestureAction.FullScreen:
+                _keyboardInputSender.SendKey(KeyboardInputNativeMethods.VkF11);
+                break;
+
+            case BuiltInGestureAction.PinWindow:
+                _logger.LogInformation("PinWindow gesture action is reserved and not executed in this build.");
                 break;
 
             case BuiltInGestureAction.MinimizeForegroundWindow:
@@ -129,6 +251,23 @@ public sealed class GestureBuiltInActionExecutor : IMouseGestureActionExecutor
         if (hwnd != IntPtr.Zero)
         {
             WindowNativeMethods.PostMessage(hwnd, WindowNativeMethods.WmClose, IntPtr.Zero, IntPtr.Zero);
+        }
+    }
+
+    private void StartProcess(string fileName, string? arguments = null)
+    {
+        try
+        {
+            Process.Start(new ProcessStartInfo
+            {
+                FileName = fileName,
+                Arguments = arguments ?? "",
+                UseShellExecute = true
+            });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Failed to start process for gesture action. FileName={FileName}", fileName);
         }
     }
 }

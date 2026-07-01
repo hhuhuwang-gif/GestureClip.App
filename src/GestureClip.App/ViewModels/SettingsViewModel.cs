@@ -144,6 +144,21 @@ public sealed class SettingsViewModel : INotifyPropertyChanged
 
     public ObservableCollection<GestureBindingCardViewModel> GestureBindingCards { get; } = [];
 
+    public IReadOnlyList<GestureTriggerModeViewModel> GestureTriggerModes { get; } =
+    [
+        new("鼠标右键", "已启用", true),
+        new("鼠标中键", "预留", false),
+        new("鼠标左键", "预留", false),
+        new("鼠标侧键 1", "预留", false),
+        new("鼠标侧键 2", "预留", false),
+        new("屏幕左边缘 + 鼠标中键", "预留", false),
+        new("屏幕左边缘 + 鼠标左键", "预留", false),
+        new("屏幕左边缘 + 鼠标侧键 1", "预留", false),
+        new("屏幕左边缘 + 鼠标侧键 2", "预留", false),
+        new("屏幕右上角 + 鼠标碰撞", "预留", false),
+        new("屏幕右上角 + 滚轮", "预留", false)
+    ];
+
     public ICommand AddBlacklistItemCommand { get; }
 
     public ICommand RefreshDiagnosticsCommand { get; }
@@ -762,6 +777,8 @@ public sealed class SettingsViewModel : INotifyPropertyChanged
         public string DisplayName => $"{Name}  {Color}";
     }
 
+    public sealed record GestureTriggerModeViewModel(string Name, string Status, bool IsEnabled);
+
     public IReadOnlyList<BuiltInGestureAction> GestureActionOptions { get; } =
     [
         BuiltInGestureAction.None,
@@ -778,7 +795,37 @@ public sealed class SettingsViewModel : INotifyPropertyChanged
         BuiltInGestureAction.OpenClipboardOverlay,
         BuiltInGestureAction.PasteLatestClipboardItem,
         BuiltInGestureAction.SendAltLeft,
-        BuiltInGestureAction.SendAltRight
+        BuiltInGestureAction.SendAltRight,
+        BuiltInGestureAction.PasteAndEnter,
+        BuiltInGestureAction.NewTab,
+        BuiltInGestureAction.ReopenClosedTab,
+        BuiltInGestureAction.Refresh,
+        BuiltInGestureAction.CloseTab,
+        BuiltInGestureAction.StartMenu,
+        BuiltInGestureAction.ShowDesktop,
+        BuiltInGestureAction.SwitchApp,
+        BuiltInGestureAction.TaskSwitcher,
+        BuiltInGestureAction.PlayPause,
+        BuiltInGestureAction.VolumeUp,
+        BuiltInGestureAction.VolumeDown,
+        BuiltInGestureAction.Mute,
+        BuiltInGestureAction.PreviousTrack,
+        BuiltInGestureAction.NextTrack,
+        BuiltInGestureAction.TaskManager,
+        BuiltInGestureAction.SystemSettings,
+        BuiltInGestureAction.Sleep,
+        BuiltInGestureAction.ZoomIn,
+        BuiltInGestureAction.ZoomOut,
+        BuiltInGestureAction.ResetZoom,
+        BuiltInGestureAction.Home,
+        BuiltInGestureAction.End,
+        BuiltInGestureAction.PageUp,
+        BuiltInGestureAction.PageDown,
+        BuiltInGestureAction.Screenshot,
+        BuiltInGestureAction.NextVirtualDesktop,
+        BuiltInGestureAction.PreviousVirtualDesktop,
+        BuiltInGestureAction.FullScreen,
+        BuiltInGestureAction.PinWindow
     ];
 
     private static readonly string[] GesturePatterns = ["U", "D", "UD", "DU", "L", "R", "LR", "RL"];
@@ -833,6 +880,36 @@ public sealed class SettingsViewModel : INotifyPropertyChanged
         BuiltInGestureAction.SendAltRight => "Alt+Right",
         BuiltInGestureAction.OpenClipboardOverlay => "ClipboardOverlay",
         BuiltInGestureAction.PasteLatestClipboardItem => "PasteLatest",
+        BuiltInGestureAction.PasteAndEnter => "Ctrl+V Enter",
+        BuiltInGestureAction.NewTab => "Ctrl+T",
+        BuiltInGestureAction.ReopenClosedTab => "Ctrl+Shift+T",
+        BuiltInGestureAction.Refresh => "F5",
+        BuiltInGestureAction.CloseTab => "Ctrl+W",
+        BuiltInGestureAction.StartMenu => "Win",
+        BuiltInGestureAction.ShowDesktop => "Win+D",
+        BuiltInGestureAction.SwitchApp => "Alt+Tab",
+        BuiltInGestureAction.TaskSwitcher => "Ctrl+Alt+Tab",
+        BuiltInGestureAction.PlayPause => "Media Play/Pause",
+        BuiltInGestureAction.VolumeUp => "Volume+",
+        BuiltInGestureAction.VolumeDown => "Volume-",
+        BuiltInGestureAction.Mute => "Mute",
+        BuiltInGestureAction.PreviousTrack => "Previous Track",
+        BuiltInGestureAction.NextTrack => "Next Track",
+        BuiltInGestureAction.TaskManager => "taskmgr",
+        BuiltInGestureAction.SystemSettings => "Win+I",
+        BuiltInGestureAction.Sleep => "Sleep",
+        BuiltInGestureAction.ZoomIn => "Ctrl+=",
+        BuiltInGestureAction.ZoomOut => "Ctrl+-",
+        BuiltInGestureAction.ResetZoom => "Ctrl+0",
+        BuiltInGestureAction.Home => "Home",
+        BuiltInGestureAction.End => "End",
+        BuiltInGestureAction.PageUp => "PageUp",
+        BuiltInGestureAction.PageDown => "PageDown",
+        BuiltInGestureAction.Screenshot => "Win+Shift+S",
+        BuiltInGestureAction.NextVirtualDesktop => "Ctrl+Win+Right",
+        BuiltInGestureAction.PreviousVirtualDesktop => "Ctrl+Win+Left",
+        BuiltInGestureAction.FullScreen => "F11",
+        BuiltInGestureAction.PinWindow => "Reserved",
         _ => ""
     };
 

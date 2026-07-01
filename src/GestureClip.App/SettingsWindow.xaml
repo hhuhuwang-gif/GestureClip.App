@@ -111,6 +111,30 @@
                 <TabItem Header="鼠标手势">
                     <ScrollViewer VerticalScrollBarVisibility="Auto">
                         <StackPanel Margin="18">
+                            <GroupBox Header="全局允许的触发方式" Padding="12">
+                                <ItemsControl ItemsSource="{Binding GestureTriggerModes}">
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate>
+                                            <Border Background="#223D526B"
+                                                    BorderBrush="#33768AA8"
+                                                    BorderThickness="1"
+                                                    CornerRadius="14"
+                                                    Padding="12,8"
+                                                    Margin="0,0,0,8">
+                                                <DockPanel>
+                                                    <TextBlock DockPanel.Dock="Right"
+                                                               Text="{Binding Status}"
+                                                               Foreground="{DynamicResource BrushPrimaryBright}"
+                                                               FontWeight="SemiBold" />
+                                                    <TextBlock Text="{Binding Name}"
+                                                               FontWeight="SemiBold" />
+                                                </DockPanel>
+                                            </Border>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                            </GroupBox>
+
                             <GroupBox Header="鼠标手势" Padding="12">
                                 <StackPanel>
                                     <CheckBox Content="启用鼠标手势" IsChecked="{Binding GestureEnabled, Mode=TwoWay}" />

@@ -106,6 +106,17 @@ public sealed class SettingsViewModelTests
     }
 
     [Fact]
+    public void Gesture_trigger_modes_include_side_and_edge_placeholders()
+    {
+        var viewModel = CreateViewModel();
+
+        Assert.Contains(viewModel.GestureTriggerModes, mode => mode.Name == "鼠标右键" && mode.IsEnabled);
+        Assert.Contains(viewModel.GestureTriggerModes, mode => mode.Name == "鼠标侧键 1" && !mode.IsEnabled);
+        Assert.Contains(viewModel.GestureTriggerModes, mode => mode.Name == "屏幕左边缘 + 鼠标中键" && !mode.IsEnabled);
+        Assert.Contains(viewModel.GestureTriggerModes, mode => mode.Name == "屏幕右上角 + 滚轮" && !mode.IsEnabled);
+    }
+
+    [Fact]
     public async Task Changing_gesture_binding_saves_custom_preset()
     {
         var settings = new FakeSettingsService();

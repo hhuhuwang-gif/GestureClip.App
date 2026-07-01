@@ -21,6 +21,31 @@ public sealed class GestureBuiltInActionExecutorTests
     [InlineData(BuiltInGestureAction.Escape, "Escape")]
     [InlineData(BuiltInGestureAction.Delete, "Delete")]
     [InlineData(BuiltInGestureAction.Backspace, "Backspace")]
+    [InlineData(BuiltInGestureAction.NewTab, "Ctrl+T")]
+    [InlineData(BuiltInGestureAction.ReopenClosedTab, "Ctrl+Shift+T")]
+    [InlineData(BuiltInGestureAction.Refresh, "F5")]
+    [InlineData(BuiltInGestureAction.CloseTab, "Ctrl+W")]
+    [InlineData(BuiltInGestureAction.StartMenu, "Win")]
+    [InlineData(BuiltInGestureAction.ShowDesktop, "Win+D")]
+    [InlineData(BuiltInGestureAction.SwitchApp, "Alt+Tab")]
+    [InlineData(BuiltInGestureAction.TaskSwitcher, "Ctrl+Alt+Tab")]
+    [InlineData(BuiltInGestureAction.PlayPause, "PlayPause")]
+    [InlineData(BuiltInGestureAction.VolumeUp, "VolumeUp")]
+    [InlineData(BuiltInGestureAction.VolumeDown, "VolumeDown")]
+    [InlineData(BuiltInGestureAction.Mute, "Mute")]
+    [InlineData(BuiltInGestureAction.PreviousTrack, "PreviousTrack")]
+    [InlineData(BuiltInGestureAction.NextTrack, "NextTrack")]
+    [InlineData(BuiltInGestureAction.ZoomIn, "Ctrl+Plus")]
+    [InlineData(BuiltInGestureAction.ZoomOut, "Ctrl+Minus")]
+    [InlineData(BuiltInGestureAction.ResetZoom, "Ctrl+0")]
+    [InlineData(BuiltInGestureAction.Home, "Home")]
+    [InlineData(BuiltInGestureAction.End, "End")]
+    [InlineData(BuiltInGestureAction.PageUp, "PageUp")]
+    [InlineData(BuiltInGestureAction.PageDown, "PageDown")]
+    [InlineData(BuiltInGestureAction.Screenshot, "Win+Shift+S")]
+    [InlineData(BuiltInGestureAction.NextVirtualDesktop, "Ctrl+Win+Right")]
+    [InlineData(BuiltInGestureAction.PreviousVirtualDesktop, "Ctrl+Win+Left")]
+    [InlineData(BuiltInGestureAction.FullScreen, "F11")]
     public async Task ExecuteAsync_sends_keyboard_shortcuts(BuiltInGestureAction action, string expected)
     {
         var keyboard = new FakeKeyboardInputSender();
@@ -29,6 +54,17 @@ public sealed class GestureBuiltInActionExecutorTests
         await executor.ExecuteAsync(action, CancellationToken.None);
 
         Assert.Equal([expected], keyboard.Sent);
+    }
+
+    [Fact]
+    public async Task PasteAndEnter_sends_paste_then_enter()
+    {
+        var keyboard = new FakeKeyboardInputSender();
+        var executor = CreateExecutor(keyboard);
+
+        await executor.ExecuteAsync(BuiltInGestureAction.PasteAndEnter, CancellationToken.None);
+
+        Assert.Equal(["Ctrl+V", "Enter"], keyboard.Sent);
     }
 
     private static GestureBuiltInActionExecutor CreateExecutor(FakeKeyboardInputSender keyboard)
@@ -54,18 +90,40 @@ public sealed class GestureBuiltInActionExecutorTests
             {
                 0x11 => "Ctrl",
                 0x12 => "Alt",
+                0x09 => "Tab",
                 0x41 => "A",
                 0x43 => "C",
+                0x44 => "D",
                 0x56 => "V",
+                0x57 => "W",
                 0x58 => "X",
                 0x59 => "Y",
                 0x5A => "Z",
+                0x10 => "Shift",
+                0x30 => "0",
                 0x0D => "Enter",
                 0x1B => "Escape",
                 0x2E => "Delete",
                 0x08 => "Backspace",
                 0x25 => "Left",
                 0x27 => "Right",
+                0x5B => "Win",
+                0x54 => "T",
+                0x74 => "F5",
+                0x7A => "F11",
+                0xAD => "Mute",
+                0xAE => "VolumeDown",
+                0xAF => "VolumeUp",
+                0xB0 => "NextTrack",
+                0xB1 => "PreviousTrack",
+                0xB3 => "PlayPause",
+                0xBB => "Plus",
+                0xBD => "Minus",
+                0x23 => "End",
+                0x24 => "Home",
+                0x21 => "PageUp",
+                0x22 => "PageDown",
+                0x53 => "S",
                 _ => key.ToString()
             }));
         }
