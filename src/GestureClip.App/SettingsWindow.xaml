@@ -3,8 +3,8 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Title="GestureClip 设置"
         Icon="Assets/GestureClip.ico"
-        Width="980"
-        Height="720"
+        Width="1040"
+        Height="740"
         MinWidth="760"
         MinHeight="560"
         WindowStyle="None"
@@ -12,12 +12,12 @@
         ResizeMode="NoResize"
         Background="Transparent"
         Foreground="{DynamicResource BrushTextPrimary}">
-    <Border CornerRadius="28"
+    <Border CornerRadius="22"
             Background="{DynamicResource BrushAppBackground}"
             BorderBrush="{DynamicResource BrushBorder}"
             BorderThickness="1"
             ClipToBounds="True">
-    <Grid Margin="28">
+    <Grid Margin="26">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
             <RowDefinition Height="*" />
@@ -29,28 +29,32 @@
                         VerticalAlignment="Top"
                         Margin="12,0,0,0">
                 <Button Content="－"
-                        Width="42"
-                        Height="34"
+                        Width="32"
+                        Height="28"
                         Padding="0"
+                        Background="#00FFFFFF"
+                        BorderBrush="#00000000"
                         ToolTip="最小化"
                         Click="MinimizeButton_Click" />
                 <Button Content="×"
-                        Width="42"
-                        Height="34"
+                        Width="32"
+                        Height="28"
                         Padding="0"
-                        Margin="8,0,0,0"
-                        Style="{StaticResource DangerButtonStyle}"
+                        Margin="6,0,0,0"
+                        Background="#00FFFFFF"
+                        BorderBrush="#00000000"
+                        Foreground="{DynamicResource BrushTextSecondary}"
                         ToolTip="关闭到托盘"
                         Click="CloseButton_Click" />
             </StackPanel>
             <StackPanel>
                 <TextBlock Text="GestureClip"
-                           FontSize="34"
+                           FontSize="32"
                            FontWeight="SemiBold"
                            Foreground="{DynamicResource BrushTextPrimary}" />
                 <TextBlock Text="设置与状态"
-                           Margin="0,7,0,20"
-                           FontSize="15"
+                           Margin="0,6,0,22"
+                           FontSize="14"
                            Foreground="{DynamicResource BrushTextSecondary}" />
             </StackPanel>
         </DockPanel>
@@ -63,36 +67,74 @@
                 <TabControl.Resources>
                     <Style TargetType="TabItem" BasedOn="{StaticResource GlassTabItemStyle}">
                         <Setter Property="Margin" Value="0,0,0,9" />
-                        <Setter Property="MinWidth" Value="150" />
+                        <Setter Property="MinWidth" Value="210" />
                     </Style>
                 </TabControl.Resources>
 
                 <TabItem Header="基础设置">
                     <ScrollViewer VerticalScrollBarVisibility="Auto">
-                        <GroupBox Header="基础设置" Margin="18" Padding="12">
-                            <Grid>
-                                <Grid.RowDefinitions>
-                                    <RowDefinition Height="Auto" />
-                                    <RowDefinition Height="Auto" />
-                                    <RowDefinition Height="Auto" />
-                                    <RowDefinition Height="Auto" />
-                                </Grid.RowDefinitions>
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="120" />
-                                    <ColumnDefinition Width="*" />
-                                </Grid.ColumnDefinitions>
-                                <TextBlock Text="权限状态" FontWeight="SemiBold" />
-                                <TextBlock Grid.Column="1" Text="{Binding PermissionStatusText}" />
-                                <TextBlock Grid.Row="1" Text="数据库路径" FontWeight="SemiBold" Margin="0,12,0,0" />
-                                <TextBox Grid.Row="1" Grid.Column="1" Text="{Binding DatabasePath, Mode=OneWay}" IsReadOnly="True" Margin="0,8,0,0" />
-                                <TextBlock Grid.Row="2" Text="日志目录" FontWeight="SemiBold" Margin="0,12,0,0" />
-                                <TextBox Grid.Row="2" Grid.Column="1" Text="{Binding LogDirectory, Mode=OneWay}" IsReadOnly="True" Margin="0,8,0,0" />
-                                <TextBlock Grid.Row="3" Text="运行状态" FontWeight="SemiBold" Margin="0,12,0,0" />
-                                <StackPanel Grid.Row="3" Grid.Column="1" Margin="0,12,0,0">
-                                    <TextBlock Text="{Binding StartupStatus}" />
-                                    <TextBlock Text="{Binding HotkeyStatusText}" Style="{StaticResource MutedTextStyle}" Margin="0,4,0,0" />
-                                </StackPanel>
-                            </Grid>
+                        <GroupBox Header="基础设置" Margin="20" Padding="12">
+                            <StackPanel>
+                                <Border Style="{StaticResource SettingRowStyle}">
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="132" />
+                                            <ColumnDefinition Width="*" />
+                                        </Grid.ColumnDefinitions>
+                                        <TextBlock Text="权限状态" FontWeight="SemiBold" VerticalAlignment="Center" />
+                                        <Border Grid.Column="1" Style="{StaticResource StatusBadgeStyle}" HorizontalAlignment="Left">
+                                            <TextBlock Text="{Binding PermissionStatusText}" Foreground="{DynamicResource BrushPrimary}" FontWeight="SemiBold" />
+                                        </Border>
+                                    </Grid>
+                                </Border>
+                                <Border Style="{StaticResource SettingRowStyle}">
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="132" />
+                                            <ColumnDefinition Width="*" />
+                                        </Grid.ColumnDefinitions>
+                                        <TextBlock Text="数据库路径" FontWeight="SemiBold" VerticalAlignment="Center" />
+                                        <TextBox Grid.Column="1" Text="{Binding DatabasePath, Mode=OneWay}" IsReadOnly="True" />
+                                    </Grid>
+                                </Border>
+                                <Border Style="{StaticResource SettingRowStyle}">
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="132" />
+                                            <ColumnDefinition Width="*" />
+                                        </Grid.ColumnDefinitions>
+                                        <TextBlock Text="日志目录" FontWeight="SemiBold" VerticalAlignment="Center" />
+                                        <TextBox Grid.Column="1" Text="{Binding LogDirectory, Mode=OneWay}" IsReadOnly="True" />
+                                    </Grid>
+                                </Border>
+                                <Border Style="{StaticResource SettingRowStyle}">
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="132" />
+                                            <ColumnDefinition Width="*" />
+                                        </Grid.ColumnDefinitions>
+                                        <TextBlock Text="运行状态" FontWeight="SemiBold" VerticalAlignment="Center" />
+                                        <StackPanel Grid.Column="1">
+                                            <StackPanel Orientation="Horizontal">
+                                                <Ellipse Width="8" Height="8" Fill="#22C55E" Margin="0,0,8,0" VerticalAlignment="Center" />
+                                                <TextBlock Text="{Binding StartupStatus}" />
+                                            </StackPanel>
+                                            <StackPanel Orientation="Horizontal" Margin="0,8,0,0">
+                                                <Border Style="{StaticResource KeyboardKeyStyle}">
+                                                    <TextBlock Text="Ctrl" FontSize="12" Foreground="{DynamicResource BrushTextSecondary}" />
+                                                </Border>
+                                                <Border Style="{StaticResource KeyboardKeyStyle}">
+                                                    <TextBlock Text="Alt" FontSize="12" Foreground="{DynamicResource BrushTextSecondary}" />
+                                                </Border>
+                                                <Border Style="{StaticResource KeyboardKeyStyle}">
+                                                    <TextBlock Text="V" FontSize="12" Foreground="{DynamicResource BrushTextSecondary}" />
+                                                </Border>
+                                                <TextBlock Text="{Binding HotkeyStatusText}" Style="{StaticResource MutedTextStyle}" Margin="4,3,0,0" />
+                                            </StackPanel>
+                                        </StackPanel>
+                                    </Grid>
+                                </Border>
+                            </StackPanel>
                         </GroupBox>
                     </ScrollViewer>
                 </TabItem>

@@ -36,17 +36,17 @@ public sealed class ThemeResourceTests
     }
 
     [Fact]
-    public void Theme_uses_readable_dark_blue_gray_palette()
+    public void Theme_uses_readable_soft_macos_inspired_palette()
     {
         var colorsPath = FindRepositoryFile("src", "GestureClip.App", "Themes", "Colors.xaml");
         var colors = File.ReadAllText(colorsPath);
 
-        Assert.Contains("#0B1020", colors);
-        Assert.Contains("#161D2C", colors);
-        Assert.Contains("#66768AA8", colors);
+        Assert.Contains("#F5F7FA", colors);
         Assert.Contains("#FFFFFFFF", colors);
-        Assert.Contains("#E6EEF8", colors);
-        Assert.Contains("#4FA3FF", colors);
+        Assert.Contains("#1C111827", colors);
+        Assert.Contains("#111827", colors);
+        Assert.Contains("#667085", colors);
+        Assert.Contains("#2563EB", colors);
         Assert.Contains("ColorTabSelected", colors);
     }
 
@@ -100,10 +100,12 @@ public sealed class ThemeResourceTests
 
         Assert.Contains("WindowStyle=\"None\"", xaml);
         Assert.Contains("AllowsTransparency=\"True\"", xaml);
-        Assert.Contains("CornerRadius=\"28\"", xaml);
+        Assert.Contains("CornerRadius=\"22\"", xaml);
         Assert.Contains("GestureStrokeColorOptions", xaml);
         Assert.Contains("NewGesturePattern", xaml);
         Assert.Contains("AddCustomGestureBindingCommand", xaml);
+        Assert.Contains("SettingRowStyle", xaml);
+        Assert.Contains("KeyboardKeyStyle", xaml);
     }
 
     private static string FindRepositoryFile(params string[] segments)
