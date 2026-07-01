@@ -36,8 +36,10 @@ public sealed class DefaultDataSeederTests
         var topLeftAction = await connection.ExecuteScalarAsync<string>("SELECT Value FROM Settings WHERE Key = 'EdgeTrigger.TopLeft.Action';");
         var leftEdgeMiddleEnabled = await connection.ExecuteScalarAsync<string>("SELECT Value FROM Settings WHERE Key = 'EdgeTrigger.LeftEdge.MiddleButton.Enabled';");
         var topRightWheelEnabled = await connection.ExecuteScalarAsync<string>("SELECT Value FROM Settings WHERE Key = 'EdgeTrigger.TopRight.Wheel.Enabled';");
+        var slideThreshold = await connection.ExecuteScalarAsync<string>("SELECT Value FROM Settings WHERE Key = 'EdgeTrigger.SlideThreshold';");
+        var slideLeftEnabled = await connection.ExecuteScalarAsync<string>("SELECT Value FROM Settings WHERE Key = 'EdgeTrigger.Slide.Left.Enabled';");
 
-        Assert.Equal(33, settingCount);
+        Assert.Equal(42, settingCount);
         Assert.Equal(7, blacklistCount);
         Assert.Equal(6, gestureCount);
         Assert.Equal("1000", maxItems);
@@ -46,6 +48,8 @@ public sealed class DefaultDataSeederTests
         Assert.Equal(((int)BuiltInGestureAction.StartMenu).ToString(), topLeftAction);
         Assert.Equal("false", leftEdgeMiddleEnabled);
         Assert.Equal("false", topRightWheelEnabled);
+        Assert.Equal("80", slideThreshold);
+        Assert.Equal("false", slideLeftEnabled);
     }
 
     [Fact]

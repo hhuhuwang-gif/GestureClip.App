@@ -25,6 +25,7 @@ public static class SettingKeys
     public const string EdgeTriggerHotZoneSize = "EdgeTrigger.HotZoneSize";
     public const string EdgeTriggerDwellMs = "EdgeTrigger.DwellMs";
     public const string EdgeTriggerCooldownMs = "EdgeTrigger.CooldownMs";
+    public const string EdgeTriggerSlideThreshold = "EdgeTrigger.SlideThreshold";
     public const string EdgeTriggerTopLeftAction = "EdgeTrigger.TopLeft.Action";
     public const string EdgeTriggerTopRightAction = "EdgeTrigger.TopRight.Action";
     public const string EdgeTriggerBottomRightAction = "EdgeTrigger.BottomRight.Action";
@@ -39,5 +40,13 @@ public static class SettingKeys
     public const string EdgeTriggerLeftEdgeXButton2Action = "EdgeTrigger.LeftEdge.XButton2.Action";
     public const string EdgeTriggerTopRightWheelEnabled = "EdgeTrigger.TopRight.Wheel.Enabled";
     public const string EdgeTriggerTopRightWheelAction = "EdgeTrigger.TopRight.Wheel.Action";
+    public const string EdgeTriggerSlideLeftEnabled = "EdgeTrigger.Slide.Left.Enabled";
+    public const string EdgeTriggerSlideLeftAction = "EdgeTrigger.Slide.Left.Action";
+    public const string EdgeTriggerSlideRightEnabled = "EdgeTrigger.Slide.Right.Enabled";
+    public const string EdgeTriggerSlideRightAction = "EdgeTrigger.Slide.Right.Action";
+    public const string EdgeTriggerSlideTopEnabled = "EdgeTrigger.Slide.Top.Enabled";
+    public const string EdgeTriggerSlideTopAction = "EdgeTrigger.Slide.Top.Action";
+    public const string EdgeTriggerSlideBottomEnabled = "EdgeTrigger.Slide.Bottom.Enabled";
+    public const string EdgeTriggerSlideBottomAction = "EdgeTrigger.Slide.Bottom.Action";
     public const string PrivacySuppressSensitive = "Privacy.SuppressSensitive";
 }

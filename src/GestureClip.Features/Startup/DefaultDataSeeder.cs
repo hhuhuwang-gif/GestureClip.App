@@ -40,6 +40,7 @@ public sealed class DefaultDataSeeder
         await SeedSettingAsync(connection, SettingKeys.EdgeTriggerHotZoneSize, "8", "int", now);
         await SeedSettingAsync(connection, SettingKeys.EdgeTriggerDwellMs, "350", "int", now);
         await SeedSettingAsync(connection, SettingKeys.EdgeTriggerCooldownMs, "1200", "int", now);
+        await SeedSettingAsync(connection, SettingKeys.EdgeTriggerSlideThreshold, "80", "int", now);
         await SeedSettingAsync(connection, SettingKeys.EdgeTriggerTopLeftAction, ((int)BuiltInGestureAction.StartMenu).ToString(), "int", now);
         await SeedSettingAsync(connection, SettingKeys.EdgeTriggerTopRightAction, ((int)BuiltInGestureAction.TaskSwitcher).ToString(), "int", now);
         await SeedSettingAsync(connection, SettingKeys.EdgeTriggerBottomRightAction, ((int)BuiltInGestureAction.ShowDesktop).ToString(), "int", now);
@@ -54,6 +55,14 @@ public sealed class DefaultDataSeeder
         await SeedSettingAsync(connection, SettingKeys.EdgeTriggerLeftEdgeXButton2Action, ((int)BuiltInGestureAction.TaskSwitcher).ToString(), "int", now);
         await SeedSettingAsync(connection, SettingKeys.EdgeTriggerTopRightWheelEnabled, "false", "bool", now);
         await SeedSettingAsync(connection, SettingKeys.EdgeTriggerTopRightWheelAction, ((int)BuiltInGestureAction.TaskSwitcher).ToString(), "int", now);
+        await SeedSettingAsync(connection, SettingKeys.EdgeTriggerSlideLeftEnabled, "false", "bool", now);
+        await SeedSettingAsync(connection, SettingKeys.EdgeTriggerSlideLeftAction, ((int)BuiltInGestureAction.SwitchApp).ToString(), "int", now);
+        await SeedSettingAsync(connection, SettingKeys.EdgeTriggerSlideRightEnabled, "false", "bool", now);
+        await SeedSettingAsync(connection, SettingKeys.EdgeTriggerSlideRightAction, ((int)BuiltInGestureAction.TaskSwitcher).ToString(), "int", now);
+        await SeedSettingAsync(connection, SettingKeys.EdgeTriggerSlideTopEnabled, "false", "bool", now);
+        await SeedSettingAsync(connection, SettingKeys.EdgeTriggerSlideTopAction, ((int)BuiltInGestureAction.StartMenu).ToString(), "int", now);
+        await SeedSettingAsync(connection, SettingKeys.EdgeTriggerSlideBottomEnabled, "false", "bool", now);
+        await SeedSettingAsync(connection, SettingKeys.EdgeTriggerSlideBottomAction, ((int)BuiltInGestureAction.ShowDesktop).ToString(), "int", now);
         await SeedSettingAsync(connection, SettingKeys.PrivacySuppressSensitive, "true", "bool", now);
 
         foreach (var processName in DefaultPrivacyBlacklist.ProcessNames)

@@ -56,6 +56,18 @@ public sealed class SettingsViewModel : INotifyPropertyChanged
     private BuiltInGestureAction _edgeTriggerLeftEdgeXButton1Action;
     private BuiltInGestureAction _edgeTriggerLeftEdgeXButton2Action;
     private BuiltInGestureAction _edgeTriggerTopRightWheelAction;
+    private int _edgeTriggerHotZoneSize;
+    private int _edgeTriggerDwellMs;
+    private int _edgeTriggerCooldownMs;
+    private int _edgeTriggerSlideThreshold;
+    private bool _edgeTriggerSlideLeftEnabled;
+    private bool _edgeTriggerSlideRightEnabled;
+    private bool _edgeTriggerSlideTopEnabled;
+    private bool _edgeTriggerSlideBottomEnabled;
+    private BuiltInGestureAction _edgeTriggerSlideLeftAction;
+    private BuiltInGestureAction _edgeTriggerSlideRightAction;
+    private BuiltInGestureAction _edgeTriggerSlideTopAction;
+    private BuiltInGestureAction _edgeTriggerSlideBottomAction;
     private GesturePreset _selectedGesturePreset;
     private int _gestureTriggerThreshold;
     private GestureDiagnosticsSnapshot _gestureDiagnostics;
@@ -132,6 +144,18 @@ public sealed class SettingsViewModel : INotifyPropertyChanged
         _edgeTriggerLeftEdgeXButton1Action = _settingsService.Get(SettingKeys.EdgeTriggerLeftEdgeXButton1Action, BuiltInGestureAction.SwitchApp);
         _edgeTriggerLeftEdgeXButton2Action = _settingsService.Get(SettingKeys.EdgeTriggerLeftEdgeXButton2Action, BuiltInGestureAction.TaskSwitcher);
         _edgeTriggerTopRightWheelAction = _settingsService.Get(SettingKeys.EdgeTriggerTopRightWheelAction, BuiltInGestureAction.TaskSwitcher);
+        _edgeTriggerHotZoneSize = _settingsService.Get(SettingKeys.EdgeTriggerHotZoneSize, 8);
+        _edgeTriggerDwellMs = _settingsService.Get(SettingKeys.EdgeTriggerDwellMs, 350);
+        _edgeTriggerCooldownMs = _settingsService.Get(SettingKeys.EdgeTriggerCooldownMs, 1200);
+        _edgeTriggerSlideThreshold = _settingsService.Get(SettingKeys.EdgeTriggerSlideThreshold, 80);
+        _edgeTriggerSlideLeftEnabled = _settingsService.Get(SettingKeys.EdgeTriggerSlideLeftEnabled, false);
+        _edgeTriggerSlideRightEnabled = _settingsService.Get(SettingKeys.EdgeTriggerSlideRightEnabled, false);
+        _edgeTriggerSlideTopEnabled = _settingsService.Get(SettingKeys.EdgeTriggerSlideTopEnabled, false);
+        _edgeTriggerSlideBottomEnabled = _settingsService.Get(SettingKeys.EdgeTriggerSlideBottomEnabled, false);
+        _edgeTriggerSlideLeftAction = _settingsService.Get(SettingKeys.EdgeTriggerSlideLeftAction, BuiltInGestureAction.SwitchApp);
+        _edgeTriggerSlideRightAction = _settingsService.Get(SettingKeys.EdgeTriggerSlideRightAction, BuiltInGestureAction.TaskSwitcher);
+        _edgeTriggerSlideTopAction = _settingsService.Get(SettingKeys.EdgeTriggerSlideTopAction, BuiltInGestureAction.StartMenu);
+        _edgeTriggerSlideBottomAction = _settingsService.Get(SettingKeys.EdgeTriggerSlideBottomAction, BuiltInGestureAction.ShowDesktop);
         _selectedGesturePreset = _settingsService.Get(SettingKeys.GesturePreset, GesturePreset.EditEnhanced);
         _gestureTriggerThreshold = _settingsService.Get(SettingKeys.GestureTriggerThreshold, 20);
         _clipboardMaxItems = _settingsService.Get(SettingKeys.ClipboardMaxItems, 1000);
@@ -150,6 +174,9 @@ public sealed class SettingsViewModel : INotifyPropertyChanged
         ClearUnpinnedClipboardItemsCommand = new AsyncRelayCommand(_ => ClearUnpinnedClipboardItemsAsync());
         ApplyClipboardCleanupCommand = new AsyncRelayCommand(_ => ApplyClipboardCleanupAsync());
         AddCustomGestureBindingCommand = new AsyncRelayCommand(_ => AddCustomGestureBindingAsync());
+        ApplyBrowserEdgePresetCommand = new AsyncRelayCommand(_ => ApplyBrowserEdgePresetAsync());
+        ApplySystemEdgePresetCommand = new AsyncRelayCommand(_ => ApplySystemEdgePresetAsync());
+        ApplyClipboardEdgePresetCommand = new AsyncRelayCommand(_ => ApplyClipboardEdgePresetAsync());
         OpenLogDirectoryCommand = new RelayCommand(_ => OpenDirectory(LogDirectory));
         OpenDataDirectoryCommand = new RelayCommand(_ => OpenDirectory(AppDataPath));
         _diagnosticsTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(500) };
@@ -192,11 +219,12 @@ public sealed class SettingsViewModel : INotifyPropertyChanged
         new("鼠标侧键 2", "可启用", false),
         new("屏幕四角热区", "可启用", false),
         new("屏幕左边缘 + 鼠标中键", "可启用", false),
-        new("屏幕左边缘 + 鼠标左键", "后续", false),
+        new("屏幕左边缘 + 鼠标左键", "可启用", false),
         new("屏幕左边缘 + 鼠标侧键 1", "可启用", false),
         new("屏幕左边缘 + 鼠标侧键 2", "可启用", false),
         new("屏幕右上角 + 鼠标碰撞", "已支持", true),
-        new("屏幕右上角 + 滚轮", "可启用", false)
+        new("屏幕右上角 + 滚轮", "可启用", false),
+        new("屏幕边缘滑动", "可启用", false)
     ];
 
     public ICommand AddBlacklistItemCommand { get; }
@@ -218,6 +246,12 @@ public sealed class SettingsViewModel : INotifyPropertyChanged
     public ICommand ApplyClipboardCleanupCommand { get; }
 
     public ICommand AddCustomGestureBindingCommand { get; }
+
+    public ICommand ApplyBrowserEdgePresetCommand { get; }
+
+    public ICommand ApplySystemEdgePresetCommand { get; }
+
+    public ICommand ApplyClipboardEdgePresetCommand { get; }
 
     public int ClipboardItemCount
     {
@@ -660,6 +694,94 @@ public sealed class SettingsViewModel : INotifyPropertyChanged
         set => SetEdgeTriggerAction(ref _edgeTriggerTopRightWheelAction, value, SettingKeys.EdgeTriggerTopRightWheelAction);
     }
 
+    public int EdgeTriggerHotZoneSize
+    {
+        get => _edgeTriggerHotZoneSize;
+        set => SetEdgeTriggerInt(ref _edgeTriggerHotZoneSize, Math.Clamp(value, 2, 64), SettingKeys.EdgeTriggerHotZoneSize, nameof(EdgeTriggerHotZoneSize));
+    }
+
+    public int EdgeTriggerDwellMs
+    {
+        get => _edgeTriggerDwellMs;
+        set => SetEdgeTriggerInt(ref _edgeTriggerDwellMs, Math.Clamp(value, 100, 2000), SettingKeys.EdgeTriggerDwellMs, nameof(EdgeTriggerDwellMs));
+    }
+
+    public int EdgeTriggerCooldownMs
+    {
+        get => _edgeTriggerCooldownMs;
+        set => SetEdgeTriggerInt(ref _edgeTriggerCooldownMs, Math.Clamp(value, 250, 5000), SettingKeys.EdgeTriggerCooldownMs, nameof(EdgeTriggerCooldownMs));
+    }
+
+    public int EdgeTriggerSlideThreshold
+    {
+        get => _edgeTriggerSlideThreshold;
+        set => SetEdgeTriggerInt(ref _edgeTriggerSlideThreshold, Math.Clamp(value, 24, 400), SettingKeys.EdgeTriggerSlideThreshold, nameof(EdgeTriggerSlideThreshold));
+    }
+
+    public bool EdgeTriggerSlideLeftEnabled
+    {
+        get => _edgeTriggerSlideLeftEnabled;
+        set => SetEdgeTriggerEnabled(ref _edgeTriggerSlideLeftEnabled, value, SettingKeys.EdgeTriggerSlideLeftEnabled);
+    }
+
+    public BuiltInGestureAction EdgeTriggerSlideLeftAction
+    {
+        get => _edgeTriggerSlideLeftAction;
+        set => SetEdgeTriggerAction(ref _edgeTriggerSlideLeftAction, value, SettingKeys.EdgeTriggerSlideLeftAction);
+    }
+
+    public bool EdgeTriggerSlideRightEnabled
+    {
+        get => _edgeTriggerSlideRightEnabled;
+        set => SetEdgeTriggerEnabled(ref _edgeTriggerSlideRightEnabled, value, SettingKeys.EdgeTriggerSlideRightEnabled);
+    }
+
+    public BuiltInGestureAction EdgeTriggerSlideRightAction
+    {
+        get => _edgeTriggerSlideRightAction;
+        set => SetEdgeTriggerAction(ref _edgeTriggerSlideRightAction, value, SettingKeys.EdgeTriggerSlideRightAction);
+    }
+
+    public bool EdgeTriggerSlideTopEnabled
+    {
+        get => _edgeTriggerSlideTopEnabled;
+        set => SetEdgeTriggerEnabled(ref _edgeTriggerSlideTopEnabled, value, SettingKeys.EdgeTriggerSlideTopEnabled);
+    }
+
+    public BuiltInGestureAction EdgeTriggerSlideTopAction
+    {
+        get => _edgeTriggerSlideTopAction;
+        set => SetEdgeTriggerAction(ref _edgeTriggerSlideTopAction, value, SettingKeys.EdgeTriggerSlideTopAction);
+    }
+
+    public bool EdgeTriggerSlideBottomEnabled
+    {
+        get => _edgeTriggerSlideBottomEnabled;
+        set => SetEdgeTriggerEnabled(ref _edgeTriggerSlideBottomEnabled, value, SettingKeys.EdgeTriggerSlideBottomEnabled);
+    }
+
+    public BuiltInGestureAction EdgeTriggerSlideBottomAction
+    {
+        get => _edgeTriggerSlideBottomAction;
+        set => SetEdgeTriggerAction(ref _edgeTriggerSlideBottomAction, value, SettingKeys.EdgeTriggerSlideBottomAction);
+    }
+
+    public string EdgeTriggerLastSource => _edgeTriggerService.Diagnostics.LastSource;
+
+    public string EdgeTriggerLastPosition => _edgeTriggerService.Diagnostics.LastPosition;
+
+    public string EdgeTriggerLastAction => GestureActionText.Name(_edgeTriggerService.Diagnostics.LastAction);
+
+    public string EdgeTriggerLastReason => _edgeTriggerService.Diagnostics.LastReason;
+
+    public string EdgeTriggerLastEventTime => _edgeTriggerService.Diagnostics.LastEventAt is null
+        ? "-"
+        : _edgeTriggerService.Diagnostics.LastEventAt.Value.ToLocalTime().ToString("HH:mm:ss.fff");
+
+    public string EdgeTriggerCooldownText => _edgeTriggerService.Diagnostics.CooldownUntil is null
+        ? "未冷却"
+        : $"冷却到 {_edgeTriggerService.Diagnostics.CooldownUntil.Value.ToLocalTime():HH:mm:ss.fff}";
+
     public IReadOnlyList<GestureStrokeColorOption> GestureStrokeColorOptions { get; } =
     [
         new("冰蓝", "#8CC8FF"),
@@ -833,6 +955,10 @@ public sealed class SettingsViewModel : INotifyPropertyChanged
             SettingKeys.EdgeTriggerLeftEdgeXButton1Action => nameof(EdgeTriggerLeftEdgeXButton1Action),
             SettingKeys.EdgeTriggerLeftEdgeXButton2Action => nameof(EdgeTriggerLeftEdgeXButton2Action),
             SettingKeys.EdgeTriggerTopRightWheelAction => nameof(EdgeTriggerTopRightWheelAction),
+            SettingKeys.EdgeTriggerSlideLeftAction => nameof(EdgeTriggerSlideLeftAction),
+            SettingKeys.EdgeTriggerSlideRightAction => nameof(EdgeTriggerSlideRightAction),
+            SettingKeys.EdgeTriggerSlideTopAction => nameof(EdgeTriggerSlideTopAction),
+            SettingKeys.EdgeTriggerSlideBottomAction => nameof(EdgeTriggerSlideBottomAction),
             _ => null
         });
         _ = _settingsService.SetAsync(settingKey, value, CancellationToken.None);
@@ -853,9 +979,92 @@ public sealed class SettingsViewModel : INotifyPropertyChanged
             SettingKeys.EdgeTriggerLeftEdgeXButton1Enabled => nameof(EdgeTriggerLeftEdgeXButton1Enabled),
             SettingKeys.EdgeTriggerLeftEdgeXButton2Enabled => nameof(EdgeTriggerLeftEdgeXButton2Enabled),
             SettingKeys.EdgeTriggerTopRightWheelEnabled => nameof(EdgeTriggerTopRightWheelEnabled),
+            SettingKeys.EdgeTriggerSlideLeftEnabled => nameof(EdgeTriggerSlideLeftEnabled),
+            SettingKeys.EdgeTriggerSlideRightEnabled => nameof(EdgeTriggerSlideRightEnabled),
+            SettingKeys.EdgeTriggerSlideTopEnabled => nameof(EdgeTriggerSlideTopEnabled),
+            SettingKeys.EdgeTriggerSlideBottomEnabled => nameof(EdgeTriggerSlideBottomEnabled),
             _ => null
         });
         _ = _settingsService.SetAsync(settingKey, value, CancellationToken.None);
+    }
+
+    private void SetEdgeTriggerInt(ref int field, int value, string settingKey, string propertyName)
+    {
+        if (field == value)
+        {
+            return;
+        }
+
+        field = value;
+        OnPropertyChanged(propertyName);
+        _ = _settingsService.SetAsync(settingKey, value, CancellationToken.None);
+    }
+
+    private async Task ApplyBrowserEdgePresetAsync()
+    {
+        await ApplyEdgePresetAsync(
+            enableLeftMiddle: true,
+            leftMiddleAction: BuiltInGestureAction.Refresh,
+            enableX1: true,
+            x1Action: BuiltInGestureAction.SendAltLeft,
+            enableX2: true,
+            x2Action: BuiltInGestureAction.SendAltRight,
+            enableWheel: true,
+            wheelAction: BuiltInGestureAction.TaskSwitcher);
+    }
+
+    private async Task ApplySystemEdgePresetAsync()
+    {
+        await ApplyEdgePresetAsync(
+            enableLeftMiddle: true,
+            leftMiddleAction: BuiltInGestureAction.ShowDesktop,
+            enableX1: true,
+            x1Action: BuiltInGestureAction.SwitchApp,
+            enableX2: true,
+            x2Action: BuiltInGestureAction.TaskSwitcher,
+            enableWheel: true,
+            wheelAction: BuiltInGestureAction.VolumeUp);
+    }
+
+    private async Task ApplyClipboardEdgePresetAsync()
+    {
+        await ApplyEdgePresetAsync(
+            enableLeftMiddle: true,
+            leftMiddleAction: BuiltInGestureAction.OpenClipboardOverlay,
+            enableX1: true,
+            x1Action: BuiltInGestureAction.PasteLatestClipboardItem,
+            enableX2: true,
+            x2Action: BuiltInGestureAction.Copy,
+            enableWheel: false,
+            wheelAction: BuiltInGestureAction.TaskSwitcher);
+    }
+
+    private async Task ApplyEdgePresetAsync(
+        bool enableLeftMiddle,
+        BuiltInGestureAction leftMiddleAction,
+        bool enableX1,
+        BuiltInGestureAction x1Action,
+        bool enableX2,
+        BuiltInGestureAction x2Action,
+        bool enableWheel,
+        BuiltInGestureAction wheelAction)
+    {
+        EdgeTriggerEnabled = true;
+        EdgeTriggerLeftEdgeMiddleButtonEnabled = enableLeftMiddle;
+        EdgeTriggerLeftEdgeMiddleButtonAction = leftMiddleAction;
+        EdgeTriggerLeftEdgeXButton1Enabled = enableX1;
+        EdgeTriggerLeftEdgeXButton1Action = x1Action;
+        EdgeTriggerLeftEdgeXButton2Enabled = enableX2;
+        EdgeTriggerLeftEdgeXButton2Action = x2Action;
+        EdgeTriggerTopRightWheelEnabled = enableWheel;
+        EdgeTriggerTopRightWheelAction = wheelAction;
+        EdgeTriggerSlideLeftEnabled = true;
+        EdgeTriggerSlideLeftAction = BuiltInGestureAction.SwitchApp;
+        EdgeTriggerSlideRightEnabled = true;
+        EdgeTriggerSlideRightAction = BuiltInGestureAction.TaskSwitcher;
+        EdgeTriggerSlideBottomEnabled = true;
+        EdgeTriggerSlideBottomAction = BuiltInGestureAction.ShowDesktop;
+        await _settingsService.SetAsync(SettingKeys.EdgeTriggerEnabled, true, CancellationToken.None);
     }
 
     private async Task LoadBlacklistAsync()
@@ -998,6 +1207,12 @@ public sealed class SettingsViewModel : INotifyPropertyChanged
         OnPropertyChanged(nameof(LastGestureError));
         OnPropertyChanged(nameof(LastGestureEventTime));
         OnPropertyChanged(nameof(GestureEnvironmentStatus));
+        OnPropertyChanged(nameof(EdgeTriggerLastSource));
+        OnPropertyChanged(nameof(EdgeTriggerLastPosition));
+        OnPropertyChanged(nameof(EdgeTriggerLastAction));
+        OnPropertyChanged(nameof(EdgeTriggerLastReason));
+        OnPropertyChanged(nameof(EdgeTriggerLastEventTime));
+        OnPropertyChanged(nameof(EdgeTriggerCooldownText));
         OnPropertyChanged(nameof(HotkeyStatusText));
         _ = RefreshDiagnosticsAsync();
         var toggles = _featureToggleService.GetSnapshot();

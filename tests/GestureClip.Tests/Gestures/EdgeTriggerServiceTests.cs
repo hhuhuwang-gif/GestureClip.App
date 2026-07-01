@@ -135,6 +135,27 @@ public sealed class EdgeTriggerServiceTests
         Assert.False(args.Suppress);
     }
 
+    [Fact]
+    public async Task Left_edge_slide_executes_after_threshold()
+    {
+        var hook = new FakeLowLevelMouseHook();
+        var executor = new FakeGestureActionExecutor();
+        var settings = new FakeSettingsService();
+        settings.Values[SettingKeys.EdgeTriggerSlideLeftEnabled] = true;
+        settings.Values[SettingKeys.EdgeTriggerSlideThreshold] = 80;
+        var service = CreateService(hook: hook, executor: executor, settings: settings);
+
+        await service.StartAsync(CancellationToken.None);
+        hook.Emit(new MouseHookEvent(MouseHookEventType.Move, 2, 500, DateTimeOffset.UtcNow));
+        hook.Emit(new MouseHookEvent(MouseHookEventType.Move, 50, 500, DateTimeOffset.UtcNow.AddMilliseconds(20)));
+        Assert.Empty(executor.Actions);
+        hook.Emit(new MouseHookEvent(MouseHookEventType.Move, 100, 500, DateTimeOffset.UtcNow.AddMilliseconds(40)));
+        await WaitForAsync(() => executor.Actions.Count == 1);
+        await service.StopAsync(CancellationToken.None);
+
+        Assert.Equal([BuiltInGestureAction.SwitchApp], executor.Actions);
+    }
+
     private static EdgeTriggerService CreateService(
         FakeCursorPositionProvider? cursor = null,
         FakeLowLevelMouseHook? hook = null,
@@ -160,6 +181,15 @@ public sealed class EdgeTriggerServiceTests
         settings.Values.TryAdd(SettingKeys.EdgeTriggerLeftEdgeXButton2Action, BuiltInGestureAction.TaskSwitcher);
         settings.Values.TryAdd(SettingKeys.EdgeTriggerTopRightWheelEnabled, false);
         settings.Values.TryAdd(SettingKeys.EdgeTriggerTopRightWheelAction, BuiltInGestureAction.TaskSwitcher);
+        settings.Values.TryAdd(SettingKeys.EdgeTriggerSlideThreshold, 80);
+        settings.Values.TryAdd(SettingKeys.EdgeTriggerSlideLeftEnabled, false);
+        settings.Values.TryAdd(SettingKeys.EdgeTriggerSlideLeftAction, BuiltInGestureAction.SwitchApp);
+        settings.Values.TryAdd(SettingKeys.EdgeTriggerSlideRightEnabled, false);
+        settings.Values.TryAdd(SettingKeys.EdgeTriggerSlideRightAction, BuiltInGestureAction.TaskSwitcher);
+        settings.Values.TryAdd(SettingKeys.EdgeTriggerSlideTopEnabled, false);
+        settings.Values.TryAdd(SettingKeys.EdgeTriggerSlideTopAction, BuiltInGestureAction.StartMenu);
+        settings.Values.TryAdd(SettingKeys.EdgeTriggerSlideBottomEnabled, false);
+        settings.Values.TryAdd(SettingKeys.EdgeTriggerSlideBottomAction, BuiltInGestureAction.ShowDesktop);
 
         return new EdgeTriggerService(
             cursor ?? new FakeCursorPositionProvider(),

@@ -329,6 +329,7 @@ public sealed class SettingsViewModelTests
         public bool IsEnabled { get; private set; }
         public int StartCount { get; private set; }
         public int StopCount { get; private set; }
+        public EdgeTriggerDiagnosticsSnapshot Diagnostics => new(IsEnabled, "测试", "1, 2", BuiltInGestureAction.ShowDesktop, "已触发", DateTimeOffset.UtcNow, null);
 
         public Task StartAsync(CancellationToken cancellationToken)
         {

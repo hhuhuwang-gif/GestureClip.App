@@ -172,6 +172,39 @@
                                                Style="{StaticResource MutedTextStyle}"
                                                Margin="0,8,0,10"
                                                TextWrapping="Wrap" />
+                                    <StackPanel Orientation="Horizontal" Margin="0,0,0,12">
+                                        <Button Content="浏览器增强"
+                                                Style="{StaticResource SecondaryButtonStyle}"
+                                                Command="{Binding ApplyBrowserEdgePresetCommand}" />
+                                        <Button Content="系统控制"
+                                                Style="{StaticResource SecondaryButtonStyle}"
+                                                Margin="8,0,0,0"
+                                                Command="{Binding ApplySystemEdgePresetCommand}" />
+                                        <Button Content="剪贴板增强"
+                                                Style="{StaticResource SecondaryButtonStyle}"
+                                                Margin="8,0,0,0"
+                                                Command="{Binding ApplyClipboardEdgePresetCommand}" />
+                                    </StackPanel>
+                                    <Grid Margin="0,0,0,12">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="100" />
+                                            <ColumnDefinition Width="90" />
+                                            <ColumnDefinition Width="100" />
+                                            <ColumnDefinition Width="90" />
+                                            <ColumnDefinition Width="100" />
+                                            <ColumnDefinition Width="90" />
+                                            <ColumnDefinition Width="100" />
+                                            <ColumnDefinition Width="90" />
+                                        </Grid.ColumnDefinitions>
+                                        <TextBlock Text="热区 px" VerticalAlignment="Center" />
+                                        <TextBox Grid.Column="1" Text="{Binding EdgeTriggerHotZoneSize, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                                        <TextBlock Grid.Column="2" Text="停留 ms" Margin="10,0,0,0" VerticalAlignment="Center" />
+                                        <TextBox Grid.Column="3" Text="{Binding EdgeTriggerDwellMs, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                                        <TextBlock Grid.Column="4" Text="冷却 ms" Margin="10,0,0,0" VerticalAlignment="Center" />
+                                        <TextBox Grid.Column="5" Text="{Binding EdgeTriggerCooldownMs, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                                        <TextBlock Grid.Column="6" Text="滑动 px" Margin="10,0,0,0" VerticalAlignment="Center" />
+                                        <TextBox Grid.Column="7" Text="{Binding EdgeTriggerSlideThreshold, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                                    </Grid>
                                     <Grid>
                                         <Grid.ColumnDefinitions>
                                             <ColumnDefinition Width="130" />
@@ -291,12 +324,73 @@
                                                   SelectedValuePath="Action"
                                                   SelectedValue="{Binding EdgeTriggerTopRightWheelAction, Mode=TwoWay}" />
                                     </Grid>
+
+                                    <TextBlock Text="边缘滑动"
+                                               FontWeight="SemiBold"
+                                               Margin="0,16,0,8" />
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="210" />
+                                            <ColumnDefinition Width="*" />
+                                        </Grid.ColumnDefinitions>
+                                        <Grid.RowDefinitions>
+                                            <RowDefinition Height="Auto" />
+                                            <RowDefinition Height="Auto" />
+                                            <RowDefinition Height="Auto" />
+                                            <RowDefinition Height="Auto" />
+                                        </Grid.RowDefinitions>
+                                        <CheckBox Content="左边缘向右滑"
+                                                  IsChecked="{Binding EdgeTriggerSlideLeftEnabled, Mode=TwoWay}" />
+                                        <ComboBox Grid.Column="1"
+                                                  ItemsSource="{Binding GestureActionOptions}"
+                                                  DisplayMemberPath="DisplayName"
+                                                  SelectedValuePath="Action"
+                                                  SelectedValue="{Binding EdgeTriggerSlideLeftAction, Mode=TwoWay}" />
+                                        <CheckBox Grid.Row="1"
+                                                  Content="右边缘向左滑"
+                                                  Margin="0,8,0,0"
+                                                  IsChecked="{Binding EdgeTriggerSlideRightEnabled, Mode=TwoWay}" />
+                                        <ComboBox Grid.Row="1"
+                                                  Grid.Column="1"
+                                                  Margin="0,8,0,0"
+                                                  ItemsSource="{Binding GestureActionOptions}"
+                                                  DisplayMemberPath="DisplayName"
+                                                  SelectedValuePath="Action"
+                                                  SelectedValue="{Binding EdgeTriggerSlideRightAction, Mode=TwoWay}" />
+                                        <CheckBox Grid.Row="2"
+                                                  Content="上边缘向下滑"
+                                                  Margin="0,8,0,0"
+                                                  IsChecked="{Binding EdgeTriggerSlideTopEnabled, Mode=TwoWay}" />
+                                        <ComboBox Grid.Row="2"
+                                                  Grid.Column="1"
+                                                  Margin="0,8,0,0"
+                                                  ItemsSource="{Binding GestureActionOptions}"
+                                                  DisplayMemberPath="DisplayName"
+                                                  SelectedValuePath="Action"
+                                                  SelectedValue="{Binding EdgeTriggerSlideTopAction, Mode=TwoWay}" />
+                                        <CheckBox Grid.Row="3"
+                                                  Content="下边缘向上滑"
+                                                  Margin="0,8,0,0"
+                                                  IsChecked="{Binding EdgeTriggerSlideBottomEnabled, Mode=TwoWay}" />
+                                        <ComboBox Grid.Row="3"
+                                                  Grid.Column="1"
+                                                  Margin="0,8,0,0"
+                                                  ItemsSource="{Binding GestureActionOptions}"
+                                                  DisplayMemberPath="DisplayName"
+                                                  SelectedValuePath="Action"
+                                                  SelectedValue="{Binding EdgeTriggerSlideBottomAction, Mode=TwoWay}" />
+                                    </Grid>
                                 </StackPanel>
                             </GroupBox>
 
                             <GroupBox Header="手势测试" Padding="12" Margin="0,12,0,0">
                                 <Grid>
                                     <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto" />
+                                        <RowDefinition Height="Auto" />
+                                        <RowDefinition Height="Auto" />
+                                        <RowDefinition Height="Auto" />
+                                        <RowDefinition Height="Auto" />
                                         <RowDefinition Height="Auto" />
                                         <RowDefinition Height="Auto" />
                                         <RowDefinition Height="Auto" />
@@ -322,6 +416,19 @@
                                     <StackPanel Grid.Row="5" Grid.Column="1" Margin="0,6,0,0">
                                         <TextBlock Text="{Binding LastGestureEventTime}" />
                                         <TextBlock Text="{Binding GestureEnvironmentStatus}" Style="{StaticResource MutedTextStyle}" Margin="0,4,0,0" />
+                                    </StackPanel>
+                                    <TextBlock Grid.Row="6" Text="边缘来源" Margin="0,10,0,0" />
+                                    <TextBlock Grid.Row="6" Grid.Column="1" Text="{Binding EdgeTriggerLastSource}" Margin="0,10,0,0" />
+                                    <TextBlock Grid.Row="7" Text="边缘位置" Margin="0,6,0,0" />
+                                    <TextBlock Grid.Row="7" Grid.Column="1" Text="{Binding EdgeTriggerLastPosition}" Margin="0,6,0,0" />
+                                    <TextBlock Grid.Row="8" Text="边缘动作" Margin="0,6,0,0" />
+                                    <TextBlock Grid.Row="8" Grid.Column="1" Text="{Binding EdgeTriggerLastAction}" Margin="0,6,0,0" />
+                                    <TextBlock Grid.Row="9" Text="边缘状态" Margin="0,6,0,0" />
+                                    <TextBlock Grid.Row="9" Grid.Column="1" Text="{Binding EdgeTriggerLastReason}" Margin="0,6,0,0" />
+                                    <TextBlock Grid.Row="10" Text="边缘冷却" Margin="0,6,0,0" />
+                                    <StackPanel Grid.Row="10" Grid.Column="1" Margin="0,6,0,0">
+                                        <TextBlock Text="{Binding EdgeTriggerCooldownText}" />
+                                        <TextBlock Text="{Binding EdgeTriggerLastEventTime}" Style="{StaticResource MutedTextStyle}" Margin="0,4,0,0" />
                                     </StackPanel>
                                 </Grid>
                             </GroupBox>

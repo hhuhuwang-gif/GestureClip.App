@@ -19,9 +19,12 @@ public sealed class EdgeTriggerService : IEdgeTriggerService
     private Task? _loopTask;
     private ScreenCornerTarget? _activeCorner;
     private DateTimeOffset? _enteredCornerAt;
+    private ScreenEdgeTarget? _activeSlideEdge;
+    private CursorPosition? _slideStartPoint;
     private DateTimeOffset _cooldownUntil = DateTimeOffset.MinValue;
     private EdgeTriggerSettings _currentSettings;
     private bool _started;
+    private EdgeTriggerDiagnosticsSnapshot _diagnostics = new(false, "-", "-", BuiltInGestureAction.None, "未触发", null, null);
 
     public EdgeTriggerService(
         ICursorPositionProvider cursorPositionProvider,
@@ -41,12 +44,24 @@ public sealed class EdgeTriggerService : IEdgeTriggerService
 
     public bool IsEnabled { get; private set; }
 
+    public EdgeTriggerDiagnosticsSnapshot Diagnostics
+    {
+        get
+        {
+            lock (_syncRoot)
+            {
+                return _diagnostics;
+            }
+        }
+    }
+
     public Task StartAsync(CancellationToken cancellationToken)
     {
         var settings = LoadSettings();
         IsEnabled = settings.Enabled;
         if (!IsEnabled)
         {
+            SetDiagnostics("服务状态", "-", BuiltInGestureAction.None, "边缘触发未启用", null);
             return Task.CompletedTask;
         }
 
@@ -58,11 +73,12 @@ public sealed class EdgeTriggerService : IEdgeTriggerService
             }
 
             var loopCancellation = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+            var loopToken = loopCancellation.Token;
             _loopCancellation = loopCancellation;
             _mouseHook.MouseEventReceived += OnMouseEventReceived;
             _mouseHook.Start();
             _started = true;
-            _loopTask = Task.Run(() => RunAsync(loopCancellation.Token), CancellationToken.None);
+            _loopTask = Task.Run(() => RunAsync(loopToken), CancellationToken.None);
         }
 
         _logger.LogInformation("Edge trigger service started.");
@@ -87,6 +103,7 @@ public sealed class EdgeTriggerService : IEdgeTriggerService
 
             _started = false;
             ResetTracking();
+            SetDiagnostics("服务状态", "-", BuiltInGestureAction.None, "边缘触发已停止", null);
         }
 
         if (cts is not null || task is not null)
@@ -131,6 +148,7 @@ public sealed class EdgeTriggerService : IEdgeTriggerService
         if (!settings.Enabled)
         {
             ResetTracking();
+            SetDiagnostics("轮询", "-", BuiltInGestureAction.None, "边缘触发未启用", null);
             return;
         }
 
@@ -168,11 +186,13 @@ public sealed class EdgeTriggerService : IEdgeTriggerService
         if (corner is null)
         {
             ResetTracking();
+            SetDiagnostics("四角热区", $"{position.X}, {position.Y}", BuiltInGestureAction.None, "未进入角落热区", position.Time);
             return;
         }
 
         if (position.Time < _cooldownUntil)
         {
+            SetDiagnostics($"四角热区 {corner}", $"{position.X}, {position.Y}", BuiltInGestureAction.None, "冷却中", position.Time);
             return;
         }
 
@@ -180,12 +200,14 @@ public sealed class EdgeTriggerService : IEdgeTriggerService
         {
             _activeCorner = corner;
             _enteredCornerAt = position.Time;
+            SetDiagnostics($"四角热区 {corner}", $"{position.X}, {position.Y}", BuiltInGestureAction.None, "等待停留", position.Time);
             return;
         }
 
         if (_enteredCornerAt is null ||
             position.Time - _enteredCornerAt.Value < TimeSpan.FromMilliseconds(settings.DwellMs))
         {
+            SetDiagnostics($"四角热区 {corner}", $"{position.X}, {position.Y}", BuiltInGestureAction.None, "停留时间不足", position.Time);
             return;
         }
 
@@ -194,9 +216,11 @@ public sealed class EdgeTriggerService : IEdgeTriggerService
         _cooldownUntil = position.Time.AddMilliseconds(settings.CooldownMs);
         if (action == BuiltInGestureAction.None)
         {
+            SetDiagnostics($"四角热区 {corner}", $"{position.X}, {position.Y}", BuiltInGestureAction.None, "动作未绑定", position.Time);
             return;
         }
 
+        SetDiagnostics($"四角热区 {corner}", $"{position.X}, {position.Y}", action, "已触发", position.Time);
         _logger.LogInformation("Edge trigger action requested. Corner={Corner}, Action={Action}", corner, action);
         await _actionExecutor.ExecuteAsync(action, cancellationToken);
     }
@@ -211,12 +235,14 @@ public sealed class EdgeTriggerService : IEdgeTriggerService
             }
 
             BuiltInGestureAction action;
+            string source;
             lock (_syncRoot)
             {
-                action = ResolveMouseEdgeAction(args.Event, _currentSettings);
+                action = ResolveMouseEdgeAction(args.Event, _currentSettings, out source);
                 if (action != BuiltInGestureAction.None)
                 {
                     _cooldownUntil = args.Event.Time.AddMilliseconds(_currentSettings.CooldownMs);
+                    SetDiagnostics(source, $"{args.Event.X}, {args.Event.Y}", action, "已触发", args.Event.Time);
                 }
             }
 
@@ -233,30 +259,94 @@ public sealed class EdgeTriggerService : IEdgeTriggerService
         }
     }
 
-    private BuiltInGestureAction ResolveMouseEdgeAction(MouseHookEvent mouseEvent, EdgeTriggerSettings settings)
+    private BuiltInGestureAction ResolveMouseEdgeAction(MouseHookEvent mouseEvent, EdgeTriggerSettings settings, out string source)
     {
+        source = "边缘触发";
         if (!settings.Enabled || mouseEvent.Time < _cooldownUntil)
         {
+            SetDiagnostics(source, $"{mouseEvent.X}, {mouseEvent.Y}", BuiltInGestureAction.None, settings.Enabled ? "冷却中" : "边缘触发未启用", mouseEvent.Time);
             return BuiltInGestureAction.None;
         }
 
         var bounds = _cursorPositionProvider.GetVirtualScreenBounds();
+        var slideAction = ResolveSlideAction(mouseEvent, bounds, settings, out source);
+        if (slideAction != BuiltInGestureAction.None)
+        {
+            return slideAction;
+        }
+
         if (mouseEvent.Type == MouseHookEventType.Wheel)
         {
+            source = "右上角 + 滚轮";
             if (!settings.TopRightWheelEnabled || !IsTopRightCorner(mouseEvent.X, mouseEvent.Y, bounds, settings.HotZoneSize))
             {
+                SetDiagnostics(source, $"{mouseEvent.X}, {mouseEvent.Y}", BuiltInGestureAction.None, settings.TopRightWheelEnabled ? "未进入右上角热区" : "触发方式未启用", mouseEvent.Time);
                 return BuiltInGestureAction.None;
             }
 
             return settings.TopRightWheelAction;
         }
 
+        source = mouseEvent.Type switch
+        {
+            MouseHookEventType.LeftButtonDown => "左边缘 + 鼠标左键",
+            MouseHookEventType.MiddleButtonDown => "左边缘 + 鼠标中键",
+            MouseHookEventType.XButton1Down => "左边缘 + 鼠标侧键 1",
+            MouseHookEventType.XButton2Down => "左边缘 + 鼠标侧键 2",
+            _ => "左边缘 + 鼠标按钮"
+        };
         if (!IsLeftEdge(mouseEvent.X, bounds, settings.HotZoneSize))
         {
+            if (IsButtonDown(mouseEvent.Type))
+            {
+                SetDiagnostics(source, $"{mouseEvent.X}, {mouseEvent.Y}", BuiltInGestureAction.None, "未进入左边缘热区", mouseEvent.Time);
+            }
+
             return BuiltInGestureAction.None;
         }
 
         return settings.GetLeftEdgeButtonAction(mouseEvent.Type);
+    }
+
+    private BuiltInGestureAction ResolveSlideAction(MouseHookEvent mouseEvent, ScreenBounds bounds, EdgeTriggerSettings settings, out string source)
+    {
+        source = "边缘滑动";
+        if (mouseEvent.Type != MouseHookEventType.Move)
+        {
+            return BuiltInGestureAction.None;
+        }
+
+        var position = new CursorPosition(mouseEvent.X, mouseEvent.Y, mouseEvent.Time);
+        var edge = HitTestEdge(position, bounds, settings.HotZoneSize);
+        if (_activeSlideEdge is null)
+        {
+            if (edge is not null)
+            {
+                _activeSlideEdge = edge;
+                _slideStartPoint = position;
+                SetDiagnostics($"边缘滑动 {edge}", $"{position.X}, {position.Y}", BuiltInGestureAction.None, "等待向屏幕内滑动", position.Time);
+            }
+
+            return BuiltInGestureAction.None;
+        }
+
+        if (_slideStartPoint is null)
+        {
+            ResetSlideTracking();
+            return BuiltInGestureAction.None;
+        }
+
+        source = $"边缘滑动 {_activeSlideEdge}";
+        var distance = InwardDistance(_activeSlideEdge.Value, _slideStartPoint, position);
+        if (distance < settings.SlideThreshold)
+        {
+            SetDiagnostics(source, $"{position.X}, {position.Y}", BuiltInGestureAction.None, $"滑动距离不足 {distance}px", position.Time);
+            return BuiltInGestureAction.None;
+        }
+
+        var action = settings.GetSlideAction(_activeSlideEdge.Value);
+        ResetSlideTracking();
+        return action;
     }
 
     private async Task ExecuteEdgeActionAsync(BuiltInGestureAction action, CancellationToken cancellationToken)
@@ -319,6 +409,7 @@ public sealed class EdgeTriggerService : IEdgeTriggerService
             Math.Clamp(_settingsService.Get(SettingKeys.EdgeTriggerHotZoneSize, 8), 2, 64),
             Math.Clamp(_settingsService.Get(SettingKeys.EdgeTriggerDwellMs, 350), 100, 2000),
             Math.Clamp(_settingsService.Get(SettingKeys.EdgeTriggerCooldownMs, 1200), 250, 5000),
+            Math.Clamp(_settingsService.Get(SettingKeys.EdgeTriggerSlideThreshold, 80), 24, 400),
             _settingsService.Get(SettingKeys.EdgeTriggerTopLeftAction, BuiltInGestureAction.StartMenu),
             _settingsService.Get(SettingKeys.EdgeTriggerTopRightAction, BuiltInGestureAction.TaskSwitcher),
             _settingsService.Get(SettingKeys.EdgeTriggerBottomRightAction, BuiltInGestureAction.ShowDesktop),
@@ -332,12 +423,74 @@ public sealed class EdgeTriggerService : IEdgeTriggerService
             _settingsService.Get(SettingKeys.EdgeTriggerLeftEdgeXButton2Enabled, false),
             _settingsService.Get(SettingKeys.EdgeTriggerLeftEdgeXButton2Action, BuiltInGestureAction.TaskSwitcher),
             _settingsService.Get(SettingKeys.EdgeTriggerTopRightWheelEnabled, false),
-            _settingsService.Get(SettingKeys.EdgeTriggerTopRightWheelAction, BuiltInGestureAction.TaskSwitcher));
+            _settingsService.Get(SettingKeys.EdgeTriggerTopRightWheelAction, BuiltInGestureAction.TaskSwitcher),
+            _settingsService.Get(SettingKeys.EdgeTriggerSlideLeftEnabled, false),
+            _settingsService.Get(SettingKeys.EdgeTriggerSlideLeftAction, BuiltInGestureAction.SwitchApp),
+            _settingsService.Get(SettingKeys.EdgeTriggerSlideRightEnabled, false),
+            _settingsService.Get(SettingKeys.EdgeTriggerSlideRightAction, BuiltInGestureAction.TaskSwitcher),
+            _settingsService.Get(SettingKeys.EdgeTriggerSlideTopEnabled, false),
+            _settingsService.Get(SettingKeys.EdgeTriggerSlideTopAction, BuiltInGestureAction.StartMenu),
+            _settingsService.Get(SettingKeys.EdgeTriggerSlideBottomEnabled, false),
+            _settingsService.Get(SettingKeys.EdgeTriggerSlideBottomAction, BuiltInGestureAction.ShowDesktop));
     }
 
     private void ResetTracking()
     {
         _activeCorner = null;
         _enteredCornerAt = null;
+        ResetSlideTracking();
+    }
+
+    private void ResetSlideTracking()
+    {
+        _activeSlideEdge = null;
+        _slideStartPoint = null;
+    }
+
+    private void SetDiagnostics(string source, string position, BuiltInGestureAction action, string reason, DateTimeOffset? eventAt)
+    {
+        _diagnostics = new EdgeTriggerDiagnosticsSnapshot(IsEnabled, source, position, action, reason, eventAt, _cooldownUntil > DateTimeOffset.UtcNow ? _cooldownUntil : null);
+    }
+
+    private static bool IsButtonDown(MouseHookEventType type)
+    {
+        return type is MouseHookEventType.LeftButtonDown or MouseHookEventType.MiddleButtonDown or MouseHookEventType.XButton1Down or MouseHookEventType.XButton2Down;
+    }
+
+    private static ScreenEdgeTarget? HitTestEdge(CursorPosition position, ScreenBounds bounds, int hotZoneSize)
+    {
+        if (position.X <= bounds.Left + hotZoneSize)
+        {
+            return ScreenEdgeTarget.Left;
+        }
+
+        if (position.X >= bounds.Right - hotZoneSize)
+        {
+            return ScreenEdgeTarget.Right;
+        }
+
+        if (position.Y <= bounds.Top + hotZoneSize)
+        {
+            return ScreenEdgeTarget.Top;
+        }
+
+        if (position.Y >= bounds.Bottom - hotZoneSize)
+        {
+            return ScreenEdgeTarget.Bottom;
+        }
+
+        return null;
+    }
+
+    private static int InwardDistance(ScreenEdgeTarget edge, CursorPosition start, CursorPosition current)
+    {
+        return edge switch
+        {
+            ScreenEdgeTarget.Left => current.X - start.X,
+            ScreenEdgeTarget.Right => start.X - current.X,
+            ScreenEdgeTarget.Top => current.Y - start.Y,
+            ScreenEdgeTarget.Bottom => start.Y - current.Y,
+            _ => 0
+        };
     }
 }
