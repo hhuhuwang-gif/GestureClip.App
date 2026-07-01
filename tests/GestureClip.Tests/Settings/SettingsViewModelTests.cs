@@ -95,6 +95,62 @@ public sealed class SettingsViewModelTests
             settings.Values.TryGetValue(SettingKeys.ClipboardRetentionDays, out var retentionDays) && Equals(retentionDays, 0));
     }
 
+    [Fact]
+    public void Gesture_binding_cards_are_created_for_supported_patterns()
+    {
+        var viewModel = CreateViewModel();
+
+        Assert.Equal(8, viewModel.GestureBindingCards.Count);
+        Assert.Contains(viewModel.GestureBindingCards, card => card.Pattern == "U" && card.SelectedAction == BuiltInGestureAction.Copy);
+        Assert.Contains(viewModel.GestureBindingCards, card => card.Pattern == "D" && card.SelectedAction == BuiltInGestureAction.Paste);
+    }
+
+    [Fact]
+    public async Task Changing_gesture_binding_saves_custom_preset()
+    {
+        var settings = new FakeSettingsService();
+        var viewModel = CreateViewModel(settings: settings);
+        var upCard = viewModel.GestureBindingCards.Single(card => card.Pattern == "U");
+
+        upCard.SelectedAction = BuiltInGestureAction.OpenClipboardOverlay;
+
+        await WaitForAsync(() =>
+            settings.Values.TryGetValue(SettingKeys.GesturePreset, out var preset) && Equals(preset, GesturePreset.Custom) &&
+            settings.Values.TryGetValue(SettingKeys.GestureCustomBindingsJson, out var json) &&
+            json is string text && text.Contains("\"U\"", StringComparison.Ordinal));
+        Assert.Equal(GesturePreset.Custom, viewModel.SelectedGesturePresetOption?.Value);
+    }
+
+    [Fact]
+    public async Task Adding_custom_gesture_pattern_saves_binding()
+    {
+        var settings = new FakeSettingsService();
+        var viewModel = CreateViewModel(settings: settings);
+
+        viewModel.NewGesturePattern = "urdl";
+        viewModel.NewGestureAction = BuiltInGestureAction.Enter;
+
+        viewModel.AddCustomGestureBindingCommand.Execute(null);
+
+        Assert.Contains(viewModel.GestureBindingCards, card => card.Pattern == "URDL" && card.SelectedAction == BuiltInGestureAction.Enter);
+        await WaitForAsync(() =>
+            settings.Values.TryGetValue(SettingKeys.GestureCustomBindingsJson, out var json) &&
+            json is string text && text.Contains("\"URDL\"", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public async Task Changing_gesture_stroke_color_saves_setting()
+    {
+        var settings = new FakeSettingsService();
+        var viewModel = CreateViewModel(settings: settings);
+
+        viewModel.SelectedGestureStrokeColorOption = viewModel.GestureStrokeColorOptions.Single(option => option.Color == "#6EE7D8");
+
+        await WaitForAsync(() =>
+            settings.Values.TryGetValue(SettingKeys.GestureStrokeColor, out var color) &&
+            Equals(color, "#6EE7D8"));
+    }
+
     private static SettingsViewModel CreateViewModel(
         FakeClipboardRepository? repository = null,
         FakeClipboardOverlayService? overlay = null,
@@ -117,7 +173,8 @@ public sealed class SettingsViewModelTests
             new FakeClipboardWriter(),
             repository ?? new FakeClipboardRepository(),
             overlay ?? new FakeClipboardOverlayService(),
-            confirmation ?? new FakeConfirmationService { Result = true });
+            confirmation ?? new FakeConfirmationService { Result = true },
+            new GestureClip.Features.Gestures.GesturePresetProvider());
     }
 
     private static async Task WaitForAsync(Func<bool> condition)

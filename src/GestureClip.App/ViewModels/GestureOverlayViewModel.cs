@@ -12,6 +12,7 @@ public sealed class GestureOverlayViewModel : INotifyPropertyChanged
     private string _shortcutText = "暂无动作";
     private string _presetName = "";
     private PointCollection _points = [];
+    private System.Windows.Media.Brush _strokeBrush = new SolidColorBrush(System.Windows.Media.Color.FromRgb(140, 200, 255));
 
     public event PropertyChangedEventHandler? PropertyChanged;
 
@@ -96,6 +97,21 @@ public sealed class GestureOverlayViewModel : INotifyPropertyChanged
         set
         {
             _points = value;
+            OnPropertyChanged();
+        }
+    }
+
+    public System.Windows.Media.Brush StrokeBrush
+    {
+        get => _strokeBrush;
+        set
+        {
+            if (ReferenceEquals(_strokeBrush, value))
+            {
+                return;
+            }
+
+            _strokeBrush = value;
             OnPropertyChanged();
         }
     }

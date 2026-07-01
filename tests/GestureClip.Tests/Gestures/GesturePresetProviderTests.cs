@@ -45,4 +45,36 @@ public sealed class GesturePresetProviderTests
 
         Assert.Equal(BuiltInGestureAction.None, provider.GetAction(GesturePreset.EditEnhanced, "LD"));
     }
+
+    [Fact]
+    public void Custom_bindings_can_override_default_actions()
+    {
+        var provider = new GesturePresetProvider();
+
+        provider.UpdateCustomBindings(new Dictionary<string, BuiltInGestureAction>
+        {
+            ["U"] = BuiltInGestureAction.OpenClipboardOverlay,
+            ["D"] = BuiltInGestureAction.PasteLatestClipboardItem
+        });
+
+        Assert.Equal(BuiltInGestureAction.OpenClipboardOverlay, provider.GetAction(GesturePreset.Custom, "U"));
+        Assert.Equal(BuiltInGestureAction.PasteLatestClipboardItem, provider.GetAction(GesturePreset.Custom, "D"));
+        Assert.Equal(BuiltInGestureAction.None, provider.GetAction(GesturePreset.Custom, "L"));
+    }
+
+    [Fact]
+    public void GetBindings_returns_custom_snapshot()
+    {
+        var provider = new GesturePresetProvider();
+
+        provider.UpdateCustomBindings(new Dictionary<string, BuiltInGestureAction>
+        {
+            ["LR"] = BuiltInGestureAction.SelectAll
+        });
+
+        var bindings = provider.GetBindings(GesturePreset.Custom);
+
+        Assert.Single(bindings);
+        Assert.Equal(BuiltInGestureAction.SelectAll, bindings["LR"]);
+    }
 }

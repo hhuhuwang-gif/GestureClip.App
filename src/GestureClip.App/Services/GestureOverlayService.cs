@@ -3,21 +3,30 @@ using System.Windows.Media;
 using GestureClip.App.ViewModels;
 using GestureClip.Core.Abstractions;
 using GestureClip.Core.Gestures;
+using GestureClip.Core.Settings;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace GestureClip.App.Services;
 
 public sealed class GestureOverlayService : IGestureOverlayService
 {
+    private const int MaxVisiblePointCount = 96;
+
     private readonly IServiceProvider _serviceProvider;
+    private readonly ISettingsService _settingsService;
     private GestureOverlayWindow? _window;
     private GestureOverlayViewModel? _viewModel;
     private CancellationTokenSource? _hideCts;
     private DateTimeOffset _lastUpdateAt = DateTimeOffset.MinValue;
+    private readonly object _updateSyncRoot = new();
+    private IReadOnlyList<GesturePoint>? _pendingUpdatePoints;
+    private GestureHudInfo? _pendingUpdateHudInfo;
+    private bool _updateQueued;
 
-    public GestureOverlayService(IServiceProvider serviceProvider)
+    public GestureOverlayService(IServiceProvider serviceProvider, ISettingsService settingsService)
     {
         _serviceProvider = serviceProvider;
+        _settingsService = settingsService;
     }
 
     public async Task ShowGestureStartAsync(GesturePoint point, GestureHudInfo hudInfo, CancellationToken cancellationToken)
@@ -25,6 +34,7 @@ public sealed class GestureOverlayService : IGestureOverlayService
         await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
         {
             cancellationToken.ThrowIfCancellationRequested();
+            ClearPendingUpdate();
             EnsureWindow();
             PositionWindow();
             _hideCts?.Cancel();
@@ -36,22 +46,29 @@ public sealed class GestureOverlayService : IGestureOverlayService
 
     public async Task UpdateGestureAsync(IReadOnlyList<GesturePoint> points, GestureHudInfo hudInfo, CancellationToken cancellationToken)
     {
+        points = TrimVisiblePoints(points);
+
         var now = DateTimeOffset.UtcNow;
-        if ((now - _lastUpdateAt).TotalMilliseconds < 16)
+        if ((now - _lastUpdateAt).TotalMilliseconds < 33)
         {
+            StorePendingUpdate(points, hudInfo);
             return;
         }
 
         _lastUpdateAt = now;
-        await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
+        lock (_updateSyncRoot)
         {
-            cancellationToken.ThrowIfCancellationRequested();
-            EnsureWindow();
-            PositionWindow();
-            ApplyHudInfo(hudInfo);
-            _viewModel!.Points = ToPointCollection(points);
-            _window!.Show();
-        });
+            _pendingUpdatePoints = points;
+            _pendingUpdateHudInfo = hudInfo;
+            if (_updateQueued)
+            {
+                return;
+            }
+
+            _updateQueued = true;
+        }
+
+        await System.Windows.Application.Current.Dispatcher.InvokeAsync(() => FlushPendingUpdate(cancellationToken));
     }
 
     public async Task CompleteGestureAsync(GestureHudInfo hudInfo, CancellationToken cancellationToken)
@@ -59,6 +76,7 @@ public sealed class GestureOverlayService : IGestureOverlayService
         await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
         {
             cancellationToken.ThrowIfCancellationRequested();
+            ClearPendingUpdate();
             EnsureWindow();
             ApplyHudInfo(hudInfo);
             _window!.Show();
@@ -73,6 +91,7 @@ public sealed class GestureOverlayService : IGestureOverlayService
         await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
         {
             cancellationToken.ThrowIfCancellationRequested();
+            ClearPendingUpdate();
             EnsureWindow();
             PositionWindow();
             _viewModel!.DirectionText = pattern;
@@ -91,9 +110,55 @@ public sealed class GestureOverlayService : IGestureOverlayService
         await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
         {
             cancellationToken.ThrowIfCancellationRequested();
+            ClearPendingUpdate();
             _hideCts?.Cancel();
             _window?.Hide();
         });
+    }
+
+    private void StorePendingUpdate(IReadOnlyList<GesturePoint> points, GestureHudInfo hudInfo)
+    {
+        lock (_updateSyncRoot)
+        {
+            _pendingUpdatePoints = points;
+            _pendingUpdateHudInfo = hudInfo;
+        }
+    }
+
+    private void FlushPendingUpdate(CancellationToken cancellationToken)
+    {
+        IReadOnlyList<GesturePoint>? points;
+        GestureHudInfo? hudInfo;
+        lock (_updateSyncRoot)
+        {
+            points = _pendingUpdatePoints;
+            hudInfo = _pendingUpdateHudInfo;
+            _pendingUpdatePoints = null;
+            _pendingUpdateHudInfo = null;
+            _updateQueued = false;
+        }
+
+        if (points is null || hudInfo is null)
+        {
+            return;
+        }
+
+        cancellationToken.ThrowIfCancellationRequested();
+        EnsureWindow();
+        PositionWindow();
+        ApplyHudInfo(hudInfo);
+        _viewModel!.Points = ToPointCollection(points);
+        _window!.Show();
+    }
+
+    private void ClearPendingUpdate()
+    {
+        lock (_updateSyncRoot)
+        {
+            _pendingUpdatePoints = null;
+            _pendingUpdateHudInfo = null;
+            _updateQueued = false;
+        }
     }
 
     private void EnsureWindow()
@@ -120,6 +185,7 @@ public sealed class GestureOverlayService : IGestureOverlayService
         _viewModel.ActionName = hudInfo.ActionName;
         _viewModel.ShortcutText = hudInfo.ShortcutText;
         _viewModel.PresetName = hudInfo.PresetName;
+        _viewModel.StrokeBrush = CreateStrokeBrush(_settingsService.Get(SettingKeys.GestureStrokeColor, "#8CC8FF"));
     }
 
     private void PositionWindow()
@@ -156,6 +222,32 @@ public sealed class GestureOverlayService : IGestureOverlayService
         return _window.PointFromScreen(new System.Windows.Point(point.X, point.Y));
     }
 
+    private static IReadOnlyList<GesturePoint> TrimVisiblePoints(IReadOnlyList<GesturePoint> points)
+    {
+        if (points.Count <= MaxVisiblePointCount)
+        {
+            return points;
+        }
+
+        return points.Skip(points.Count - MaxVisiblePointCount).ToArray();
+    }
+
+    private static System.Windows.Media.Brush CreateStrokeBrush(string colorText)
+    {
+        try
+        {
+            var brush = (SolidColorBrush)new BrushConverter().ConvertFromString(colorText)!;
+            brush.Freeze();
+            return brush;
+        }
+        catch
+        {
+            var fallback = new SolidColorBrush(System.Windows.Media.Color.FromRgb(140, 200, 255));
+            fallback.Freeze();
+            return fallback;
+        }
+    }
+
     private async Task HideLaterAsync(CancellationToken cancellationToken)
     {
         try
@@ -167,4 +259,5 @@ public sealed class GestureOverlayService : IGestureOverlayService
         {
         }
     }
+
 }

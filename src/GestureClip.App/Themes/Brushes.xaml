@@ -13,15 +13,31 @@
     <SolidColorBrush x:Key="BrushDangerSoft" Color="{StaticResource ColorDangerSoft}" />
     <SolidColorBrush x:Key="BrushTextPrimary" Color="{StaticResource ColorTextPrimaryDark}" />
     <SolidColorBrush x:Key="BrushTextSecondary" Color="{StaticResource ColorTextSecondaryDark}" />
-    <SolidColorBrush x:Key="BrushTextMuted" Color="#7FAAB0BC" />
+    <SolidColorBrush x:Key="BrushTextMuted" Color="{StaticResource ColorTextMutedDark}" />
+    <SolidColorBrush x:Key="BrushControlHover" Color="{StaticResource ColorControlHover}" />
+    <SolidColorBrush x:Key="BrushControlSelected" Color="{StaticResource ColorControlSelected}" />
+    <SolidColorBrush x:Key="BrushControlDisabled" Color="{StaticResource ColorControlDisabled}" />
+    <SolidColorBrush x:Key="BrushComboBoxDropDown" Color="{StaticResource ColorComboBoxDropDown}" />
+    <SolidColorBrush x:Key="BrushTabSelected" Color="{StaticResource ColorTabSelected}" />
+    <SolidColorBrush x:Key="BrushTabSelectedText" Color="{StaticResource ColorTabSelectedText}" />
+    <SolidColorBrush x:Key="BrushTabIdle" Color="{StaticResource ColorTabIdle}" />
     <LinearGradientBrush x:Key="BrushAppBackground" StartPoint="0,0" EndPoint="1,1">
-        <GradientStop Color="#10131A" Offset="0" />
-        <GradientStop Color="#171B25" Offset="0.48" />
-        <GradientStop Color="#0E1728" Offset="1" />
+        <GradientStop Color="#08101F" Offset="0" />
+        <GradientStop Color="#111A2B" Offset="0.45" />
+        <GradientStop Color="#0A1224" Offset="1" />
+    </LinearGradientBrush>
+    <LinearGradientBrush x:Key="BrushGlassHighlight" StartPoint="0,0" EndPoint="1,1">
+        <GradientStop Color="#38FFFFFF" Offset="0" />
+        <GradientStop Color="#12FFFFFF" Offset="0.36" />
+        <GradientStop Color="#0615223A" Offset="1" />
+    </LinearGradientBrush>
+    <LinearGradientBrush x:Key="BrushTabSelectedGradient" StartPoint="0,0" EndPoint="1,1">
+        <GradientStop Color="#FFFFFFFF" Offset="0" />
+        <GradientStop Color="#D7ECFF" Offset="1" />
     </LinearGradientBrush>
     <LinearGradientBrush x:Key="BrushPrimaryGradient" StartPoint="0,0" EndPoint="1,1">
-        <GradientStop Color="#7DB7FF" Offset="0" />
-        <GradientStop Color="#5B8CFF" Offset="0.52" />
-        <GradientStop Color="#6D6BFF" Offset="1" />
+        <GradientStop Color="#9ED4FF" Offset="0" />
+        <GradientStop Color="#4FA3FF" Offset="0.52" />
+        <GradientStop Color="#2F7DFF" Offset="1" />
     </LinearGradientBrush>
 </ResourceDictionary>

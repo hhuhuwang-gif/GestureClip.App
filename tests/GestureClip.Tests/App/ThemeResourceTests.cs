@@ -31,7 +31,40 @@ public sealed class ThemeResourceTests
         Assert.Contains("GlassComboBoxStyle", controls);
         Assert.Contains("GlassCheckBoxStyle", controls);
         Assert.Contains("GlassListBoxStyle", controls);
+        Assert.Contains("GlassTabItemStyle", controls);
         Assert.Contains("GlassCardStyle", glass);
+    }
+
+    [Fact]
+    public void Theme_uses_readable_dark_blue_gray_palette()
+    {
+        var colorsPath = FindRepositoryFile("src", "GestureClip.App", "Themes", "Colors.xaml");
+        var colors = File.ReadAllText(colorsPath);
+
+        Assert.Contains("#0B1020", colors);
+        Assert.Contains("#161D2C", colors);
+        Assert.Contains("#66768AA8", colors);
+        Assert.Contains("#FFFFFFFF", colors);
+        Assert.Contains("#E6EEF8", colors);
+        Assert.Contains("#4FA3FF", colors);
+        Assert.Contains("ColorTabSelected", colors);
+    }
+
+    [Fact]
+    public void ComboBox_theme_defines_readable_dropdown_and_item_states()
+    {
+        var controlsPath = FindRepositoryFile("src", "GestureClip.App", "Themes", "Controls.xaml");
+        var brushesPath = FindRepositoryFile("src", "GestureClip.App", "Themes", "Brushes.xaml");
+        var controls = File.ReadAllText(controlsPath);
+        var brushes = File.ReadAllText(brushesPath);
+
+        Assert.Contains("GlassComboBoxItemStyle", controls);
+        Assert.Contains("PART_Popup", controls);
+        Assert.Contains("BrushComboBoxDropDown", brushes);
+        Assert.Contains("BrushControlHover", brushes);
+        Assert.Contains("BrushControlSelected", brushes);
+        Assert.Contains("IsHighlighted", controls);
+        Assert.Contains("IsSelected", controls);
     }
 
     [Fact]
@@ -57,6 +90,20 @@ public sealed class ThemeResourceTests
         Assert.DoesNotContain("Text=\"{Binding DatabasePath}\"", xaml);
         Assert.DoesNotContain("Text=\"{Binding LogDirectory}\"", xaml);
         Assert.DoesNotContain("Text=\"{Binding DiagnosticsText}\"", xaml);
+    }
+
+    [Fact]
+    public void SettingsWindow_uses_custom_rounded_shell_and_gesture_customization_controls()
+    {
+        var path = FindRepositoryFile("src", "GestureClip.App", "SettingsWindow.xaml");
+        var xaml = File.ReadAllText(path);
+
+        Assert.Contains("WindowStyle=\"None\"", xaml);
+        Assert.Contains("AllowsTransparency=\"True\"", xaml);
+        Assert.Contains("CornerRadius=\"28\"", xaml);
+        Assert.Contains("GestureStrokeColorOptions", xaml);
+        Assert.Contains("NewGesturePattern", xaml);
+        Assert.Contains("AddCustomGestureBindingCommand", xaml);
     }
 
     private static string FindRepositoryFile(params string[] segments)

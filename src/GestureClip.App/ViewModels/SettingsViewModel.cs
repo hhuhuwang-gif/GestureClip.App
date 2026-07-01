@@ -3,6 +3,7 @@ using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.IO;
 using System.Runtime.CompilerServices;
+using System.Text.Json;
 using System.Windows.Input;
 using GestureClip.Core.Abstractions;
 using GestureClip.Core.Diagnostics;
@@ -30,6 +31,7 @@ public sealed class SettingsViewModel : INotifyPropertyChanged
     private readonly IClipboardRepository _clipboardRepository;
     private readonly IClipboardOverlayService _clipboardOverlayService;
     private readonly IConfirmationService _confirmationService;
+    private readonly IGesturePresetProvider _gesturePresetProvider;
     private bool _clipboardCaptureEnabled;
     private bool _gestureEnabled;
     private bool _gestureShowOverlay;
@@ -44,6 +46,9 @@ public sealed class SettingsViewModel : INotifyPropertyChanged
     private int _clipboardItemCount;
     private int _clipboardMaxItems;
     private int _clipboardRetentionDays;
+    private string _gestureStrokeColor;
+    private string _newGesturePattern = "";
+    private BuiltInGestureAction _newGestureAction = BuiltInGestureAction.Copy;
     private readonly DispatcherTimer _diagnosticsTimer;
 
     public SettingsViewModel(
@@ -61,7 +66,8 @@ public sealed class SettingsViewModel : INotifyPropertyChanged
         IClipboardWriter clipboardWriter,
         IClipboardRepository clipboardRepository,
         IClipboardOverlayService clipboardOverlayService,
-        IConfirmationService confirmationService)
+        IConfirmationService confirmationService,
+        IGesturePresetProvider gesturePresetProvider)
     {
         _settingsService = settingsService;
         _mouseGestureService = mouseGestureService;
@@ -76,6 +82,7 @@ public sealed class SettingsViewModel : INotifyPropertyChanged
         _clipboardRepository = clipboardRepository;
         _clipboardOverlayService = clipboardOverlayService;
         _confirmationService = confirmationService;
+        _gesturePresetProvider = gesturePresetProvider;
         DatabasePath = paths.DatabasePath;
         LogDirectory = paths.LogDirectory;
         AppDataPath = paths.RootDirectory;
@@ -90,6 +97,7 @@ public sealed class SettingsViewModel : INotifyPropertyChanged
         _gestureTriggerThreshold = _settingsService.Get(SettingKeys.GestureTriggerThreshold, 20);
         _clipboardMaxItems = _settingsService.Get(SettingKeys.ClipboardMaxItems, 1000);
         _clipboardRetentionDays = _settingsService.Get(SettingKeys.ClipboardRetentionDays, 30);
+        _gestureStrokeColor = _settingsService.Get(SettingKeys.GestureStrokeColor, "#8CC8FF");
         _gestureDiagnostics = _mouseGestureService.Diagnostics;
         _startWithWindows = _startupService.IsEnabled();
         StartupModeWarning = _startupService.IsDevelopmentRunMode()
@@ -102,6 +110,7 @@ public sealed class SettingsViewModel : INotifyPropertyChanged
         ClearAllClipboardItemsCommand = new AsyncRelayCommand(_ => ClearAllClipboardItemsAsync());
         ClearUnpinnedClipboardItemsCommand = new AsyncRelayCommand(_ => ClearUnpinnedClipboardItemsAsync());
         ApplyClipboardCleanupCommand = new AsyncRelayCommand(_ => ApplyClipboardCleanupAsync());
+        AddCustomGestureBindingCommand = new AsyncRelayCommand(_ => AddCustomGestureBindingAsync());
         OpenLogDirectoryCommand = new RelayCommand(_ => OpenDirectory(LogDirectory));
         OpenDataDirectoryCommand = new RelayCommand(_ => OpenDirectory(AppDataPath));
         _diagnosticsTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(500) };
@@ -110,6 +119,7 @@ public sealed class SettingsViewModel : INotifyPropertyChanged
         _ = LoadBlacklistAsync();
         _ = RefreshDiagnosticsAsync();
         _ = RefreshClipboardStatsAsync();
+        RefreshGestureBindingCards();
     }
 
     public event PropertyChangedEventHandler? PropertyChanged;
@@ -132,6 +142,8 @@ public sealed class SettingsViewModel : INotifyPropertyChanged
 
     public ObservableCollection<AppBlacklistItemViewModel> AppBlacklistItems { get; } = [];
 
+    public ObservableCollection<GestureBindingCardViewModel> GestureBindingCards { get; } = [];
+
     public ICommand AddBlacklistItemCommand { get; }
 
     public ICommand RefreshDiagnosticsCommand { get; }
@@ -149,6 +161,8 @@ public sealed class SettingsViewModel : INotifyPropertyChanged
     public ICommand ClearUnpinnedClipboardItemsCommand { get; }
 
     public ICommand ApplyClipboardCleanupCommand { get; }
+
+    public ICommand AddCustomGestureBindingCommand { get; }
 
     public int ClipboardItemCount
     {
@@ -351,6 +365,7 @@ public sealed class SettingsViewModel : INotifyPropertyChanged
             UpdateGestureSettingsSnapshot();
             OnPropertyChanged();
             _ = _settingsService.SetAsync(SettingKeys.GesturePreset, _selectedGesturePreset, CancellationToken.None);
+            RefreshGestureBindingCards();
         }
     }
 
@@ -436,6 +451,63 @@ public sealed class SettingsViewModel : INotifyPropertyChanged
             UpdateGestureSettingsSnapshot();
             OnPropertyChanged();
             _ = _settingsService.SetAsync(SettingKeys.GestureCloseWindowEnabled, value, CancellationToken.None);
+        }
+    }
+
+    public IReadOnlyList<GestureStrokeColorOption> GestureStrokeColorOptions { get; } =
+    [
+        new("冰蓝", "#8CC8FF"),
+        new("青绿", "#6EE7D8"),
+        new("紫光", "#C4B5FD"),
+        new("粉色", "#FDA4C8"),
+        new("琥珀", "#FCD34D"),
+        new("白色", "#F8FAFC")
+    ];
+
+    public GestureStrokeColorOption? SelectedGestureStrokeColorOption
+    {
+        get => GestureStrokeColorOptions.FirstOrDefault(option => string.Equals(option.Color, _gestureStrokeColor, StringComparison.OrdinalIgnoreCase));
+        set
+        {
+            if (value is null || string.Equals(_gestureStrokeColor, value.Color, StringComparison.OrdinalIgnoreCase))
+            {
+                return;
+            }
+
+            _gestureStrokeColor = value.Color;
+            OnPropertyChanged();
+            _ = _settingsService.SetAsync(SettingKeys.GestureStrokeColor, value.Color, CancellationToken.None);
+        }
+    }
+
+    public string NewGesturePattern
+    {
+        get => _newGesturePattern;
+        set
+        {
+            var normalized = NormalizeGesturePattern(value);
+            if (_newGesturePattern == normalized)
+            {
+                return;
+            }
+
+            _newGesturePattern = normalized;
+            OnPropertyChanged();
+        }
+    }
+
+    public BuiltInGestureAction NewGestureAction
+    {
+        get => _newGestureAction;
+        set
+        {
+            if (_newGestureAction == value)
+            {
+                return;
+            }
+
+            _newGestureAction = value;
+            OnPropertyChanged();
         }
     }
 
@@ -584,6 +656,72 @@ public sealed class SettingsViewModel : INotifyPropertyChanged
             new GestureOptions(_gestureTriggerThreshold, 16, 2000, 2)));
     }
 
+    private void RefreshGestureBindingCards()
+    {
+        GestureBindingCards.Clear();
+        var bindings = _gesturePresetProvider.GetBindings(_selectedGesturePreset);
+        var patterns = GesturePatterns
+            .Concat(bindings.Keys)
+            .Distinct(StringComparer.Ordinal)
+            .OrderBy(pattern => Array.IndexOf(GesturePatterns, pattern) >= 0 ? Array.IndexOf(GesturePatterns, pattern) : int.MaxValue)
+            .ThenBy(pattern => pattern, StringComparer.Ordinal);
+
+        foreach (var pattern in patterns)
+        {
+            var action = bindings.TryGetValue(pattern, out var mappedAction) ? mappedAction : BuiltInGestureAction.None;
+            GestureBindingCards.Add(new GestureBindingCardViewModel(
+                pattern,
+                DirectionText(pattern),
+                GestureName(pattern),
+                action,
+                GestureActionOptions,
+                ApplyGestureBindingAsync));
+        }
+    }
+
+    private async Task ApplyGestureBindingAsync(GestureBindingCardViewModel card)
+    {
+        var bindings = GestureBindingCards.ToDictionary(item => item.Pattern, item => item.SelectedAction, StringComparer.Ordinal);
+        var json = JsonSerializer.Serialize(bindings.ToDictionary(
+            pair => pair.Key,
+            pair => new CustomBindingDto(pair.Value, ShortcutText(pair.Value), pair.Value != BuiltInGestureAction.None),
+            StringComparer.Ordinal));
+        _gesturePresetProvider.UpdateCustomBindings(bindings);
+        _selectedGesturePreset = GesturePreset.Custom;
+        UpdateGestureSettingsSnapshot();
+        OnPropertyChanged(nameof(SelectedGesturePresetOption));
+        await _settingsService.SetAsync(SettingKeys.GestureCustomBindingsJson, json, CancellationToken.None);
+        await _settingsService.SetAsync(SettingKeys.GesturePreset, GesturePreset.Custom, CancellationToken.None);
+    }
+
+    private async Task AddCustomGestureBindingAsync()
+    {
+        var pattern = NormalizeGesturePattern(NewGesturePattern);
+        if (!IsValidGesturePattern(pattern))
+        {
+            return;
+        }
+
+        var existing = GestureBindingCards.FirstOrDefault(card => string.Equals(card.Pattern, pattern, StringComparison.Ordinal));
+        if (existing is not null)
+        {
+            existing.SelectedAction = NewGestureAction;
+            NewGesturePattern = "";
+            return;
+        }
+
+        var card = new GestureBindingCardViewModel(
+            pattern,
+            DirectionText(pattern),
+            GestureName(pattern),
+            NewGestureAction,
+            GestureActionOptions,
+            ApplyGestureBindingAsync);
+        GestureBindingCards.Add(card);
+        NewGesturePattern = "";
+        await ApplyGestureBindingAsync(card);
+    }
+
     private void RefreshGestureDiagnostics()
     {
         _gestureDiagnostics = _mouseGestureService.Diagnostics;
@@ -618,4 +756,85 @@ public sealed class SettingsViewModel : INotifyPropertyChanged
     public sealed record GesturePresetOption(GesturePreset Value, string DisplayName);
 
     public sealed record RetentionOption(string Label, int Days);
+
+    public sealed record GestureStrokeColorOption(string Name, string Color)
+    {
+        public string DisplayName => $"{Name}  {Color}";
+    }
+
+    public IReadOnlyList<BuiltInGestureAction> GestureActionOptions { get; } =
+    [
+        BuiltInGestureAction.None,
+        BuiltInGestureAction.Copy,
+        BuiltInGestureAction.Paste,
+        BuiltInGestureAction.Cut,
+        BuiltInGestureAction.SelectAll,
+        BuiltInGestureAction.Undo,
+        BuiltInGestureAction.Redo,
+        BuiltInGestureAction.Enter,
+        BuiltInGestureAction.Escape,
+        BuiltInGestureAction.Delete,
+        BuiltInGestureAction.Backspace,
+        BuiltInGestureAction.OpenClipboardOverlay,
+        BuiltInGestureAction.PasteLatestClipboardItem,
+        BuiltInGestureAction.SendAltLeft,
+        BuiltInGestureAction.SendAltRight
+    ];
+
+    private static readonly string[] GesturePatterns = ["U", "D", "UD", "DU", "L", "R", "LR", "RL"];
+
+    private static string NormalizeGesturePattern(string? pattern)
+    {
+        if (string.IsNullOrWhiteSpace(pattern))
+        {
+            return "";
+        }
+
+        return new string(pattern.Trim().ToUpperInvariant().Where(ch => ch is 'U' or 'D' or 'L' or 'R').ToArray());
+    }
+
+    private static bool IsValidGesturePattern(string pattern)
+    {
+        return pattern.Length is >= 1 and <= 8 && pattern.All(ch => ch is 'U' or 'D' or 'L' or 'R');
+    }
+
+    private static string DirectionText(string pattern) => pattern
+        .Replace("U", "↑", StringComparison.Ordinal)
+        .Replace("D", "↓", StringComparison.Ordinal)
+        .Replace("L", "←", StringComparison.Ordinal)
+        .Replace("R", "→", StringComparison.Ordinal);
+
+    private static string GestureName(string pattern) => pattern switch
+    {
+        "U" => "上划",
+        "D" => "下划",
+        "UD" => "上下划",
+        "DU" => "下上划",
+        "L" => "左划",
+        "R" => "右划",
+        "LR" => "左右划",
+        "RL" => "右左划",
+        _ => pattern
+    };
+
+    private static string ShortcutText(BuiltInGestureAction action) => action switch
+    {
+        BuiltInGestureAction.Copy => "Ctrl+C",
+        BuiltInGestureAction.Paste => "Ctrl+V",
+        BuiltInGestureAction.Cut => "Ctrl+X",
+        BuiltInGestureAction.SelectAll => "Ctrl+A",
+        BuiltInGestureAction.Undo => "Ctrl+Z",
+        BuiltInGestureAction.Redo => "Ctrl+Y",
+        BuiltInGestureAction.Enter => "Enter",
+        BuiltInGestureAction.Escape => "Esc",
+        BuiltInGestureAction.Delete => "Delete",
+        BuiltInGestureAction.Backspace => "Backspace",
+        BuiltInGestureAction.SendAltLeft => "Alt+Left",
+        BuiltInGestureAction.SendAltRight => "Alt+Right",
+        BuiltInGestureAction.OpenClipboardOverlay => "ClipboardOverlay",
+        BuiltInGestureAction.PasteLatestClipboardItem => "PasteLatest",
+        _ => ""
+    };
+
+    private sealed record CustomBindingDto(BuiltInGestureAction Action, string Shortcut, bool IsEnabled);
 }

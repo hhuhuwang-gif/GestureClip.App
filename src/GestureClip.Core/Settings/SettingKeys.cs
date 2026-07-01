@@ -16,5 +16,7 @@ public static class SettingKeys
     public const string GestureSegmentThreshold = "Gesture.SegmentThreshold";
     public const string GestureMaxDurationMs = "Gesture.MaxDurationMs";
     public const string GestureCloseWindowEnabled = "Gesture.CloseWindowEnabled";
+    public const string GestureCustomBindingsJson = "Gesture.CustomBindingsJson";
+    public const string GestureStrokeColor = "Gesture.StrokeColor";
     public const string PrivacySuppressSensitive = "Privacy.SuppressSensitive";
 }

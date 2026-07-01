@@ -3,240 +3,309 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Title="GestureClip 设置"
         Icon="Assets/GestureClip.ico"
-        Width="820"
+        Width="980"
         Height="720"
-        MinWidth="640"
+        MinWidth="760"
         MinHeight="560"
-        Background="{DynamicResource BrushAppBackground}"
+        WindowStyle="None"
+        AllowsTransparency="True"
+        ResizeMode="NoResize"
+        Background="Transparent"
         Foreground="{DynamicResource BrushTextPrimary}">
+    <Border CornerRadius="28"
+            Background="{DynamicResource BrushAppBackground}"
+            BorderBrush="{DynamicResource BrushBorder}"
+            BorderThickness="1"
+            ClipToBounds="True">
     <Grid Margin="28">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
             <RowDefinition Height="*" />
         </Grid.RowDefinitions>
 
-        <StackPanel>
-            <TextBlock Text="GestureClip"
-                       FontSize="30"
-                       FontWeight="SemiBold"
-                       Foreground="{DynamicResource BrushTextPrimary}" />
-            <TextBlock Text="设置与状态"
-                       Margin="0,6,0,18"
-                       Style="{StaticResource MutedTextStyle}" />
-        </StackPanel>
-
-        <Border Grid.Row="1"
-                Style="{StaticResource GlassPanelStyle}"
-                Padding="18">
-            <ScrollViewer VerticalScrollBarVisibility="Auto"
-                          HorizontalScrollBarVisibility="Disabled">
-            <StackPanel>
-                <GroupBox Header="基础设置" Padding="12">
-                    <Grid>
-                        <Grid.RowDefinitions>
-                            <RowDefinition Height="Auto" />
-                            <RowDefinition Height="Auto" />
-                            <RowDefinition Height="Auto" />
-                            <RowDefinition Height="Auto" />
-                        </Grid.RowDefinitions>
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="120" />
-                            <ColumnDefinition Width="*" />
-                        </Grid.ColumnDefinitions>
-                        <TextBlock Text="权限状态" FontWeight="SemiBold" />
-                        <TextBlock Grid.Column="1" Text="{Binding PermissionStatusText}" />
-                        <TextBlock Grid.Row="1" Text="数据库路径" FontWeight="SemiBold" Margin="0,12,0,0" />
-                        <TextBox Grid.Row="1" Grid.Column="1" Text="{Binding DatabasePath, Mode=OneWay}" IsReadOnly="True" Margin="0,8,0,0" />
-                        <TextBlock Grid.Row="2" Text="日志目录" FontWeight="SemiBold" Margin="0,12,0,0" />
-                        <TextBox Grid.Row="2" Grid.Column="1" Text="{Binding LogDirectory, Mode=OneWay}" IsReadOnly="True" Margin="0,8,0,0" />
-                        <TextBlock Grid.Row="3" Text="运行状态" FontWeight="SemiBold" Margin="0,12,0,0" />
-                        <StackPanel Grid.Row="3" Grid.Column="1" Margin="0,12,0,0">
-                            <TextBlock Text="{Binding StartupStatus}" />
-                            <TextBlock Text="{Binding HotkeyStatusText}" Style="{StaticResource MutedTextStyle}" Margin="0,4,0,0" />
-                        </StackPanel>
-                    </Grid>
-                </GroupBox>
-
-                <GroupBox Header="剪贴板" Padding="12" Margin="0,12,0,0">
-                    <CheckBox Content="启用剪贴板记录"
-                              IsChecked="{Binding ClipboardCaptureEnabled, Mode=TwoWay}" />
-                </GroupBox>
-
-                <GroupBox Header="鼠标手势" Padding="12" Margin="0,12,0,0">
-                    <StackPanel>
-                        <CheckBox Content="启用鼠标手势"
-                                  IsChecked="{Binding GestureEnabled, Mode=TwoWay}" />
-                        <CheckBox Content="显示手势提示"
-                                  Margin="0,8,0,0"
-                                  IsChecked="{Binding GestureShowOverlay, Mode=TwoWay}" />
-                        <CheckBox Content="启用手势调试日志"
-                                  Margin="0,8,0,0"
-                                  IsChecked="{Binding GestureDebugEnabled, Mode=TwoWay}" />
-                        <StackPanel Orientation="Horizontal" Margin="0,8,0,0">
-                            <TextBlock Text="手势预设" VerticalAlignment="Center" />
-                            <ComboBox Width="160"
-                                      Margin="12,0,0,0"
-                                      ItemsSource="{Binding GesturePresetOptions}"
-                                      SelectedItem="{Binding SelectedGesturePresetOption, Mode=TwoWay}"
-                                      DisplayMemberPath="DisplayName" />
-                        </StackPanel>
-                        <StackPanel Orientation="Horizontal" Margin="0,8,0,0">
-                            <TextBlock Text="触发阈值" VerticalAlignment="Center" />
-                            <TextBox Width="60"
-                                     Margin="12,0,0,0"
-                                     Text="{Binding GestureTriggerThreshold, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
-                            <TextBlock Text="px" Margin="6,0,0,0" VerticalAlignment="Center" />
-                        </StackPanel>
-                        <CheckBox Content="启用 UD 关闭窗口手势"
-                                  Margin="0,8,0,0"
-                                  IsChecked="{Binding GestureCloseWindowEnabled, Mode=TwoWay}" />
-                        <TextBlock Margin="0,12,0,0"
-                                   Style="{StaticResource MutedTextStyle}"
-                                   TextWrapping="Wrap"
-                                   Text="编辑增强：U 复制，D 粘贴，UD 回车，DU 取消，L 后退，R 前进，LR 全选，RL 撤销。剪贴板增强：U 打开剪贴板历史，D 粘贴最近一条。" />
-                        <Grid Margin="0,14,0,0">
-                            <Grid.RowDefinitions>
-                                <RowDefinition Height="Auto" />
-                                <RowDefinition Height="Auto" />
-                                <RowDefinition Height="Auto" />
-                                <RowDefinition Height="Auto" />
-                                <RowDefinition Height="Auto" />
-                                <RowDefinition Height="Auto" />
-                                <RowDefinition Height="Auto" />
-                            </Grid.RowDefinitions>
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="110" />
-                                <ColumnDefinition Width="*" />
-                            </Grid.ColumnDefinitions>
-                            <TextBlock Text="手势测试" FontWeight="SemiBold" Grid.ColumnSpan="2" />
-                            <TextBlock Grid.Row="1" Text="Hook 状态" Margin="0,8,0,0" />
-                            <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding GestureHookStatus}" Margin="0,8,0,0" />
-                            <TextBlock Grid.Row="2" Text="当前状态" Margin="0,6,0,0" />
-                            <TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding GestureRuntimeStateText}" Margin="0,6,0,0" />
-                            <TextBlock Grid.Row="3" Text="最近 Pattern" Margin="0,6,0,0" />
-                            <TextBlock Grid.Row="3" Grid.Column="1" Text="{Binding LastGesturePattern}" Margin="0,6,0,0" />
-                            <TextBlock Grid.Row="4" Text="最近 Action" Margin="0,6,0,0" />
-                            <TextBlock Grid.Row="4" Grid.Column="1" Text="{Binding LastGestureAction}" Margin="0,6,0,0" />
-                            <TextBlock Grid.Row="5" Text="最近错误" Margin="0,6,0,0" />
-                            <TextBlock Grid.Row="5" Grid.Column="1" Text="{Binding LastGestureError}" TextWrapping="Wrap" Margin="0,6,0,0" />
-                            <TextBlock Grid.Row="6" Text="最近事件" Margin="0,6,0,0" />
-                            <StackPanel Grid.Row="6" Grid.Column="1" Margin="0,6,0,0">
-                                <TextBlock Text="{Binding LastGestureEventTime}" />
-                                <TextBlock Text="{Binding GestureEnvironmentStatus}" Style="{StaticResource MutedTextStyle}" Margin="0,4,0,0" />
-                            </StackPanel>
-                        </Grid>
-                    </StackPanel>
-                </GroupBox>
-
-                <GroupBox Header="隐私黑名单" Padding="12" Margin="0,12,0,0">
-                    <StackPanel>
-                        <StackPanel Orientation="Horizontal">
-                            <TextBox Width="220"
-                                     Text="{Binding NewBlacklistProcessName, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
-                            <Button Content="添加"
-                                    Style="{StaticResource PrimaryButtonStyle}"
-                                    Width="72"
-                                    Margin="8,0,0,0"
-                                    Command="{Binding AddBlacklistItemCommand}" />
-                        </StackPanel>
-                        <TextBlock Text="添加进程名后，会按进程阻止剪贴板记录和鼠标手势。"
-                                   Style="{StaticResource MutedTextStyle}"
-                                   TextWrapping="Wrap"
-                                   Margin="0,6,0,8" />
-                        <ItemsControl ItemsSource="{Binding AppBlacklistItems}">
-                            <ItemsControl.ItemTemplate>
-                                <DataTemplate>
-                                    <Grid Margin="0,4,0,0">
-                                        <Grid.ColumnDefinitions>
-                                            <ColumnDefinition Width="170" />
-                                            <ColumnDefinition Width="110" />
-                                            <ColumnDefinition Width="110" />
-                                            <ColumnDefinition Width="70" />
-                                        </Grid.ColumnDefinitions>
-                                        <TextBlock Text="{Binding ProcessName}" VerticalAlignment="Center" />
-                                        <CheckBox Grid.Column="1" Content="剪贴板" IsChecked="{Binding BlockClipboard, Mode=TwoWay}" />
-                                        <CheckBox Grid.Column="2" Content="手势" IsChecked="{Binding BlockGesture, Mode=TwoWay}" />
-                                        <Button Grid.Column="3" Content="删除" Style="{StaticResource DangerButtonStyle}" Command="{Binding DeleteCommand}" />
-                                    </Grid>
-                                </DataTemplate>
-                            </ItemsControl.ItemTemplate>
-                        </ItemsControl>
-                    </StackPanel>
-                </GroupBox>
-
-                <GroupBox Header="数据与清理" Padding="12" Margin="0,12,0,0">
-                    <StackPanel>
-                        <StackPanel Orientation="Horizontal">
-                            <TextBlock Text="{Binding ClipboardItemCountText}" VerticalAlignment="Center" />
-                            <Button Content="刷新"
-                                    Style="{StaticResource SecondaryButtonStyle}"
-                                    Margin="12,0,0,0"
-                                    Command="{Binding RefreshClipboardStatsCommand}" />
-                        </StackPanel>
-                        <StackPanel Orientation="Horizontal" Margin="0,10,0,0">
-                            <TextBlock Text="最大保存数量" VerticalAlignment="Center" />
-                            <ComboBox Width="100"
-                                      Margin="12,0,0,0"
-                                      ItemsSource="{Binding ClipboardMaxItemOptions}"
-                                      SelectedItem="{Binding ClipboardMaxItems, Mode=TwoWay}" />
-                            <TextBlock Text="保留天数" Margin="24,0,0,0" VerticalAlignment="Center" />
-                            <ComboBox Width="100"
-                                      Margin="12,0,0,0"
-                                      ItemsSource="{Binding ClipboardRetentionOptions}"
-                                      SelectedItem="{Binding SelectedClipboardRetentionOption, Mode=TwoWay}"
-                                      DisplayMemberPath="Label" />
-                        </StackPanel>
-                        <StackPanel Orientation="Horizontal" Margin="0,12,0,0">
-                            <Button Content="清空非固定项"
-                                    Style="{StaticResource SecondaryButtonStyle}"
-                                    Command="{Binding ClearUnpinnedClipboardItemsCommand}" />
-                            <Button Content="清空全部历史"
-                                    Style="{StaticResource DangerButtonStyle}"
-                                    Margin="8,0,0,0"
-                                    Command="{Binding ClearAllClipboardItemsCommand}" />
-                            <Button Content="立即执行清理"
-                                    Style="{StaticResource PrimaryButtonStyle}"
-                                    Margin="8,0,0,0"
-                                    Command="{Binding ApplyClipboardCleanupCommand}" />
-                        </StackPanel>
-                    </StackPanel>
-                </GroupBox>
-
-                <GroupBox Header="开机自启" Padding="12" Margin="0,12,0,0">
-                    <StackPanel>
-                        <CheckBox Content="开机自动启动 GestureClip"
-                                  IsChecked="{Binding StartWithWindows, Mode=TwoWay}" />
-                        <TextBlock Text="{Binding StartupModeWarning}"
-                                   Foreground="{DynamicResource BrushPrimaryBright}"
-                                   TextWrapping="Wrap"
-                                   Margin="0,6,0,0" />
-                    </StackPanel>
-                </GroupBox>
-
-                <GroupBox Header="诊断" Padding="12" Margin="0,12,0,0">
-                    <StackPanel>
-                        <StackPanel Orientation="Horizontal">
-                            <Button Content="打开日志目录" Command="{Binding OpenLogDirectoryCommand}" />
-                            <Button Content="打开数据目录" Margin="8,0,0,0" Command="{Binding OpenDataDirectoryCommand}" />
-                            <Button Content="复制诊断信息" Margin="8,0,0,0" Command="{Binding CopyDiagnosticsCommand}" />
-                            <Button Content="刷新" Margin="8,0,0,0" Command="{Binding RefreshDiagnosticsCommand}" />
-                        </StackPanel>
-                        <TextBox Text="{Binding DiagnosticsText, Mode=OneWay}"
-                                 IsReadOnly="True"
-                                 TextWrapping="Wrap"
-                                 AcceptsReturn="True"
-                                 MinHeight="150"
-                                 Margin="0,10,0,0" />
-                    </StackPanel>
-                </GroupBox>
-
-                <TextBlock Margin="0,16,0,0"
-                           Style="{StaticResource MutedTextStyle}"
-                           TextWrapping="Wrap"
-                           Text="MVP 不保证控制管理员权限窗口。如需控制管理员窗口，请以管理员身份运行 GestureClip。第三阶段仅包含右键鼠标手势，不包含屏幕边缘触发、圆形菜单和应用级手势规则。" />
+        <DockPanel MouseLeftButtonDown="TitleBar_MouseLeftButtonDown">
+            <StackPanel DockPanel.Dock="Right"
+                        Orientation="Horizontal"
+                        VerticalAlignment="Top"
+                        Margin="12,0,0,0">
+                <Button Content="－"
+                        Width="42"
+                        Height="34"
+                        Padding="0"
+                        ToolTip="最小化"
+                        Click="MinimizeButton_Click" />
+                <Button Content="×"
+                        Width="42"
+                        Height="34"
+                        Padding="0"
+                        Margin="8,0,0,0"
+                        Style="{StaticResource DangerButtonStyle}"
+                        ToolTip="关闭到托盘"
+                        Click="CloseButton_Click" />
             </StackPanel>
-            </ScrollViewer>
+            <StackPanel>
+                <TextBlock Text="GestureClip"
+                           FontSize="34"
+                           FontWeight="SemiBold"
+                           Foreground="{DynamicResource BrushTextPrimary}" />
+                <TextBlock Text="设置与状态"
+                           Margin="0,7,0,20"
+                           FontSize="15"
+                           Foreground="{DynamicResource BrushTextSecondary}" />
+            </StackPanel>
+        </DockPanel>
+
+        <Border Grid.Row="1" Style="{StaticResource GlassPanelStyle}" Padding="0">
+            <TabControl TabStripPlacement="Left"
+                        Background="Transparent"
+                        BorderThickness="0"
+                        Padding="0">
+                <TabControl.Resources>
+                    <Style TargetType="TabItem" BasedOn="{StaticResource GlassTabItemStyle}">
+                        <Setter Property="Margin" Value="0,0,0,9" />
+                        <Setter Property="MinWidth" Value="150" />
+                    </Style>
+                </TabControl.Resources>
+
+                <TabItem Header="基础设置">
+                    <ScrollViewer VerticalScrollBarVisibility="Auto">
+                        <GroupBox Header="基础设置" Margin="18" Padding="12">
+                            <Grid>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                </Grid.RowDefinitions>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="120" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Text="权限状态" FontWeight="SemiBold" />
+                                <TextBlock Grid.Column="1" Text="{Binding PermissionStatusText}" />
+                                <TextBlock Grid.Row="1" Text="数据库路径" FontWeight="SemiBold" Margin="0,12,0,0" />
+                                <TextBox Grid.Row="1" Grid.Column="1" Text="{Binding DatabasePath, Mode=OneWay}" IsReadOnly="True" Margin="0,8,0,0" />
+                                <TextBlock Grid.Row="2" Text="日志目录" FontWeight="SemiBold" Margin="0,12,0,0" />
+                                <TextBox Grid.Row="2" Grid.Column="1" Text="{Binding LogDirectory, Mode=OneWay}" IsReadOnly="True" Margin="0,8,0,0" />
+                                <TextBlock Grid.Row="3" Text="运行状态" FontWeight="SemiBold" Margin="0,12,0,0" />
+                                <StackPanel Grid.Row="3" Grid.Column="1" Margin="0,12,0,0">
+                                    <TextBlock Text="{Binding StartupStatus}" />
+                                    <TextBlock Text="{Binding HotkeyStatusText}" Style="{StaticResource MutedTextStyle}" Margin="0,4,0,0" />
+                                </StackPanel>
+                            </Grid>
+                        </GroupBox>
+                    </ScrollViewer>
+                </TabItem>
+
+                <TabItem Header="剪贴板">
+                    <StackPanel Margin="18">
+                        <GroupBox Header="剪贴板" Padding="12">
+                            <StackPanel>
+                                <CheckBox Content="启用剪贴板记录" IsChecked="{Binding ClipboardCaptureEnabled, Mode=TwoWay}" />
+                                <TextBlock Text="全局快捷键：Ctrl + Alt + V 打开剪贴板历史" Margin="0,10,0,0" Style="{StaticResource MutedTextStyle}" />
+                            </StackPanel>
+                        </GroupBox>
+                    </StackPanel>
+                </TabItem>
+
+                <TabItem Header="鼠标手势">
+                    <ScrollViewer VerticalScrollBarVisibility="Auto">
+                        <StackPanel Margin="18">
+                            <GroupBox Header="鼠标手势" Padding="12">
+                                <StackPanel>
+                                    <CheckBox Content="启用鼠标手势" IsChecked="{Binding GestureEnabled, Mode=TwoWay}" />
+                                    <CheckBox Content="显示手势提示" Margin="0,8,0,0" IsChecked="{Binding GestureShowOverlay, Mode=TwoWay}" />
+                                    <CheckBox Content="启用手势调试日志" Margin="0,8,0,0" IsChecked="{Binding GestureDebugEnabled, Mode=TwoWay}" />
+                                    <StackPanel Orientation="Horizontal" Margin="0,8,0,0">
+                                        <TextBlock Text="手势预设" VerticalAlignment="Center" />
+                                        <ComboBox Width="180" Margin="12,0,0,0" ItemsSource="{Binding GesturePresetOptions}" SelectedItem="{Binding SelectedGesturePresetOption, Mode=TwoWay}" DisplayMemberPath="DisplayName" />
+                                    </StackPanel>
+                                    <StackPanel Orientation="Horizontal" Margin="0,8,0,0">
+                                        <TextBlock Text="触发阈值" VerticalAlignment="Center" />
+                                        <TextBox Width="70" Margin="12,0,0,0" Text="{Binding GestureTriggerThreshold, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                                        <TextBlock Text="px" Margin="6,0,0,0" VerticalAlignment="Center" />
+                                    </StackPanel>
+                                    <StackPanel Orientation="Horizontal" Margin="0,8,0,0">
+                                        <TextBlock Text="轨迹颜色" VerticalAlignment="Center" />
+                                        <ComboBox Width="180"
+                                                  Margin="12,0,0,0"
+                                                  ItemsSource="{Binding GestureStrokeColorOptions}"
+                                                  SelectedItem="{Binding SelectedGestureStrokeColorOption, Mode=TwoWay}"
+                                                  DisplayMemberPath="DisplayName" />
+                                    </StackPanel>
+                                    <CheckBox Content="启用 UD 关闭窗口手势" Margin="0,8,0,0" IsChecked="{Binding GestureCloseWindowEnabled, Mode=TwoWay}" />
+                                </StackPanel>
+                            </GroupBox>
+
+                            <GroupBox Header="手势测试" Padding="12" Margin="0,12,0,0">
+                                <Grid>
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto" />
+                                        <RowDefinition Height="Auto" />
+                                        <RowDefinition Height="Auto" />
+                                        <RowDefinition Height="Auto" />
+                                        <RowDefinition Height="Auto" />
+                                        <RowDefinition Height="Auto" />
+                                    </Grid.RowDefinitions>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="120" />
+                                        <ColumnDefinition Width="*" />
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Text="Hook 状态" />
+                                    <TextBlock Grid.Column="1" Text="{Binding GestureHookStatus}" />
+                                    <TextBlock Grid.Row="1" Text="当前状态" Margin="0,6,0,0" />
+                                    <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding GestureRuntimeStateText}" Margin="0,6,0,0" />
+                                    <TextBlock Grid.Row="2" Text="最近 Pattern" Margin="0,6,0,0" />
+                                    <TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding LastGesturePattern}" Margin="0,6,0,0" />
+                                    <TextBlock Grid.Row="3" Text="最近 Action" Margin="0,6,0,0" />
+                                    <TextBlock Grid.Row="3" Grid.Column="1" Text="{Binding LastGestureAction}" Margin="0,6,0,0" />
+                                    <TextBlock Grid.Row="4" Text="最近错误" Margin="0,6,0,0" />
+                                    <TextBlock Grid.Row="4" Grid.Column="1" Text="{Binding LastGestureError}" TextWrapping="Wrap" Margin="0,6,0,0" />
+                                    <TextBlock Grid.Row="5" Text="最近事件" Margin="0,6,0,0" />
+                                    <StackPanel Grid.Row="5" Grid.Column="1" Margin="0,6,0,0">
+                                        <TextBlock Text="{Binding LastGestureEventTime}" />
+                                        <TextBlock Text="{Binding GestureEnvironmentStatus}" Style="{StaticResource MutedTextStyle}" Margin="0,4,0,0" />
+                                    </StackPanel>
+                                </Grid>
+                            </GroupBox>
+                        </StackPanel>
+                    </ScrollViewer>
+                </TabItem>
+
+                <TabItem Header="手势绑定">
+                    <ScrollViewer VerticalScrollBarVisibility="Auto">
+                        <StackPanel Margin="18">
+                            <GroupBox Header="添加自定义手势" Padding="12">
+                                <StackPanel>
+                                    <TextBlock Text="输入 U / D / L / R 组合，例如 UL、DR、URDL。最长 8 段。"
+                                               Style="{StaticResource MutedTextStyle}"
+                                               Margin="0,0,0,10" />
+                                    <StackPanel Orientation="Horizontal">
+                                        <TextBox Width="120"
+                                                 Text="{Binding NewGesturePattern, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                                        <ComboBox Width="220"
+                                                  Margin="10,0,0,0"
+                                                  ItemsSource="{Binding GestureActionOptions}"
+                                                  SelectedItem="{Binding NewGestureAction, Mode=TwoWay}" />
+                                        <Button Content="添加"
+                                                Width="84"
+                                                Margin="10,0,0,0"
+                                                Style="{StaticResource PrimaryButtonStyle}"
+                                                Command="{Binding AddCustomGestureBindingCommand}" />
+                                    </StackPanel>
+                                </StackPanel>
+                            </GroupBox>
+
+                            <ItemsControl ItemsSource="{Binding GestureBindingCards}" Margin="0,14,0,0">
+                                <ItemsControl.ItemsPanel>
+                                    <ItemsPanelTemplate>
+                                        <WrapPanel />
+                                    </ItemsPanelTemplate>
+                                </ItemsControl.ItemsPanel>
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <Border Style="{StaticResource GlassCardStyle}" Width="230" Margin="0,0,12,12" Padding="16">
+                                            <StackPanel>
+                                                <TextBlock Text="{Binding DirectionText}" FontSize="42" FontWeight="SemiBold" Foreground="{DynamicResource BrushPrimaryBright}" HorizontalAlignment="Center" />
+                                                <TextBlock Text="{Binding GestureName}" FontSize="16" FontWeight="SemiBold" HorizontalAlignment="Center" Margin="0,4,0,0" />
+                                                <TextBlock Text="{Binding Pattern, StringFormat=Pattern: {0}}" Style="{StaticResource MutedTextStyle}" HorizontalAlignment="Center" Margin="0,4,0,10" />
+                                                <ComboBox ItemsSource="{Binding ActionOptions}" SelectedItem="{Binding SelectedAction, Mode=TwoWay}" />
+                                                <TextBlock Text="{Binding ShortcutText}" Style="{StaticResource MutedTextStyle}" Margin="0,8,0,0" HorizontalAlignment="Center" />
+                                            </StackPanel>
+                                        </Border>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </StackPanel>
+                    </ScrollViewer>
+                </TabItem>
+
+                <TabItem Header="隐私黑名单">
+                    <ScrollViewer VerticalScrollBarVisibility="Auto">
+                        <GroupBox Header="隐私黑名单" Padding="12" Margin="18">
+                            <StackPanel>
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBox Width="220" Text="{Binding NewBlacklistProcessName, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                                    <Button Content="添加" Style="{StaticResource PrimaryButtonStyle}" Width="72" Margin="8,0,0,0" Command="{Binding AddBlacklistItemCommand}" />
+                                </StackPanel>
+                                <TextBlock Text="添加进程名后，会按进程阻止剪贴板记录和鼠标手势。" Style="{StaticResource MutedTextStyle}" TextWrapping="Wrap" Margin="0,6,0,8" />
+                                <ItemsControl ItemsSource="{Binding AppBlacklistItems}">
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate>
+                                            <Grid Margin="0,4,0,0">
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="170" />
+                                                    <ColumnDefinition Width="110" />
+                                                    <ColumnDefinition Width="110" />
+                                                    <ColumnDefinition Width="70" />
+                                                </Grid.ColumnDefinitions>
+                                                <TextBlock Text="{Binding ProcessName}" VerticalAlignment="Center" />
+                                                <CheckBox Grid.Column="1" Content="剪贴板" IsChecked="{Binding BlockClipboard, Mode=TwoWay}" />
+                                                <CheckBox Grid.Column="2" Content="手势" IsChecked="{Binding BlockGesture, Mode=TwoWay}" />
+                                                <Button Grid.Column="3" Content="删除" Style="{StaticResource DangerButtonStyle}" Command="{Binding DeleteCommand}" />
+                                            </Grid>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                            </StackPanel>
+                        </GroupBox>
+                    </ScrollViewer>
+                </TabItem>
+
+                <TabItem Header="开机自启">
+                    <GroupBox Header="开机自启" Padding="12" Margin="18">
+                        <StackPanel>
+                            <CheckBox Content="开机自动启动 GestureClip" IsChecked="{Binding StartWithWindows, Mode=TwoWay}" />
+                            <TextBlock Text="{Binding StartupModeWarning}" Foreground="{DynamicResource BrushPrimaryBright}" TextWrapping="Wrap" Margin="0,6,0,0" />
+                        </StackPanel>
+                    </GroupBox>
+                </TabItem>
+
+                <TabItem Header="数据与清理">
+                    <GroupBox Header="数据与清理" Padding="12" Margin="18">
+                        <StackPanel>
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Text="{Binding ClipboardItemCountText}" VerticalAlignment="Center" />
+                                <Button Content="刷新" Style="{StaticResource SecondaryButtonStyle}" Margin="12,0,0,0" Command="{Binding RefreshClipboardStatsCommand}" />
+                            </StackPanel>
+                            <StackPanel Orientation="Horizontal" Margin="0,10,0,0">
+                                <TextBlock Text="最大保存数量" VerticalAlignment="Center" />
+                                <ComboBox Width="100" Margin="12,0,0,0" ItemsSource="{Binding ClipboardMaxItemOptions}" SelectedItem="{Binding ClipboardMaxItems, Mode=TwoWay}" />
+                                <TextBlock Text="保留天数" Margin="24,0,0,0" VerticalAlignment="Center" />
+                                <ComboBox Width="100" Margin="12,0,0,0" ItemsSource="{Binding ClipboardRetentionOptions}" SelectedItem="{Binding SelectedClipboardRetentionOption, Mode=TwoWay}" DisplayMemberPath="Label" />
+                            </StackPanel>
+                            <StackPanel Orientation="Horizontal" Margin="0,12,0,0">
+                                <Button Content="清空非固定项" Style="{StaticResource SecondaryButtonStyle}" Command="{Binding ClearUnpinnedClipboardItemsCommand}" />
+                                <Button Content="清空全部历史" Style="{StaticResource DangerButtonStyle}" Margin="8,0,0,0" Command="{Binding ClearAllClipboardItemsCommand}" />
+                                <Button Content="立即执行清理" Style="{StaticResource PrimaryButtonStyle}" Margin="8,0,0,0" Command="{Binding ApplyClipboardCleanupCommand}" />
+                            </StackPanel>
+                        </StackPanel>
+                    </GroupBox>
+                </TabItem>
+
+                <TabItem Header="诊断">
+                    <GroupBox Header="诊断" Padding="12" Margin="18">
+                        <StackPanel>
+                            <StackPanel Orientation="Horizontal">
+                                <Button Content="打开日志目录" Command="{Binding OpenLogDirectoryCommand}" />
+                                <Button Content="打开数据目录" Margin="8,0,0,0" Command="{Binding OpenDataDirectoryCommand}" />
+                                <Button Content="复制诊断信息" Margin="8,0,0,0" Command="{Binding CopyDiagnosticsCommand}" />
+                                <Button Content="刷新" Margin="8,0,0,0" Command="{Binding RefreshDiagnosticsCommand}" />
+                            </StackPanel>
+                            <TextBox Text="{Binding DiagnosticsText, Mode=OneWay}" IsReadOnly="True" TextWrapping="Wrap" AcceptsReturn="True" MinHeight="220" Margin="0,10,0,0" />
+                        </StackPanel>
+                    </GroupBox>
+                </TabItem>
+
+                <TabItem Header="关于">
+                    <GroupBox Header="关于" Padding="12" Margin="18">
+                        <TextBlock TextWrapping="Wrap"
+                                   Style="{StaticResource MutedTextStyle}"
+                                   Text="GestureClip 是本地优先的 Windows 剪贴板历史与右键手势工具。剪贴板文本存储在本机 SQLite，日志不记录剪贴板正文。MVP 不保证控制管理员权限窗口，如需控制管理员窗口，请以管理员身份运行 GestureClip。" />
+                    </GroupBox>
+                </TabItem>
+            </TabControl>
         </Border>
     </Grid>
+    </Border>
 </Window>
-

@@ -6,6 +6,9 @@ namespace GestureClip.Features.Gestures;
 
 public sealed class MouseGestureService : IMouseGestureService
 {
+    private const int MaxTrackedPoints = 96;
+    private const int MaxPreviewPatternLength = 2;
+
     private readonly ILowLevelMouseHook _mouseHook;
     private readonly IMouseGestureRecognizer _recognizer;
     private readonly IMouseGestureActionExecutor _actionExecutor;
@@ -23,6 +26,7 @@ public sealed class MouseGestureService : IMouseGestureService
     private GestureSettings? _activeSettings;
     private List<GesturePoint> _points = [];
     private GesturePoint? _startPoint;
+    private DateTimeOffset? _gestureStartedAt;
     private DateTimeOffset _ignoreInjectedUntil = DateTimeOffset.MinValue;
     private DateTimeOffset _lastMoveDebugLogAt = DateTimeOffset.MinValue;
     private bool _synthesizeRightClickOnNextRightButtonUp;
@@ -136,7 +140,7 @@ public sealed class MouseGestureService : IMouseGestureService
 
         lock (_syncRoot)
         {
-            ResetState();
+            ResetState("StateReset");
             _hookStatus = "未安装";
         }
 
@@ -164,7 +168,7 @@ public sealed class MouseGestureService : IMouseGestureService
             lock (_syncRoot)
             {
                 SetLastError(ex.Message);
-                ResetState();
+                ResetState("ExceptionReset");
             }
 
             _logger.LogError(ex, "Mouse gesture event handling failed.");
@@ -179,12 +183,20 @@ public sealed class MouseGestureService : IMouseGestureService
         }
 
         var mouseEvent = args.Event;
-        if (DateTimeOffset.UtcNow < _ignoreInjectedUntil)
+        if (mouseEvent.IsInjected && DateTimeOffset.UtcNow < _ignoreInjectedUntil)
         {
+            _logger.LogDebug("GestureRecovery InjectedRightClickIgnored");
             return null;
         }
 
         _lastEventAt = mouseEvent.Time;
+
+        if (IsSafetyTimeoutExceeded(mouseEvent.Time))
+        {
+            ResetState("TimeoutReset");
+            _synthesizeRightClickOnNextRightButtonUp = true;
+            _ = _gestureOverlayService.HideAsync(CancellationToken.None);
+        }
 
         switch (mouseEvent.Type)
         {
@@ -195,7 +207,7 @@ public sealed class MouseGestureService : IMouseGestureService
                 if (!IsEnabled)
                 {
                     LogDebug(_activeSettings, "Gesture disabled by setting");
-                    ResetState();
+                    ResetState("StateReset");
                     return null;
                 }
 
@@ -203,12 +215,13 @@ public sealed class MouseGestureService : IMouseGestureService
                 if (_appBlacklistService.IsGestureBlockedCached(foreground.ProcessName))
                 {
                     LogDebug(_activeSettings, "Gesture skipped: foreground process is blacklisted.");
-                    ResetState();
+                    ResetState("StateReset");
                     return null;
                 }
 
                 _state = GestureRuntimeState.Tracking;
                 _startPoint = ToPoint(mouseEvent);
+                _gestureStartedAt = mouseEvent.Time;
                 _points = [_startPoint];
                 args.Suppress = true;
                 LogDebug(_activeSettings, "RightButtonDown: x={X}, y={Y}", mouseEvent.X, mouseEvent.Y);
@@ -229,8 +242,9 @@ public sealed class MouseGestureService : IMouseGestureService
 
                 if (IsExpired(mouseEvent.Time, _activeSettings))
                 {
-                    ResetState();
+                    ResetState("TimeoutReset");
                     _synthesizeRightClickOnNextRightButtonUp = true;
+                    _ = _gestureOverlayService.HideAsync(CancellationToken.None);
                     return null;
                 }
 
@@ -240,6 +254,7 @@ public sealed class MouseGestureService : IMouseGestureService
                 if (Distance(lastPoint, movePoint) >= _activeSettings.Options.SegmentThreshold)
                 {
                     _points.Add(movePoint);
+                    TrimTrackedPoints();
                 }
 
                 if (_state == GestureRuntimeState.Tracking &&
@@ -253,7 +268,8 @@ public sealed class MouseGestureService : IMouseGestureService
                 if (_activeSettings.ShowOverlay && _state != GestureRuntimeState.Idle)
                 {
                     var preview = _recognizer.Recognize(_points, _activeSettings.Options);
-                    var hudInfo = _hudInfoProvider.GetInfo(_activeSettings.Preset, preview.Pattern);
+                    var previewPattern = NormalizePreviewPattern(preview.Pattern);
+                    var hudInfo = _hudInfoProvider.GetInfo(_activeSettings.Preset, previewPattern);
                     _ = _gestureOverlayService.UpdateGestureAsync([.. _points], hudInfo, CancellationToken.None);
                 }
 
@@ -279,7 +295,7 @@ public sealed class MouseGestureService : IMouseGestureService
 
                 if (_activeSettings is null)
                 {
-                    ResetState();
+                    ResetState("StateReset");
                     return null;
                 }
 
@@ -287,20 +303,21 @@ public sealed class MouseGestureService : IMouseGestureService
                 if (Distance(_points[^1], upPoint) >= 1)
                 {
                     _points.Add(upPoint);
+                    TrimTrackedPoints();
                 }
 
                 if (_state != GestureRuntimeState.GestureActive || IsExpired(mouseEvent.Time, _activeSettings))
                 {
                     var clickX = mouseEvent.X;
                     var clickY = mouseEvent.Y;
-                    ResetState();
+                    ResetState(IsExpired(mouseEvent.Time, _activeSettings) ? "TimeoutReset" : "StateReset");
                     _ = _gestureOverlayService.HideAsync(CancellationToken.None);
                     _ = Task.Run(() => SynthesizeRightClickAsync(clickX, clickY));
                     return null;
                 }
 
                 var pendingGesture = new PendingGesture([.. _points], _activeSettings.Options, _activeSettings.Preset, _activeSettings.ShowOverlay);
-                ResetState();
+                ResetState("StateReset");
                 return pendingGesture;
 
             default:
@@ -338,8 +355,6 @@ public sealed class MouseGestureService : IMouseGestureService
 
             if (pendingGesture.ShowOverlay)
             {
-                var hudInfo = _hudInfoProvider.GetInfo(pendingGesture.Preset, result.Pattern);
-                await _gestureOverlayService.CompleteGestureAsync(hudInfo, CancellationToken.None);
                 await _gestureOverlayService.HideAsync(CancellationToken.None);
             }
         }
@@ -348,7 +363,7 @@ public sealed class MouseGestureService : IMouseGestureService
             lock (_syncRoot)
             {
                 SetLastError(ex.Message);
-                ResetState();
+                ResetState("ExceptionReset");
             }
 
             _logger.LogError(ex, "Gesture recognition failed.");
@@ -386,27 +401,65 @@ public sealed class MouseGestureService : IMouseGestureService
             lock (_syncRoot)
             {
                 SetLastError(ex.Message);
-                ResetState();
+                ResetState("ExceptionReset");
             }
 
             _logger.LogError(ex, "Gesture action execution failed.");
         }
     }
 
-    private void ResetState()
+    private void ResetState(string reason)
     {
+        if (reason != "StateReset" ||
+            _state != GestureRuntimeState.Idle ||
+            _startPoint is not null ||
+            _activeSettings is not null ||
+            _synthesizeRightClickOnNextRightButtonUp)
+        {
+            _logger.LogDebug("GestureRecovery {Reason}", reason);
+        }
+
         _state = GestureRuntimeState.Idle;
         _activeSettings = null;
         _points = [];
         _startPoint = null;
+        _gestureStartedAt = null;
         _synthesizeRightClickOnNextRightButtonUp = false;
+    }
+
+    private void TrimTrackedPoints()
+    {
+        if (_points.Count <= MaxTrackedPoints)
+        {
+            return;
+        }
+
+        var overflow = _points.Count - MaxTrackedPoints;
+        _points.RemoveRange(0, overflow);
+        if (_startPoint is not null && !_points.Contains(_startPoint))
+        {
+            _points.Insert(0, _startPoint);
+            if (_points.Count > MaxTrackedPoints)
+            {
+                _points.RemoveAt(1);
+            }
+        }
+    }
+
+    private static string? NormalizePreviewPattern(string? pattern)
+    {
+        return pattern is { Length: > MaxPreviewPatternLength } ? null : pattern;
     }
 
     private Task SynthesizeRightClickAsync(int x, int y)
     {
         try
         {
-            _ignoreInjectedUntil = DateTimeOffset.UtcNow.AddMilliseconds(500);
+            lock (_syncRoot)
+            {
+                _ignoreInjectedUntil = DateTimeOffset.UtcNow.AddMilliseconds(500);
+            }
+
             _rightClickSynthesizer.SynthesizeRightClick(x, y);
             LogDebug(_settingsProvider.GetCurrent(), "Synthesized normal right click");
         }
@@ -468,8 +521,19 @@ public sealed class MouseGestureService : IMouseGestureService
 
     private bool IsExpired(DateTimeOffset currentTime, GestureSettings settings)
     {
-        return _startPoint is not null &&
-            (currentTime - _startPoint.Time).TotalMilliseconds > settings.Options.MaxDurationMs;
+        return _gestureStartedAt is not null &&
+            (currentTime - _gestureStartedAt.Value).TotalMilliseconds > settings.Options.MaxDurationMs;
+    }
+
+    private bool IsSafetyTimeoutExceeded(DateTimeOffset currentTime)
+    {
+        if (_state == GestureRuntimeState.Idle || _activeSettings is null || _gestureStartedAt is null)
+        {
+            return false;
+        }
+
+        return (currentTime - _gestureStartedAt.Value).TotalMilliseconds >
+            _activeSettings.Options.MaxDurationMs + 500;
     }
 
     private static bool IsDisabledByEnvironment()
