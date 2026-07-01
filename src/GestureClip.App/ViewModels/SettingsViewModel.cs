@@ -46,6 +46,16 @@ public sealed class SettingsViewModel : INotifyPropertyChanged
     private BuiltInGestureAction _edgeTriggerTopRightAction;
     private BuiltInGestureAction _edgeTriggerBottomRightAction;
     private BuiltInGestureAction _edgeTriggerBottomLeftAction;
+    private bool _edgeTriggerLeftEdgeLeftButtonEnabled;
+    private bool _edgeTriggerLeftEdgeMiddleButtonEnabled;
+    private bool _edgeTriggerLeftEdgeXButton1Enabled;
+    private bool _edgeTriggerLeftEdgeXButton2Enabled;
+    private bool _edgeTriggerTopRightWheelEnabled;
+    private BuiltInGestureAction _edgeTriggerLeftEdgeLeftButtonAction;
+    private BuiltInGestureAction _edgeTriggerLeftEdgeMiddleButtonAction;
+    private BuiltInGestureAction _edgeTriggerLeftEdgeXButton1Action;
+    private BuiltInGestureAction _edgeTriggerLeftEdgeXButton2Action;
+    private BuiltInGestureAction _edgeTriggerTopRightWheelAction;
     private GesturePreset _selectedGesturePreset;
     private int _gestureTriggerThreshold;
     private GestureDiagnosticsSnapshot _gestureDiagnostics;
@@ -112,6 +122,16 @@ public sealed class SettingsViewModel : INotifyPropertyChanged
         _edgeTriggerTopRightAction = _settingsService.Get(SettingKeys.EdgeTriggerTopRightAction, BuiltInGestureAction.TaskSwitcher);
         _edgeTriggerBottomRightAction = _settingsService.Get(SettingKeys.EdgeTriggerBottomRightAction, BuiltInGestureAction.ShowDesktop);
         _edgeTriggerBottomLeftAction = _settingsService.Get(SettingKeys.EdgeTriggerBottomLeftAction, BuiltInGestureAction.SwitchApp);
+        _edgeTriggerLeftEdgeLeftButtonEnabled = _settingsService.Get(SettingKeys.EdgeTriggerLeftEdgeLeftButtonEnabled, false);
+        _edgeTriggerLeftEdgeMiddleButtonEnabled = _settingsService.Get(SettingKeys.EdgeTriggerLeftEdgeMiddleButtonEnabled, false);
+        _edgeTriggerLeftEdgeXButton1Enabled = _settingsService.Get(SettingKeys.EdgeTriggerLeftEdgeXButton1Enabled, false);
+        _edgeTriggerLeftEdgeXButton2Enabled = _settingsService.Get(SettingKeys.EdgeTriggerLeftEdgeXButton2Enabled, false);
+        _edgeTriggerTopRightWheelEnabled = _settingsService.Get(SettingKeys.EdgeTriggerTopRightWheelEnabled, false);
+        _edgeTriggerLeftEdgeLeftButtonAction = _settingsService.Get(SettingKeys.EdgeTriggerLeftEdgeLeftButtonAction, BuiltInGestureAction.StartMenu);
+        _edgeTriggerLeftEdgeMiddleButtonAction = _settingsService.Get(SettingKeys.EdgeTriggerLeftEdgeMiddleButtonAction, BuiltInGestureAction.ShowDesktop);
+        _edgeTriggerLeftEdgeXButton1Action = _settingsService.Get(SettingKeys.EdgeTriggerLeftEdgeXButton1Action, BuiltInGestureAction.SwitchApp);
+        _edgeTriggerLeftEdgeXButton2Action = _settingsService.Get(SettingKeys.EdgeTriggerLeftEdgeXButton2Action, BuiltInGestureAction.TaskSwitcher);
+        _edgeTriggerTopRightWheelAction = _settingsService.Get(SettingKeys.EdgeTriggerTopRightWheelAction, BuiltInGestureAction.TaskSwitcher);
         _selectedGesturePreset = _settingsService.Get(SettingKeys.GesturePreset, GesturePreset.EditEnhanced);
         _gestureTriggerThreshold = _settingsService.Get(SettingKeys.GestureTriggerThreshold, 20);
         _clipboardMaxItems = _settingsService.Get(SettingKeys.ClipboardMaxItems, 1000);
@@ -171,12 +191,12 @@ public sealed class SettingsViewModel : INotifyPropertyChanged
         new("鼠标侧键 1", "可启用", false),
         new("鼠标侧键 2", "可启用", false),
         new("屏幕四角热区", "可启用", false),
-        new("屏幕左边缘 + 鼠标中键", "后续", false),
+        new("屏幕左边缘 + 鼠标中键", "可启用", false),
         new("屏幕左边缘 + 鼠标左键", "后续", false),
-        new("屏幕左边缘 + 鼠标侧键 1", "后续", false),
-        new("屏幕左边缘 + 鼠标侧键 2", "后续", false),
+        new("屏幕左边缘 + 鼠标侧键 1", "可启用", false),
+        new("屏幕左边缘 + 鼠标侧键 2", "可启用", false),
         new("屏幕右上角 + 鼠标碰撞", "已支持", true),
-        new("屏幕右上角 + 滚轮", "预留", false)
+        new("屏幕右上角 + 滚轮", "可启用", false)
     ];
 
     public ICommand AddBlacklistItemCommand { get; }
@@ -580,6 +600,66 @@ public sealed class SettingsViewModel : INotifyPropertyChanged
         set => SetEdgeTriggerAction(ref _edgeTriggerBottomLeftAction, value, SettingKeys.EdgeTriggerBottomLeftAction);
     }
 
+    public bool EdgeTriggerLeftEdgeLeftButtonEnabled
+    {
+        get => _edgeTriggerLeftEdgeLeftButtonEnabled;
+        set => SetEdgeTriggerEnabled(ref _edgeTriggerLeftEdgeLeftButtonEnabled, value, SettingKeys.EdgeTriggerLeftEdgeLeftButtonEnabled);
+    }
+
+    public BuiltInGestureAction EdgeTriggerLeftEdgeLeftButtonAction
+    {
+        get => _edgeTriggerLeftEdgeLeftButtonAction;
+        set => SetEdgeTriggerAction(ref _edgeTriggerLeftEdgeLeftButtonAction, value, SettingKeys.EdgeTriggerLeftEdgeLeftButtonAction);
+    }
+
+    public bool EdgeTriggerLeftEdgeMiddleButtonEnabled
+    {
+        get => _edgeTriggerLeftEdgeMiddleButtonEnabled;
+        set => SetEdgeTriggerEnabled(ref _edgeTriggerLeftEdgeMiddleButtonEnabled, value, SettingKeys.EdgeTriggerLeftEdgeMiddleButtonEnabled);
+    }
+
+    public BuiltInGestureAction EdgeTriggerLeftEdgeMiddleButtonAction
+    {
+        get => _edgeTriggerLeftEdgeMiddleButtonAction;
+        set => SetEdgeTriggerAction(ref _edgeTriggerLeftEdgeMiddleButtonAction, value, SettingKeys.EdgeTriggerLeftEdgeMiddleButtonAction);
+    }
+
+    public bool EdgeTriggerLeftEdgeXButton1Enabled
+    {
+        get => _edgeTriggerLeftEdgeXButton1Enabled;
+        set => SetEdgeTriggerEnabled(ref _edgeTriggerLeftEdgeXButton1Enabled, value, SettingKeys.EdgeTriggerLeftEdgeXButton1Enabled);
+    }
+
+    public BuiltInGestureAction EdgeTriggerLeftEdgeXButton1Action
+    {
+        get => _edgeTriggerLeftEdgeXButton1Action;
+        set => SetEdgeTriggerAction(ref _edgeTriggerLeftEdgeXButton1Action, value, SettingKeys.EdgeTriggerLeftEdgeXButton1Action);
+    }
+
+    public bool EdgeTriggerLeftEdgeXButton2Enabled
+    {
+        get => _edgeTriggerLeftEdgeXButton2Enabled;
+        set => SetEdgeTriggerEnabled(ref _edgeTriggerLeftEdgeXButton2Enabled, value, SettingKeys.EdgeTriggerLeftEdgeXButton2Enabled);
+    }
+
+    public BuiltInGestureAction EdgeTriggerLeftEdgeXButton2Action
+    {
+        get => _edgeTriggerLeftEdgeXButton2Action;
+        set => SetEdgeTriggerAction(ref _edgeTriggerLeftEdgeXButton2Action, value, SettingKeys.EdgeTriggerLeftEdgeXButton2Action);
+    }
+
+    public bool EdgeTriggerTopRightWheelEnabled
+    {
+        get => _edgeTriggerTopRightWheelEnabled;
+        set => SetEdgeTriggerEnabled(ref _edgeTriggerTopRightWheelEnabled, value, SettingKeys.EdgeTriggerTopRightWheelEnabled);
+    }
+
+    public BuiltInGestureAction EdgeTriggerTopRightWheelAction
+    {
+        get => _edgeTriggerTopRightWheelAction;
+        set => SetEdgeTriggerAction(ref _edgeTriggerTopRightWheelAction, value, SettingKeys.EdgeTriggerTopRightWheelAction);
+    }
+
     public IReadOnlyList<GestureStrokeColorOption> GestureStrokeColorOptions { get; } =
     [
         new("冰蓝", "#8CC8FF"),
@@ -748,6 +828,31 @@ public sealed class SettingsViewModel : INotifyPropertyChanged
             SettingKeys.EdgeTriggerTopRightAction => nameof(EdgeTriggerTopRightAction),
             SettingKeys.EdgeTriggerBottomRightAction => nameof(EdgeTriggerBottomRightAction),
             SettingKeys.EdgeTriggerBottomLeftAction => nameof(EdgeTriggerBottomLeftAction),
+            SettingKeys.EdgeTriggerLeftEdgeLeftButtonAction => nameof(EdgeTriggerLeftEdgeLeftButtonAction),
+            SettingKeys.EdgeTriggerLeftEdgeMiddleButtonAction => nameof(EdgeTriggerLeftEdgeMiddleButtonAction),
+            SettingKeys.EdgeTriggerLeftEdgeXButton1Action => nameof(EdgeTriggerLeftEdgeXButton1Action),
+            SettingKeys.EdgeTriggerLeftEdgeXButton2Action => nameof(EdgeTriggerLeftEdgeXButton2Action),
+            SettingKeys.EdgeTriggerTopRightWheelAction => nameof(EdgeTriggerTopRightWheelAction),
+            _ => null
+        });
+        _ = _settingsService.SetAsync(settingKey, value, CancellationToken.None);
+    }
+
+    private void SetEdgeTriggerEnabled(ref bool field, bool value, string settingKey)
+    {
+        if (field == value)
+        {
+            return;
+        }
+
+        field = value;
+        OnPropertyChanged(settingKey switch
+        {
+            SettingKeys.EdgeTriggerLeftEdgeLeftButtonEnabled => nameof(EdgeTriggerLeftEdgeLeftButtonEnabled),
+            SettingKeys.EdgeTriggerLeftEdgeMiddleButtonEnabled => nameof(EdgeTriggerLeftEdgeMiddleButtonEnabled),
+            SettingKeys.EdgeTriggerLeftEdgeXButton1Enabled => nameof(EdgeTriggerLeftEdgeXButton1Enabled),
+            SettingKeys.EdgeTriggerLeftEdgeXButton2Enabled => nameof(EdgeTriggerLeftEdgeXButton2Enabled),
+            SettingKeys.EdgeTriggerTopRightWheelEnabled => nameof(EdgeTriggerTopRightWheelEnabled),
             _ => null
         });
         _ = _settingsService.SetAsync(settingKey, value, CancellationToken.None);

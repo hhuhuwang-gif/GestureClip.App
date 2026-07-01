@@ -86,8 +86,58 @@ public sealed class EdgeTriggerServiceTests
         Assert.Single(executor.Actions);
     }
 
+    [Fact]
+    public async Task Left_edge_middle_button_executes_configured_action()
+    {
+        var hook = new FakeLowLevelMouseHook();
+        var executor = new FakeGestureActionExecutor();
+        var settings = new FakeSettingsService();
+        settings.Values[SettingKeys.EdgeTriggerLeftEdgeMiddleButtonEnabled] = true;
+        var service = CreateService(hook: hook, executor: executor, settings: settings);
+
+        await service.StartAsync(CancellationToken.None);
+        hook.Emit(new MouseHookEvent(MouseHookEventType.MiddleButtonDown, 2, 500, DateTimeOffset.UtcNow));
+        await WaitForAsync(() => executor.Actions.Count == 1);
+        await service.StopAsync(CancellationToken.None);
+
+        Assert.Equal([BuiltInGestureAction.ShowDesktop], executor.Actions);
+    }
+
+    [Fact]
+    public async Task Right_top_wheel_executes_configured_action()
+    {
+        var hook = new FakeLowLevelMouseHook();
+        var executor = new FakeGestureActionExecutor();
+        var settings = new FakeSettingsService();
+        settings.Values[SettingKeys.EdgeTriggerTopRightWheelEnabled] = true;
+        var service = CreateService(hook: hook, executor: executor, settings: settings);
+
+        await service.StartAsync(CancellationToken.None);
+        hook.Emit(new MouseHookEvent(MouseHookEventType.Wheel, 1918, 2, DateTimeOffset.UtcNow, WheelDelta: 120));
+        await WaitForAsync(() => executor.Actions.Count == 1);
+        await service.StopAsync(CancellationToken.None);
+
+        Assert.Equal([BuiltInGestureAction.TaskSwitcher], executor.Actions);
+    }
+
+    [Fact]
+    public async Task Mouse_edge_trigger_does_not_suppress_original_event()
+    {
+        var hook = new FakeLowLevelMouseHook();
+        var settings = new FakeSettingsService();
+        settings.Values[SettingKeys.EdgeTriggerLeftEdgeXButton1Enabled] = true;
+        var service = CreateService(hook: hook, settings: settings);
+
+        await service.StartAsync(CancellationToken.None);
+        var args = hook.Emit(new MouseHookEvent(MouseHookEventType.XButton1Down, 2, 500, DateTimeOffset.UtcNow));
+        await service.StopAsync(CancellationToken.None);
+
+        Assert.False(args.Suppress);
+    }
+
     private static EdgeTriggerService CreateService(
         FakeCursorPositionProvider? cursor = null,
+        FakeLowLevelMouseHook? hook = null,
         FakeGestureActionExecutor? executor = null,
         FakeSettingsService? settings = null)
     {
@@ -100,12 +150,39 @@ public sealed class EdgeTriggerServiceTests
         settings.Values.TryAdd(SettingKeys.EdgeTriggerTopRightAction, BuiltInGestureAction.TaskSwitcher);
         settings.Values.TryAdd(SettingKeys.EdgeTriggerBottomRightAction, BuiltInGestureAction.ShowDesktop);
         settings.Values.TryAdd(SettingKeys.EdgeTriggerBottomLeftAction, BuiltInGestureAction.SwitchApp);
+        settings.Values.TryAdd(SettingKeys.EdgeTriggerLeftEdgeLeftButtonEnabled, false);
+        settings.Values.TryAdd(SettingKeys.EdgeTriggerLeftEdgeLeftButtonAction, BuiltInGestureAction.StartMenu);
+        settings.Values.TryAdd(SettingKeys.EdgeTriggerLeftEdgeMiddleButtonEnabled, false);
+        settings.Values.TryAdd(SettingKeys.EdgeTriggerLeftEdgeMiddleButtonAction, BuiltInGestureAction.ShowDesktop);
+        settings.Values.TryAdd(SettingKeys.EdgeTriggerLeftEdgeXButton1Enabled, false);
+        settings.Values.TryAdd(SettingKeys.EdgeTriggerLeftEdgeXButton1Action, BuiltInGestureAction.SwitchApp);
+        settings.Values.TryAdd(SettingKeys.EdgeTriggerLeftEdgeXButton2Enabled, false);
+        settings.Values.TryAdd(SettingKeys.EdgeTriggerLeftEdgeXButton2Action, BuiltInGestureAction.TaskSwitcher);
+        settings.Values.TryAdd(SettingKeys.EdgeTriggerTopRightWheelEnabled, false);
+        settings.Values.TryAdd(SettingKeys.EdgeTriggerTopRightWheelAction, BuiltInGestureAction.TaskSwitcher);
 
         return new EdgeTriggerService(
             cursor ?? new FakeCursorPositionProvider(),
+            hook ?? new FakeLowLevelMouseHook(),
             executor ?? new FakeGestureActionExecutor(),
             settings,
             NullLogger<EdgeTriggerService>.Instance);
+    }
+
+    private static async Task WaitForAsync(Func<bool> condition)
+    {
+        var deadline = DateTimeOffset.UtcNow.AddSeconds(2);
+        while (DateTimeOffset.UtcNow < deadline)
+        {
+            if (condition())
+            {
+                return;
+            }
+
+            await Task.Delay(20);
+        }
+
+        Assert.True(condition());
     }
 
     private sealed class FakeCursorPositionProvider : ICursorPositionProvider
@@ -126,6 +203,24 @@ public sealed class EdgeTriggerServiceTests
         {
             Actions.Add(action);
             return Task.CompletedTask;
+        }
+    }
+
+    private sealed class FakeLowLevelMouseHook : ILowLevelMouseHook
+    {
+        public event EventHandler<MouseHookEventArgs>? MouseEventReceived;
+        public int StartCount { get; private set; }
+        public int StopCount { get; private set; }
+
+        public void Start() => StartCount++;
+
+        public void Stop() => StopCount++;
+
+        public MouseHookEventArgs Emit(MouseHookEvent mouseEvent)
+        {
+            var args = new MouseHookEventArgs { Event = mouseEvent };
+            MouseEventReceived?.Invoke(this, args);
+            return args;
         }
     }
 

@@ -210,6 +210,69 @@
                                                   ItemsSource="{Binding GestureActionOptions}"
                                                   SelectedItem="{Binding EdgeTriggerBottomLeftAction, Mode=TwoWay}" />
                                     </Grid>
+
+                                    <TextBlock Text="边缘 + 鼠标按钮"
+                                               FontWeight="SemiBold"
+                                               Margin="0,16,0,8" />
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="210" />
+                                            <ColumnDefinition Width="*" />
+                                        </Grid.ColumnDefinitions>
+                                        <Grid.RowDefinitions>
+                                            <RowDefinition Height="Auto" />
+                                            <RowDefinition Height="Auto" />
+                                            <RowDefinition Height="Auto" />
+                                            <RowDefinition Height="Auto" />
+                                            <RowDefinition Height="Auto" />
+                                        </Grid.RowDefinitions>
+
+                                        <CheckBox Content="左边缘 + 鼠标左键"
+                                                  IsChecked="{Binding EdgeTriggerLeftEdgeLeftButtonEnabled, Mode=TwoWay}" />
+                                        <ComboBox Grid.Column="1"
+                                                  ItemsSource="{Binding GestureActionOptions}"
+                                                  SelectedItem="{Binding EdgeTriggerLeftEdgeLeftButtonAction, Mode=TwoWay}" />
+
+                                        <CheckBox Grid.Row="1"
+                                                  Content="左边缘 + 鼠标中键"
+                                                  Margin="0,8,0,0"
+                                                  IsChecked="{Binding EdgeTriggerLeftEdgeMiddleButtonEnabled, Mode=TwoWay}" />
+                                        <ComboBox Grid.Row="1"
+                                                  Grid.Column="1"
+                                                  Margin="0,8,0,0"
+                                                  ItemsSource="{Binding GestureActionOptions}"
+                                                  SelectedItem="{Binding EdgeTriggerLeftEdgeMiddleButtonAction, Mode=TwoWay}" />
+
+                                        <CheckBox Grid.Row="2"
+                                                  Content="左边缘 + 鼠标侧键 1"
+                                                  Margin="0,8,0,0"
+                                                  IsChecked="{Binding EdgeTriggerLeftEdgeXButton1Enabled, Mode=TwoWay}" />
+                                        <ComboBox Grid.Row="2"
+                                                  Grid.Column="1"
+                                                  Margin="0,8,0,0"
+                                                  ItemsSource="{Binding GestureActionOptions}"
+                                                  SelectedItem="{Binding EdgeTriggerLeftEdgeXButton1Action, Mode=TwoWay}" />
+
+                                        <CheckBox Grid.Row="3"
+                                                  Content="左边缘 + 鼠标侧键 2"
+                                                  Margin="0,8,0,0"
+                                                  IsChecked="{Binding EdgeTriggerLeftEdgeXButton2Enabled, Mode=TwoWay}" />
+                                        <ComboBox Grid.Row="3"
+                                                  Grid.Column="1"
+                                                  Margin="0,8,0,0"
+                                                  ItemsSource="{Binding GestureActionOptions}"
+                                                  SelectedItem="{Binding EdgeTriggerLeftEdgeXButton2Action, Mode=TwoWay}" />
+
+                                        <CheckBox Grid.Row="4"
+                                                  Content="右上角 + 滚轮"
+                                                  Margin="0,8,0,0"
+                                                  IsChecked="{Binding EdgeTriggerTopRightWheelEnabled, Mode=TwoWay}" />
+                                        <ComboBox Grid.Row="4"
+                                                  Grid.Column="1"
+                                                  Margin="0,8,0,0"
+                                                  ItemsSource="{Binding GestureActionOptions}"
+                                                  SelectedItem="{Binding EdgeTriggerTopRightWheelAction, Mode=TwoWay}" />
+                                    </Grid>
                                 </StackPanel>
                             </GroupBox>
 

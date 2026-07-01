@@ -34,14 +34,18 @@ public sealed class DefaultDataSeederTests
         var retentionDays = await connection.ExecuteScalarAsync<string>("SELECT Value FROM Settings WHERE Key = 'Clipboard.RetentionDays';");
         var edgeEnabled = await connection.ExecuteScalarAsync<string>("SELECT Value FROM Settings WHERE Key = 'EdgeTrigger.Enabled';");
         var topLeftAction = await connection.ExecuteScalarAsync<string>("SELECT Value FROM Settings WHERE Key = 'EdgeTrigger.TopLeft.Action';");
+        var leftEdgeMiddleEnabled = await connection.ExecuteScalarAsync<string>("SELECT Value FROM Settings WHERE Key = 'EdgeTrigger.LeftEdge.MiddleButton.Enabled';");
+        var topRightWheelEnabled = await connection.ExecuteScalarAsync<string>("SELECT Value FROM Settings WHERE Key = 'EdgeTrigger.TopRight.Wheel.Enabled';");
 
-        Assert.Equal(23, settingCount);
+        Assert.Equal(33, settingCount);
         Assert.Equal(7, blacklistCount);
         Assert.Equal(6, gestureCount);
         Assert.Equal("1000", maxItems);
         Assert.Equal("30", retentionDays);
         Assert.Equal("false", edgeEnabled);
         Assert.Equal(((int)BuiltInGestureAction.StartMenu).ToString(), topLeftAction);
+        Assert.Equal("false", leftEdgeMiddleEnabled);
+        Assert.Equal("false", topRightWheelEnabled);
     }
 
     [Fact]

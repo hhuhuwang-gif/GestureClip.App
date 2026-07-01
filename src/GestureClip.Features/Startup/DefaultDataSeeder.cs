@@ -44,6 +44,16 @@ public sealed class DefaultDataSeeder
         await SeedSettingAsync(connection, SettingKeys.EdgeTriggerTopRightAction, ((int)BuiltInGestureAction.TaskSwitcher).ToString(), "int", now);
         await SeedSettingAsync(connection, SettingKeys.EdgeTriggerBottomRightAction, ((int)BuiltInGestureAction.ShowDesktop).ToString(), "int", now);
         await SeedSettingAsync(connection, SettingKeys.EdgeTriggerBottomLeftAction, ((int)BuiltInGestureAction.SwitchApp).ToString(), "int", now);
+        await SeedSettingAsync(connection, SettingKeys.EdgeTriggerLeftEdgeLeftButtonEnabled, "false", "bool", now);
+        await SeedSettingAsync(connection, SettingKeys.EdgeTriggerLeftEdgeLeftButtonAction, ((int)BuiltInGestureAction.StartMenu).ToString(), "int", now);
+        await SeedSettingAsync(connection, SettingKeys.EdgeTriggerLeftEdgeMiddleButtonEnabled, "false", "bool", now);
+        await SeedSettingAsync(connection, SettingKeys.EdgeTriggerLeftEdgeMiddleButtonAction, ((int)BuiltInGestureAction.ShowDesktop).ToString(), "int", now);
+        await SeedSettingAsync(connection, SettingKeys.EdgeTriggerLeftEdgeXButton1Enabled, "false", "bool", now);
+        await SeedSettingAsync(connection, SettingKeys.EdgeTriggerLeftEdgeXButton1Action, ((int)BuiltInGestureAction.SwitchApp).ToString(), "int", now);
+        await SeedSettingAsync(connection, SettingKeys.EdgeTriggerLeftEdgeXButton2Enabled, "false", "bool", now);
+        await SeedSettingAsync(connection, SettingKeys.EdgeTriggerLeftEdgeXButton2Action, ((int)BuiltInGestureAction.TaskSwitcher).ToString(), "int", now);
+        await SeedSettingAsync(connection, SettingKeys.EdgeTriggerTopRightWheelEnabled, "false", "bool", now);
+        await SeedSettingAsync(connection, SettingKeys.EdgeTriggerTopRightWheelAction, ((int)BuiltInGestureAction.TaskSwitcher).ToString(), "int", now);
         await SeedSettingAsync(connection, SettingKeys.PrivacySuppressSensitive, "true", "bool", now);
 
         foreach (var processName in DefaultPrivacyBlacklist.ProcessNames)

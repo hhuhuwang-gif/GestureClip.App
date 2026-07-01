@@ -29,5 +29,15 @@ public static class SettingKeys
     public const string EdgeTriggerTopRightAction = "EdgeTrigger.TopRight.Action";
     public const string EdgeTriggerBottomRightAction = "EdgeTrigger.BottomRight.Action";
     public const string EdgeTriggerBottomLeftAction = "EdgeTrigger.BottomLeft.Action";
+    public const string EdgeTriggerLeftEdgeLeftButtonEnabled = "EdgeTrigger.LeftEdge.LeftButton.Enabled";
+    public const string EdgeTriggerLeftEdgeLeftButtonAction = "EdgeTrigger.LeftEdge.LeftButton.Action";
+    public const string EdgeTriggerLeftEdgeMiddleButtonEnabled = "EdgeTrigger.LeftEdge.MiddleButton.Enabled";
+    public const string EdgeTriggerLeftEdgeMiddleButtonAction = "EdgeTrigger.LeftEdge.MiddleButton.Action";
+    public const string EdgeTriggerLeftEdgeXButton1Enabled = "EdgeTrigger.LeftEdge.XButton1.Enabled";
+    public const string EdgeTriggerLeftEdgeXButton1Action = "EdgeTrigger.LeftEdge.XButton1.Action";
+    public const string EdgeTriggerLeftEdgeXButton2Enabled = "EdgeTrigger.LeftEdge.XButton2.Enabled";
+    public const string EdgeTriggerLeftEdgeXButton2Action = "EdgeTrigger.LeftEdge.XButton2.Action";
+    public const string EdgeTriggerTopRightWheelEnabled = "EdgeTrigger.TopRight.Wheel.Enabled";
+    public const string EdgeTriggerTopRightWheelAction = "EdgeTrigger.TopRight.Wheel.Action";
     public const string PrivacySuppressSensitive = "Privacy.SuppressSensitive";
 }

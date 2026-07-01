@@ -14,8 +14,9 @@ public sealed class LowLevelMouseHook : ILowLevelMouseHook, IDisposable
     private readonly Dispatcher _dispatcher;
     private readonly ILogger<LowLevelMouseHook> _logger;
     private readonly MouseHookNativeMethods.HookProc _hookProc;
+    private readonly object _startLock = new();
     private IntPtr _hookHandle;
-    private int _started;
+    private int _startReferenceCount;
     private long _receivedEventCount;
 
     public LowLevelMouseHook(ILogger<LowLevelMouseHook> logger)
@@ -29,56 +30,69 @@ public sealed class LowLevelMouseHook : ILowLevelMouseHook, IDisposable
 
     public void Start()
     {
-        if (Interlocked.Exchange(ref _started, 1) == 1)
+        lock (_startLock)
         {
-            return;
-        }
-
-        _dispatcher.Invoke(() =>
-        {
-            var moduleName = Process.GetCurrentProcess().MainModule?.ModuleName;
-            var moduleHandle = MouseHookNativeMethods.GetModuleHandle(moduleName);
-            _hookHandle = MouseHookNativeMethods.SetWindowsHookEx(
-                MouseHookNativeMethods.WhMouseLl,
-                _hookProc,
-                moduleHandle,
-                0);
-
-            if (_hookHandle == IntPtr.Zero)
+            _startReferenceCount++;
+            if (_startReferenceCount > 1)
             {
-                Interlocked.Exchange(ref _started, 0);
-                var error = Marshal.GetLastWin32Error();
-                _logger.LogError(
-                    "Failed to install low-level mouse hook. ModuleName={ModuleName}, ModuleHandle={ModuleHandle}, Win32Error={Win32Error}",
-                    moduleName,
-                    moduleHandle,
-                    error);
-                throw new InvalidOperationException($"Failed to install low-level mouse hook. Win32Error={error}");
+                return;
             }
 
-            _logger.LogInformation(
-                "Low-level mouse hook started. ModuleName={ModuleName}, ModuleHandle={ModuleHandle}",
-                moduleName,
-                moduleHandle);
-        });
+            _dispatcher.Invoke(() =>
+            {
+                var moduleName = Process.GetCurrentProcess().MainModule?.ModuleName;
+                var moduleHandle = MouseHookNativeMethods.GetModuleHandle(moduleName);
+                _hookHandle = MouseHookNativeMethods.SetWindowsHookEx(
+                    MouseHookNativeMethods.WhMouseLl,
+                    _hookProc,
+                    moduleHandle,
+                    0);
+
+                if (_hookHandle == IntPtr.Zero)
+                {
+                    _startReferenceCount = 0;
+                    var error = Marshal.GetLastWin32Error();
+                    _logger.LogError(
+                        "Failed to install low-level mouse hook. ModuleName={ModuleName}, ModuleHandle={ModuleHandle}, Win32Error={Win32Error}",
+                        moduleName,
+                        moduleHandle,
+                        error);
+                    throw new InvalidOperationException($"Failed to install low-level mouse hook. Win32Error={error}");
+                }
+
+                _logger.LogInformation(
+                    "Low-level mouse hook started. ModuleName={ModuleName}, ModuleHandle={ModuleHandle}",
+                    moduleName,
+                    moduleHandle);
+            });
+        }
     }
 
     public void Stop()
     {
-        if (Interlocked.Exchange(ref _started, 0) == 0)
+        lock (_startLock)
         {
-            return;
-        }
-
-        _dispatcher.Invoke(() =>
-        {
-            if (_hookHandle != IntPtr.Zero)
+            if (_startReferenceCount <= 0)
             {
-                MouseHookNativeMethods.UnhookWindowsHookEx(_hookHandle);
-                _hookHandle = IntPtr.Zero;
-                _logger.LogInformation("Low-level mouse hook stopped.");
+                return;
             }
-        });
+
+            _startReferenceCount--;
+            if (_startReferenceCount > 0)
+            {
+                return;
+            }
+
+            _dispatcher.Invoke(() =>
+            {
+                if (_hookHandle != IntPtr.Zero)
+                {
+                    MouseHookNativeMethods.UnhookWindowsHookEx(_hookHandle);
+                    _hookHandle = IntPtr.Zero;
+                    _logger.LogInformation("Low-level mouse hook stopped.");
+                }
+            });
+        }
     }
 
     public void Dispose()
@@ -133,11 +147,14 @@ public sealed class LowLevelMouseHook : ILowLevelMouseHook, IDisposable
         var xButton = data.mouseData >> 16;
         var type = message switch
         {
+            MouseHookNativeMethods.WmLButtonDown => MouseHookEventType.LeftButtonDown,
+            MouseHookNativeMethods.WmLButtonUp => MouseHookEventType.LeftButtonUp,
             MouseHookNativeMethods.WmRButtonDown => MouseHookEventType.RightButtonDown,
             MouseHookNativeMethods.WmMouseMove => MouseHookEventType.Move,
             MouseHookNativeMethods.WmRButtonUp => MouseHookEventType.RightButtonUp,
             MouseHookNativeMethods.WmMButtonDown => MouseHookEventType.MiddleButtonDown,
             MouseHookNativeMethods.WmMButtonUp => MouseHookEventType.MiddleButtonUp,
+            MouseHookNativeMethods.WmMouseWheel => MouseHookEventType.Wheel,
             MouseHookNativeMethods.WmXButtonDown when xButton == MouseHookNativeMethods.XButton1 => MouseHookEventType.XButton1Down,
             MouseHookNativeMethods.WmXButtonUp when xButton == MouseHookNativeMethods.XButton1 => MouseHookEventType.XButton1Up,
             MouseHookNativeMethods.WmXButtonDown when xButton == MouseHookNativeMethods.XButton2 => MouseHookEventType.XButton2Down,
@@ -152,7 +169,8 @@ public sealed class LowLevelMouseHook : ILowLevelMouseHook, IDisposable
         }
 
         var isInjected = (data.flags & MouseHookNativeMethods.LlmhfInjected) != 0;
-        hookEvent = new MouseHookEvent(type.Value, data.pt.x, data.pt.y, DateTimeOffset.UtcNow, isInjected);
+        var wheelDelta = type == MouseHookEventType.Wheel ? (short)xButton : 0;
+        hookEvent = new MouseHookEvent(type.Value, data.pt.x, data.pt.y, DateTimeOffset.UtcNow, isInjected, wheelDelta);
         return true;
     }
 }

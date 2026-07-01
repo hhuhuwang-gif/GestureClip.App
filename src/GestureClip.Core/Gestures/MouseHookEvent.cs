@@ -5,4 +5,5 @@ public sealed record MouseHookEvent(
     int X,
     int Y,
     DateTimeOffset Time,
-    bool IsInjected = false);
+    bool IsInjected = false,
+    int WheelDelta = 0);
