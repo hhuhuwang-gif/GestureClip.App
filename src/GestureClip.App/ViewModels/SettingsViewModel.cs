@@ -128,19 +128,19 @@ public sealed class SettingsViewModel : INotifyPropertyChanged
         _gestureShowOverlay = _settingsService.Get(SettingKeys.GestureShowOverlay, true);
         _gestureDebugEnabled = _settingsService.Get(SettingKeys.GestureDebugEnabled, false);
         _gestureCloseWindowEnabled = _settingsService.Get(SettingKeys.GestureCloseWindowEnabled, false);
-        _gestureMiddleButtonEnabled = _settingsService.Get(SettingKeys.GestureTriggerMiddleButtonEnabled, false);
-        _gestureXButton1Enabled = _settingsService.Get(SettingKeys.GestureTriggerXButton1Enabled, false);
-        _gestureXButton2Enabled = _settingsService.Get(SettingKeys.GestureTriggerXButton2Enabled, false);
-        _edgeTriggerEnabled = _settingsService.Get(SettingKeys.EdgeTriggerEnabled, false);
+        _gestureMiddleButtonEnabled = _settingsService.Get(SettingKeys.GestureTriggerMiddleButtonEnabled, true);
+        _gestureXButton1Enabled = _settingsService.Get(SettingKeys.GestureTriggerXButton1Enabled, true);
+        _gestureXButton2Enabled = _settingsService.Get(SettingKeys.GestureTriggerXButton2Enabled, true);
+        _edgeTriggerEnabled = _settingsService.Get(SettingKeys.EdgeTriggerEnabled, true);
         _edgeTriggerTopLeftAction = _settingsService.Get(SettingKeys.EdgeTriggerTopLeftAction, BuiltInGestureAction.StartMenu);
         _edgeTriggerTopRightAction = _settingsService.Get(SettingKeys.EdgeTriggerTopRightAction, BuiltInGestureAction.TaskSwitcher);
         _edgeTriggerBottomRightAction = _settingsService.Get(SettingKeys.EdgeTriggerBottomRightAction, BuiltInGestureAction.ShowDesktop);
         _edgeTriggerBottomLeftAction = _settingsService.Get(SettingKeys.EdgeTriggerBottomLeftAction, BuiltInGestureAction.SwitchApp);
-        _edgeTriggerLeftEdgeLeftButtonEnabled = _settingsService.Get(SettingKeys.EdgeTriggerLeftEdgeLeftButtonEnabled, false);
-        _edgeTriggerLeftEdgeMiddleButtonEnabled = _settingsService.Get(SettingKeys.EdgeTriggerLeftEdgeMiddleButtonEnabled, false);
-        _edgeTriggerLeftEdgeXButton1Enabled = _settingsService.Get(SettingKeys.EdgeTriggerLeftEdgeXButton1Enabled, false);
-        _edgeTriggerLeftEdgeXButton2Enabled = _settingsService.Get(SettingKeys.EdgeTriggerLeftEdgeXButton2Enabled, false);
-        _edgeTriggerTopRightWheelEnabled = _settingsService.Get(SettingKeys.EdgeTriggerTopRightWheelEnabled, false);
+        _edgeTriggerLeftEdgeLeftButtonEnabled = _settingsService.Get(SettingKeys.EdgeTriggerLeftEdgeLeftButtonEnabled, true);
+        _edgeTriggerLeftEdgeMiddleButtonEnabled = _settingsService.Get(SettingKeys.EdgeTriggerLeftEdgeMiddleButtonEnabled, true);
+        _edgeTriggerLeftEdgeXButton1Enabled = _settingsService.Get(SettingKeys.EdgeTriggerLeftEdgeXButton1Enabled, true);
+        _edgeTriggerLeftEdgeXButton2Enabled = _settingsService.Get(SettingKeys.EdgeTriggerLeftEdgeXButton2Enabled, true);
+        _edgeTriggerTopRightWheelEnabled = _settingsService.Get(SettingKeys.EdgeTriggerTopRightWheelEnabled, true);
         _edgeTriggerLeftEdgeLeftButtonAction = _settingsService.Get(SettingKeys.EdgeTriggerLeftEdgeLeftButtonAction, BuiltInGestureAction.StartMenu);
         _edgeTriggerLeftEdgeMiddleButtonAction = _settingsService.Get(SettingKeys.EdgeTriggerLeftEdgeMiddleButtonAction, BuiltInGestureAction.ShowDesktop);
         _edgeTriggerLeftEdgeXButton1Action = _settingsService.Get(SettingKeys.EdgeTriggerLeftEdgeXButton1Action, BuiltInGestureAction.SwitchApp);
@@ -150,10 +150,10 @@ public sealed class SettingsViewModel : INotifyPropertyChanged
         _edgeTriggerDwellMs = _settingsService.Get(SettingKeys.EdgeTriggerDwellMs, 350);
         _edgeTriggerCooldownMs = _settingsService.Get(SettingKeys.EdgeTriggerCooldownMs, 1200);
         _edgeTriggerSlideThreshold = _settingsService.Get(SettingKeys.EdgeTriggerSlideThreshold, 80);
-        _edgeTriggerSlideLeftEnabled = _settingsService.Get(SettingKeys.EdgeTriggerSlideLeftEnabled, false);
-        _edgeTriggerSlideRightEnabled = _settingsService.Get(SettingKeys.EdgeTriggerSlideRightEnabled, false);
-        _edgeTriggerSlideTopEnabled = _settingsService.Get(SettingKeys.EdgeTriggerSlideTopEnabled, false);
-        _edgeTriggerSlideBottomEnabled = _settingsService.Get(SettingKeys.EdgeTriggerSlideBottomEnabled, false);
+        _edgeTriggerSlideLeftEnabled = _settingsService.Get(SettingKeys.EdgeTriggerSlideLeftEnabled, true);
+        _edgeTriggerSlideRightEnabled = _settingsService.Get(SettingKeys.EdgeTriggerSlideRightEnabled, true);
+        _edgeTriggerSlideTopEnabled = _settingsService.Get(SettingKeys.EdgeTriggerSlideTopEnabled, true);
+        _edgeTriggerSlideBottomEnabled = _settingsService.Get(SettingKeys.EdgeTriggerSlideBottomEnabled, true);
         _edgeTriggerSlideLeftAction = _settingsService.Get(SettingKeys.EdgeTriggerSlideLeftAction, BuiltInGestureAction.SwitchApp);
         _edgeTriggerSlideRightAction = _settingsService.Get(SettingKeys.EdgeTriggerSlideRightAction, BuiltInGestureAction.TaskSwitcher);
         _edgeTriggerSlideTopAction = _settingsService.Get(SettingKeys.EdgeTriggerSlideTopAction, BuiltInGestureAction.StartMenu);
@@ -235,18 +235,18 @@ public sealed class SettingsViewModel : INotifyPropertyChanged
     public IReadOnlyList<GestureTriggerModeViewModel> GestureTriggerModes { get; } =
     [
         new("鼠标右键", "已启用", true),
-        new("鼠标中键", "可启用", false),
-        new("鼠标左键", "预留", false),
-        new("鼠标侧键 1", "可启用", false),
-        new("鼠标侧键 2", "可启用", false),
-        new("屏幕四角热区", "可启用", false),
-        new("屏幕左边缘 + 鼠标中键", "可启用", false),
-        new("屏幕左边缘 + 鼠标左键", "可启用", false),
-        new("屏幕左边缘 + 鼠标侧键 1", "可启用", false),
-        new("屏幕左边缘 + 鼠标侧键 2", "可启用", false),
+        new("鼠标中键", "默认开启", true),
+        new("鼠标左键", "暂未支持", false),
+        new("鼠标侧键 1", "默认开启", true),
+        new("鼠标侧键 2", "默认开启", true),
+        new("屏幕四角热区", "默认开启", true),
+        new("屏幕左边缘 + 鼠标中键", "默认开启", true),
+        new("屏幕左边缘 + 鼠标左键", "默认开启", true),
+        new("屏幕左边缘 + 鼠标侧键 1", "默认开启", true),
+        new("屏幕左边缘 + 鼠标侧键 2", "默认开启", true),
         new("屏幕右上角 + 鼠标碰撞", "已支持", true),
-        new("屏幕右上角 + 滚轮", "可启用", false),
-        new("屏幕边缘滑动", "可启用", false)
+        new("屏幕右上角 + 滚轮", "默认开启", true),
+        new("屏幕边缘滑动", "默认开启", true)
     ];
 
     public ICommand AddBlacklistItemCommand { get; }

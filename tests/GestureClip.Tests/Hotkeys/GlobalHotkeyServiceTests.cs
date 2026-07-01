@@ -80,6 +80,19 @@ public sealed class GlobalHotkeyServiceTests
     }
 
     [Fact]
+    public void Start_falls_back_when_default_hotkey_is_already_registered()
+    {
+        var registrar = new FakeHotkeyRegistrar { FailedHotkeys = { "Ctrl + `" } };
+        var service = CreateService(registrar);
+
+        service.Start();
+
+        Assert.Equal(HotkeyRegistrationState.Registered, service.Status.State);
+        Assert.Equal("Ctrl + ` 被占用，已改用 Ctrl + Alt + V", service.Status.DisplayText);
+        Assert.Equal(["Ctrl + `", "Ctrl + Alt + V"], registrar.RegisteredHotkeys);
+    }
+
+    [Fact]
     public async Task Hotkey_trigger_opens_clipboard_overlay()
     {
         var registrar = new FakeHotkeyRegistrar();
@@ -129,11 +142,20 @@ public sealed class GlobalHotkeyServiceTests
         public int RegisterCount { get; private set; }
         public int UnregisterCount { get; private set; }
         public string? LastHotkeyText { get; private set; }
+        public List<string> FailedHotkeys { get; } = [];
+        public List<string> RegisteredHotkeys { get; } = [];
 
         public bool RegisterOpenClipboardHotkey(HotkeyDefinition hotkey)
         {
             RegisterCount++;
             LastHotkeyText = hotkey.DisplayText;
+            RegisteredHotkeys.Add(hotkey.DisplayText);
+            if (FailedHotkeys.Contains(hotkey.DisplayText, StringComparer.Ordinal))
+            {
+                LastError = 1409;
+                return false;
+            }
+
             return RegisterResult;
         }
 

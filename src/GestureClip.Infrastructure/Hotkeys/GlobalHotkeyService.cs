@@ -39,15 +39,22 @@ public sealed class GlobalHotkeyService : IGlobalHotkeyService
         var hotkey = HotkeyDefinition.ParseOrDefault(_settingsService.Get(
             SettingKeys.HotkeyOpenClipboardOverlayKey,
             HotkeyDefinition.DefaultOpenClipboardOverlay));
-        if (_registrar.RegisterOpenClipboardHotkey(hotkey))
+
+        if (TryRegister(hotkey, null))
         {
-            Status = new HotkeyStatus(HotkeyRegistrationState.Registered, $"{hotkey.DisplayText} 已注册");
-            _logger.LogInformation("Global hotkey registered: {Hotkey}.", hotkey.DisplayText);
+            return;
+        }
+
+        var firstError = _registrar.GetLastError();
+        var fallback = HotkeyDefinition.ParseOrDefault(HotkeyDefinition.FallbackOpenClipboardOverlay);
+        if (!string.Equals(hotkey.DisplayText, fallback.DisplayText, StringComparison.Ordinal) &&
+            TryRegister(fallback, $"{hotkey.DisplayText} 被占用，已改用 {fallback.DisplayText}"))
+        {
             return;
         }
 
         var error = _registrar.GetLastError();
-        Status = new HotkeyStatus(HotkeyRegistrationState.Failed, $"{hotkey.DisplayText} 注册失败", error);
+        Status = new HotkeyStatus(HotkeyRegistrationState.Failed, $"{hotkey.DisplayText} 注册失败，请在剪贴板页换一个热键", error == 0 ? firstError : error);
         _logger.LogWarning("Global hotkey registration failed. Hotkey={Hotkey} Win32Error={Win32Error}", hotkey.DisplayText, error);
     }
 
@@ -67,6 +74,18 @@ public sealed class GlobalHotkeyService : IGlobalHotkeyService
     private void OnHotkeyPressed(object? sender, EventArgs e)
     {
         _ = ShowClipboardOverlayAsync();
+    }
+
+    private bool TryRegister(HotkeyDefinition hotkey, string? successMessage)
+    {
+        if (!_registrar.RegisterOpenClipboardHotkey(hotkey))
+        {
+            return false;
+        }
+
+        Status = new HotkeyStatus(HotkeyRegistrationState.Registered, successMessage ?? $"{hotkey.DisplayText} 已注册");
+        _logger.LogInformation("Global hotkey registered: {Hotkey}.", hotkey.DisplayText);
+        return true;
     }
 
     private async Task ShowClipboardOverlayAsync()

@@ -405,7 +405,7 @@ public sealed class EdgeTriggerService : IEdgeTriggerService
     private EdgeTriggerSettings LoadSettings()
     {
         return new EdgeTriggerSettings(
-            _settingsService.Get(SettingKeys.EdgeTriggerEnabled, false),
+            _settingsService.Get(SettingKeys.EdgeTriggerEnabled, true),
             Math.Clamp(_settingsService.Get(SettingKeys.EdgeTriggerHotZoneSize, 8), 2, 64),
             Math.Clamp(_settingsService.Get(SettingKeys.EdgeTriggerDwellMs, 350), 100, 2000),
             Math.Clamp(_settingsService.Get(SettingKeys.EdgeTriggerCooldownMs, 1200), 250, 5000),
@@ -414,23 +414,23 @@ public sealed class EdgeTriggerService : IEdgeTriggerService
             _settingsService.Get(SettingKeys.EdgeTriggerTopRightAction, BuiltInGestureAction.TaskSwitcher),
             _settingsService.Get(SettingKeys.EdgeTriggerBottomRightAction, BuiltInGestureAction.ShowDesktop),
             _settingsService.Get(SettingKeys.EdgeTriggerBottomLeftAction, BuiltInGestureAction.SwitchApp),
-            _settingsService.Get(SettingKeys.EdgeTriggerLeftEdgeLeftButtonEnabled, false),
+            _settingsService.Get(SettingKeys.EdgeTriggerLeftEdgeLeftButtonEnabled, true),
             _settingsService.Get(SettingKeys.EdgeTriggerLeftEdgeLeftButtonAction, BuiltInGestureAction.StartMenu),
-            _settingsService.Get(SettingKeys.EdgeTriggerLeftEdgeMiddleButtonEnabled, false),
+            _settingsService.Get(SettingKeys.EdgeTriggerLeftEdgeMiddleButtonEnabled, true),
             _settingsService.Get(SettingKeys.EdgeTriggerLeftEdgeMiddleButtonAction, BuiltInGestureAction.ShowDesktop),
-            _settingsService.Get(SettingKeys.EdgeTriggerLeftEdgeXButton1Enabled, false),
+            _settingsService.Get(SettingKeys.EdgeTriggerLeftEdgeXButton1Enabled, true),
             _settingsService.Get(SettingKeys.EdgeTriggerLeftEdgeXButton1Action, BuiltInGestureAction.SwitchApp),
-            _settingsService.Get(SettingKeys.EdgeTriggerLeftEdgeXButton2Enabled, false),
+            _settingsService.Get(SettingKeys.EdgeTriggerLeftEdgeXButton2Enabled, true),
             _settingsService.Get(SettingKeys.EdgeTriggerLeftEdgeXButton2Action, BuiltInGestureAction.TaskSwitcher),
-            _settingsService.Get(SettingKeys.EdgeTriggerTopRightWheelEnabled, false),
+            _settingsService.Get(SettingKeys.EdgeTriggerTopRightWheelEnabled, true),
             _settingsService.Get(SettingKeys.EdgeTriggerTopRightWheelAction, BuiltInGestureAction.TaskSwitcher),
-            _settingsService.Get(SettingKeys.EdgeTriggerSlideLeftEnabled, false),
+            _settingsService.Get(SettingKeys.EdgeTriggerSlideLeftEnabled, true),
             _settingsService.Get(SettingKeys.EdgeTriggerSlideLeftAction, BuiltInGestureAction.SwitchApp),
-            _settingsService.Get(SettingKeys.EdgeTriggerSlideRightEnabled, false),
+            _settingsService.Get(SettingKeys.EdgeTriggerSlideRightEnabled, true),
             _settingsService.Get(SettingKeys.EdgeTriggerSlideRightAction, BuiltInGestureAction.TaskSwitcher),
-            _settingsService.Get(SettingKeys.EdgeTriggerSlideTopEnabled, false),
+            _settingsService.Get(SettingKeys.EdgeTriggerSlideTopEnabled, true),
             _settingsService.Get(SettingKeys.EdgeTriggerSlideTopAction, BuiltInGestureAction.StartMenu),
-            _settingsService.Get(SettingKeys.EdgeTriggerSlideBottomEnabled, false),
+            _settingsService.Get(SettingKeys.EdgeTriggerSlideBottomEnabled, true),
             _settingsService.Get(SettingKeys.EdgeTriggerSlideBottomAction, BuiltInGestureAction.ShowDesktop));
     }
 

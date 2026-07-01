@@ -23,6 +23,29 @@ public sealed class EdgeTriggerServiceTests
     }
 
     [Fact]
+    public async Task PollOnceAsync_defaults_edge_triggers_to_enabled()
+    {
+        var now = DateTimeOffset.UtcNow;
+        var cursor = new FakeCursorPositionProvider
+        {
+            Position = new CursorPosition(2, 2, now)
+        };
+        var executor = new FakeGestureActionExecutor();
+        var service = new EdgeTriggerService(
+            cursor,
+            new FakeLowLevelMouseHook(),
+            executor,
+            new FakeSettingsService(),
+            NullLogger<EdgeTriggerService>.Instance);
+
+        await service.PollOnceAsync(CancellationToken.None);
+        cursor.Position = cursor.Position with { Time = now.AddMilliseconds(400) };
+        await service.PollOnceAsync(CancellationToken.None);
+
+        Assert.Equal([BuiltInGestureAction.StartMenu], executor.Actions);
+    }
+
+    [Fact]
     public async Task PollOnceAsync_requires_dwell_before_executing()
     {
         var now = DateTimeOffset.UtcNow;

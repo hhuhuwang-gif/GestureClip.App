@@ -34,24 +34,30 @@ public sealed class DefaultDataSeederTests
         var retentionDays = await connection.ExecuteScalarAsync<string>("SELECT Value FROM Settings WHERE Key = 'Clipboard.RetentionDays';");
         var hotkey = await connection.ExecuteScalarAsync<string>("SELECT Value FROM Settings WHERE Key = 'Hotkey.OpenClipboardOverlay.Key';");
         var edgeEnabled = await connection.ExecuteScalarAsync<string>("SELECT Value FROM Settings WHERE Key = 'EdgeTrigger.Enabled';");
+        var middleEnabled = await connection.ExecuteScalarAsync<string>("SELECT Value FROM Settings WHERE Key = 'Gesture.Trigger.MiddleButton.Enabled';");
+        var x1Enabled = await connection.ExecuteScalarAsync<string>("SELECT Value FROM Settings WHERE Key = 'Gesture.Trigger.XButton1.Enabled';");
+        var x2Enabled = await connection.ExecuteScalarAsync<string>("SELECT Value FROM Settings WHERE Key = 'Gesture.Trigger.XButton2.Enabled';");
         var topLeftAction = await connection.ExecuteScalarAsync<string>("SELECT Value FROM Settings WHERE Key = 'EdgeTrigger.TopLeft.Action';");
         var leftEdgeMiddleEnabled = await connection.ExecuteScalarAsync<string>("SELECT Value FROM Settings WHERE Key = 'EdgeTrigger.LeftEdge.MiddleButton.Enabled';");
         var topRightWheelEnabled = await connection.ExecuteScalarAsync<string>("SELECT Value FROM Settings WHERE Key = 'EdgeTrigger.TopRight.Wheel.Enabled';");
         var slideThreshold = await connection.ExecuteScalarAsync<string>("SELECT Value FROM Settings WHERE Key = 'EdgeTrigger.SlideThreshold';");
         var slideLeftEnabled = await connection.ExecuteScalarAsync<string>("SELECT Value FROM Settings WHERE Key = 'EdgeTrigger.Slide.Left.Enabled';");
 
-        Assert.Equal(42, settingCount);
+        Assert.Equal(45, settingCount);
         Assert.Equal(7, blacklistCount);
         Assert.Equal(6, gestureCount);
         Assert.Equal("1000", maxItems);
         Assert.Equal("30", retentionDays);
         Assert.Equal("\"Ctrl + `\"", hotkey);
-        Assert.Equal("false", edgeEnabled);
+        Assert.Equal("true", middleEnabled);
+        Assert.Equal("true", x1Enabled);
+        Assert.Equal("true", x2Enabled);
+        Assert.Equal("true", edgeEnabled);
         Assert.Equal(((int)BuiltInGestureAction.StartMenu).ToString(), topLeftAction);
-        Assert.Equal("false", leftEdgeMiddleEnabled);
-        Assert.Equal("false", topRightWheelEnabled);
+        Assert.Equal("true", leftEdgeMiddleEnabled);
+        Assert.Equal("true", topRightWheelEnabled);
         Assert.Equal("80", slideThreshold);
-        Assert.Equal("false", slideLeftEnabled);
+        Assert.Equal("true", slideLeftEnabled);
     }
 
     [Fact]

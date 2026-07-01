@@ -3,6 +3,7 @@ namespace GestureClip.Core.Hotkeys;
 public sealed record HotkeyDefinition(uint Modifiers, uint VirtualKey, string DisplayText)
 {
     public const string DefaultOpenClipboardOverlay = "Ctrl + `";
+    public const string FallbackOpenClipboardOverlay = "Ctrl + Alt + V";
 
     public static HotkeyDefinition ParseOrDefault(string? text)
     {

@@ -137,9 +137,10 @@ public sealed class SettingsViewModelTests
         var viewModel = CreateViewModel();
 
         Assert.Contains(viewModel.GestureTriggerModes, mode => mode.Name == "鼠标右键" && mode.IsEnabled);
-        Assert.Contains(viewModel.GestureTriggerModes, mode => mode.Name == "鼠标侧键 1" && !mode.IsEnabled);
-        Assert.Contains(viewModel.GestureTriggerModes, mode => mode.Name == "屏幕左边缘 + 鼠标中键" && !mode.IsEnabled);
-        Assert.Contains(viewModel.GestureTriggerModes, mode => mode.Name == "屏幕右上角 + 滚轮" && !mode.IsEnabled);
+        Assert.Contains(viewModel.GestureTriggerModes, mode => mode.Name == "鼠标侧键 1" && mode.IsEnabled && mode.Status == "默认开启");
+        Assert.Contains(viewModel.GestureTriggerModes, mode => mode.Name == "屏幕左边缘 + 鼠标中键" && mode.IsEnabled && mode.Status == "默认开启");
+        Assert.Contains(viewModel.GestureTriggerModes, mode => mode.Name == "屏幕右上角 + 滚轮" && mode.IsEnabled && mode.Status == "默认开启");
+        Assert.Contains(viewModel.GestureTriggerModes, mode => mode.Name == "鼠标左键" && !mode.IsEnabled && mode.Status == "暂未支持");
     }
 
     [Fact]
@@ -194,6 +195,9 @@ public sealed class SettingsViewModelTests
         var settings = new FakeSettingsService();
         var viewModel = CreateViewModel(settings: settings);
 
+        viewModel.GestureMiddleButtonEnabled = false;
+        viewModel.GestureXButton1Enabled = false;
+        viewModel.GestureXButton2Enabled = false;
         viewModel.GestureMiddleButtonEnabled = true;
         viewModel.GestureXButton1Enabled = true;
         viewModel.GestureXButton2Enabled = true;
@@ -211,6 +215,7 @@ public sealed class SettingsViewModelTests
         var edge = new FakeEdgeTriggerService();
         var viewModel = CreateViewModel(settings: settings, edgeTriggerService: edge);
 
+        viewModel.EdgeTriggerEnabled = false;
         viewModel.EdgeTriggerEnabled = true;
         viewModel.EdgeTriggerTopLeftAction = BuiltInGestureAction.ShowDesktop;
         viewModel.EdgeTriggerBottomRightAction = BuiltInGestureAction.StartMenu;
