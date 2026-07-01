@@ -14,9 +14,9 @@
     </Style>
 
     <Style x:Key="BaseButtonStyle" TargetType="Button">
-        <Setter Property="Height" Value="36" />
-        <Setter Property="MinWidth" Value="78" />
-        <Setter Property="Padding" Value="14,0" />
+        <Setter Property="Height" Value="38" />
+        <Setter Property="MinWidth" Value="96" />
+        <Setter Property="Padding" Value="18,0" />
         <Setter Property="Foreground" Value="{DynamicResource BrushTextPrimary}" />
         <Setter Property="Background" Value="#EAF0F7" />
         <Setter Property="BorderBrush" Value="{DynamicResource BrushBorder}" />

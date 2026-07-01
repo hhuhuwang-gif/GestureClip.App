@@ -1,5 +1,6 @@
 using GestureClip.Core.Abstractions;
 using GestureClip.Core.Hotkeys;
+using GestureClip.Core.Settings;
 using GestureClip.Infrastructure.Hotkeys;
 using Microsoft.Extensions.Logging.Abstractions;
 using Xunit;
@@ -20,6 +21,49 @@ public sealed class GlobalHotkeyServiceTests
         service.Stop();
 
         Assert.Equal(1, registrar.RegisterCount);
+        Assert.Equal(1, registrar.UnregisterCount);
+    }
+
+    [Fact]
+    public void Start_registers_default_ctrl_backtick_hotkey()
+    {
+        var registrar = new FakeHotkeyRegistrar();
+        var service = CreateService(registrar);
+
+        service.Start();
+
+        Assert.Equal("Ctrl + `", registrar.LastHotkeyText);
+        Assert.Equal("Ctrl + ` 已注册", service.Status.DisplayText);
+    }
+
+    [Fact]
+    public void Start_registers_custom_hotkey_from_settings()
+    {
+        var registrar = new FakeHotkeyRegistrar();
+        var settings = new FakeSettingsService();
+        settings.Values[SettingKeys.HotkeyOpenClipboardOverlayKey] = "Ctrl+Alt+V";
+        var service = CreateService(registrar, settings: settings);
+
+        service.Start();
+
+        Assert.Equal("Ctrl + Alt + V", registrar.LastHotkeyText);
+        Assert.Equal("Ctrl + Alt + V 已注册", service.Status.DisplayText);
+    }
+
+    [Fact]
+    public void Restart_after_setting_change_registers_new_hotkey()
+    {
+        var registrar = new FakeHotkeyRegistrar();
+        var settings = new FakeSettingsService();
+        var service = CreateService(registrar, settings: settings);
+
+        service.Start();
+        settings.Values[SettingKeys.HotkeyOpenClipboardOverlayKey] = "Ctrl+Alt+V";
+        service.Stop();
+        service.Start();
+
+        Assert.Equal("Ctrl + Alt + V", registrar.LastHotkeyText);
+        Assert.Equal(2, registrar.RegisterCount);
         Assert.Equal(1, registrar.UnregisterCount);
     }
 
@@ -51,11 +95,13 @@ public sealed class GlobalHotkeyServiceTests
 
     private static GlobalHotkeyService CreateService(
         FakeHotkeyRegistrar registrar,
-        FakeClipboardOverlayService? overlay = null)
+        FakeClipboardOverlayService? overlay = null,
+        FakeSettingsService? settings = null)
     {
         return new GlobalHotkeyService(
             registrar,
             overlay ?? new FakeClipboardOverlayService(),
+            settings ?? new FakeSettingsService(),
             NullLogger<GlobalHotkeyService>.Instance);
     }
 
@@ -82,10 +128,12 @@ public sealed class GlobalHotkeyServiceTests
         public int LastError { get; set; }
         public int RegisterCount { get; private set; }
         public int UnregisterCount { get; private set; }
+        public string? LastHotkeyText { get; private set; }
 
-        public bool RegisterOpenClipboardHotkey()
+        public bool RegisterOpenClipboardHotkey(HotkeyDefinition hotkey)
         {
             RegisterCount++;
+            LastHotkeyText = hotkey.DisplayText;
             return RegisterResult;
         }
 
@@ -97,6 +145,19 @@ public sealed class GlobalHotkeyServiceTests
         public int GetLastError() => LastError;
 
         public void RaiseHotkeyPressed() => HotkeyPressed?.Invoke(this, EventArgs.Empty);
+    }
+
+    private sealed class FakeSettingsService : ISettingsService
+    {
+        public Dictionary<string, object?> Values { get; } = new();
+
+        public T Get<T>(string key, T defaultValue) => Values.TryGetValue(key, out var value) ? (T)value! : defaultValue;
+
+        public Task SetAsync<T>(string key, T value, CancellationToken cancellationToken)
+        {
+            Values[key] = value;
+            return Task.CompletedTask;
+        }
     }
 
     private sealed class FakeClipboardOverlayService : IClipboardOverlayService

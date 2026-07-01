@@ -70,7 +70,7 @@ public static class GestureActionText
         BuiltInGestureAction.Backspace => "Backspace",
         BuiltInGestureAction.SendAltLeft => "Alt + ←",
         BuiltInGestureAction.SendAltRight => "Alt + →",
-        BuiltInGestureAction.OpenClipboardOverlay => "Ctrl + Alt + V",
+        BuiltInGestureAction.OpenClipboardOverlay => "Ctrl + `",
         BuiltInGestureAction.PasteLatestClipboardItem => "历史最近一条",
         BuiltInGestureAction.PasteAndEnter => "Ctrl + V, Enter",
         BuiltInGestureAction.NewTab => "Ctrl + T",

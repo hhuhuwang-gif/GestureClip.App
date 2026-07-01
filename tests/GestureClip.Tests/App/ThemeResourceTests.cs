@@ -105,7 +105,8 @@ public sealed class ThemeResourceTests
         Assert.Contains("NewGesturePattern", xaml);
         Assert.Contains("AddCustomGestureBindingCommand", xaml);
         Assert.Contains("SettingRowStyle", xaml);
-        Assert.Contains("KeyboardKeyStyle", xaml);
+        Assert.Contains("OpenClipboardHotkeyText", xaml);
+        Assert.DoesNotContain("TabItem Header=\"数据与清理\"", xaml);
     }
 
     private static string FindRepositoryFile(params string[] segments)

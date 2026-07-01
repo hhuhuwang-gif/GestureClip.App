@@ -96,6 +96,22 @@ public sealed class SettingsViewModelTests
     }
 
     [Fact]
+    public async Task Changing_clipboard_hotkey_saves_setting_and_restarts_hotkey_service()
+    {
+        var settings = new FakeSettingsService();
+        var hotkey = new FakeGlobalHotkeyService();
+        var viewModel = CreateViewModel(settings: settings, hotkey: hotkey);
+
+        viewModel.OpenClipboardHotkeyText = "Ctrl+Alt+V";
+
+        await WaitForAsync(() =>
+            settings.Values.TryGetValue(SettingKeys.HotkeyOpenClipboardOverlayKey, out var value) &&
+            Equals(value, "Ctrl + Alt + V"));
+        Assert.Equal(1, hotkey.StopCount);
+        Assert.Equal(1, hotkey.StartCount);
+    }
+
+    [Fact]
     public void Gesture_binding_cards_are_created_for_supported_patterns()
     {
         var viewModel = CreateViewModel();
@@ -201,7 +217,8 @@ public sealed class SettingsViewModelTests
         FakeClipboardOverlayService? overlay = null,
         FakeConfirmationService? confirmation = null,
         FakeSettingsService? settings = null,
-        FakeEdgeTriggerService? edgeTriggerService = null)
+        FakeEdgeTriggerService? edgeTriggerService = null,
+        FakeGlobalHotkeyService? hotkey = null)
     {
         settings ??= new FakeSettingsService();
         return new SettingsViewModel(
@@ -211,7 +228,7 @@ public sealed class SettingsViewModelTests
             new FakeMouseGestureService(),
             new FakeGestureSettingsProvider(),
             new FakeFeatureToggleService(),
-            new FakeGlobalHotkeyService(),
+            hotkey ?? new FakeGlobalHotkeyService(),
             new FakeAppBlacklistService(),
             new FakeStartupService(),
             new FakeDiagnosticsService(),
@@ -363,9 +380,11 @@ public sealed class SettingsViewModelTests
 
     private sealed class FakeGlobalHotkeyService : IGlobalHotkeyService
     {
-        public HotkeyStatus Status { get; } = new(HotkeyRegistrationState.Registered, "Ctrl+Alt+V 已注册");
-        public void Start() { }
-        public void Stop() { }
+        public HotkeyStatus Status { get; } = new(HotkeyRegistrationState.Registered, "Ctrl + ` 已注册");
+        public int StartCount { get; private set; }
+        public int StopCount { get; private set; }
+        public void Start() => StartCount++;
+        public void Stop() => StopCount++;
     }
 
     private sealed class FakeAppBlacklistService : IAppBlacklistService

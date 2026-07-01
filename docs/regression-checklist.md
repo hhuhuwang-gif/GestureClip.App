@@ -16,7 +16,7 @@ Use this checklist before publishing a build.
 - Repeated identical text is not saved repeatedly.
 - Pausing clipboard recording prevents new saves.
 - Resuming clipboard recording saves again.
-- `Ctrl + Alt + V` opens clipboard history.
+- Ctrl + \` opens clipboard history.
 - Search works.
 - Pasting a history item works.
 - Pasting a history item does not pollute history.

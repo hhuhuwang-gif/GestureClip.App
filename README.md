@@ -8,7 +8,7 @@ GestureClip is a local Windows desktop tool for text clipboard history and right
 - Single-instance startup guard
 - Text clipboard history with SQLite storage
 - Clipboard search and quick paste overlay
-- Global hotkey: `Ctrl + Alt + V`
+- Global hotkey: Ctrl + \`
 - Global right-button mouse gestures
 - Gesture presets and action HUD
 - Clipboard and gesture pause/resume switches

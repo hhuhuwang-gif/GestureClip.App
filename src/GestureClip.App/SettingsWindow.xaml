@@ -119,18 +119,7 @@
                                                 <Ellipse Width="8" Height="8" Fill="#22C55E" Margin="0,0,8,0" VerticalAlignment="Center" />
                                                 <TextBlock Text="{Binding StartupStatus}" />
                                             </StackPanel>
-                                            <StackPanel Orientation="Horizontal" Margin="0,8,0,0">
-                                                <Border Style="{StaticResource KeyboardKeyStyle}">
-                                                    <TextBlock Text="Ctrl" FontSize="12" Foreground="{DynamicResource BrushTextSecondary}" />
-                                                </Border>
-                                                <Border Style="{StaticResource KeyboardKeyStyle}">
-                                                    <TextBlock Text="Alt" FontSize="12" Foreground="{DynamicResource BrushTextSecondary}" />
-                                                </Border>
-                                                <Border Style="{StaticResource KeyboardKeyStyle}">
-                                                    <TextBlock Text="V" FontSize="12" Foreground="{DynamicResource BrushTextSecondary}" />
-                                                </Border>
-                                                <TextBlock Text="{Binding HotkeyStatusText}" Style="{StaticResource MutedTextStyle}" Margin="4,3,0,0" />
-                                            </StackPanel>
+                                            <TextBlock Text="{Binding HotkeyStatusText}" Style="{StaticResource MutedTextStyle}" Margin="0,8,0,0" />
                                         </StackPanel>
                                     </Grid>
                                 </Border>
@@ -140,14 +129,104 @@
                 </TabItem>
 
                 <TabItem Header="剪贴板">
-                    <StackPanel Margin="18">
-                        <GroupBox Header="剪贴板" Padding="12">
-                            <StackPanel>
-                                <CheckBox Content="启用剪贴板记录" IsChecked="{Binding ClipboardCaptureEnabled, Mode=TwoWay}" />
-                                <TextBlock Text="全局快捷键：Ctrl + Alt + V 打开剪贴板历史" Margin="0,10,0,0" Style="{StaticResource MutedTextStyle}" />
-                            </StackPanel>
-                        </GroupBox>
-                    </StackPanel>
+                    <ScrollViewer VerticalScrollBarVisibility="Auto">
+                        <StackPanel Margin="18">
+                            <GroupBox Header="剪贴板" Padding="12">
+                                <StackPanel>
+                                    <Border Style="{StaticResource SettingRowStyle}">
+                                        <Grid>
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="150" />
+                                                <ColumnDefinition Width="*" />
+                                            </Grid.ColumnDefinitions>
+                                            <TextBlock Text="记录状态" FontWeight="SemiBold" VerticalAlignment="Center" />
+                                            <CheckBox Grid.Column="1" Content="启用剪贴板记录" IsChecked="{Binding ClipboardCaptureEnabled, Mode=TwoWay}" />
+                                        </Grid>
+                                    </Border>
+                                    <Border Style="{StaticResource SettingRowStyle}">
+                                        <Grid>
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="150" />
+                                                <ColumnDefinition Width="*" />
+                                            </Grid.ColumnDefinitions>
+                                            <TextBlock Text="打开历史热键" FontWeight="SemiBold" VerticalAlignment="Center" />
+                                            <StackPanel Grid.Column="1">
+                                                <TextBox Width="190"
+                                                         HorizontalAlignment="Left"
+                                                         Text="{Binding OpenClipboardHotkeyText, Mode=TwoWay, UpdateSourceTrigger=LostFocus}" />
+                                                <TextBlock Text="{Binding HotkeyStatusText}" Margin="0,6,0,0" Style="{StaticResource MutedTextStyle}" />
+                                            </StackPanel>
+                                        </Grid>
+                                    </Border>
+                                </StackPanel>
+                            </GroupBox>
+
+                            <GroupBox Header="数据与清理" Padding="12" Margin="0,14,0,0">
+                                <StackPanel>
+                                    <Border Style="{StaticResource SettingRowStyle}">
+                                        <Grid>
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="150" />
+                                                <ColumnDefinition Width="*" />
+                                            </Grid.ColumnDefinitions>
+                                            <TextBlock Text="历史数量" FontWeight="SemiBold" VerticalAlignment="Center" />
+                                            <StackPanel Grid.Column="1" Orientation="Horizontal">
+                                                <TextBlock Text="{Binding ClipboardItemCountText}" VerticalAlignment="Center" />
+                                                <Button Content="刷新"
+                                                        Style="{StaticResource SecondaryButtonStyle}"
+                                                        Margin="14,0,0,0"
+                                                        Command="{Binding RefreshClipboardStatsCommand}" />
+                                            </StackPanel>
+                                        </Grid>
+                                    </Border>
+                                    <Border Style="{StaticResource SettingRowStyle}">
+                                        <Grid>
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="150" />
+                                                <ColumnDefinition Width="*" />
+                                            </Grid.ColumnDefinitions>
+                                            <TextBlock Text="保留策略" FontWeight="SemiBold" VerticalAlignment="Center" />
+                                            <WrapPanel Grid.Column="1" VerticalAlignment="Center">
+                                                <TextBlock Text="最大保存数量" VerticalAlignment="Center" Margin="0,0,10,0" />
+                                                <ComboBox Width="110"
+                                                          Margin="0,0,22,0"
+                                                          ItemsSource="{Binding ClipboardMaxItemOptions}"
+                                                          SelectedItem="{Binding ClipboardMaxItems, Mode=TwoWay}" />
+                                                <TextBlock Text="保留天数" VerticalAlignment="Center" Margin="0,0,10,0" />
+                                                <ComboBox Width="110"
+                                                          ItemsSource="{Binding ClipboardRetentionOptions}"
+                                                          SelectedItem="{Binding SelectedClipboardRetentionOption, Mode=TwoWay}"
+                                                          DisplayMemberPath="Label" />
+                                            </WrapPanel>
+                                        </Grid>
+                                    </Border>
+                                    <Border Style="{StaticResource SettingRowStyle}">
+                                        <Grid>
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="150" />
+                                                <ColumnDefinition Width="*" />
+                                            </Grid.ColumnDefinitions>
+                                            <TextBlock Text="清理操作" FontWeight="SemiBold" VerticalAlignment="Center" />
+                                            <WrapPanel Grid.Column="1">
+                                                <Button Content="清空非固定项"
+                                                        Style="{StaticResource SecondaryButtonStyle}"
+                                                        Margin="0,0,12,10"
+                                                        Command="{Binding ClearUnpinnedClipboardItemsCommand}" />
+                                                <Button Content="清空全部历史"
+                                                        Style="{StaticResource DangerButtonStyle}"
+                                                        Margin="0,0,12,10"
+                                                        Command="{Binding ClearAllClipboardItemsCommand}" />
+                                                <Button Content="立即执行清理"
+                                                        Style="{StaticResource PrimaryButtonStyle}"
+                                                        Margin="0,0,0,10"
+                                                        Command="{Binding ApplyClipboardCleanupCommand}" />
+                                            </WrapPanel>
+                                        </Grid>
+                                    </Border>
+                                </StackPanel>
+                            </GroupBox>
+                        </StackPanel>
+                    </ScrollViewer>
                 </TabItem>
 
                 <TabItem Header="鼠标手势">
@@ -568,28 +647,6 @@
                         <StackPanel>
                             <CheckBox Content="开机自动启动 GestureClip" IsChecked="{Binding StartWithWindows, Mode=TwoWay}" />
                             <TextBlock Text="{Binding StartupModeWarning}" Foreground="{DynamicResource BrushPrimaryBright}" TextWrapping="Wrap" Margin="0,6,0,0" />
-                        </StackPanel>
-                    </GroupBox>
-                </TabItem>
-
-                <TabItem Header="数据与清理">
-                    <GroupBox Header="数据与清理" Padding="12" Margin="18">
-                        <StackPanel>
-                            <StackPanel Orientation="Horizontal">
-                                <TextBlock Text="{Binding ClipboardItemCountText}" VerticalAlignment="Center" />
-                                <Button Content="刷新" Style="{StaticResource SecondaryButtonStyle}" Margin="12,0,0,0" Command="{Binding RefreshClipboardStatsCommand}" />
-                            </StackPanel>
-                            <StackPanel Orientation="Horizontal" Margin="0,10,0,0">
-                                <TextBlock Text="最大保存数量" VerticalAlignment="Center" />
-                                <ComboBox Width="100" Margin="12,0,0,0" ItemsSource="{Binding ClipboardMaxItemOptions}" SelectedItem="{Binding ClipboardMaxItems, Mode=TwoWay}" />
-                                <TextBlock Text="保留天数" Margin="24,0,0,0" VerticalAlignment="Center" />
-                                <ComboBox Width="100" Margin="12,0,0,0" ItemsSource="{Binding ClipboardRetentionOptions}" SelectedItem="{Binding SelectedClipboardRetentionOption, Mode=TwoWay}" DisplayMemberPath="Label" />
-                            </StackPanel>
-                            <StackPanel Orientation="Horizontal" Margin="0,12,0,0">
-                                <Button Content="清空非固定项" Style="{StaticResource SecondaryButtonStyle}" Command="{Binding ClearUnpinnedClipboardItemsCommand}" />
-                                <Button Content="清空全部历史" Style="{StaticResource DangerButtonStyle}" Margin="8,0,0,0" Command="{Binding ClearAllClipboardItemsCommand}" />
-                                <Button Content="立即执行清理" Style="{StaticResource PrimaryButtonStyle}" Margin="8,0,0,0" Command="{Binding ApplyClipboardCleanupCommand}" />
-                            </StackPanel>
                         </StackPanel>
                     </GroupBox>
                 </TabItem>

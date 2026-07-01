@@ -3,6 +3,7 @@ using System.Windows;
 using System.Windows.Interop;
 using System.Windows.Threading;
 using GestureClip.Core.Abstractions;
+using GestureClip.Core.Hotkeys;
 using GestureClip.Infrastructure.Win32;
 
 namespace GestureClip.Infrastructure.Hotkeys;
@@ -21,7 +22,7 @@ public sealed class WindowsHotkeyRegistrar : IHotkeyRegistrar, IDisposable
 
     public event EventHandler? HotkeyPressed;
 
-    public bool RegisterOpenClipboardHotkey()
+    public bool RegisterOpenClipboardHotkey(HotkeyDefinition hotkey)
     {
         return _dispatcher.Invoke(() =>
         {
@@ -29,8 +30,8 @@ public sealed class WindowsHotkeyRegistrar : IHotkeyRegistrar, IDisposable
             var ok = HotkeyNativeMethods.RegisterHotKey(
                 _source!.Handle,
                 OpenClipboardOverlayHotkeyId,
-                HotkeyNativeMethods.ModControl | HotkeyNativeMethods.ModAlt,
-                HotkeyNativeMethods.VkV);
+                hotkey.Modifiers,
+                hotkey.VirtualKey);
             _lastError = ok ? 0 : Marshal.GetLastWin32Error();
             return ok;
         });

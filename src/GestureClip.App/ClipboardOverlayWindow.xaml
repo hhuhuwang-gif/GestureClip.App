@@ -27,7 +27,7 @@
 
             <DockPanel Margin="2,0,2,16">
                 <TextBlock DockPanel.Dock="Right"
-                           Text="Ctrl + Alt + V"
+                           Text="Ctrl + `"
                            Foreground="{DynamicResource BrushPrimaryBright}"
                            FontWeight="SemiBold"
                            VerticalAlignment="Center" />

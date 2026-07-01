@@ -1,5 +1,6 @@
 using GestureClip.Core.Abstractions;
 using GestureClip.Core.Hotkeys;
+using GestureClip.Core.Settings;
 using Microsoft.Extensions.Logging;
 
 namespace GestureClip.Infrastructure.Hotkeys;
@@ -8,16 +9,19 @@ public sealed class GlobalHotkeyService : IGlobalHotkeyService
 {
     private readonly IHotkeyRegistrar _registrar;
     private readonly IClipboardOverlayService _clipboardOverlayService;
+    private readonly ISettingsService _settingsService;
     private readonly ILogger<GlobalHotkeyService> _logger;
     private int _started;
 
     public GlobalHotkeyService(
         IHotkeyRegistrar registrar,
         IClipboardOverlayService clipboardOverlayService,
+        ISettingsService settingsService,
         ILogger<GlobalHotkeyService> logger)
     {
         _registrar = registrar;
         _clipboardOverlayService = clipboardOverlayService;
+        _settingsService = settingsService;
         _logger = logger;
     }
 
@@ -32,16 +36,19 @@ public sealed class GlobalHotkeyService : IGlobalHotkeyService
         }
 
         _registrar.HotkeyPressed += OnHotkeyPressed;
-        if (_registrar.RegisterOpenClipboardHotkey())
+        var hotkey = HotkeyDefinition.ParseOrDefault(_settingsService.Get(
+            SettingKeys.HotkeyOpenClipboardOverlayKey,
+            HotkeyDefinition.DefaultOpenClipboardOverlay));
+        if (_registrar.RegisterOpenClipboardHotkey(hotkey))
         {
-            Status = new HotkeyStatus(HotkeyRegistrationState.Registered, "Ctrl + Alt + V 已注册");
-            _logger.LogInformation("Global hotkey registered: Ctrl+Alt+V.");
+            Status = new HotkeyStatus(HotkeyRegistrationState.Registered, $"{hotkey.DisplayText} 已注册");
+            _logger.LogInformation("Global hotkey registered: {Hotkey}.", hotkey.DisplayText);
             return;
         }
 
         var error = _registrar.GetLastError();
-        Status = new HotkeyStatus(HotkeyRegistrationState.Failed, "Ctrl + Alt + V 注册失败", error);
-        _logger.LogWarning("Global hotkey registration failed. Win32Error={Win32Error}", error);
+        Status = new HotkeyStatus(HotkeyRegistrationState.Failed, $"{hotkey.DisplayText} 注册失败", error);
+        _logger.LogWarning("Global hotkey registration failed. Hotkey={Hotkey} Win32Error={Win32Error}", hotkey.DisplayText, error);
     }
 
     public void Stop()

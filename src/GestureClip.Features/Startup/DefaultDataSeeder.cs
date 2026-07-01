@@ -27,7 +27,8 @@ public sealed class DefaultDataSeeder
         await SeedSettingAsync(connection, SettingKeys.ClipboardMaxItems, "1000", "int", now);
         await SeedSettingAsync(connection, SettingKeys.ClipboardRetentionDays, "30", "int", now);
         await SeedSettingAsync(connection, SettingKeys.HotkeyOpenClipboardOverlayEnabled, "true", "bool", now);
-        await SeedSettingAsync(connection, SettingKeys.HotkeyOpenClipboardOverlayKey, "\"Ctrl+Alt+V\"", "string", now);
+        await SeedSettingAsync(connection, SettingKeys.HotkeyOpenClipboardOverlayKey, "\"Ctrl + `\"", "string", now);
+        await MigrateOldDefaultHotkeyAsync(connection, now);
         await SeedSettingAsync(connection, SettingKeys.GestureEnabled, "true", "bool", now);
         await SeedSettingAsync(connection, SettingKeys.GestureShowOverlay, "true", "bool", now);
         await SeedSettingAsync(connection, SettingKeys.GestureDebugEnabled, "false", "bool", now);
@@ -111,6 +112,21 @@ VALUES (@Key, @Value, @ValueType, @UpdatedAt);
                 Key = key,
                 Value = value,
                 ValueType = valueType,
+                UpdatedAt = now
+            });
+    }
+
+    private static Task MigrateOldDefaultHotkeyAsync(SqliteConnection connection, string now)
+    {
+        return connection.ExecuteAsync(
+            """
+UPDATE Settings
+SET Value = '"Ctrl + `"', UpdatedAt = @UpdatedAt
+WHERE Key = @Key AND Value = '"Ctrl+Alt+V"';
+""",
+            new
+            {
+                Key = SettingKeys.HotkeyOpenClipboardOverlayKey,
                 UpdatedAt = now
             });
     }

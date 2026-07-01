@@ -10,6 +10,7 @@ using GestureClip.Core.Diagnostics;
 using GestureClip.Core.Settings;
 using GestureClip.Core.SystemInfo;
 using GestureClip.Core.Gestures;
+using GestureClip.Core.Hotkeys;
 using GestureClip.Features.Gestures;
 using GestureClip.Infrastructure.Paths;
 using System.Windows.Threading;
@@ -77,6 +78,7 @@ public sealed class SettingsViewModel : INotifyPropertyChanged
     private int _clipboardItemCount;
     private int _clipboardMaxItems;
     private int _clipboardRetentionDays;
+    private string _openClipboardHotkeyText;
     private string _gestureStrokeColor;
     private string _newGesturePattern = "";
     private BuiltInGestureAction _newGestureAction = BuiltInGestureAction.Copy;
@@ -160,6 +162,9 @@ public sealed class SettingsViewModel : INotifyPropertyChanged
         _gestureTriggerThreshold = _settingsService.Get(SettingKeys.GestureTriggerThreshold, 20);
         _clipboardMaxItems = _settingsService.Get(SettingKeys.ClipboardMaxItems, 1000);
         _clipboardRetentionDays = _settingsService.Get(SettingKeys.ClipboardRetentionDays, 30);
+        _openClipboardHotkeyText = HotkeyDefinition.ParseOrDefault(_settingsService.Get(
+            SettingKeys.HotkeyOpenClipboardOverlayKey,
+            HotkeyDefinition.DefaultOpenClipboardOverlay)).DisplayText;
         _gestureStrokeColor = _settingsService.Get(SettingKeys.GestureStrokeColor, "#8CC8FF");
         _gestureDiagnostics = _mouseGestureService.Diagnostics;
         _startWithWindows = _startupService.IsEnabled();
@@ -205,6 +210,23 @@ public sealed class SettingsViewModel : INotifyPropertyChanged
     public string StartupStatus => "托盘常驻已启用，关闭窗口将隐藏到托盘。";
 
     public string HotkeyStatusText => _globalHotkeyService.Status.DisplayText;
+
+    public string OpenClipboardHotkeyText
+    {
+        get => _openClipboardHotkeyText;
+        set
+        {
+            var hotkey = HotkeyDefinition.ParseOrDefault(value);
+            if (_openClipboardHotkeyText == hotkey.DisplayText)
+            {
+                return;
+            }
+
+            _openClipboardHotkeyText = hotkey.DisplayText;
+            OnPropertyChanged();
+            _ = ApplyOpenClipboardHotkeyAsync(hotkey.DisplayText);
+        }
+    }
 
     public ObservableCollection<AppBlacklistItemViewModel> AppBlacklistItems { get; } = [];
 
@@ -934,6 +956,14 @@ public sealed class SettingsViewModel : INotifyPropertyChanged
         }
 
         await _settingsService.SetAsync(SettingKeys.AppStartWithWindows, enabled, CancellationToken.None);
+    }
+
+    private async Task ApplyOpenClipboardHotkeyAsync(string hotkeyText)
+    {
+        await _settingsService.SetAsync(SettingKeys.HotkeyOpenClipboardOverlayKey, hotkeyText, CancellationToken.None);
+        _globalHotkeyService.Stop();
+        _globalHotkeyService.Start();
+        OnPropertyChanged(nameof(HotkeyStatusText));
     }
 
     private void SetEdgeTriggerAction(ref BuiltInGestureAction field, BuiltInGestureAction value, string settingKey)

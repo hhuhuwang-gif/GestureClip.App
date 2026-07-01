@@ -30,7 +30,7 @@ public sealed class DiagnosticsServiceTests
         Assert.Contains(paths.LogDirectory, report);
         Assert.Contains("ApplicationPath:", report);
         Assert.Contains(@"C:\Program Files\GestureClip\GestureClip.exe", report);
-        Assert.Contains("Ctrl+Alt+V", report);
+        Assert.Contains("Ctrl + `", report);
         Assert.Contains("U", report);
         Assert.DoesNotContain("secret clipboard text", report, StringComparison.OrdinalIgnoreCase);
     }
@@ -64,7 +64,7 @@ public sealed class DiagnosticsServiceTests
 
     private sealed class FakeGlobalHotkeyService : IGlobalHotkeyService
     {
-        public HotkeyStatus Status { get; } = new(HotkeyRegistrationState.Registered, "Ctrl+Alt+V 已注册");
+        public HotkeyStatus Status { get; } = new(HotkeyRegistrationState.Registered, "Ctrl + ` 已注册");
         public void Start() { }
         public void Stop() { }
     }
