@@ -57,11 +57,12 @@ public sealed class EdgeTriggerService : IEdgeTriggerService
                 return Task.CompletedTask;
             }
 
-            _loopCancellation = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+            var loopCancellation = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+            _loopCancellation = loopCancellation;
             _mouseHook.MouseEventReceived += OnMouseEventReceived;
             _mouseHook.Start();
             _started = true;
-            _loopTask = Task.Run(() => RunAsync(_loopCancellation.Token), CancellationToken.None);
+            _loopTask = Task.Run(() => RunAsync(loopCancellation.Token), CancellationToken.None);
         }
 
         _logger.LogInformation("Edge trigger service started.");
