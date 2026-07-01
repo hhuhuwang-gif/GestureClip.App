@@ -18,5 +18,8 @@ public static class SettingKeys
     public const string GestureCloseWindowEnabled = "Gesture.CloseWindowEnabled";
     public const string GestureCustomBindingsJson = "Gesture.CustomBindingsJson";
     public const string GestureStrokeColor = "Gesture.StrokeColor";
+    public const string GestureTriggerMiddleButtonEnabled = "Gesture.Trigger.MiddleButton.Enabled";
+    public const string GestureTriggerXButton1Enabled = "Gesture.Trigger.XButton1.Enabled";
+    public const string GestureTriggerXButton2Enabled = "Gesture.Trigger.XButton2.Enabled";
     public const string PrivacySuppressSensitive = "Privacy.SuppressSensitive";
 }

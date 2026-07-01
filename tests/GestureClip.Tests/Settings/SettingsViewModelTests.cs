@@ -162,6 +162,22 @@ public sealed class SettingsViewModelTests
             Equals(color, "#6EE7D8"));
     }
 
+    [Fact]
+    public async Task Changing_extra_gesture_trigger_toggles_saves_settings()
+    {
+        var settings = new FakeSettingsService();
+        var viewModel = CreateViewModel(settings: settings);
+
+        viewModel.GestureMiddleButtonEnabled = true;
+        viewModel.GestureXButton1Enabled = true;
+        viewModel.GestureXButton2Enabled = true;
+
+        await WaitForAsync(() =>
+            settings.Values.TryGetValue(SettingKeys.GestureTriggerMiddleButtonEnabled, out var middle) && Equals(middle, true) &&
+            settings.Values.TryGetValue(SettingKeys.GestureTriggerXButton1Enabled, out var x1) && Equals(x1, true) &&
+            settings.Values.TryGetValue(SettingKeys.GestureTriggerXButton2Enabled, out var x2) && Equals(x2, true));
+    }
+
     private static SettingsViewModel CreateViewModel(
         FakeClipboardRepository? repository = null,
         FakeClipboardOverlayService? overlay = null,

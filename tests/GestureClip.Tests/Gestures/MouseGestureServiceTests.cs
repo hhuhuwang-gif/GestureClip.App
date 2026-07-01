@@ -73,6 +73,77 @@ public sealed class MouseGestureServiceTests
     }
 
     [Fact]
+    public async Task Middle_button_gesture_executes_when_enabled()
+    {
+        var hook = new FakeLowLevelMouseHook();
+        var executor = new FakeMouseGestureActionExecutor();
+        var service = CreateService(hook, executor, showOverlay: false, middleButtonEnabled: true);
+        await service.StartAsync(CancellationToken.None);
+
+        var down = hook.Raise(MouseHookEventType.MiddleButtonDown, 0, 0);
+        hook.Raise(MouseHookEventType.Move, 0, -30);
+        var up = hook.Raise(MouseHookEventType.MiddleButtonUp, 0, -50);
+        await WaitForAsync(() => executor.Actions.Count == 1);
+
+        Assert.True(down.Suppress);
+        Assert.True(up.Suppress);
+        Assert.Equal(BuiltInGestureAction.Copy, executor.Actions.Single());
+    }
+
+    [Fact]
+    public async Task Middle_button_events_pass_through_when_disabled()
+    {
+        var hook = new FakeLowLevelMouseHook();
+        var executor = new FakeMouseGestureActionExecutor();
+        var service = CreateService(hook, executor, showOverlay: false, middleButtonEnabled: false);
+        await service.StartAsync(CancellationToken.None);
+
+        var down = hook.Raise(MouseHookEventType.MiddleButtonDown, 0, 0);
+        hook.Raise(MouseHookEventType.Move, 0, -30);
+        var up = hook.Raise(MouseHookEventType.MiddleButtonUp, 0, -50);
+        await Task.Delay(50);
+
+        Assert.False(down.Suppress);
+        Assert.False(up.Suppress);
+        Assert.Empty(executor.Actions);
+    }
+
+    [Fact]
+    public async Task XButton1_light_click_synthesizes_original_click_when_enabled()
+    {
+        var hook = new FakeLowLevelMouseHook();
+        var synthesizer = new FakeRightClickSynthesizer();
+        var service = CreateService(hook, synthesizer: synthesizer, showOverlay: false, xButton1Enabled: true);
+        await service.StartAsync(CancellationToken.None);
+
+        var down = hook.Raise(MouseHookEventType.XButton1Down, 10, 10);
+        var up = hook.Raise(MouseHookEventType.XButton1Up, 12, 12);
+        await WaitForAsync(() => synthesizer.MouseClicks.Count == 1);
+
+        Assert.True(down.Suppress);
+        Assert.True(up.Suppress);
+        Assert.Equal((GestureTriggerButton.XButton1, 12, 12), synthesizer.MouseClicks.Single());
+    }
+
+    [Fact]
+    public async Task XButton2_gesture_executes_when_enabled()
+    {
+        var hook = new FakeLowLevelMouseHook();
+        var executor = new FakeMouseGestureActionExecutor();
+        var service = CreateService(hook, executor, showOverlay: false, xButton2Enabled: true);
+        await service.StartAsync(CancellationToken.None);
+
+        var down = hook.Raise(MouseHookEventType.XButton2Down, 0, 0);
+        hook.Raise(MouseHookEventType.Move, 0, -30);
+        var up = hook.Raise(MouseHookEventType.XButton2Up, 0, -50);
+        await WaitForAsync(() => executor.Actions.Count == 1);
+
+        Assert.True(down.Suppress);
+        Assert.True(up.Suppress);
+        Assert.Equal(BuiltInGestureAction.Copy, executor.Actions.Single());
+    }
+
+    [Fact]
     public async Task Right_button_down_enters_tracking_and_move_over_threshold_enters_gesture_active()
     {
         var hook = new FakeLowLevelMouseHook();
@@ -443,14 +514,17 @@ public sealed class MouseGestureServiceTests
         int maxDurationMs = 2000,
         bool showOverlay = true,
         bool debugEnabled = false,
-        bool gestureBlacklisted = false)
+        bool gestureBlacklisted = false,
+        bool middleButtonEnabled = false,
+        bool xButton1Enabled = false,
+        bool xButton2Enabled = false)
     {
         return new MouseGestureService(
             hook,
             new DirectionGestureRecognizer(),
             executor ?? new FakeMouseGestureActionExecutor(),
             synthesizer ?? new FakeRightClickSynthesizer(),
-            new FakeGestureSettingsProvider(enabled, maxDurationMs, showOverlay, debugEnabled),
+            new FakeGestureSettingsProvider(enabled, maxDurationMs, showOverlay, debugEnabled, middleButtonEnabled, xButton1Enabled, xButton2Enabled),
             new GesturePresetProvider(),
             new GestureHudInfoProvider(new GesturePresetProvider()),
             overlay ?? new FakeGestureOverlayService(),
@@ -505,10 +579,20 @@ public sealed class MouseGestureServiceTests
     private sealed class FakeRightClickSynthesizer : IRightClickSynthesizer
     {
         public List<(int X, int Y)> Clicks { get; } = [];
+        public List<(GestureTriggerButton Button, int X, int Y)> MouseClicks { get; } = [];
 
         public void SynthesizeRightClick(int x, int y)
         {
-            Clicks.Add((x, y));
+            SynthesizeClick(GestureTriggerButton.Right, x, y);
+        }
+
+        public void SynthesizeClick(GestureTriggerButton button, int x, int y)
+        {
+            MouseClicks.Add((button, x, y));
+            if (button == GestureTriggerButton.Right)
+            {
+                Clicks.Add((x, y));
+            }
         }
     }
 
@@ -577,13 +661,19 @@ public sealed class MouseGestureServiceTests
         private readonly int _maxDurationMs;
         private readonly bool _showOverlay;
         private readonly bool _debugEnabled;
+        private readonly bool _middleButtonEnabled;
+        private readonly bool _xButton1Enabled;
+        private readonly bool _xButton2Enabled;
 
-        public FakeGestureSettingsProvider(bool enabled, int maxDurationMs, bool showOverlay, bool debugEnabled)
+        public FakeGestureSettingsProvider(bool enabled, int maxDurationMs, bool showOverlay, bool debugEnabled, bool middleButtonEnabled, bool xButton1Enabled, bool xButton2Enabled)
         {
             _enabled = enabled;
             _maxDurationMs = maxDurationMs;
             _showOverlay = showOverlay;
             _debugEnabled = debugEnabled;
+            _middleButtonEnabled = middleButtonEnabled;
+            _xButton1Enabled = xButton1Enabled;
+            _xButton2Enabled = xButton2Enabled;
         }
 
         public GestureSettings GetCurrent()
@@ -594,7 +684,10 @@ public sealed class MouseGestureServiceTests
                 CloseWindowEnabled: false,
                 DebugEnabled: _debugEnabled,
                 GesturePreset.EditEnhanced,
-                new GestureOptions(20, 16, _maxDurationMs, 2));
+                new GestureOptions(20, 16, _maxDurationMs, 2),
+                _middleButtonEnabled,
+                _xButton1Enabled,
+                _xButton2Enabled);
         }
 
         public void Update(GestureSettings settings)

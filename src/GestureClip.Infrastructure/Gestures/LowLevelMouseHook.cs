@@ -129,11 +129,19 @@ public sealed class LowLevelMouseHook : ILowLevelMouseHook, IDisposable
     private static bool TryCreateEvent(IntPtr wParam, IntPtr lParam, out MouseHookEvent hookEvent)
     {
         var message = wParam.ToInt32();
+        var data = Marshal.PtrToStructure<MouseHookNativeMethods.MSLLHOOKSTRUCT>(lParam);
+        var xButton = data.mouseData >> 16;
         var type = message switch
         {
             MouseHookNativeMethods.WmRButtonDown => MouseHookEventType.RightButtonDown,
             MouseHookNativeMethods.WmMouseMove => MouseHookEventType.Move,
             MouseHookNativeMethods.WmRButtonUp => MouseHookEventType.RightButtonUp,
+            MouseHookNativeMethods.WmMButtonDown => MouseHookEventType.MiddleButtonDown,
+            MouseHookNativeMethods.WmMButtonUp => MouseHookEventType.MiddleButtonUp,
+            MouseHookNativeMethods.WmXButtonDown when xButton == MouseHookNativeMethods.XButton1 => MouseHookEventType.XButton1Down,
+            MouseHookNativeMethods.WmXButtonUp when xButton == MouseHookNativeMethods.XButton1 => MouseHookEventType.XButton1Up,
+            MouseHookNativeMethods.WmXButtonDown when xButton == MouseHookNativeMethods.XButton2 => MouseHookEventType.XButton2Down,
+            MouseHookNativeMethods.WmXButtonUp when xButton == MouseHookNativeMethods.XButton2 => MouseHookEventType.XButton2Up,
             _ => (MouseHookEventType?)null
         };
 
@@ -143,7 +151,6 @@ public sealed class LowLevelMouseHook : ILowLevelMouseHook, IDisposable
             return false;
         }
 
-        var data = Marshal.PtrToStructure<MouseHookNativeMethods.MSLLHOOKSTRUCT>(lParam);
         var isInjected = (data.flags & MouseHookNativeMethods.LlmhfInjected) != 0;
         hookEvent = new MouseHookEvent(type.Value, data.pt.x, data.pt.y, DateTimeOffset.UtcNow, isInjected);
         return true;

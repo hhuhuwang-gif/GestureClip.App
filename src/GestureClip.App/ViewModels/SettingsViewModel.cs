@@ -37,6 +37,9 @@ public sealed class SettingsViewModel : INotifyPropertyChanged
     private bool _gestureShowOverlay;
     private bool _gestureDebugEnabled;
     private bool _gestureCloseWindowEnabled;
+    private bool _gestureMiddleButtonEnabled;
+    private bool _gestureXButton1Enabled;
+    private bool _gestureXButton2Enabled;
     private GesturePreset _selectedGesturePreset;
     private int _gestureTriggerThreshold;
     private GestureDiagnosticsSnapshot _gestureDiagnostics;
@@ -93,6 +96,9 @@ public sealed class SettingsViewModel : INotifyPropertyChanged
         _gestureShowOverlay = _settingsService.Get(SettingKeys.GestureShowOverlay, true);
         _gestureDebugEnabled = _settingsService.Get(SettingKeys.GestureDebugEnabled, false);
         _gestureCloseWindowEnabled = _settingsService.Get(SettingKeys.GestureCloseWindowEnabled, false);
+        _gestureMiddleButtonEnabled = _settingsService.Get(SettingKeys.GestureTriggerMiddleButtonEnabled, false);
+        _gestureXButton1Enabled = _settingsService.Get(SettingKeys.GestureTriggerXButton1Enabled, false);
+        _gestureXButton2Enabled = _settingsService.Get(SettingKeys.GestureTriggerXButton2Enabled, false);
         _selectedGesturePreset = _settingsService.Get(SettingKeys.GesturePreset, GesturePreset.EditEnhanced);
         _gestureTriggerThreshold = _settingsService.Get(SettingKeys.GestureTriggerThreshold, 20);
         _clipboardMaxItems = _settingsService.Get(SettingKeys.ClipboardMaxItems, 1000);
@@ -147,10 +153,10 @@ public sealed class SettingsViewModel : INotifyPropertyChanged
     public IReadOnlyList<GestureTriggerModeViewModel> GestureTriggerModes { get; } =
     [
         new("鼠标右键", "已启用", true),
-        new("鼠标中键", "预留", false),
+        new("鼠标中键", "可启用", false),
         new("鼠标左键", "预留", false),
-        new("鼠标侧键 1", "预留", false),
-        new("鼠标侧键 2", "预留", false),
+        new("鼠标侧键 1", "可启用", false),
+        new("鼠标侧键 2", "可启用", false),
         new("屏幕左边缘 + 鼠标中键", "预留", false),
         new("屏幕左边缘 + 鼠标左键", "预留", false),
         new("屏幕左边缘 + 鼠标侧键 1", "预留", false),
@@ -469,6 +475,57 @@ public sealed class SettingsViewModel : INotifyPropertyChanged
         }
     }
 
+    public bool GestureMiddleButtonEnabled
+    {
+        get => _gestureMiddleButtonEnabled;
+        set
+        {
+            if (_gestureMiddleButtonEnabled == value)
+            {
+                return;
+            }
+
+            _gestureMiddleButtonEnabled = value;
+            UpdateGestureSettingsSnapshot();
+            OnPropertyChanged();
+            _ = _settingsService.SetAsync(SettingKeys.GestureTriggerMiddleButtonEnabled, value, CancellationToken.None);
+        }
+    }
+
+    public bool GestureXButton1Enabled
+    {
+        get => _gestureXButton1Enabled;
+        set
+        {
+            if (_gestureXButton1Enabled == value)
+            {
+                return;
+            }
+
+            _gestureXButton1Enabled = value;
+            UpdateGestureSettingsSnapshot();
+            OnPropertyChanged();
+            _ = _settingsService.SetAsync(SettingKeys.GestureTriggerXButton1Enabled, value, CancellationToken.None);
+        }
+    }
+
+    public bool GestureXButton2Enabled
+    {
+        get => _gestureXButton2Enabled;
+        set
+        {
+            if (_gestureXButton2Enabled == value)
+            {
+                return;
+            }
+
+            _gestureXButton2Enabled = value;
+            UpdateGestureSettingsSnapshot();
+            OnPropertyChanged();
+            _ = _settingsService.SetAsync(SettingKeys.GestureTriggerXButton2Enabled, value, CancellationToken.None);
+        }
+    }
+
     public IReadOnlyList<GestureStrokeColorOption> GestureStrokeColorOptions { get; } =
     [
         new("冰蓝", "#8CC8FF"),
@@ -668,7 +725,10 @@ public sealed class SettingsViewModel : INotifyPropertyChanged
             _gestureCloseWindowEnabled,
             _gestureDebugEnabled,
             _selectedGesturePreset,
-            new GestureOptions(_gestureTriggerThreshold, 16, 2000, 2)));
+            new GestureOptions(_gestureTriggerThreshold, 16, 2000, 2),
+            _gestureMiddleButtonEnabled,
+            _gestureXButton1Enabled,
+            _gestureXButton2Enabled));
     }
 
     private void RefreshGestureBindingCards()

@@ -8,4 +8,7 @@ public sealed record GestureSettings(
     bool CloseWindowEnabled,
     bool DebugEnabled,
     GesturePreset Preset,
-    GestureOptions Options);
+    GestureOptions Options,
+    bool MiddleButtonEnabled = false,
+    bool XButton1Enabled = false,
+    bool XButton2Enabled = false);

@@ -138,6 +138,9 @@
                             <GroupBox Header="鼠标手势" Padding="12">
                                 <StackPanel>
                                     <CheckBox Content="启用鼠标手势" IsChecked="{Binding GestureEnabled, Mode=TwoWay}" />
+                                    <CheckBox Content="启用鼠标中键手势" Margin="0,8,0,0" IsChecked="{Binding GestureMiddleButtonEnabled, Mode=TwoWay}" />
+                                    <CheckBox Content="启用鼠标侧键 1 手势" Margin="0,8,0,0" IsChecked="{Binding GestureXButton1Enabled, Mode=TwoWay}" />
+                                    <CheckBox Content="启用鼠标侧键 2 手势" Margin="0,8,0,0" IsChecked="{Binding GestureXButton2Enabled, Mode=TwoWay}" />
                                     <CheckBox Content="显示手势提示" Margin="0,8,0,0" IsChecked="{Binding GestureShowOverlay, Mode=TwoWay}" />
                                     <CheckBox Content="启用手势调试日志" Margin="0,8,0,0" IsChecked="{Binding GestureDebugEnabled, Mode=TwoWay}" />
                                     <StackPanel Orientation="Horizontal" Margin="0,8,0,0">

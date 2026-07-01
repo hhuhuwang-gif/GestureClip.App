@@ -30,6 +30,7 @@ public sealed class MouseGestureService : IMouseGestureService
     private DateTimeOffset _ignoreInjectedUntil = DateTimeOffset.MinValue;
     private DateTimeOffset _lastMoveDebugLogAt = DateTimeOffset.MinValue;
     private bool _synthesizeRightClickOnNextRightButtonUp;
+    private GestureTriggerButton _activeTriggerButton = GestureTriggerButton.Right;
     private string _hookStatus = "未安装";
     private string? _lastPattern;
     private BuiltInGestureAction _lastAction = BuiltInGestureAction.None;
@@ -185,7 +186,7 @@ public sealed class MouseGestureService : IMouseGestureService
         var mouseEvent = args.Event;
         if (mouseEvent.IsInjected && DateTimeOffset.UtcNow < _ignoreInjectedUntil)
         {
-            _logger.LogDebug("GestureRecovery InjectedRightClickIgnored");
+            _logger.LogDebug("GestureRecovery InjectedMouseClickIgnored");
             return null;
         }
 
@@ -201,10 +202,14 @@ public sealed class MouseGestureService : IMouseGestureService
         switch (mouseEvent.Type)
         {
             case MouseHookEventType.RightButtonDown:
+            case MouseHookEventType.MiddleButtonDown:
+            case MouseHookEventType.XButton1Down:
+            case MouseHookEventType.XButton2Down:
+                var triggerButton = GetTriggerButton(mouseEvent.Type);
                 _synthesizeRightClickOnNextRightButtonUp = false;
                 _activeSettings = _settingsProvider.GetCurrent();
                 IsEnabled = _activeSettings.Enabled;
-                if (!IsEnabled)
+                if (!IsEnabled || !IsTriggerEnabled(triggerButton, _activeSettings))
                 {
                     LogDebug(_activeSettings, "Gesture disabled by setting");
                     ResetState("StateReset");
@@ -220,12 +225,13 @@ public sealed class MouseGestureService : IMouseGestureService
                 }
 
                 _state = GestureRuntimeState.Tracking;
+                _activeTriggerButton = triggerButton;
                 _startPoint = ToPoint(mouseEvent);
                 _gestureStartedAt = mouseEvent.Time;
                 _points = [_startPoint];
                 args.Suppress = true;
-                LogDebug(_activeSettings, "RightButtonDown: x={X}, y={Y}", mouseEvent.X, mouseEvent.Y);
-                LogDebug(_activeSettings, "Suppressed original right button");
+                LogDebug(_activeSettings, "{Button}Down: x={X}, y={Y}", triggerButton, mouseEvent.X, mouseEvent.Y);
+                LogDebug(_activeSettings, "Suppressed original {Button} button", triggerButton);
                 if (_activeSettings.ShowOverlay)
                 {
                     var hudInfo = _hudInfoProvider.GetInfo(_activeSettings.Preset, null);
@@ -276,12 +282,17 @@ public sealed class MouseGestureService : IMouseGestureService
                 return null;
 
             case MouseHookEventType.RightButtonUp:
-                LogDebug(_activeSettings, "RightButtonUp: state={State}, pointCount={PointCount}", _state, _points.Count);
+            case MouseHookEventType.MiddleButtonUp:
+            case MouseHookEventType.XButton1Up:
+            case MouseHookEventType.XButton2Up:
+                var upButton = GetTriggerButton(mouseEvent.Type);
+                LogDebug(_activeSettings, "{Button}Up: state={State}, pointCount={PointCount}", upButton, _state, _points.Count);
                 if (_synthesizeRightClickOnNextRightButtonUp)
                 {
                     args.Suppress = true;
                     _synthesizeRightClickOnNextRightButtonUp = false;
-                    _ = Task.Run(() => SynthesizeRightClickAsync(mouseEvent.X, mouseEvent.Y));
+                    var buttonToSynthesize = _activeTriggerButton;
+                    _ = Task.Run(() => SynthesizeClickAsync(buttonToSynthesize, mouseEvent.X, mouseEvent.Y));
                     return null;
                 }
 
@@ -290,8 +301,13 @@ public sealed class MouseGestureService : IMouseGestureService
                     return null;
                 }
 
+                if (upButton != _activeTriggerButton)
+                {
+                    return null;
+                }
+
                 args.Suppress = true;
-                LogDebug(_activeSettings, "Suppressed original right button");
+                LogDebug(_activeSettings, "Suppressed original {Button} button", upButton);
 
                 if (_activeSettings is null)
                 {
@@ -310,9 +326,10 @@ public sealed class MouseGestureService : IMouseGestureService
                 {
                     var clickX = mouseEvent.X;
                     var clickY = mouseEvent.Y;
+                    var clickButton = _activeTriggerButton;
                     ResetState(IsExpired(mouseEvent.Time, _activeSettings) ? "TimeoutReset" : "StateReset");
                     _ = _gestureOverlayService.HideAsync(CancellationToken.None);
-                    _ = Task.Run(() => SynthesizeRightClickAsync(clickX, clickY));
+                    _ = Task.Run(() => SynthesizeClickAsync(clickButton, clickX, clickY));
                     return null;
                 }
 
@@ -425,6 +442,7 @@ public sealed class MouseGestureService : IMouseGestureService
         _startPoint = null;
         _gestureStartedAt = null;
         _synthesizeRightClickOnNextRightButtonUp = false;
+        _activeTriggerButton = GestureTriggerButton.Right;
     }
 
     private void TrimTrackedPoints()
@@ -451,7 +469,7 @@ public sealed class MouseGestureService : IMouseGestureService
         return pattern is { Length: > MaxPreviewPatternLength } ? null : pattern;
     }
 
-    private Task SynthesizeRightClickAsync(int x, int y)
+    private Task SynthesizeClickAsync(GestureTriggerButton button, int x, int y)
     {
         try
         {
@@ -460,8 +478,8 @@ public sealed class MouseGestureService : IMouseGestureService
                 _ignoreInjectedUntil = DateTimeOffset.UtcNow.AddMilliseconds(500);
             }
 
-            _rightClickSynthesizer.SynthesizeRightClick(x, y);
-            LogDebug(_settingsProvider.GetCurrent(), "Synthesized normal right click");
+            _rightClickSynthesizer.SynthesizeClick(button, x, y);
+            LogDebug(_settingsProvider.GetCurrent(), "Synthesized normal {Button} click", button);
         }
         catch (Exception ex)
         {
@@ -470,7 +488,7 @@ public sealed class MouseGestureService : IMouseGestureService
                 SetLastError(ex.Message);
             }
 
-            _logger.LogError(ex, "Failed to synthesize right click.");
+            _logger.LogError(ex, "Failed to synthesize mouse click.");
         }
 
         return Task.CompletedTask;
@@ -534,6 +552,28 @@ public sealed class MouseGestureService : IMouseGestureService
 
         return (currentTime - _gestureStartedAt.Value).TotalMilliseconds >
             _activeSettings.Options.MaxDurationMs + 500;
+    }
+
+    private static GestureTriggerButton GetTriggerButton(MouseHookEventType type)
+    {
+        return type switch
+        {
+            MouseHookEventType.MiddleButtonDown or MouseHookEventType.MiddleButtonUp => GestureTriggerButton.Middle,
+            MouseHookEventType.XButton1Down or MouseHookEventType.XButton1Up => GestureTriggerButton.XButton1,
+            MouseHookEventType.XButton2Down or MouseHookEventType.XButton2Up => GestureTriggerButton.XButton2,
+            _ => GestureTriggerButton.Right
+        };
+    }
+
+    private static bool IsTriggerEnabled(GestureTriggerButton button, GestureSettings settings)
+    {
+        return button switch
+        {
+            GestureTriggerButton.Middle => settings.MiddleButtonEnabled,
+            GestureTriggerButton.XButton1 => settings.XButton1Enabled,
+            GestureTriggerButton.XButton2 => settings.XButton2Enabled,
+            _ => true
+        };
     }
 
     private static bool IsDisabledByEnvironment()

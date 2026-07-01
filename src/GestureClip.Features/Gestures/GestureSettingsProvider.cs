@@ -20,7 +20,10 @@ public sealed class GestureSettingsProvider : IGestureSettingsProvider
                 settingsService.Get(SettingKeys.GestureTriggerThreshold, 20),
                 settingsService.Get(SettingKeys.GestureSegmentThreshold, 16),
                 settingsService.Get(SettingKeys.GestureMaxDurationMs, 2000),
-                2));
+                2),
+            settingsService.Get(SettingKeys.GestureTriggerMiddleButtonEnabled, false),
+            settingsService.Get(SettingKeys.GestureTriggerXButton1Enabled, false),
+            settingsService.Get(SettingKeys.GestureTriggerXButton2Enabled, false));
     }
 
     public GestureSettings GetCurrent()
