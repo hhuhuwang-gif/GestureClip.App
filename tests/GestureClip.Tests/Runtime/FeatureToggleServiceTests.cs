@@ -27,42 +27,69 @@ public sealed class FeatureToggleServiceTests
     public async Task SetGestureEnabledAsync_updates_settings_snapshot_and_service()
     {
         var gesture = new FakeMouseGestureService();
+        var edge = new FakeEdgeTriggerService();
         var settings = new FakeSettingsService();
         var provider = new FakeGestureSettingsProvider();
-        var service = CreateService(gesture: gesture, settings: settings, provider: provider);
+        var service = CreateService(gesture: gesture, edge: edge, settings: settings, provider: provider);
 
         await service.SetGestureEnabledAsync(false, CancellationToken.None);
 
         Assert.False(provider.Current.Enabled);
         Assert.Equal(false, settings.Values[SettingKeys.GestureEnabled]);
         Assert.Equal(1, gesture.StopCount);
+        Assert.Equal(1, edge.StopCount);
     }
 
     [Fact]
     public async Task ToggleGestureAsync_uses_current_runtime_state()
     {
         var gesture = new FakeMouseGestureService { IsEnabled = false };
+        var edge = new FakeEdgeTriggerService();
         var provider = new FakeGestureSettingsProvider();
-        var service = CreateService(gesture: gesture, provider: provider);
+        var service = CreateService(gesture: gesture, edge: edge, provider: provider);
 
         await service.ToggleGestureAsync(CancellationToken.None);
 
         Assert.True(provider.Current.Enabled);
         Assert.Equal(1, gesture.StartCount);
+        Assert.Equal(1, edge.StartCount);
     }
 
     private static FeatureToggleService CreateService(
         FakeClipboardService? clipboard = null,
         FakeMouseGestureService? gesture = null,
+        FakeEdgeTriggerService? edge = null,
         FakeSettingsService? settings = null,
         FakeGestureSettingsProvider? provider = null)
     {
         return new FeatureToggleService(
             clipboard ?? new FakeClipboardService(),
             gesture ?? new FakeMouseGestureService(),
+            edge ?? new FakeEdgeTriggerService(),
             provider ?? new FakeGestureSettingsProvider(),
             settings ?? new FakeSettingsService(),
             NullLogger<FeatureToggleService>.Instance);
+    }
+
+    private sealed class FakeEdgeTriggerService : IEdgeTriggerService
+    {
+        public bool IsEnabled { get; private set; }
+        public int StartCount { get; private set; }
+        public int StopCount { get; private set; }
+
+        public Task StartAsync(CancellationToken cancellationToken)
+        {
+            IsEnabled = true;
+            StartCount++;
+            return Task.CompletedTask;
+        }
+
+        public Task StopAsync(CancellationToken cancellationToken)
+        {
+            IsEnabled = false;
+            StopCount++;
+            return Task.CompletedTask;
+        }
     }
 
     private sealed class FakeClipboardService : IClipboardService

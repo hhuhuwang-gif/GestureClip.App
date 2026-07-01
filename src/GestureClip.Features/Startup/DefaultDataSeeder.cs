@@ -1,4 +1,5 @@
 using Dapper;
+using GestureClip.Core.Gestures;
 using GestureClip.Core.Privacy;
 using GestureClip.Core.Settings;
 using Microsoft.Data.Sqlite;
@@ -35,6 +36,14 @@ public sealed class DefaultDataSeeder
         await SeedSettingAsync(connection, SettingKeys.GestureSegmentThreshold, "16", "int", now);
         await SeedSettingAsync(connection, SettingKeys.GestureMaxDurationMs, "2000", "int", now);
         await SeedSettingAsync(connection, SettingKeys.GestureCloseWindowEnabled, "false", "bool", now);
+        await SeedSettingAsync(connection, SettingKeys.EdgeTriggerEnabled, "false", "bool", now);
+        await SeedSettingAsync(connection, SettingKeys.EdgeTriggerHotZoneSize, "8", "int", now);
+        await SeedSettingAsync(connection, SettingKeys.EdgeTriggerDwellMs, "350", "int", now);
+        await SeedSettingAsync(connection, SettingKeys.EdgeTriggerCooldownMs, "1200", "int", now);
+        await SeedSettingAsync(connection, SettingKeys.EdgeTriggerTopLeftAction, ((int)BuiltInGestureAction.StartMenu).ToString(), "int", now);
+        await SeedSettingAsync(connection, SettingKeys.EdgeTriggerTopRightAction, ((int)BuiltInGestureAction.TaskSwitcher).ToString(), "int", now);
+        await SeedSettingAsync(connection, SettingKeys.EdgeTriggerBottomRightAction, ((int)BuiltInGestureAction.ShowDesktop).ToString(), "int", now);
+        await SeedSettingAsync(connection, SettingKeys.EdgeTriggerBottomLeftAction, ((int)BuiltInGestureAction.SwitchApp).ToString(), "int", now);
         await SeedSettingAsync(connection, SettingKeys.PrivacySuppressSensitive, "true", "bool", now);
 
         foreach (var processName in DefaultPrivacyBlacklist.ProcessNames)

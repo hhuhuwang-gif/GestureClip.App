@@ -21,5 +21,13 @@ public static class SettingKeys
     public const string GestureTriggerMiddleButtonEnabled = "Gesture.Trigger.MiddleButton.Enabled";
     public const string GestureTriggerXButton1Enabled = "Gesture.Trigger.XButton1.Enabled";
     public const string GestureTriggerXButton2Enabled = "Gesture.Trigger.XButton2.Enabled";
+    public const string EdgeTriggerEnabled = "EdgeTrigger.Enabled";
+    public const string EdgeTriggerHotZoneSize = "EdgeTrigger.HotZoneSize";
+    public const string EdgeTriggerDwellMs = "EdgeTrigger.DwellMs";
+    public const string EdgeTriggerCooldownMs = "EdgeTrigger.CooldownMs";
+    public const string EdgeTriggerTopLeftAction = "EdgeTrigger.TopLeft.Action";
+    public const string EdgeTriggerTopRightAction = "EdgeTrigger.TopRight.Action";
+    public const string EdgeTriggerBottomRightAction = "EdgeTrigger.BottomRight.Action";
+    public const string EdgeTriggerBottomLeftAction = "EdgeTrigger.BottomLeft.Action";
     public const string PrivacySuppressSensitive = "Privacy.SuppressSensitive";
 }

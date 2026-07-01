@@ -10,6 +10,7 @@ public sealed class FeatureToggleService : IFeatureToggleService
 {
     private readonly IClipboardService _clipboardService;
     private readonly IMouseGestureService _mouseGestureService;
+    private readonly IEdgeTriggerService _edgeTriggerService;
     private readonly IGestureSettingsProvider _gestureSettingsProvider;
     private readonly ISettingsService _settingsService;
     private readonly ILogger<FeatureToggleService> _logger;
@@ -17,12 +18,14 @@ public sealed class FeatureToggleService : IFeatureToggleService
     public FeatureToggleService(
         IClipboardService clipboardService,
         IMouseGestureService mouseGestureService,
+        IEdgeTriggerService edgeTriggerService,
         IGestureSettingsProvider gestureSettingsProvider,
         ISettingsService settingsService,
         ILogger<FeatureToggleService> logger)
     {
         _clipboardService = clipboardService;
         _mouseGestureService = mouseGestureService;
+        _edgeTriggerService = edgeTriggerService;
         _gestureSettingsProvider = gestureSettingsProvider;
         _settingsService = settingsService;
         _logger = logger;
@@ -57,10 +60,12 @@ public sealed class FeatureToggleService : IFeatureToggleService
         if (enabled)
         {
             await _mouseGestureService.StartAsync(cancellationToken);
+            await _edgeTriggerService.StartAsync(cancellationToken);
         }
         else
         {
             await _mouseGestureService.StopAsync(cancellationToken);
+            await _edgeTriggerService.StopAsync(cancellationToken);
         }
 
         _logger.LogInformation("Gesture state changed to {GestureEnabled}.", enabled);

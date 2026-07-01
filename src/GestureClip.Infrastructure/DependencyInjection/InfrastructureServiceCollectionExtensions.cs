@@ -31,6 +31,7 @@ public static class InfrastructureServiceCollectionExtensions
         services.AddSingleton<IClipboardTextReader, WpfClipboardTextReader>();
         services.AddSingleton<IClipboardWriter, WpfClipboardWriter>();
         services.AddSingleton<IForegroundAppService, ForegroundAppService>();
+        services.AddSingleton<ICursorPositionProvider, WindowsCursorPositionProvider>();
         services.AddSingleton<ILowLevelMouseHook, LowLevelMouseHook>();
         services.AddSingleton<IRightClickSynthesizer, RightClickSynthesizer>();
         services.AddSingleton<IKeyboardInputSender, KeyboardInputSender>();

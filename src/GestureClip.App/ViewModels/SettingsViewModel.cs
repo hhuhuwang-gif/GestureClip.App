@@ -32,6 +32,7 @@ public sealed class SettingsViewModel : INotifyPropertyChanged
     private readonly IClipboardOverlayService _clipboardOverlayService;
     private readonly IConfirmationService _confirmationService;
     private readonly IGesturePresetProvider _gesturePresetProvider;
+    private readonly IEdgeTriggerService _edgeTriggerService;
     private bool _clipboardCaptureEnabled;
     private bool _gestureEnabled;
     private bool _gestureShowOverlay;
@@ -40,6 +41,11 @@ public sealed class SettingsViewModel : INotifyPropertyChanged
     private bool _gestureMiddleButtonEnabled;
     private bool _gestureXButton1Enabled;
     private bool _gestureXButton2Enabled;
+    private bool _edgeTriggerEnabled;
+    private BuiltInGestureAction _edgeTriggerTopLeftAction;
+    private BuiltInGestureAction _edgeTriggerTopRightAction;
+    private BuiltInGestureAction _edgeTriggerBottomRightAction;
+    private BuiltInGestureAction _edgeTriggerBottomLeftAction;
     private GesturePreset _selectedGesturePreset;
     private int _gestureTriggerThreshold;
     private GestureDiagnosticsSnapshot _gestureDiagnostics;
@@ -70,7 +76,8 @@ public sealed class SettingsViewModel : INotifyPropertyChanged
         IClipboardRepository clipboardRepository,
         IClipboardOverlayService clipboardOverlayService,
         IConfirmationService confirmationService,
-        IGesturePresetProvider gesturePresetProvider)
+        IGesturePresetProvider gesturePresetProvider,
+        IEdgeTriggerService edgeTriggerService)
     {
         _settingsService = settingsService;
         _mouseGestureService = mouseGestureService;
@@ -86,6 +93,7 @@ public sealed class SettingsViewModel : INotifyPropertyChanged
         _clipboardOverlayService = clipboardOverlayService;
         _confirmationService = confirmationService;
         _gesturePresetProvider = gesturePresetProvider;
+        _edgeTriggerService = edgeTriggerService;
         DatabasePath = paths.DatabasePath;
         LogDirectory = paths.LogDirectory;
         AppDataPath = paths.RootDirectory;
@@ -99,6 +107,11 @@ public sealed class SettingsViewModel : INotifyPropertyChanged
         _gestureMiddleButtonEnabled = _settingsService.Get(SettingKeys.GestureTriggerMiddleButtonEnabled, false);
         _gestureXButton1Enabled = _settingsService.Get(SettingKeys.GestureTriggerXButton1Enabled, false);
         _gestureXButton2Enabled = _settingsService.Get(SettingKeys.GestureTriggerXButton2Enabled, false);
+        _edgeTriggerEnabled = _settingsService.Get(SettingKeys.EdgeTriggerEnabled, false);
+        _edgeTriggerTopLeftAction = _settingsService.Get(SettingKeys.EdgeTriggerTopLeftAction, BuiltInGestureAction.StartMenu);
+        _edgeTriggerTopRightAction = _settingsService.Get(SettingKeys.EdgeTriggerTopRightAction, BuiltInGestureAction.TaskSwitcher);
+        _edgeTriggerBottomRightAction = _settingsService.Get(SettingKeys.EdgeTriggerBottomRightAction, BuiltInGestureAction.ShowDesktop);
+        _edgeTriggerBottomLeftAction = _settingsService.Get(SettingKeys.EdgeTriggerBottomLeftAction, BuiltInGestureAction.SwitchApp);
         _selectedGesturePreset = _settingsService.Get(SettingKeys.GesturePreset, GesturePreset.EditEnhanced);
         _gestureTriggerThreshold = _settingsService.Get(SettingKeys.GestureTriggerThreshold, 20);
         _clipboardMaxItems = _settingsService.Get(SettingKeys.ClipboardMaxItems, 1000);
@@ -157,11 +170,12 @@ public sealed class SettingsViewModel : INotifyPropertyChanged
         new("鼠标左键", "预留", false),
         new("鼠标侧键 1", "可启用", false),
         new("鼠标侧键 2", "可启用", false),
-        new("屏幕左边缘 + 鼠标中键", "预留", false),
-        new("屏幕左边缘 + 鼠标左键", "预留", false),
-        new("屏幕左边缘 + 鼠标侧键 1", "预留", false),
-        new("屏幕左边缘 + 鼠标侧键 2", "预留", false),
-        new("屏幕右上角 + 鼠标碰撞", "预留", false),
+        new("屏幕四角热区", "可启用", false),
+        new("屏幕左边缘 + 鼠标中键", "后续", false),
+        new("屏幕左边缘 + 鼠标左键", "后续", false),
+        new("屏幕左边缘 + 鼠标侧键 1", "后续", false),
+        new("屏幕左边缘 + 鼠标侧键 2", "后续", false),
+        new("屏幕右上角 + 鼠标碰撞", "已支持", true),
         new("屏幕右上角 + 滚轮", "预留", false)
     ];
 
@@ -526,6 +540,46 @@ public sealed class SettingsViewModel : INotifyPropertyChanged
         }
     }
 
+    public bool EdgeTriggerEnabled
+    {
+        get => _edgeTriggerEnabled;
+        set
+        {
+            if (_edgeTriggerEnabled == value)
+            {
+                return;
+            }
+
+            _edgeTriggerEnabled = value;
+            OnPropertyChanged();
+            _ = ApplyEdgeTriggerEnabledAsync(value);
+        }
+    }
+
+    public BuiltInGestureAction EdgeTriggerTopLeftAction
+    {
+        get => _edgeTriggerTopLeftAction;
+        set => SetEdgeTriggerAction(ref _edgeTriggerTopLeftAction, value, SettingKeys.EdgeTriggerTopLeftAction);
+    }
+
+    public BuiltInGestureAction EdgeTriggerTopRightAction
+    {
+        get => _edgeTriggerTopRightAction;
+        set => SetEdgeTriggerAction(ref _edgeTriggerTopRightAction, value, SettingKeys.EdgeTriggerTopRightAction);
+    }
+
+    public BuiltInGestureAction EdgeTriggerBottomRightAction
+    {
+        get => _edgeTriggerBottomRightAction;
+        set => SetEdgeTriggerAction(ref _edgeTriggerBottomRightAction, value, SettingKeys.EdgeTriggerBottomRightAction);
+    }
+
+    public BuiltInGestureAction EdgeTriggerBottomLeftAction
+    {
+        get => _edgeTriggerBottomLeftAction;
+        set => SetEdgeTriggerAction(ref _edgeTriggerBottomLeftAction, value, SettingKeys.EdgeTriggerBottomLeftAction);
+    }
+
     public IReadOnlyList<GestureStrokeColorOption> GestureStrokeColorOptions { get; } =
     [
         new("冰蓝", "#8CC8FF"),
@@ -586,6 +640,19 @@ public sealed class SettingsViewModel : INotifyPropertyChanged
     private async Task ApplyGestureEnabledAsync(bool enabled)
     {
         await _featureToggleService.SetGestureEnabledAsync(enabled, CancellationToken.None);
+    }
+
+    private async Task ApplyEdgeTriggerEnabledAsync(bool enabled)
+    {
+        await _settingsService.SetAsync(SettingKeys.EdgeTriggerEnabled, enabled, CancellationToken.None);
+        if (enabled)
+        {
+            await _edgeTriggerService.StartAsync(CancellationToken.None);
+        }
+        else
+        {
+            await _edgeTriggerService.StopAsync(CancellationToken.None);
+        }
     }
 
     private async Task ApplyClipboardCaptureEnabledAsync(bool enabled)
@@ -665,6 +732,25 @@ public sealed class SettingsViewModel : INotifyPropertyChanged
         }
 
         await _settingsService.SetAsync(SettingKeys.AppStartWithWindows, enabled, CancellationToken.None);
+    }
+
+    private void SetEdgeTriggerAction(ref BuiltInGestureAction field, BuiltInGestureAction value, string settingKey)
+    {
+        if (field == value)
+        {
+            return;
+        }
+
+        field = value;
+        OnPropertyChanged(settingKey switch
+        {
+            SettingKeys.EdgeTriggerTopLeftAction => nameof(EdgeTriggerTopLeftAction),
+            SettingKeys.EdgeTriggerTopRightAction => nameof(EdgeTriggerTopRightAction),
+            SettingKeys.EdgeTriggerBottomRightAction => nameof(EdgeTriggerBottomRightAction),
+            SettingKeys.EdgeTriggerBottomLeftAction => nameof(EdgeTriggerBottomLeftAction),
+            _ => null
+        });
+        _ = _settingsService.SetAsync(settingKey, value, CancellationToken.None);
     }
 
     private async Task LoadBlacklistAsync()

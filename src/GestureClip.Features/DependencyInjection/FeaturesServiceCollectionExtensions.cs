@@ -25,6 +25,7 @@ public static class FeaturesServiceCollectionExtensions
         services.AddSingleton<IGestureHudInfoProvider, GestureHudInfoProvider>();
         services.AddSingleton<IMouseGestureActionExecutor, GestureBuiltInActionExecutor>();
         services.AddSingleton<IMouseGestureService, MouseGestureService>();
+        services.AddSingleton<IEdgeTriggerService, EdgeTriggerService>();
         services.AddSingleton<IFeatureToggleService, FeatureToggleService>();
         services.AddSingleton<IDiagnosticsService, DiagnosticsService>();
         return services;

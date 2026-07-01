@@ -69,6 +69,7 @@ public partial class App : System.Windows.Application
                     MessageBoxImage.Warning);
             }
 
+            await _serviceProvider.GetRequiredService<IEdgeTriggerService>().StartAsync(CancellationToken.None);
             _serviceProvider.GetRequiredService<IGlobalHotkeyService>().Start();
 
             _serviceProvider.GetRequiredService<AppLifecycleService>().ShowSettingsWindow();
@@ -89,6 +90,7 @@ public partial class App : System.Windows.Application
     protected override void OnExit(ExitEventArgs e)
     {
         _serviceProvider?.GetService<IGlobalHotkeyService>()?.Stop();
+        _serviceProvider?.GetService<IEdgeTriggerService>()?.StopAsync(CancellationToken.None).GetAwaiter().GetResult();
         _serviceProvider?.GetService<IMouseGestureService>()?.StopAsync(CancellationToken.None).GetAwaiter().GetResult();
         _serviceProvider?.GetService<IClipboardService>()?.StopAsync(CancellationToken.None).GetAwaiter().GetResult();
         _trayIconService?.Dispose();

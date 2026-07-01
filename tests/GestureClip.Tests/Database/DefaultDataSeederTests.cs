@@ -1,5 +1,6 @@
 using Xunit;
 using Dapper;
+using GestureClip.Core.Gestures;
 using GestureClip.Features.Startup;
 using GestureClip.Infrastructure.Database;
 using Microsoft.Data.Sqlite;
@@ -31,12 +32,16 @@ public sealed class DefaultDataSeederTests
         var gestureCount = await connection.ExecuteScalarAsync<int>("SELECT COUNT(*) FROM GestureRules;");
         var maxItems = await connection.ExecuteScalarAsync<string>("SELECT Value FROM Settings WHERE Key = 'Clipboard.MaxItems';");
         var retentionDays = await connection.ExecuteScalarAsync<string>("SELECT Value FROM Settings WHERE Key = 'Clipboard.RetentionDays';");
+        var edgeEnabled = await connection.ExecuteScalarAsync<string>("SELECT Value FROM Settings WHERE Key = 'EdgeTrigger.Enabled';");
+        var topLeftAction = await connection.ExecuteScalarAsync<string>("SELECT Value FROM Settings WHERE Key = 'EdgeTrigger.TopLeft.Action';");
 
-        Assert.Equal(15, settingCount);
+        Assert.Equal(23, settingCount);
         Assert.Equal(7, blacklistCount);
         Assert.Equal(6, gestureCount);
         Assert.Equal("1000", maxItems);
         Assert.Equal("30", retentionDays);
+        Assert.Equal("false", edgeEnabled);
+        Assert.Equal(((int)BuiltInGestureAction.StartMenu).ToString(), topLeftAction);
     }
 
     [Fact]

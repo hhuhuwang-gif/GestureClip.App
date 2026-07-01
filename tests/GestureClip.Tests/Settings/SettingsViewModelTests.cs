@@ -178,11 +178,30 @@ public sealed class SettingsViewModelTests
             settings.Values.TryGetValue(SettingKeys.GestureTriggerXButton2Enabled, out var x2) && Equals(x2, true));
     }
 
+    [Fact]
+    public async Task Changing_edge_trigger_settings_saves_settings_and_starts_service()
+    {
+        var settings = new FakeSettingsService();
+        var edge = new FakeEdgeTriggerService();
+        var viewModel = CreateViewModel(settings: settings, edgeTriggerService: edge);
+
+        viewModel.EdgeTriggerEnabled = true;
+        viewModel.EdgeTriggerTopLeftAction = BuiltInGestureAction.ShowDesktop;
+        viewModel.EdgeTriggerBottomRightAction = BuiltInGestureAction.StartMenu;
+
+        await WaitForAsync(() =>
+            edge.StartCount == 1 &&
+            settings.Values.TryGetValue(SettingKeys.EdgeTriggerEnabled, out var enabled) && Equals(enabled, true) &&
+            settings.Values.TryGetValue(SettingKeys.EdgeTriggerTopLeftAction, out var topLeft) && Equals(topLeft, BuiltInGestureAction.ShowDesktop) &&
+            settings.Values.TryGetValue(SettingKeys.EdgeTriggerBottomRightAction, out var bottomRight) && Equals(bottomRight, BuiltInGestureAction.StartMenu));
+    }
+
     private static SettingsViewModel CreateViewModel(
         FakeClipboardRepository? repository = null,
         FakeClipboardOverlayService? overlay = null,
         FakeConfirmationService? confirmation = null,
-        FakeSettingsService? settings = null)
+        FakeSettingsService? settings = null,
+        FakeEdgeTriggerService? edgeTriggerService = null)
     {
         settings ??= new FakeSettingsService();
         return new SettingsViewModel(
@@ -201,7 +220,8 @@ public sealed class SettingsViewModelTests
             repository ?? new FakeClipboardRepository(),
             overlay ?? new FakeClipboardOverlayService(),
             confirmation ?? new FakeConfirmationService { Result = true },
-            new GestureClip.Features.Gestures.GesturePresetProvider());
+            new GestureClip.Features.Gestures.GesturePresetProvider(),
+            edgeTriggerService ?? new FakeEdgeTriggerService());
     }
 
     private static async Task WaitForAsync(Func<bool> condition)
@@ -302,6 +322,27 @@ public sealed class SettingsViewModelTests
         public GestureDiagnosticsSnapshot Diagnostics => new("已安装", GestureRuntimeState.Idle, null, BuiltInGestureAction.None, null, null, false);
         public Task StartAsync(CancellationToken cancellationToken) => Task.CompletedTask;
         public Task StopAsync(CancellationToken cancellationToken) => Task.CompletedTask;
+    }
+
+    private sealed class FakeEdgeTriggerService : IEdgeTriggerService
+    {
+        public bool IsEnabled { get; private set; }
+        public int StartCount { get; private set; }
+        public int StopCount { get; private set; }
+
+        public Task StartAsync(CancellationToken cancellationToken)
+        {
+            IsEnabled = true;
+            StartCount++;
+            return Task.CompletedTask;
+        }
+
+        public Task StopAsync(CancellationToken cancellationToken)
+        {
+            IsEnabled = false;
+            StopCount++;
+            return Task.CompletedTask;
+        }
     }
 
     private sealed class FakeGestureSettingsProvider : IGestureSettingsProvider

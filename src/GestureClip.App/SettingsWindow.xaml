@@ -164,6 +164,55 @@
                                 </StackPanel>
                             </GroupBox>
 
+                            <GroupBox Header="屏幕角落触发" Padding="12" Margin="0,12,0,0">
+                                <StackPanel>
+                                    <CheckBox Content="启用屏幕四角热区"
+                                              IsChecked="{Binding EdgeTriggerEnabled, Mode=TwoWay}" />
+                                    <TextBlock Text="进入屏幕角落并短暂停留后执行动作。默认关闭，用于避免误触。"
+                                               Style="{StaticResource MutedTextStyle}"
+                                               Margin="0,8,0,10"
+                                               TextWrapping="Wrap" />
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="130" />
+                                            <ColumnDefinition Width="*" />
+                                        </Grid.ColumnDefinitions>
+                                        <Grid.RowDefinitions>
+                                            <RowDefinition Height="Auto" />
+                                            <RowDefinition Height="Auto" />
+                                            <RowDefinition Height="Auto" />
+                                            <RowDefinition Height="Auto" />
+                                        </Grid.RowDefinitions>
+
+                                        <TextBlock Text="左上角" VerticalAlignment="Center" />
+                                        <ComboBox Grid.Column="1"
+                                                  ItemsSource="{Binding GestureActionOptions}"
+                                                  SelectedItem="{Binding EdgeTriggerTopLeftAction, Mode=TwoWay}" />
+
+                                        <TextBlock Grid.Row="1" Text="右上角" Margin="0,8,0,0" VerticalAlignment="Center" />
+                                        <ComboBox Grid.Row="1"
+                                                  Grid.Column="1"
+                                                  Margin="0,8,0,0"
+                                                  ItemsSource="{Binding GestureActionOptions}"
+                                                  SelectedItem="{Binding EdgeTriggerTopRightAction, Mode=TwoWay}" />
+
+                                        <TextBlock Grid.Row="2" Text="右下角" Margin="0,8,0,0" VerticalAlignment="Center" />
+                                        <ComboBox Grid.Row="2"
+                                                  Grid.Column="1"
+                                                  Margin="0,8,0,0"
+                                                  ItemsSource="{Binding GestureActionOptions}"
+                                                  SelectedItem="{Binding EdgeTriggerBottomRightAction, Mode=TwoWay}" />
+
+                                        <TextBlock Grid.Row="3" Text="左下角" Margin="0,8,0,0" VerticalAlignment="Center" />
+                                        <ComboBox Grid.Row="3"
+                                                  Grid.Column="1"
+                                                  Margin="0,8,0,0"
+                                                  ItemsSource="{Binding GestureActionOptions}"
+                                                  SelectedItem="{Binding EdgeTriggerBottomLeftAction, Mode=TwoWay}" />
+                                    </Grid>
+                                </StackPanel>
+                            </GroupBox>
+
                             <GroupBox Header="手势测试" Padding="12" Margin="0,12,0,0">
                                 <Grid>
                                     <Grid.RowDefinitions>
