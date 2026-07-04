@@ -7,6 +7,8 @@ namespace GestureClip.Features.WorkerLevel;
 
 public sealed class WorkerLevelService : IWorkerLevelService
 {
+    private const int PersistEveryActionCount = 10;
+
     public static readonly IReadOnlyList<WorkerLevelDefinition> LevelDefinitions =
     [
         new(1, 0, "初入工位"),
@@ -23,27 +25,32 @@ public sealed class WorkerLevelService : IWorkerLevelService
 
     private readonly ISettingsService _settingsService;
     private readonly SemaphoreSlim _sync = new(1, 1);
+    private WorkerLevelState? _cachedState;
+    private int _actionsSincePersist;
 
     public WorkerLevelService(ISettingsService settingsService)
     {
         _settingsService = settingsService;
     }
 
-    public Task<WorkerLevelSnapshot> GetSnapshotAsync(CancellationToken cancellationToken)
+    public async Task<WorkerLevelSnapshot> GetSnapshotAsync(CancellationToken cancellationToken)
     {
-        var totalXp = Math.Max(0, _settingsService.Get(SettingKeys.WorkerLevelTotalXp, 0));
-        var actionCount = Math.Max(0, _settingsService.Get(SettingKeys.WorkerLevelTotalActionCount, 0));
-        var storedLevel = Math.Clamp(_settingsService.Get(SettingKeys.WorkerLevelCurrentLevel, 1), 1, 10);
-        var computedLevel = GetLevelForXp(totalXp).Level;
-        var level = storedLevel > computedLevel ? computedLevel : storedLevel;
-        if (level != computedLevel)
+        await _sync.WaitAsync(cancellationToken);
+        try
         {
-            level = computedLevel;
+            var state = GetState();
+            return CreateSnapshot(
+                state.TotalXp,
+                state.ActionCount,
+                GetLevelForXp(state.TotalXp).Level,
+                leveledUp: false,
+                previousLevel: GetLevelForXp(state.TotalXp).Level,
+                state.LastLevelUpAt);
         }
-
-        var lastLevelUpText = _settingsService.Get(SettingKeys.WorkerLevelLastLevelUpAt, string.Empty);
-        var lastLevelUpAt = DateTimeOffset.TryParse(lastLevelUpText, out var parsed) ? parsed : (DateTimeOffset?)null;
-        return Task.FromResult(CreateSnapshot(totalXp, actionCount, level, leveledUp: false, previousLevel: level, lastLevelUpAt));
+        finally
+        {
+            _sync.Release();
+        }
     }
 
     public async Task<WorkerLevelSnapshot> RecordActionAsync(
@@ -55,22 +62,22 @@ public sealed class WorkerLevelService : IWorkerLevelService
         await _sync.WaitAsync(cancellationToken);
         try
         {
-            var oldXp = Math.Max(0, _settingsService.Get(SettingKeys.WorkerLevelTotalXp, 0));
+            var state = GetState();
+            var oldXp = state.TotalXp;
             var oldLevel = GetLevelForXp(oldXp).Level;
-            var oldCount = Math.Max(0, _settingsService.Get(SettingKeys.WorkerLevelTotalActionCount, 0));
             var gained = GetActionXp(action) + (isGestureSuccess ? 2 : 0);
             var newXp = Math.Max(0, oldXp + gained);
             var newLevel = GetLevelForXp(newXp).Level;
-            var newCount = oldCount + 1;
+            var newCount = state.ActionCount + 1;
             var leveledUp = newLevel > oldLevel;
-            var lastLevelUpAt = leveledUp ? now : TryReadLastLevelUpAt();
+            var lastLevelUpAt = leveledUp ? now : state.LastLevelUpAt;
+            _cachedState = new WorkerLevelState(newXp, newCount, lastLevelUpAt);
+            _actionsSincePersist++;
 
-            await _settingsService.SetAsync(SettingKeys.WorkerLevelTotalXp, newXp, cancellationToken);
-            await _settingsService.SetAsync(SettingKeys.WorkerLevelCurrentLevel, newLevel, cancellationToken);
-            await _settingsService.SetAsync(SettingKeys.WorkerLevelTotalActionCount, newCount, cancellationToken);
-            if (leveledUp)
+            if (leveledUp || _actionsSincePersist >= PersistEveryActionCount)
             {
-                await _settingsService.SetAsync(SettingKeys.WorkerLevelLastLevelUpAt, now.ToString("O"), cancellationToken);
+                await PersistStateAsync(_cachedState, newLevel, leveledUp, now, cancellationToken);
+                _actionsSincePersist = 0;
             }
 
             return CreateSnapshot(newXp, newCount, newLevel, leveledUp, leveledUp ? oldLevel : newLevel, lastLevelUpAt);
@@ -78,6 +85,36 @@ public sealed class WorkerLevelService : IWorkerLevelService
         finally
         {
             _sync.Release();
+        }
+    }
+
+    private WorkerLevelState GetState()
+    {
+        if (_cachedState is { } cached)
+        {
+            return cached;
+        }
+
+        var totalXp = Math.Max(0, _settingsService.Get(SettingKeys.WorkerLevelTotalXp, 0));
+        var actionCount = Math.Max(0, _settingsService.Get(SettingKeys.WorkerLevelTotalActionCount, 0));
+        var lastLevelUpAt = TryReadLastLevelUpAt();
+        _cachedState = new WorkerLevelState(totalXp, actionCount, lastLevelUpAt);
+        return _cachedState;
+    }
+
+    private async Task PersistStateAsync(
+        WorkerLevelState state,
+        int currentLevel,
+        bool leveledUp,
+        DateTimeOffset now,
+        CancellationToken cancellationToken)
+    {
+        await _settingsService.SetAsync(SettingKeys.WorkerLevelTotalXp, state.TotalXp, cancellationToken);
+        await _settingsService.SetAsync(SettingKeys.WorkerLevelCurrentLevel, currentLevel, cancellationToken);
+        await _settingsService.SetAsync(SettingKeys.WorkerLevelTotalActionCount, state.ActionCount, cancellationToken);
+        if (leveledUp)
+        {
+            await _settingsService.SetAsync(SettingKeys.WorkerLevelLastLevelUpAt, now.ToString("O"), cancellationToken);
         }
     }
 
@@ -140,4 +177,6 @@ public sealed class WorkerLevelService : IWorkerLevelService
     {
         return LevelDefinitions.Last(level => totalXp >= level.RequiredXp);
     }
+
+    private sealed record WorkerLevelState(int TotalXp, int ActionCount, DateTimeOffset? LastLevelUpAt);
 }

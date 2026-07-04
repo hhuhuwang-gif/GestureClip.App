@@ -123,6 +123,32 @@ public sealed class MouseGestureServiceTests
     }
 
     [Fact]
+    public async Task Slow_stats_and_worker_level_do_not_delay_overlay_hide_after_action()
+    {
+        var hook = new FakeLowLevelMouseHook();
+        var executor = new FakeMouseGestureActionExecutor();
+        var overlay = new FakeGestureOverlayService();
+        var dashboard = new FakeWorkstationDashboardService { RecordGestureDelay = TimeSpan.FromMilliseconds(500) };
+        var workerLevel = new FakeWorkerLevelService { RecordDelay = TimeSpan.FromMilliseconds(500) };
+        var service = CreateService(
+            hook,
+            executor,
+            overlay: overlay,
+            dashboard: dashboard,
+            workerLevel: workerLevel);
+        await service.StartAsync(CancellationToken.None);
+
+        hook.Raise(MouseHookEventType.RightButtonDown, 0, 0);
+        hook.Raise(MouseHookEventType.Move, 0, -30);
+        hook.Raise(MouseHookEventType.RightButtonUp, 0, -50);
+        await WaitForAsync(() => executor.Actions.Count == 1);
+        await Task.Delay(120);
+
+        Assert.Contains("hide", overlay.Events);
+        Assert.Equal(GestureRuntimeState.Idle, service.Diagnostics.State);
+    }
+
+    [Fact]
     public async Task Middle_button_gesture_executes_when_enabled()
     {
         var hook = new FakeLowLevelMouseHook();
@@ -864,6 +890,8 @@ public sealed class MouseGestureServiceTests
     {
         public int GestureCount { get; private set; }
 
+        public TimeSpan RecordGestureDelay { get; init; }
+
         public Task<Core.Workstation.WorkstationDashboardSnapshot> GetSnapshotAsync(DateTimeOffset now, CancellationToken cancellationToken)
         {
             throw new NotImplementedException();
@@ -879,10 +907,14 @@ public sealed class MouseGestureServiceTests
 
         public Task RecordPasteAsync(DateTimeOffset now, CancellationToken cancellationToken) => Task.CompletedTask;
 
-        public Task RecordGestureAsync(DateTimeOffset now, CancellationToken cancellationToken)
+        public async Task RecordGestureAsync(DateTimeOffset now, CancellationToken cancellationToken)
         {
+            if (RecordGestureDelay > TimeSpan.Zero)
+            {
+                await Task.Delay(RecordGestureDelay, cancellationToken);
+            }
+
             GestureCount++;
-            return Task.CompletedTask;
         }
     }
     private sealed class FakeWorkerLevelUpService : IWorkerLevelUpService
@@ -904,6 +936,8 @@ public sealed class MouseGestureServiceTests
         public bool ThrowOnRecord { get; set; }
 
         public bool LeveledUp { get; set; }
+
+        public TimeSpan RecordDelay { get; init; }
 
         public Task<Core.WorkerLevel.WorkerLevelSnapshot> GetSnapshotAsync(CancellationToken cancellationToken)
         {
@@ -927,9 +961,25 @@ public sealed class MouseGestureServiceTests
                 throw new InvalidOperationException("xp boom");
             }
 
+            if (RecordDelay > TimeSpan.Zero)
+            {
+                return RecordActionWithDelayAsync(action, isGestureSuccess, cancellationToken);
+            }
+
             RecordedActions.Add(action);
             LastGestureSuccess = isGestureSuccess;
             return GetSnapshotAsync(cancellationToken);
+        }
+
+        private async Task<Core.WorkerLevel.WorkerLevelSnapshot> RecordActionWithDelayAsync(
+            BuiltInGestureAction action,
+            bool isGestureSuccess,
+            CancellationToken cancellationToken)
+        {
+            await Task.Delay(RecordDelay, cancellationToken);
+            RecordedActions.Add(action);
+            LastGestureSuccess = isGestureSuccess;
+            return await GetSnapshotAsync(cancellationToken);
         }
     }
 }

@@ -70,6 +70,28 @@ public sealed class WorkerLevelServiceTests
     }
 
     [Fact]
+    public async Task RecordActionAsync_batches_ordinary_settings_writes()
+    {
+        var settings = new FakeSettingsService();
+        var service = new WorkerLevelService(settings);
+
+        for (var i = 0; i < 9; i++)
+        {
+            await service.RecordActionAsync(BuiltInGestureAction.Copy, true, DateTimeOffset.UtcNow, CancellationToken.None);
+        }
+
+        Assert.Equal(0, settings.SetCount);
+
+        var snapshot = await service.RecordActionAsync(BuiltInGestureAction.Copy, true, DateTimeOffset.UtcNow, CancellationToken.None);
+
+        Assert.Equal(30, snapshot.TotalXp);
+        Assert.Equal(10, snapshot.TotalActionCount);
+        Assert.Equal(3, settings.SetCount);
+        Assert.Equal(30, settings.Values[SettingKeys.WorkerLevelTotalXp]);
+        Assert.Equal(10, settings.Values[SettingKeys.WorkerLevelTotalActionCount]);
+    }
+
+    [Fact]
     public async Task GetSnapshotAsync_handles_damaged_settings()
     {
         var settings = new FakeSettingsService();

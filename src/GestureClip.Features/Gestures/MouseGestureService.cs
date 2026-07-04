@@ -437,8 +437,7 @@ public sealed class MouseGestureService : IMouseGestureService
             }
 
             await _actionExecutor.ExecuteAsync(action, CancellationToken.None);
-            await _workstationDashboardService.RecordGestureAsync(DateTimeOffset.UtcNow, CancellationToken.None);
-            await RecordWorkerLevelAsync(action);
+            RecordPostGestureStatsInBackground(action);
             LogDebug(settings, "Action Executed: {Action}", action);
         }
         catch (Exception ex)
@@ -451,6 +450,22 @@ public sealed class MouseGestureService : IMouseGestureService
 
             _logger.LogError(ex, "Gesture action execution failed.");
         }
+    }
+
+    private void RecordPostGestureStatsInBackground(BuiltInGestureAction action)
+    {
+        _ = Task.Run(async () =>
+        {
+            try
+            {
+                await _workstationDashboardService.RecordGestureAsync(DateTimeOffset.UtcNow, CancellationToken.None);
+                await RecordWorkerLevelAsync(action);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogDebug(ex, "Gesture stats recording failed.");
+            }
+        });
     }
 
     private async Task RecordWorkerLevelAsync(BuiltInGestureAction action)

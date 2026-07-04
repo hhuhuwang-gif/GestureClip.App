@@ -6,6 +6,10 @@ public sealed class FakeSettingsService : ISettingsService
 {
     public Dictionary<string, object?> Values { get; } = [];
 
+    public int SetCount { get; private set; }
+
+    public Dictionary<string, int> SetCountsByKey { get; } = [];
+
     public T Get<T>(string key, T defaultValue)
     {
         if (!Values.TryGetValue(key, out var value) || value is null)
@@ -30,6 +34,8 @@ public sealed class FakeSettingsService : ISettingsService
 
     public Task SetAsync<T>(string key, T value, CancellationToken cancellationToken)
     {
+        SetCount++;
+        SetCountsByKey[key] = SetCountsByKey.GetValueOrDefault(key) + 1;
         Values[key] = value;
         return Task.CompletedTask;
     }
