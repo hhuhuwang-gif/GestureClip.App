@@ -17,7 +17,7 @@
         <Canvas IsHitTestVisible="False">
             <Polyline Points="{Binding Points}"
                       Stroke="{Binding StrokeBrush}"
-                      StrokeThickness="3"
+                      StrokeThickness="2.2"
                       StrokeStartLineCap="Round"
                       StrokeEndLineCap="Round"
                       StrokeLineJoin="Round"
@@ -34,7 +34,7 @@
                 VerticalAlignment="Bottom"
                 Margin="0,0,0,70"
                 Width="860"
-                Height="178"
+                Height="210"
                 CornerRadius="24"
                 Padding="12"
                 Background="#D4111724"
@@ -110,40 +110,54 @@
                                    FontFamily="Cascadia Mono, Consolas, Microsoft YaHei UI"
                                    FontWeight="Bold" />
                     </StackPanel>
-                    <Grid Margin="0,10,0,0">
+                    <Grid Margin="0,8,0,0">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="*" />
-                            <ColumnDefinition Width="8" />
-                            <ColumnDefinition Width="*" />
-                            <ColumnDefinition Width="8" />
-                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
                         </Grid.ColumnDefinitions>
-
-                        <Border CornerRadius="12" Background="#20FFFFFF" BorderBrush="#18FFFFFF" BorderThickness="1" Padding="10,6">
-                            <StackPanel>
-                                <TextBlock Text="今日工资" Foreground="#FF94A3B8" FontSize="10" FontWeight="SemiBold" />
-                                <TextBlock Text="{Binding TodayEarnedText}" Foreground="#FFFFFFFF" FontSize="14" FontWeight="SemiBold" Margin="0,2,0,0" TextTrimming="CharacterEllipsis" />
-                            </StackPanel>
-                        </Border>
-
-                        <Border Grid.Column="2" CornerRadius="12" Background="#20FFFFFF" BorderBrush="#18FFFFFF" BorderThickness="1" Padding="10,6">
-                            <StackPanel>
-                                <TextBlock Text="还有多久下班" Foreground="#FF94A3B8" FontSize="10" FontWeight="SemiBold" />
-                                <TextBlock Text="{Binding OffWorkCountdownText}" Foreground="#FFFDE68A" FontSize="14" FontWeight="SemiBold" Margin="0,2,0,0" TextTrimming="CharacterEllipsis" />
-                            </StackPanel>
-                        </Border>
-
-                        <Border Grid.Column="4" CornerRadius="12" Background="#20FFFFFF" BorderBrush="#18FFFFFF" BorderThickness="1" Padding="10,6">
-                            <StackPanel>
-                                <TextBlock Text="还有多久发薪水" Foreground="#FF94A3B8" FontSize="10" FontWeight="SemiBold" />
-                                <TextBlock Text="{Binding PaydayCountdownText}" Foreground="#FF93C5FD" FontSize="14" FontWeight="SemiBold" Margin="0,2,0,0" TextTrimming="CharacterEllipsis" />
-                            </StackPanel>
-                        </Border>
+                        <TextBlock Text="{Binding FunText}"
+                                   Foreground="#FFFDE68A"
+                                   FontSize="13"
+                                   FontWeight="SemiBold"
+                                   TextWrapping="NoWrap"
+                                   TextTrimming="CharacterEllipsis" />
+                        <TextBlock Grid.Column="1"
+                                   Text="{Binding GainedXpText}"
+                                   Foreground="#FF86EFAC"
+                                   FontSize="12"
+                                   FontWeight="Bold"
+                                   Margin="12,0,0,0" />
                     </Grid>
-                    <StackPanel x:Name="TodayStatsLine" Orientation="Horizontal" Margin="0,7,0,0">
-                        <TextBlock Text="{Binding EfficiencyStatsText}" Foreground="#FFC9D4E5" FontSize="10" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" />
-                        <TextBlock Text="  ·  " Foreground="#556B7280" FontSize="10" />
-                        <TextBlock Text="{Binding SavedClicksText}" Foreground="#FF93C5FD" FontSize="10" FontWeight="SemiBold" />
+                    <Grid Margin="0,8,0,0">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="120" />
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Text="{Binding LevelText}"
+                                   Foreground="#FFE0F2FE"
+                                   FontSize="12"
+                                   FontWeight="SemiBold"
+                                   TextTrimming="CharacterEllipsis" />
+                        <TextBlock Grid.Column="1"
+                                   Text="{Binding XpText}"
+                                   Foreground="#FF93C5FD"
+                                   FontSize="11"
+                                   FontFamily="Cascadia Mono, Consolas, Microsoft YaHei UI"
+                                   FontWeight="SemiBold"
+                                   HorizontalAlignment="Right"
+                                   TextTrimming="CharacterEllipsis" />
+                    </Grid>
+                    <ProgressBar Minimum="0"
+                                 Maximum="1"
+                                 Value="{Binding XpProgressPercent}"
+                                 Height="5"
+                                 Margin="0,7,0,0"
+                                 Foreground="#FF93C5FD"
+                                 Background="#24FFFFFF"
+                                 BorderThickness="0" />
+                    <StackPanel x:Name="TodayStatsLine" Margin="0,8,0,0">
+                        <TextBlock Text="{Binding WorkSummaryText}" Foreground="#FFFFFFFF" FontSize="12" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" />
+                        <TextBlock Text="{Binding StatsText}" Foreground="#FFC9D4E5" FontSize="11" FontWeight="SemiBold" Margin="0,5,0,0" TextTrimming="CharacterEllipsis" />
                     </StackPanel>
                 </StackPanel>
 
@@ -171,3 +185,6 @@
         </Border>
     </Grid>
 </Window>
+
+
+

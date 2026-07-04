@@ -28,7 +28,7 @@ public sealed class GestureOverlayWindowTests
         Assert.Contains("VerticalAlignment=\"Bottom\"", xaml);
         Assert.Contains("HorizontalAlignment=\"Center\"", xaml);
         Assert.Contains("Width=\"860\"", xaml);
-        Assert.Contains("Height=\"178\"", xaml);
+        Assert.Contains("Height=\"210\"", xaml);
         Assert.Contains("BorderThickness=\"1\"", xaml);
         Assert.Contains("CornerRadius=\"24\"", xaml);
         Assert.DoesNotContain("Canvas.Left=\"24\"", xaml);
@@ -47,7 +47,7 @@ public sealed class GestureOverlayWindowTests
         Assert.Contains("TodayStatsLine", xaml);
         Assert.Contains("松开右键执行", xaml);
         Assert.Contains("普通右键不显示", xaml);
-        Assert.Contains("Height=\"178\"", xaml);
+        Assert.Contains("Height=\"210\"", xaml);
         Assert.DoesNotContain("MaxHeight=", xaml);
         Assert.DoesNotContain("GESTURE HUD", xaml);
         Assert.DoesNotContain("MiniStatusMetricsRow", xaml);
@@ -77,16 +77,18 @@ public sealed class GestureOverlayWindowTests
 
         Assert.Contains("工位小熊", xaml);
         Assert.Contains("WorkStatusText", xaml);
-        Assert.Contains("EfficiencyStatsText", xaml);
-        Assert.Contains("SavedClicksText", xaml);
+        Assert.Contains("StatsText", xaml);
+        Assert.Contains("WorkSummaryText", xaml);
         Assert.Contains("SnapsToDevicePixels=\"True\"", xaml);
-        Assert.Contains("今日工资", xaml);
-        Assert.Contains("还有多久下班", xaml);
-        Assert.Contains("还有多久发薪水", xaml);
-        Assert.Contains("OffWorkCountdownText", xaml);
-        Assert.Contains("TodayEarnedText", xaml);
-        Assert.Contains("PaydayCountdownText", xaml);
+        Assert.Contains("WorkSummaryText", xaml);
+        Assert.Contains("FunText", xaml);
+        Assert.Contains("LevelText", xaml);
+        Assert.Contains("XpText", xaml);
+        Assert.Contains("GainedXpText", xaml);
+        Assert.Contains("StatsText", xaml);
         Assert.DoesNotContain("TodayFishingValueText", xaml);
+        Assert.Contains("WorkSummaryText", xaml);
+        Assert.Contains("StatsText", xaml);
     }
 
     [Fact]
@@ -100,7 +102,7 @@ public sealed class GestureOverlayWindowTests
         Assert.DoesNotContain("Text=\"按...\"", xaml);
         Assert.DoesNotContain("MaxHeight=", xaml);
         Assert.Contains("Width=\"860\"", xaml);
-        Assert.Contains("Height=\"178\"", xaml);
+        Assert.Contains("Height=\"210\"", xaml);
     }
 
     [Fact]
@@ -110,7 +112,7 @@ public sealed class GestureOverlayWindowTests
 
         var xaml = File.ReadAllText(path);
 
-        Assert.Contains("Height=\"178\"", xaml);
+        Assert.Contains("Height=\"210\"", xaml);
         Assert.Contains("Width=\"860\"", xaml);
         Assert.DoesNotContain("Height=\"150\"", xaml);
     }
@@ -125,8 +127,8 @@ public sealed class GestureOverlayWindowTests
         var service = File.ReadAllText(servicePath);
 
         Assert.Contains("PaydayCountdownText", viewModel);
-        Assert.Contains("snapshot.DaysUntilPayday", service);
-        Assert.Contains("FormatPaydayCountdown", service);
+        Assert.Contains("WorkSummaryText", viewModel);
+        Assert.Contains("BuildSnapshotAsync", service);
     }
 
     [Fact]
@@ -136,7 +138,7 @@ public sealed class GestureOverlayWindowTests
 
         var xaml = File.ReadAllText(path);
 
-        Assert.Contains("StrokeThickness=\"3\"", xaml);
+        Assert.Contains("StrokeThickness=\"2.2\"", xaml);
         Assert.DoesNotContain("StrokeThickness=\"6\"", xaml);
     }
 
@@ -150,6 +152,28 @@ public sealed class GestureOverlayWindowTests
         Assert.Contains("PointFromScreen", source);
     }
 
+    [Fact]
+    public void GestureOverlayWindow_shows_fun_report_level_and_xp()
+    {
+        var path = FindRepositoryFile("src", "GestureClip.App", "GestureOverlayWindow.xaml");
+        var viewModelPath = FindRepositoryFile("src", "GestureClip.App", "ViewModels", "GestureOverlayViewModel.cs");
+
+        var xaml = File.ReadAllText(path);
+        var viewModel = File.ReadAllText(viewModelPath);
+
+        Assert.Contains("FunText", xaml);
+        Assert.Contains("GainedXpText", xaml);
+        Assert.Contains("LevelText", xaml);
+        Assert.Contains("XpText", xaml);
+        Assert.Contains("WorkSummaryText", xaml);
+        Assert.Contains("StatsText", xaml);
+        Assert.Contains("FunText", viewModel);
+        Assert.Contains("LevelText", viewModel);
+        Assert.Contains("XpProgressPercent", viewModel);
+        Assert.Contains("ProgressBar", xaml);
+        Assert.Contains("Maximum=\"1\"", xaml);
+        Assert.Contains("Value=\"{Binding XpProgressPercent}\"", xaml);
+    }
     private static string FindRepositoryFile(params string[] segments)
     {
         var directory = new DirectoryInfo(AppContext.BaseDirectory);
@@ -167,3 +191,9 @@ public sealed class GestureOverlayWindowTests
         throw new FileNotFoundException("Could not locate repository file.", Path.Combine(segments));
     }
 }
+
+
+
+
+
+

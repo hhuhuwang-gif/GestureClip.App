@@ -80,6 +80,14 @@ public sealed class DefaultDataSeeder
         await SeedSettingAsync(connection, SettingKeys.WorkstationShowFishingValue, "true", "bool", now);
         await SeedSettingAsync(connection, SettingKeys.WorkstationShowOffWorkCountdown, "true", "bool", now);
         await SeedSettingAsync(connection, SettingKeys.WorkstationDailyReportEnabled, "false", "bool", now);
+        await SeedSettingAsync(connection, SettingKeys.WorkerLevelTotalXp, "0", "int", now);
+        await SeedSettingAsync(connection, SettingKeys.WorkerLevelCurrentLevel, "1", "int", now);
+        await SeedSettingAsync(connection, SettingKeys.WorkerLevelTotalActionCount, "0", "int", now);
+        await SeedSettingAsync(connection, SettingKeys.WorkerLevelLastLevelUpAt, "\"\"", "string", now);
+        await SeedSettingAsync(connection, SettingKeys.WorkerLevelShowLevelUpPopup, "true", "bool", now);
+        await SeedSettingAsync(connection, SettingKeys.WorkerLevelShowLevelInHud, "true", "bool", now);
+        await SeedSettingAsync(connection, SettingKeys.HudFunTextEnabled, "true", "bool", now);
+        await SeedSettingAsync(connection, SettingKeys.HudStatusLevelEnabled, "true", "bool", now);
         await DisableLeftEdgeLeftButtonTriggerAsync(connection, now);
         await MigrateOldBottomSlideDefaultAsync(connection, now);
         await MigrateOldEdgeTimingDefaultsAsync(connection, now);
@@ -304,3 +312,5 @@ VALUES
         return new Guid(guidBytes).ToString();
     }
 }
+
+

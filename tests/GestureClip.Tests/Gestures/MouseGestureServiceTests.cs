@@ -576,6 +576,59 @@ public sealed class MouseGestureServiceTests
         Assert.Equal(BuiltInGestureAction.Copy, executor.Actions.Single());
     }
 
+    [Fact]
+    public async Task Gesture_action_success_records_worker_level_xp()
+    {
+        var hook = new FakeLowLevelMouseHook();
+        var executor = new FakeMouseGestureActionExecutor();
+        var workerLevel = new FakeWorkerLevelService();
+        var service = CreateService(hook, executor, showOverlay: false, workerLevel: workerLevel);
+        await service.StartAsync(CancellationToken.None);
+
+        hook.Raise(MouseHookEventType.RightButtonDown, 0, 0);
+        hook.Raise(MouseHookEventType.Move, 0, -30);
+        hook.Raise(MouseHookEventType.RightButtonUp, 0, -50);
+        await WaitForAsync(() => workerLevel.RecordedActions.Count == 1);
+
+        Assert.Equal(BuiltInGestureAction.Copy, workerLevel.RecordedActions.Single());
+        Assert.True(workerLevel.LastGestureSuccess);
+        Assert.Equal(GestureRuntimeState.Idle, service.Diagnostics.State);
+    }
+
+    [Fact]
+    public async Task Worker_level_exception_does_not_break_gesture_state()
+    {
+        var hook = new FakeLowLevelMouseHook();
+        var executor = new FakeMouseGestureActionExecutor();
+        var workerLevel = new FakeWorkerLevelService { ThrowOnRecord = true };
+        var service = CreateService(hook, executor, showOverlay: false, workerLevel: workerLevel);
+        await service.StartAsync(CancellationToken.None);
+
+        hook.Raise(MouseHookEventType.RightButtonDown, 0, 0);
+        hook.Raise(MouseHookEventType.Move, 0, -30);
+        hook.Raise(MouseHookEventType.RightButtonUp, 0, -50);
+        await WaitForAsync(() => executor.Actions.Count == 1);
+
+        Assert.Equal(BuiltInGestureAction.Copy, executor.Actions.Single());
+        Assert.Equal(GestureRuntimeState.Idle, service.Diagnostics.State);
+    }
+    [Fact]
+    public async Task Gesture_level_up_requests_level_up_popup_after_action()
+    {
+        var hook = new FakeLowLevelMouseHook();
+        var executor = new FakeMouseGestureActionExecutor();
+        var workerLevel = new FakeWorkerLevelService { LeveledUp = true };
+        var levelUp = new FakeWorkerLevelUpService();
+        var service = CreateService(hook, executor, showOverlay: false, workerLevel: workerLevel, levelUp: levelUp);
+        await service.StartAsync(CancellationToken.None);
+
+        hook.Raise(MouseHookEventType.RightButtonDown, 0, 0);
+        hook.Raise(MouseHookEventType.Move, 0, -30);
+        hook.Raise(MouseHookEventType.RightButtonUp, 0, -50);
+        await WaitForAsync(() => levelUp.ShowCount == 1);
+
+        Assert.Equal(1, levelUp.ShowCount);
+    }
     private static MouseGestureService CreateService(
         FakeLowLevelMouseHook hook,
         IMouseGestureActionExecutor? executor = null,
@@ -589,7 +642,9 @@ public sealed class MouseGestureServiceTests
         bool middleButtonEnabled = false,
         bool xButton1Enabled = false,
         bool xButton2Enabled = false,
-        FakeWorkstationDashboardService? dashboard = null)
+        FakeWorkstationDashboardService? dashboard = null,
+        FakeWorkerLevelService? workerLevel = null,
+        FakeWorkerLevelUpService? levelUp = null)
     {
         return new MouseGestureService(
             hook,
@@ -603,6 +658,8 @@ public sealed class MouseGestureServiceTests
             new FakeForegroundAppService(),
             new FakeAppBlacklistService { GestureBlocked = gestureBlacklisted },
             dashboard ?? new FakeWorkstationDashboardService(),
+            workerLevel ?? new FakeWorkerLevelService(),
+            levelUp ?? new FakeWorkerLevelUpService(),
             NullLogger<MouseGestureService>.Instance);
     }
 
@@ -828,5 +885,54 @@ public sealed class MouseGestureServiceTests
             return Task.CompletedTask;
         }
     }
+    private sealed class FakeWorkerLevelUpService : IWorkerLevelUpService
+    {
+        public int ShowCount { get; private set; }
+
+        public Task ShowLevelUpAsync(Core.WorkerLevel.WorkerLevelSnapshot snapshot, CancellationToken cancellationToken)
+        {
+            ShowCount++;
+            return Task.CompletedTask;
+        }
+    }
+    private sealed class FakeWorkerLevelService : IWorkerLevelService
+    {
+        public List<BuiltInGestureAction> RecordedActions { get; } = [];
+
+        public bool LastGestureSuccess { get; private set; }
+
+        public bool ThrowOnRecord { get; set; }
+
+        public bool LeveledUp { get; set; }
+
+        public Task<Core.WorkerLevel.WorkerLevelSnapshot> GetSnapshotAsync(CancellationToken cancellationToken)
+        {
+            return Task.FromResult(new Core.WorkerLevel.WorkerLevelSnapshot(
+                0,
+                0,
+                new Core.WorkerLevel.WorkerLevelDefinition(1, 0, "初入工位"),
+                new Core.WorkerLevel.WorkerLevelDefinition(2, 50, "复制学徒"),
+                0,
+                50,
+                0,
+                LeveledUp,
+                1,
+                null));
+        }
+
+        public Task<Core.WorkerLevel.WorkerLevelSnapshot> RecordActionAsync(BuiltInGestureAction action, bool isGestureSuccess, DateTimeOffset now, CancellationToken cancellationToken)
+        {
+            if (ThrowOnRecord)
+            {
+                throw new InvalidOperationException("xp boom");
+            }
+
+            RecordedActions.Add(action);
+            LastGestureSuccess = isGestureSuccess;
+            return GetSnapshotAsync(cancellationToken);
+        }
+    }
 }
+
+
 

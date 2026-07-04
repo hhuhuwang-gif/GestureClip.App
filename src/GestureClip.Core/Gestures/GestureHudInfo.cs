@@ -5,4 +5,7 @@ public sealed record GestureHudInfo(
     string Pattern,
     string ActionName,
     string ShortcutText,
-    string PresetName);
+    string PresetName)
+{
+    public BuiltInGestureAction Action { get; init; } = BuiltInGestureAction.None;
+}

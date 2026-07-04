@@ -1,0 +1,48 @@
+<Window x:Class="GestureClip.App.WorkerLevelUpWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Width="420"
+        Height="190"
+        WindowStyle="None"
+        AllowsTransparency="True"
+        Background="Transparent"
+        ShowInTaskbar="False"
+        Topmost="True"
+        ShowActivated="False"
+        Focusable="False"
+        IsHitTestVisible="False"
+        ResizeMode="NoResize"
+        WindowStartupLocation="Manual">
+    <Border CornerRadius="24"
+            Padding="22"
+            Background="#E6111724"
+            BorderBrush="#55FDE68A"
+            BorderThickness="1">
+        <Border.Effect>
+            <DropShadowEffect Color="#101827" BlurRadius="24" ShadowDepth="8" Opacity="0.30" />
+        </Border.Effect>
+        <StackPanel>
+            <TextBlock Text="{Binding Header}"
+                       Foreground="#FFFDE68A"
+                       FontSize="24"
+                       FontWeight="Bold" />
+            <TextBlock Text="{Binding LevelText}"
+                       Foreground="#FFFFFFFF"
+                       FontSize="22"
+                       FontWeight="SemiBold"
+                       Margin="0,12,0,0"
+                       TextTrimming="CharacterEllipsis" />
+            <TextBlock Text="{Binding XpText}"
+                       Foreground="#FF93C5FD"
+                       FontSize="13"
+                       FontFamily="Cascadia Mono, Consolas, Microsoft YaHei UI"
+                       FontWeight="SemiBold"
+                       Margin="0,7,0,0" />
+            <TextBlock Text="{Binding Hint}"
+                       Foreground="#FFC9D4E5"
+                       FontSize="13"
+                       FontWeight="SemiBold"
+                       Margin="0,12,0,0" />
+        </StackPanel>
+    </Border>
+</Window>

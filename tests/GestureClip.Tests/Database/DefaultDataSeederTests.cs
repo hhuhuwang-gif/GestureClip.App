@@ -51,8 +51,14 @@ public sealed class DefaultDataSeederTests
         var workStart = await connection.ExecuteScalarAsync<string>("SELECT Value FROM Settings WHERE Key = 'Workstation.WorkStartTime';");
         var workEnd = await connection.ExecuteScalarAsync<string>("SELECT Value FROM Settings WHERE Key = 'Workstation.WorkEndTime';");
         var payday = await connection.ExecuteScalarAsync<string>("SELECT Value FROM Settings WHERE Key = 'Workstation.Payday';");
+        var workerXp = await connection.ExecuteScalarAsync<string>("SELECT Value FROM Settings WHERE Key = 'WorkerLevel.TotalXp';");
+        var workerLevel = await connection.ExecuteScalarAsync<string>("SELECT Value FROM Settings WHERE Key = 'WorkerLevel.CurrentLevel';");
+        var showPopup = await connection.ExecuteScalarAsync<string>("SELECT Value FROM Settings WHERE Key = 'WorkerLevel.ShowLevelUpPopup';");
+        var showLevelInHud = await connection.ExecuteScalarAsync<string>("SELECT Value FROM Settings WHERE Key = 'WorkerLevel.ShowLevelInHud';");
+        var funText = await connection.ExecuteScalarAsync<string>("SELECT Value FROM Settings WHERE Key = 'Hud.FunTextEnabled';");
+        var statusLevel = await connection.ExecuteScalarAsync<string>("SELECT Value FROM Settings WHERE Key = 'Hud.StatusLevelEnabled';");
 
-        Assert.Equal(57, settingCount);
+        Assert.Equal(65, settingCount);
         Assert.Equal(7, blacklistCount);
         Assert.Equal(6, gestureCount);
         Assert.Equal("1000", maxItems);
@@ -76,6 +82,12 @@ public sealed class DefaultDataSeederTests
         Assert.Equal("\"09:00\"", workStart);
         Assert.Equal("\"18:00\"", workEnd);
         Assert.Equal("15", payday);
+        Assert.Equal("0", workerXp);
+        Assert.Equal("1", workerLevel);
+        Assert.Equal("true", showPopup);
+        Assert.Equal("true", showLevelInHud);
+        Assert.Equal("true", funText);
+        Assert.Equal("true", statusLevel);
     }
 
     [Fact]
@@ -262,5 +274,40 @@ VALUES ('EdgeTrigger.DwellMs', '350', 'int', @UpdatedAt),
         Assert.Equal("450", cooldownMs);
         Assert.Equal("56", slideThreshold);
     }
-}
 
+
+    [Fact]
+    public async Task SeedAsync_does_not_overwrite_existing_worker_level_settings()
+    {
+        await using var connection = new SqliteConnection("Data Source=:memory:");
+        await connection.OpenAsync();
+
+        var runner = new SqlMigrationRunner(NullLogger<SqlMigrationRunner>.Instance);
+        await runner.RunAsync(connection, new[]
+        {
+            new SqlMigration(1, "initial", InitialMigration.Sql)
+        }, CancellationToken.None);
+
+        await connection.ExecuteAsync(
+            """
+INSERT INTO Settings (Key, Value, ValueType, UpdatedAt)
+VALUES ('WorkerLevel.TotalXp', '88', 'int', @UpdatedAt),
+       ('WorkerLevel.CurrentLevel', '3', 'int', @UpdatedAt),
+       ('Hud.FunTextEnabled', 'false', 'bool', @UpdatedAt);
+""",
+            new { UpdatedAt = DateTimeOffset.UtcNow.ToString("O") });
+
+        var seeder = new DefaultDataSeeder(NullLogger<DefaultDataSeeder>.Instance);
+
+        await seeder.SeedAsync(connection, CancellationToken.None);
+
+        var workerXp = await connection.ExecuteScalarAsync<string>("SELECT Value FROM Settings WHERE Key = 'WorkerLevel.TotalXp';");
+        var workerLevel = await connection.ExecuteScalarAsync<string>("SELECT Value FROM Settings WHERE Key = 'WorkerLevel.CurrentLevel';");
+        var funText = await connection.ExecuteScalarAsync<string>("SELECT Value FROM Settings WHERE Key = 'Hud.FunTextEnabled';");
+
+        Assert.Equal("88", workerXp);
+        Assert.Equal("3", workerLevel);
+        Assert.Equal("false", funText);
+    }
+
+}

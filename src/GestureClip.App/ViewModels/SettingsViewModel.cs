@@ -34,6 +34,7 @@ public sealed class SettingsViewModel : INotifyPropertyChanged
     private readonly IConfirmationService _confirmationService;
     private readonly IGesturePresetProvider _gesturePresetProvider;
     private readonly IEdgeTriggerService _edgeTriggerService;
+    private readonly IWorkerLevelService _workerLevelService;
     private bool _clipboardCaptureEnabled;
     private bool _gestureEnabled;
     private bool _gestureShowOverlay;
@@ -94,6 +95,12 @@ public sealed class SettingsViewModel : INotifyPropertyChanged
     private string _newGesturePattern = "";
     private BuiltInGestureAction _newGestureAction = BuiltInGestureAction.Copy;
     private string _recordGestureStatusText = "按住左键在方框里画一次。";
+    private string _workerLevelText = "Lv.1 初入工位";
+    private string _workerXpText = "XP 0 / 50";
+    private bool _workerLevelShowLevelUpPopup;
+    private bool _workerLevelShowLevelInHud;
+    private bool _hudFunTextEnabled;
+    private bool _hudStatusLevelEnabled;
     private GestureBindingCardViewModel? _selectedGestureBindingCard;
     private readonly DispatcherTimer _diagnosticsTimer;
 
@@ -114,7 +121,8 @@ public sealed class SettingsViewModel : INotifyPropertyChanged
         IClipboardOverlayService clipboardOverlayService,
         IConfirmationService confirmationService,
         IGesturePresetProvider gesturePresetProvider,
-        IEdgeTriggerService edgeTriggerService)
+        IEdgeTriggerService edgeTriggerService,
+        IWorkerLevelService workerLevelService)
     {
         _settingsService = settingsService;
         _mouseGestureService = mouseGestureService;
@@ -131,6 +139,7 @@ public sealed class SettingsViewModel : INotifyPropertyChanged
         _confirmationService = confirmationService;
         _gesturePresetProvider = gesturePresetProvider;
         _edgeTriggerService = edgeTriggerService;
+        _workerLevelService = workerLevelService;
         DatabasePath = paths.DatabasePath;
         LogDirectory = paths.LogDirectory;
         AppDataPath = paths.RootDirectory;
@@ -186,6 +195,10 @@ public sealed class SettingsViewModel : INotifyPropertyChanged
         _workstationShowFishingValue = _settingsService.Get(SettingKeys.WorkstationShowFishingValue, true);
         _workstationShowOffWorkCountdown = _settingsService.Get(SettingKeys.WorkstationShowOffWorkCountdown, true);
         _workstationDailyReportEnabled = _settingsService.Get(SettingKeys.WorkstationDailyReportEnabled, false);
+        _workerLevelShowLevelUpPopup = _settingsService.Get(SettingKeys.WorkerLevelShowLevelUpPopup, true);
+        _workerLevelShowLevelInHud = _settingsService.Get(SettingKeys.WorkerLevelShowLevelInHud, true);
+        _hudFunTextEnabled = _settingsService.Get(SettingKeys.HudFunTextEnabled, true);
+        _hudStatusLevelEnabled = _settingsService.Get(SettingKeys.HudStatusLevelEnabled, true);
         _openClipboardHotkeyText = HotkeyDefinition.ParseOrDefault(_settingsService.Get(
             SettingKeys.HotkeyOpenClipboardOverlayKey,
             HotkeyDefinition.DefaultOpenClipboardOverlay)).DisplayText;
@@ -220,6 +233,7 @@ public sealed class SettingsViewModel : INotifyPropertyChanged
         _ = RefreshDiagnosticsAsync();
         _ = RefreshClipboardStatsAsync();
         RefreshGestureBindingCards();
+        _ = RefreshWorkerLevelAsync();
     }
 
     public event PropertyChangedEventHandler? PropertyChanged;
@@ -254,6 +268,102 @@ public sealed class SettingsViewModel : INotifyPropertyChanged
             _openClipboardHotkeyText = hotkey.DisplayText;
             OnPropertyChanged();
             _ = ApplyOpenClipboardHotkeyAsync(hotkey.DisplayText);
+        }
+    }
+
+
+
+    public string WorkerLevelText
+    {
+        get => _workerLevelText;
+        private set
+        {
+            if (_workerLevelText == value)
+            {
+                return;
+            }
+
+            _workerLevelText = value;
+            OnPropertyChanged();
+        }
+    }
+
+    public string WorkerXpText
+    {
+        get => _workerXpText;
+        private set
+        {
+            if (_workerXpText == value)
+            {
+                return;
+            }
+
+            _workerXpText = value;
+            OnPropertyChanged();
+        }
+    }
+
+    public bool WorkerLevelShowLevelUpPopup
+    {
+        get => _workerLevelShowLevelUpPopup;
+        set
+        {
+            if (_workerLevelShowLevelUpPopup == value)
+            {
+                return;
+            }
+
+            _workerLevelShowLevelUpPopup = value;
+            OnPropertyChanged();
+            _ = _settingsService.SetAsync(SettingKeys.WorkerLevelShowLevelUpPopup, value, CancellationToken.None);
+        }
+    }
+
+    public bool WorkerLevelShowLevelInHud
+    {
+        get => _workerLevelShowLevelInHud;
+        set
+        {
+            if (_workerLevelShowLevelInHud == value)
+            {
+                return;
+            }
+
+            _workerLevelShowLevelInHud = value;
+            OnPropertyChanged();
+            _ = _settingsService.SetAsync(SettingKeys.WorkerLevelShowLevelInHud, value, CancellationToken.None);
+        }
+    }
+
+    public bool HudFunTextEnabled
+    {
+        get => _hudFunTextEnabled;
+        set
+        {
+            if (_hudFunTextEnabled == value)
+            {
+                return;
+            }
+
+            _hudFunTextEnabled = value;
+            OnPropertyChanged();
+            _ = _settingsService.SetAsync(SettingKeys.HudFunTextEnabled, value, CancellationToken.None);
+        }
+    }
+
+    public bool HudStatusLevelEnabled
+    {
+        get => _hudStatusLevelEnabled;
+        set
+        {
+            if (_hudStatusLevelEnabled == value)
+            {
+                return;
+            }
+
+            _hudStatusLevelEnabled = value;
+            OnPropertyChanged();
+            _ = _settingsService.SetAsync(SettingKeys.HudStatusLevelEnabled, value, CancellationToken.None);
         }
     }
 
@@ -685,6 +795,7 @@ public sealed class SettingsViewModel : INotifyPropertyChanged
             OnPropertyChanged();
             _ = _settingsService.SetAsync(SettingKeys.GesturePreset, _selectedGesturePreset, CancellationToken.None);
             RefreshGestureBindingCards();
+        _ = RefreshWorkerLevelAsync();
         }
     }
 
@@ -1337,6 +1448,23 @@ public sealed class SettingsViewModel : INotifyPropertyChanged
         EdgeTriggerSlideBottomEnabled = true;
         EdgeTriggerSlideBottomAction = BuiltInGestureAction.PasteAndEnter;
         await _settingsService.SetAsync(SettingKeys.EdgeTriggerEnabled, true, CancellationToken.None);
+    }
+
+
+
+    private async Task RefreshWorkerLevelAsync()
+    {
+        try
+        {
+            var snapshot = await _workerLevelService.GetSnapshotAsync(CancellationToken.None);
+            WorkerLevelText = snapshot.LevelText;
+            WorkerXpText = snapshot.XpText;
+        }
+        catch
+        {
+            WorkerLevelText = "Lv.1 初入工位";
+            WorkerXpText = "XP 0 / 50";
+        }
     }
 
     private async Task LoadBlacklistAsync()

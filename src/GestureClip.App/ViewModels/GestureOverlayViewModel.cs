@@ -18,6 +18,13 @@ public sealed class GestureOverlayViewModel : INotifyPropertyChanged
     private string _todayFishingValueText = "￥0.00";
     private string _efficiencyStatsText = "复制 0 · 粘贴 0 · 手势 0";
     private string _savedClicksText = "少点了 0 次";
+    private string _funText = "右键一滑，效率开挂";
+    private string _gainedXpText = "";
+    private string _levelText = "Lv.1 初入工位";
+    private string _xpText = "XP 0 / 50";
+    private double _xpProgressPercent;
+    private string _workSummaryText = "今日 ￥0.00 · 下班 -- · 发薪 --";
+    private string _statsText = "手势 0 · 复制 0 · 粘贴 0 · 少点 0 次";
     private PointCollection _points = [];
     private System.Windows.Media.Brush _strokeBrush = new SolidColorBrush(System.Windows.Media.Color.FromRgb(140, 200, 255));
 
@@ -203,6 +210,110 @@ public sealed class GestureOverlayViewModel : INotifyPropertyChanged
         }
     }
 
+    public string FunText
+    {
+        get => _funText;
+        set
+        {
+            if (_funText == value)
+            {
+                return;
+            }
+
+            _funText = value;
+            OnPropertyChanged();
+        }
+    }
+
+    public string GainedXpText
+    {
+        get => _gainedXpText;
+        set
+        {
+            if (_gainedXpText == value)
+            {
+                return;
+            }
+
+            _gainedXpText = value;
+            OnPropertyChanged();
+        }
+    }
+
+    public string LevelText
+    {
+        get => _levelText;
+        set
+        {
+            if (_levelText == value)
+            {
+                return;
+            }
+
+            _levelText = value;
+            OnPropertyChanged();
+        }
+    }
+
+    public string XpText
+    {
+        get => _xpText;
+        set
+        {
+            if (_xpText == value)
+            {
+                return;
+            }
+
+            _xpText = value;
+            OnPropertyChanged();
+        }
+    }
+
+    public double XpProgressPercent
+    {
+        get => _xpProgressPercent;
+        set
+        {
+            if (Math.Abs(_xpProgressPercent - value) < 0.0001)
+            {
+                return;
+            }
+
+            _xpProgressPercent = value;
+            OnPropertyChanged();
+        }
+    }
+
+    public string WorkSummaryText
+    {
+        get => _workSummaryText;
+        set
+        {
+            if (_workSummaryText == value)
+            {
+                return;
+            }
+
+            _workSummaryText = value;
+            OnPropertyChanged();
+        }
+    }
+
+    public string StatsText
+    {
+        get => _statsText;
+        set
+        {
+            if (_statsText == value)
+            {
+                return;
+            }
+
+            _statsText = value;
+            OnPropertyChanged();
+        }
+    }
     public PointCollection Points
     {
         get => _points;
@@ -233,3 +344,5 @@ public sealed class GestureOverlayViewModel : INotifyPropertyChanged
         PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
     }
 }
+
+

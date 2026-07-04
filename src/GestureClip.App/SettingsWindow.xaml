@@ -277,6 +277,20 @@
                                     </Border>
 
                                     <Border Style="{StaticResource SettingRowStyle}">
+                                        <StackPanel>
+                                            <TextBlock Text="打工人等级" FontWeight="SemiBold" />
+                                            <TextBlock Text="{Binding WorkerLevelText}" FontSize="18" FontWeight="SemiBold" Margin="0,8,0,0" />
+                                            <TextBlock Text="{Binding WorkerXpText}" Style="{StaticResource MutedTextStyle}" Margin="0,4,0,0" />
+                                            <WrapPanel Margin="0,12,0,0">
+                                                <CheckBox Content="显示升级弹窗" Margin="0,0,18,0" IsChecked="{Binding WorkerLevelShowLevelUpPopup, Mode=TwoWay}" />
+                                                <CheckBox Content="HUD 显示等级" Margin="0,0,18,0" IsChecked="{Binding WorkerLevelShowLevelInHud, Mode=TwoWay}" />
+                                                <CheckBox Content="HUD 趣味战报" Margin="0,0,18,0" IsChecked="{Binding HudFunTextEnabled, Mode=TwoWay}" />
+                                                <CheckBox Content="HUD 状态等级" IsChecked="{Binding HudStatusLevelEnabled, Mode=TwoWay}" />
+                                            </WrapPanel>
+                                        </StackPanel>
+                                    </Border>
+
+                                    <Border Style="{StaticResource SettingRowStyle}">
                                         <Grid>
                                             <Grid.ColumnDefinitions>
                                                 <ColumnDefinition Width="150" />

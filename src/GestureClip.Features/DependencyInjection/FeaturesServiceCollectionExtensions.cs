@@ -6,6 +6,7 @@ using GestureClip.Features.Privacy;
 using GestureClip.Features.Runtime;
 using GestureClip.Features.Startup;
 using GestureClip.Features.Workstation;
+using GestureClip.Features.WorkerLevel;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace GestureClip.Features.DependencyInjection;
@@ -31,6 +32,9 @@ public static class FeaturesServiceCollectionExtensions
         services.AddSingleton<IDiagnosticsService, DiagnosticsService>();
         services.AddSingleton<IWorkstationStatsRepository, WorkstationStatsRepository>();
         services.AddSingleton<IWorkstationDashboardService, WorkstationDashboardService>();
+        services.AddSingleton<IWorkerLevelService, WorkerLevelService>();
+        services.AddSingleton<IWorkstationHudService, WorkstationHudService>();
         return services;
     }
 }
+

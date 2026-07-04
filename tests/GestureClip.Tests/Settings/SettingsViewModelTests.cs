@@ -390,13 +390,38 @@ public sealed class SettingsViewModelTests
         Assert.Equal(56, viewModel.EdgeTriggerSlideThreshold);
     }
 
+    [Fact]
+    public async Task Worker_level_settings_are_visible_and_saved()
+    {
+        var settings = new FakeSettingsService();
+        settings.Values[SettingKeys.WorkerLevelShowLevelUpPopup] = true;
+        settings.Values[SettingKeys.WorkerLevelShowLevelInHud] = true;
+        settings.Values[SettingKeys.HudFunTextEnabled] = true;
+        settings.Values[SettingKeys.HudStatusLevelEnabled] = true;
+        var worker = new FakeWorkerLevelService();
+        var viewModel = CreateViewModel(settings: settings, workerLevel: worker);
+
+        await WaitForAsync(() => viewModel.WorkerLevelText.Contains("Lv.3", StringComparison.Ordinal));
+        viewModel.WorkerLevelShowLevelUpPopup = false;
+        viewModel.WorkerLevelShowLevelInHud = false;
+        viewModel.HudFunTextEnabled = false;
+        viewModel.HudStatusLevelEnabled = false;
+
+        await WaitForAsync(() =>
+            settings.Values.TryGetValue(SettingKeys.WorkerLevelShowLevelUpPopup, out var popup) && Equals(popup, false) &&
+            settings.Values.TryGetValue(SettingKeys.WorkerLevelShowLevelInHud, out var level) && Equals(level, false) &&
+            settings.Values.TryGetValue(SettingKeys.HudFunTextEnabled, out var fun) && Equals(fun, false) &&
+            settings.Values.TryGetValue(SettingKeys.HudStatusLevelEnabled, out var status) && Equals(status, false));
+        Assert.Equal("XP 128 / 250", viewModel.WorkerXpText);
+    }
     private static SettingsViewModel CreateViewModel(
         FakeClipboardRepository? repository = null,
         FakeClipboardOverlayService? overlay = null,
         FakeConfirmationService? confirmation = null,
         FakeSettingsService? settings = null,
         FakeEdgeTriggerService? edgeTriggerService = null,
-        FakeGlobalHotkeyService? hotkey = null)
+        FakeGlobalHotkeyService? hotkey = null,
+        FakeWorkerLevelService? workerLevel = null)
     {
         settings ??= new FakeSettingsService();
         return new SettingsViewModel(
@@ -416,7 +441,8 @@ public sealed class SettingsViewModelTests
             overlay ?? new FakeClipboardOverlayService(),
             confirmation ?? new FakeConfirmationService { Result = true },
             new GestureClip.Features.Gestures.GesturePresetProvider(),
-            edgeTriggerService ?? new FakeEdgeTriggerService());
+            edgeTriggerService ?? new FakeEdgeTriggerService(),
+            workerLevel ?? new FakeWorkerLevelService());
     }
 
     private static async Task WaitForAsync(Func<bool> condition)
@@ -435,6 +461,28 @@ public sealed class SettingsViewModelTests
         Assert.True(condition());
     }
 
+    private sealed class FakeWorkerLevelService : IWorkerLevelService
+    {
+        public Task<Core.WorkerLevel.WorkerLevelSnapshot> GetSnapshotAsync(CancellationToken cancellationToken)
+        {
+            return Task.FromResult(new Core.WorkerLevel.WorkerLevelSnapshot(
+                128,
+                10,
+                new Core.WorkerLevel.WorkerLevelDefinition(3, 120, "粘贴熟练工"),
+                new Core.WorkerLevel.WorkerLevelDefinition(4, 250, "摸鱼见习生"),
+                8,
+                130,
+                0.06,
+                false,
+                3,
+                null));
+        }
+
+        public Task<Core.WorkerLevel.WorkerLevelSnapshot> RecordActionAsync(BuiltInGestureAction action, bool isGestureSuccess, DateTimeOffset now, CancellationToken cancellationToken)
+        {
+            return GetSnapshotAsync(cancellationToken);
+        }
+    }
     private sealed class FakeClipboardRepository : IClipboardRepository
     {
         public int Count { get; set; }
@@ -627,3 +675,4 @@ public sealed class SettingsViewModelTests
         public Task SendPasteHotkeyAsync(CancellationToken cancellationToken) => Task.CompletedTask;
     }
 }
+

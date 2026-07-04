@@ -61,4 +61,12 @@ public static class SettingKeys
     public const string WorkstationShowFishingValue = "Workstation.ShowFishingValue";
     public const string WorkstationShowOffWorkCountdown = "Workstation.ShowOffWorkCountdown";
     public const string WorkstationDailyReportEnabled = "Workstation.DailyReportEnabled";
+    public const string WorkerLevelTotalXp = "WorkerLevel.TotalXp";
+    public const string WorkerLevelCurrentLevel = "WorkerLevel.CurrentLevel";
+    public const string WorkerLevelTotalActionCount = "WorkerLevel.TotalActionCount";
+    public const string WorkerLevelLastLevelUpAt = "WorkerLevel.LastLevelUpAt";
+    public const string WorkerLevelShowLevelUpPopup = "WorkerLevel.ShowLevelUpPopup";
+    public const string WorkerLevelShowLevelInHud = "WorkerLevel.ShowLevelInHud";
+    public const string HudFunTextEnabled = "Hud.FunTextEnabled";
+    public const string HudStatusLevelEnabled = "Hud.StatusLevelEnabled";
 }

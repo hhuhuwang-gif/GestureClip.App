@@ -24,7 +24,7 @@ public sealed class GestureHudInfoProvider : IGestureHudInfoProvider
             normalizedPattern,
             ActionName(action),
             ShortcutText(action),
-            PresetName(preset));
+            PresetName(preset)) { Action = action };
     }
 
     private static string DirectionText(string pattern)
@@ -99,3 +99,4 @@ public sealed class GestureHudInfoProvider : IGestureHudInfoProvider
         };
     }
 }
+

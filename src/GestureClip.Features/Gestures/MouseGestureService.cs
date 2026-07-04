@@ -20,6 +20,8 @@ public sealed class MouseGestureService : IMouseGestureService
     private readonly IForegroundAppService _foregroundAppService;
     private readonly IAppBlacklistService _appBlacklistService;
     private readonly IWorkstationDashboardService _workstationDashboardService;
+    private readonly IWorkerLevelService _workerLevelService;
+    private readonly IWorkerLevelUpService _workerLevelUpService;
     private readonly ILogger<MouseGestureService> _logger;
     private readonly object _syncRoot = new();
     private int _started;
@@ -52,6 +54,8 @@ public sealed class MouseGestureService : IMouseGestureService
         IForegroundAppService foregroundAppService,
         IAppBlacklistService appBlacklistService,
         IWorkstationDashboardService workstationDashboardService,
+        IWorkerLevelService workerLevelService,
+        IWorkerLevelUpService workerLevelUpService,
         ILogger<MouseGestureService> logger)
     {
         _mouseHook = mouseHook;
@@ -65,6 +69,8 @@ public sealed class MouseGestureService : IMouseGestureService
         _foregroundAppService = foregroundAppService;
         _appBlacklistService = appBlacklistService;
         _workstationDashboardService = workstationDashboardService;
+        _workerLevelService = workerLevelService;
+        _workerLevelUpService = workerLevelUpService;
         _logger = logger;
         IsEnabled = !IsDisabledByEnvironment() && _settingsProvider.GetCurrent().Enabled;
     }
@@ -432,6 +438,7 @@ public sealed class MouseGestureService : IMouseGestureService
 
             await _actionExecutor.ExecuteAsync(action, CancellationToken.None);
             await _workstationDashboardService.RecordGestureAsync(DateTimeOffset.UtcNow, CancellationToken.None);
+            await RecordWorkerLevelAsync(action);
             LogDebug(settings, "Action Executed: {Action}", action);
         }
         catch (Exception ex)
@@ -446,6 +453,21 @@ public sealed class MouseGestureService : IMouseGestureService
         }
     }
 
+    private async Task RecordWorkerLevelAsync(BuiltInGestureAction action)
+    {
+        try
+        {
+            var snapshot = await _workerLevelService.RecordActionAsync(action, true, DateTimeOffset.UtcNow, CancellationToken.None);
+            if (snapshot.LeveledUp)
+            {
+                await _workerLevelUpService.ShowLevelUpAsync(snapshot, CancellationToken.None);
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogDebug(ex, "Worker level recording failed; gesture action already completed.");
+        }
+    }
     private void ResetState(string reason)
     {
         if (reason != "StateReset" ||
@@ -617,3 +639,5 @@ public sealed class MouseGestureService : IMouseGestureService
         GesturePreset Preset,
         bool ShowOverlay);
 }
+
+

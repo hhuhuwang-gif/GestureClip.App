@@ -23,7 +23,7 @@ public sealed class GestureOverlayService : IGestureOverlayService
     private IReadOnlyList<GesturePoint>? _pendingUpdatePoints;
     private GestureHudInfo? _pendingUpdateHudInfo;
     private bool _updateQueued;
-    private readonly IWorkstationDashboardService _workstationDashboardService;
+    private readonly IWorkstationHudService _workstationHudService;
     private DateTimeOffset _lastWorkstationSnapshotAt = DateTimeOffset.MinValue;
     private int _workstationSnapshotQueued;
     private Rect _lastWindowBounds = Rect.Empty;
@@ -33,11 +33,11 @@ public sealed class GestureOverlayService : IGestureOverlayService
     public GestureOverlayService(
         IServiceProvider serviceProvider,
         ISettingsService settingsService,
-        IWorkstationDashboardService workstationDashboardService)
+        IWorkstationHudService workstationHudService)
     {
         _serviceProvider = serviceProvider;
         _settingsService = settingsService;
-        _workstationDashboardService = workstationDashboardService;
+        _workstationHudService = workstationHudService;
     }
 
     public async Task ShowGestureStartAsync(GesturePoint point, GestureHudInfo hudInfo, CancellationToken cancellationToken)
@@ -197,10 +197,10 @@ public sealed class GestureOverlayService : IGestureOverlayService
         _viewModel.ShortcutText = hudInfo.ShortcutText;
         _viewModel.PresetName = hudInfo.PresetName;
         _viewModel.StrokeBrush = GetStrokeBrush(_settingsService.Get(SettingKeys.GestureStrokeColor, "#8CC8FF"));
-        QueueWorkstationSnapshotRefresh();
+        QueueWorkstationSnapshotRefresh(hudInfo);
     }
 
-    private void QueueWorkstationSnapshotRefresh()
+    private void QueueWorkstationSnapshotRefresh(GestureHudInfo hudInfo)
     {
         var now = DateTimeOffset.UtcNow;
         if ((now - _lastWorkstationSnapshotAt).TotalMilliseconds < 750)
@@ -218,7 +218,7 @@ public sealed class GestureOverlayService : IGestureOverlayService
         {
             try
             {
-                var snapshot = await _workstationDashboardService.GetSnapshotAsync(DateTimeOffset.Now, CancellationToken.None);
+                var snapshot = await _workstationHudService.BuildSnapshotAsync(hudInfo, 0, DateTimeOffset.Now, CancellationToken.None);
                 var dispatcher = System.Windows.Application.Current?.Dispatcher;
                 if (dispatcher is null)
                 {
@@ -233,12 +233,13 @@ public sealed class GestureOverlayService : IGestureOverlayService
                     }
 
                     _viewModel.WorkStatusText = snapshot.WorkStatusText;
-                    _viewModel.OffWorkCountdownText = FormatDuration(snapshot.TimeUntilOffWork);
-                    _viewModel.PaydayCountdownText = FormatPaydayCountdown(snapshot.DaysUntilPayday);
-                    _viewModel.TodayEarnedText = FormatMoney(snapshot.TodayEarned);
-                    _viewModel.TodayFishingValueText = FormatMoney(snapshot.TodayFishingValue);
-                    _viewModel.EfficiencyStatsText = $"复制 {snapshot.CopyCount} · 粘贴 {snapshot.PasteCount} · 手势 {snapshot.GestureCount}";
-                    _viewModel.SavedClicksText = $"少点了 {snapshot.EstimatedSavedClicks} 次";
+                    _viewModel.FunText = snapshot.FunText;
+                    _viewModel.GainedXpText = snapshot.GainedXpText;
+                    _viewModel.LevelText = snapshot.LevelText;
+                    _viewModel.XpText = snapshot.XpText;
+                    _viewModel.XpProgressPercent = snapshot.XpProgressPercent;
+                    _viewModel.WorkSummaryText = snapshot.WorkSummaryText;
+                    _viewModel.StatsText = snapshot.StatsText;
                 });
             }
             catch
@@ -371,3 +372,6 @@ public sealed class GestureOverlayService : IGestureOverlayService
     }
 
 }
+
+
+
