@@ -21,13 +21,13 @@
 ## 最新版本
 
 ```text
-v0.2.4
+v0.2.5
 ```
 
 推荐下载：
 
 ```text
-GestureClip-v0.2.4-win-x64.zip
+GestureClip-v0.2.5-win-x64.zip
 ```
 
 解压后双击：
@@ -186,3 +186,4 @@ dotnet run --project .\src\GestureClip.App\GestureClip.App.csproj
 ## English Short Intro
 
 GestureClip is a local-first Windows clipboard history and mouse gesture utility. It supports text/image clipboard history, a quick overlay hotkey, right-button gestures, customizable gesture bindings, and a playful worker-status HUD.
+
