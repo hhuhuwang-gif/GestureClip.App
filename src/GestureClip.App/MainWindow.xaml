@@ -7,9 +7,27 @@
         Height="240"
         ShowInTaskbar="False">
     <Grid Margin="24">
-        <TextBlock Text="GestureClip 正在后台运行。请从托盘打开设置。"
-                   TextWrapping="Wrap"
-                   VerticalAlignment="Center"
-                   HorizontalAlignment="Center" />
+        <StackPanel VerticalAlignment="Center"
+                    HorizontalAlignment="Center">
+            <TextBlock Text="GestureClip 正在后台运行"
+                       FontSize="18"
+                       FontWeight="SemiBold"
+                       TextAlignment="Center"
+                       TextWrapping="Wrap" />
+            <TextBlock Text="也可以从托盘打开这些入口。"
+                       Margin="0,8,0,18"
+                       TextAlignment="Center"
+                       TextWrapping="Wrap" />
+            <StackPanel Orientation="Horizontal"
+                        HorizontalAlignment="Center">
+                <Button Content="工位小熊"
+                        MinWidth="100"
+                        Click="OpenWorkstationButton_Click" />
+                <Button Content="设置"
+                        MinWidth="100"
+                        Margin="10,0,0,0"
+                        Click="OpenSettingsButton_Click" />
+            </StackPanel>
+        </StackPanel>
     </Grid>
 </Window>

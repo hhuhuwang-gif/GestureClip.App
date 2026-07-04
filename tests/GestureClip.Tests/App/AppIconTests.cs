@@ -22,6 +22,16 @@ public sealed class AppIconTests
         Assert.True(iconInfo.Length > 1024);
     }
 
+    [Fact]
+    public void App_icon_png_matches_current_bear_clipboard_artwork()
+    {
+        var iconPngPath = FindRepositoryFile("src", "GestureClip.App", "Assets", "GestureClipIcon.png");
+
+        var hash = Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(File.ReadAllBytes(iconPngPath)));
+
+        Assert.Equal("D121E09FD897B7C35D3F0667CD8C0E15B8BD587A230CDD07F21ABDAF09C916A0", hash);
+    }
+
     private static string FindRepositoryFile(params string[] segments)
     {
         var directory = new DirectoryInfo(AppContext.BaseDirectory);

@@ -38,6 +38,17 @@ public sealed class ImageBase64ToSourceConverterTests
     }
 
     [Fact]
+    public void Convert_returns_bitmap_for_wrapped_base64()
+    {
+        var converter = new ImageBase64ToSourceConverter();
+        var wrapped = OnePixelPngBase64.Insert(24, "\r\n").Insert(54, "\n");
+
+        var result = converter.Convert(wrapped, typeof(BitmapImage), new object(), CultureInfo.InvariantCulture);
+
+        Assert.IsAssignableFrom<BitmapImage>(result);
+    }
+
+    [Fact]
     public void Convert_reuses_cached_bitmap_for_same_base64()
     {
         var converter = new ImageBase64ToSourceConverter();

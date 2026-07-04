@@ -1,4 +1,5 @@
 using System.Windows;
+using System.Globalization;
 using System.Windows.Media;
 using GestureClip.App.ViewModels;
 using GestureClip.Core.Abstractions;
@@ -22,11 +23,21 @@ public sealed class GestureOverlayService : IGestureOverlayService
     private IReadOnlyList<GesturePoint>? _pendingUpdatePoints;
     private GestureHudInfo? _pendingUpdateHudInfo;
     private bool _updateQueued;
+    private readonly IWorkstationDashboardService _workstationDashboardService;
+    private DateTimeOffset _lastWorkstationSnapshotAt = DateTimeOffset.MinValue;
+    private int _workstationSnapshotQueued;
+    private Rect _lastWindowBounds = Rect.Empty;
+    private string? _lastStrokeColorText;
+    private System.Windows.Media.Brush? _lastStrokeBrush;
 
-    public GestureOverlayService(IServiceProvider serviceProvider, ISettingsService settingsService)
+    public GestureOverlayService(
+        IServiceProvider serviceProvider,
+        ISettingsService settingsService,
+        IWorkstationDashboardService workstationDashboardService)
     {
         _serviceProvider = serviceProvider;
         _settingsService = settingsService;
+        _workstationDashboardService = workstationDashboardService;
     }
 
     public async Task ShowGestureStartAsync(GesturePoint point, GestureHudInfo hudInfo, CancellationToken cancellationToken)
@@ -185,7 +196,60 @@ public sealed class GestureOverlayService : IGestureOverlayService
         _viewModel.ActionName = hudInfo.ActionName;
         _viewModel.ShortcutText = hudInfo.ShortcutText;
         _viewModel.PresetName = hudInfo.PresetName;
-        _viewModel.StrokeBrush = CreateStrokeBrush(_settingsService.Get(SettingKeys.GestureStrokeColor, "#8CC8FF"));
+        _viewModel.StrokeBrush = GetStrokeBrush(_settingsService.Get(SettingKeys.GestureStrokeColor, "#8CC8FF"));
+        QueueWorkstationSnapshotRefresh();
+    }
+
+    private void QueueWorkstationSnapshotRefresh()
+    {
+        var now = DateTimeOffset.UtcNow;
+        if ((now - _lastWorkstationSnapshotAt).TotalMilliseconds < 750)
+        {
+            return;
+        }
+
+        if (System.Threading.Interlocked.Exchange(ref _workstationSnapshotQueued, 1) == 1)
+        {
+            return;
+        }
+
+        _lastWorkstationSnapshotAt = now;
+        _ = Task.Run(async () =>
+        {
+            try
+            {
+                var snapshot = await _workstationDashboardService.GetSnapshotAsync(DateTimeOffset.Now, CancellationToken.None);
+                var dispatcher = System.Windows.Application.Current?.Dispatcher;
+                if (dispatcher is null)
+                {
+                    return;
+                }
+
+                await dispatcher.InvokeAsync(() =>
+                {
+                    if (_viewModel is null)
+                    {
+                        return;
+                    }
+
+                    _viewModel.WorkStatusText = snapshot.WorkStatusText;
+                    _viewModel.OffWorkCountdownText = FormatDuration(snapshot.TimeUntilOffWork);
+                    _viewModel.PaydayCountdownText = FormatPaydayCountdown(snapshot.DaysUntilPayday);
+                    _viewModel.TodayEarnedText = FormatMoney(snapshot.TodayEarned);
+                    _viewModel.TodayFishingValueText = FormatMoney(snapshot.TodayFishingValue);
+                    _viewModel.EfficiencyStatsText = $"复制 {snapshot.CopyCount} · 粘贴 {snapshot.PasteCount} · 手势 {snapshot.GestureCount}";
+                    _viewModel.SavedClicksText = $"少点了 {snapshot.EstimatedSavedClicks} 次";
+                });
+            }
+            catch
+            {
+                // HUD data is auxiliary; gesture drawing must stay smooth if stats cannot load.
+            }
+            finally
+            {
+                System.Threading.Interlocked.Exchange(ref _workstationSnapshotQueued, 0);
+            }
+        });
     }
 
     private void PositionWindow()
@@ -195,10 +259,21 @@ public sealed class GestureOverlayService : IGestureOverlayService
             return;
         }
 
-        _window.Left = SystemParameters.VirtualScreenLeft;
-        _window.Top = SystemParameters.VirtualScreenTop;
-        _window.Width = SystemParameters.VirtualScreenWidth;
-        _window.Height = SystemParameters.VirtualScreenHeight;
+        var bounds = new Rect(
+            SystemParameters.VirtualScreenLeft,
+            SystemParameters.VirtualScreenTop,
+            SystemParameters.VirtualScreenWidth,
+            SystemParameters.VirtualScreenHeight);
+        if (_lastWindowBounds == bounds)
+        {
+            return;
+        }
+
+        _lastWindowBounds = bounds;
+        _window.Left = bounds.Left;
+        _window.Top = bounds.Top;
+        _window.Width = bounds.Width;
+        _window.Height = bounds.Height;
     }
 
     private PointCollection ToPointCollection(IReadOnlyList<GesturePoint> points)
@@ -232,6 +307,19 @@ public sealed class GestureOverlayService : IGestureOverlayService
         return points.Skip(points.Count - MaxVisiblePointCount).ToArray();
     }
 
+    private System.Windows.Media.Brush GetStrokeBrush(string colorText)
+    {
+        if (_lastStrokeBrush is not null &&
+            string.Equals(_lastStrokeColorText, colorText, StringComparison.OrdinalIgnoreCase))
+        {
+            return _lastStrokeBrush;
+        }
+
+        _lastStrokeColorText = colorText;
+        _lastStrokeBrush = CreateStrokeBrush(colorText);
+        return _lastStrokeBrush;
+    }
+
     private static System.Windows.Media.Brush CreateStrokeBrush(string colorText)
     {
         try
@@ -246,6 +334,28 @@ public sealed class GestureOverlayService : IGestureOverlayService
             fallback.Freeze();
             return fallback;
         }
+    }
+
+    private static string FormatDuration(TimeSpan value)
+    {
+        if (value <= TimeSpan.Zero)
+        {
+            return "已下班";
+        }
+
+        return value.TotalHours >= 1
+            ? $"{(int)value.TotalHours}小时{value.Minutes:D2}分"
+            : $"{Math.Max(0, value.Minutes)}分钟";
+    }
+
+    private static string FormatMoney(decimal value)
+    {
+        return string.Create(CultureInfo.InvariantCulture, $"￥{value:0.00}");
+    }
+
+    private static string FormatPaydayCountdown(int days)
+    {
+        return days <= 0 ? "今天" : $"{days} 天";
     }
 
     private async Task HideLaterAsync(CancellationToken cancellationToken)

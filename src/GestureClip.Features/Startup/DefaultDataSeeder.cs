@@ -69,6 +69,17 @@ public sealed class DefaultDataSeeder
         await SeedSettingAsync(connection, SettingKeys.EdgeTriggerSlideBottomEnabled, "true", "bool", now);
         await SeedSettingAsync(connection, SettingKeys.EdgeTriggerSlideBottomAction, ((int)BuiltInGestureAction.PasteAndEnter).ToString(), "int", now);
         await SeedSettingAsync(connection, SettingKeys.PrivacySuppressSensitive, "true", "bool", now);
+        await SeedSettingAsync(connection, SettingKeys.WorkstationEnabled, "true", "bool", now);
+        await SeedSettingAsync(connection, SettingKeys.WorkstationMonthlySalary, "0", "decimal", now);
+        await SeedSettingAsync(connection, SettingKeys.WorkstationWorkStartTime, "\"09:00\"", "string", now);
+        await SeedSettingAsync(connection, SettingKeys.WorkstationWorkEndTime, "\"18:00\"", "string", now);
+        await SeedSettingAsync(connection, SettingKeys.WorkstationLunchStartTime, "\"12:00\"", "string", now);
+        await SeedSettingAsync(connection, SettingKeys.WorkstationLunchEndTime, "\"13:00\"", "string", now);
+        await SeedSettingAsync(connection, SettingKeys.WorkstationWorkdays, "\"1,2,3,4,5\"", "string", now);
+        await SeedSettingAsync(connection, SettingKeys.WorkstationPayday, "15", "int", now);
+        await SeedSettingAsync(connection, SettingKeys.WorkstationShowFishingValue, "true", "bool", now);
+        await SeedSettingAsync(connection, SettingKeys.WorkstationShowOffWorkCountdown, "true", "bool", now);
+        await SeedSettingAsync(connection, SettingKeys.WorkstationDailyReportEnabled, "false", "bool", now);
         await DisableLeftEdgeLeftButtonTriggerAsync(connection, now);
         await MigrateOldBottomSlideDefaultAsync(connection, now);
         await MigrateOldEdgeTimingDefaultsAsync(connection, now);

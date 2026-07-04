@@ -75,6 +75,11 @@ public partial class SettingsWindow : Window
         Close();
     }
 
+    private void UpdateButton_Click(object sender, RoutedEventArgs e)
+    {
+        _appLifecycleService.OpenLatestReleasePage();
+    }
+
     private void RecordGesturePad_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
     {
         if (sender is not FrameworkElement element || DataContext is not SettingsViewModel)

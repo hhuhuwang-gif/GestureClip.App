@@ -1,0 +1,216 @@
+<Window x:Class="GestureClip.App.WorkstationDashboardWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="工位小熊"
+        Icon="Assets/GestureClip.ico"
+        Width="520"
+        Height="560"
+        MinWidth="460"
+        MinHeight="500"
+        WindowStartupLocation="CenterScreen"
+        Background="Transparent"
+        AllowsTransparency="True"
+        WindowStyle="None"
+        ResizeMode="NoResize"
+        Foreground="{DynamicResource BrushTextPrimary}"
+        Loaded="Window_Loaded"
+        Closing="Window_Closing">
+    <Border CornerRadius="28"
+            Background="{DynamicResource BrushAppBackground}"
+            BorderBrush="{DynamicResource BrushBorder}"
+            BorderThickness="1"
+            Padding="22"
+            MouseLeftButtonDown="WindowBackground_MouseLeftButtonDown">
+        <Grid>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="*" />
+                <RowDefinition Height="Auto" />
+            </Grid.RowDefinitions>
+
+            <DockPanel Margin="2,0,2,18">
+                <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
+                    <Button Content="－"
+                            Width="42"
+                            Height="34"
+                            MinWidth="0"
+                            Padding="0"
+                            Focusable="False"
+                            FocusVisualStyle="{x:Null}"
+                            FontSize="17"
+                            FontWeight="SemiBold"
+                            Background="#00FFFFFF"
+                            BorderBrush="#00000000"
+                            ToolTip="最小化"
+                            Click="MinimizeButton_Click" />
+                    <Button Content="×"
+                            Width="42"
+                            Height="34"
+                            MinWidth="0"
+                            Padding="0"
+                            Margin="6,0,0,0"
+                            Focusable="False"
+                            FocusVisualStyle="{x:Null}"
+                            FontSize="17"
+                            FontWeight="SemiBold"
+                            Background="#00FFFFFF"
+                            BorderBrush="#00000000"
+                            Foreground="{DynamicResource BrushTextSecondary}"
+                            ToolTip="关闭"
+                            Click="CloseButton_Click" />
+                </StackPanel>
+                <StackPanel>
+                    <TextBlock Text="工位小熊"
+                               FontSize="30"
+                               FontWeight="SemiBold" />
+                    <TextBlock Text="{Binding Subtitle}"
+                               Margin="0,5,0,0"
+                               FontSize="13"
+                               Foreground="{DynamicResource BrushTextSecondary}" />
+                </StackPanel>
+            </DockPanel>
+
+            <Grid Grid.Row="1">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="*" />
+                </Grid.RowDefinitions>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+
+                <Border Grid.ColumnSpan="2"
+                        Style="{StaticResource GlassCardStyle}"
+                        Padding="20"
+                        Margin="0,0,0,14">
+                    <StackPanel>
+                        <TextBlock Text="{Binding WorkStatusText}"
+                                   FontSize="16"
+                                   FontWeight="SemiBold"
+                                   Foreground="{DynamicResource BrushPrimaryBright}" />
+                        <TextBlock Text="距离下班"
+                                   Margin="0,16,0,4"
+                                   Style="{StaticResource MutedTextStyle}" />
+                        <TextBlock Text="{Binding OffWorkCountdownText}"
+                                   FontSize="34"
+                                   FontWeight="SemiBold" />
+                        <TextBlock Text="{Binding ProtectionHintText}"
+                                   Margin="0,10,0,0"
+                                   Style="{StaticResource MutedTextStyle}"
+                                   TextWrapping="Wrap" />
+                        <TextBlock Text="{Binding WorkTipText}"
+                                   Margin="0,6,0,0"
+                                   Style="{StaticResource MutedTextStyle}"
+                                   TextWrapping="Wrap" />
+                    </StackPanel>
+                </Border>
+
+                <Border Grid.Row="1"
+                        Style="{StaticResource GlassCardStyle}"
+                        Padding="18"
+                        Margin="0,0,7,14">
+                    <StackPanel>
+                        <TextBlock Text="今日已赚" Style="{StaticResource MutedTextStyle}" />
+                        <TextBlock Text="{Binding TodayEarnedText}"
+                                   FontSize="24"
+                                   FontWeight="SemiBold"
+                                   Margin="0,8,0,0" />
+                        <TextBlock Text="{Binding MonthEarnedText, StringFormat=本月 {0}}"
+                                   Style="{StaticResource MutedTextStyle}"
+                                   Margin="0,8,0,0" />
+                    </StackPanel>
+                </Border>
+
+                <Border Grid.Row="1"
+                        Grid.Column="1"
+                        Style="{StaticResource GlassCardStyle}"
+                        Padding="18"
+                        Margin="7,0,0,14">
+                    <StackPanel>
+                        <TextBlock Text="距发薪日" Style="{StaticResource MutedTextStyle}" />
+                        <TextBlock Text="{Binding PaydayText}"
+                                   FontSize="24"
+                                   FontWeight="SemiBold"
+                                   Margin="0,8,0,0" />
+                        <TextBlock Text="稳住，快到账了"
+                                   Style="{StaticResource MutedTextStyle}"
+                                   Margin="0,8,0,0" />
+                    </StackPanel>
+                </Border>
+
+                <Border Grid.Row="2"
+                        Grid.ColumnSpan="2"
+                        Style="{StaticResource GlassCardStyle}"
+                        Padding="20">
+                    <StackPanel>
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <StackPanel>
+                                <TextBlock Text="摸鱼计时器"
+                                           FontSize="17"
+                                           FontWeight="SemiBold" />
+                                <TextBlock Text="{Binding CurrentFishingText, StringFormat=本次 {0}}"
+                                           Style="{StaticResource MutedTextStyle}"
+                                           Margin="0,6,0,0" />
+                            </StackPanel>
+                            <StackPanel Grid.Column="1" HorizontalAlignment="Right">
+                                <TextBlock Text="{Binding CurrentFishingValueText}"
+                                           FontSize="20"
+                                           FontWeight="SemiBold"
+                                           TextAlignment="Right" />
+                                <TextBlock Text="{Binding TodayFishingValueText, StringFormat=今日 {0}}"
+                                           Style="{StaticResource MutedTextStyle}"
+                                           TextAlignment="Right"
+                                           Margin="0,6,0,0" />
+                            </StackPanel>
+                        </Grid>
+
+                        <Border Margin="0,18,0,0"
+                                CornerRadius="16"
+                                Background="#55FFFFFF"
+                                BorderBrush="{DynamicResource BrushBorder}"
+                                BorderThickness="1"
+                                Padding="14">
+                            <StackPanel>
+                                <TextBlock Text="{Binding ActionStatsText}"
+                                           FontWeight="SemiBold" />
+                                <TextBlock Text="{Binding SavedClicksText}"
+                                           Style="{StaticResource MutedTextStyle}"
+                                           Margin="0,6,0,0" />
+                            </StackPanel>
+                        </Border>
+                    </StackPanel>
+                </Border>
+            </Grid>
+
+            <WrapPanel Grid.Row="2"
+                       HorizontalAlignment="Right"
+                       Margin="0,18,0,0">
+                <Button Content="刷新"
+                        Style="{StaticResource SecondaryButtonStyle}"
+                        Command="{Binding RefreshCommand}"
+                        Margin="0,0,10,0" />
+                <Button Content="{Binding FishingButtonText}"
+                        Style="{StaticResource PrimaryButtonStyle}"
+                        Command="{Binding StartFishingCommand}"
+                        Margin="0,0,10,0" />
+                <Button Content="结束摸鱼"
+                        Style="{StaticResource SecondaryButtonStyle}"
+                        Command="{Binding EndFishingCommand}"
+                        Margin="0,0,10,0" />
+                <Button Content="打开设置"
+                        Style="{StaticResource SecondaryButtonStyle}"
+                        Click="OpenSettingsButton_Click"
+                        Margin="0,0,10,0" />
+                <Button Content="重置今日"
+                        Style="{StaticResource DangerButtonStyle}"
+                        Command="{Binding ResetTodayCommand}" />
+            </WrapPanel>
+        </Grid>
+    </Border>
+</Window>

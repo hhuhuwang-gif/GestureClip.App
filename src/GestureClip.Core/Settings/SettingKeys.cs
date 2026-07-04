@@ -50,4 +50,15 @@ public static class SettingKeys
     public const string EdgeTriggerSlideBottomEnabled = "EdgeTrigger.Slide.Bottom.Enabled";
     public const string EdgeTriggerSlideBottomAction = "EdgeTrigger.Slide.Bottom.Action";
     public const string PrivacySuppressSensitive = "Privacy.SuppressSensitive";
+    public const string WorkstationEnabled = "Workstation.Enabled";
+    public const string WorkstationMonthlySalary = "Workstation.MonthlySalary";
+    public const string WorkstationWorkStartTime = "Workstation.WorkStartTime";
+    public const string WorkstationWorkEndTime = "Workstation.WorkEndTime";
+    public const string WorkstationLunchStartTime = "Workstation.LunchStartTime";
+    public const string WorkstationLunchEndTime = "Workstation.LunchEndTime";
+    public const string WorkstationWorkdays = "Workstation.Workdays";
+    public const string WorkstationPayday = "Workstation.Payday";
+    public const string WorkstationShowFishingValue = "Workstation.ShowFishingValue";
+    public const string WorkstationShowOffWorkCountdown = "Workstation.ShowOffWorkCountdown";
+    public const string WorkstationDailyReportEnabled = "Workstation.DailyReportEnabled";
 }

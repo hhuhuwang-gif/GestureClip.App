@@ -39,11 +39,24 @@ public sealed class ClipboardServiceTests
     }
 
     [Fact]
+    public async Task CaptureTextAsync_records_copy_count_after_successful_capture()
+    {
+        var repository = new FakeClipboardRepository();
+        var dashboard = new FakeWorkstationDashboardService();
+        var service = CreateService(repository, dashboard: dashboard);
+
+        await service.CaptureTextAsync(Capture("normal"), CancellationToken.None);
+
+        Assert.Equal(1, dashboard.CopyCount);
+    }
+
+    [Fact]
     public async Task PasteAsync_suppresses_capture_writes_text_sends_paste_and_updates_usage()
     {
         var repository = new FakeClipboardRepository();
         var writer = new FakeClipboardWriter();
-        var service = CreateService(repository, writer: writer);
+        var dashboard = new FakeWorkstationDashboardService();
+        var service = CreateService(repository, writer: writer, dashboard: dashboard);
         var item = Item("hello");
 
         await service.PasteAsync(item, new PasteOptions(false), CancellationToken.None);
@@ -52,6 +65,7 @@ public sealed class ClipboardServiceTests
         Assert.True(writer.PasteHotkeySent);
         Assert.True(service.SuppressCaptureUntil > DateTimeOffset.UtcNow);
         Assert.Equal(item.Id, repository.IncrementedId);
+        Assert.Equal(1, dashboard.PasteCount);
     }
 
     [Fact]
@@ -169,7 +183,8 @@ public sealed class ClipboardServiceTests
         FakeClipboardWriter? writer = null,
         FakeClipboardListener? listener = null,
         FakeClipboardTextReader? reader = null,
-        FakeSettingsService? settings = null)
+        FakeSettingsService? settings = null,
+        FakeWorkstationDashboardService? dashboard = null)
     {
         return new ClipboardService(
             listener ?? new FakeClipboardListener(),
@@ -181,6 +196,7 @@ public sealed class ClipboardServiceTests
             new FakeForegroundAppService(),
             new FakeAppBlacklistService(repository),
             settings ?? new FakeSettingsService(),
+            dashboard ?? new FakeWorkstationDashboardService(),
             NullLogger<ClipboardService>.Instance);
     }
 
@@ -396,5 +412,37 @@ public sealed class ClipboardServiceTests
         }
 
         public Task SetAsync<T>(string key, T value, CancellationToken cancellationToken) => Task.CompletedTask;
+    }
+
+    private sealed class FakeWorkstationDashboardService : IWorkstationDashboardService
+    {
+        public int CopyCount { get; private set; }
+
+        public int PasteCount { get; private set; }
+
+        public Task<Core.Workstation.WorkstationDashboardSnapshot> GetSnapshotAsync(DateTimeOffset now, CancellationToken cancellationToken)
+        {
+            throw new NotImplementedException();
+        }
+
+        public Task StartFishingAsync(DateTimeOffset now, CancellationToken cancellationToken) => Task.CompletedTask;
+
+        public Task EndFishingAsync(DateTimeOffset now, CancellationToken cancellationToken) => Task.CompletedTask;
+
+        public Task ResetTodayAsync(DateOnly date, CancellationToken cancellationToken) => Task.CompletedTask;
+
+        public Task RecordCopyAsync(DateTimeOffset now, CancellationToken cancellationToken)
+        {
+            CopyCount++;
+            return Task.CompletedTask;
+        }
+
+        public Task RecordPasteAsync(DateTimeOffset now, CancellationToken cancellationToken)
+        {
+            PasteCount++;
+            return Task.CompletedTask;
+        }
+
+        public Task RecordGestureAsync(DateTimeOffset now, CancellationToken cancellationToken) => Task.CompletedTask;
     }
 }

@@ -223,6 +223,57 @@ public sealed class ThemeResourceTests
     }
 
     [Fact]
+    public void SettingsWindow_uses_larger_window_controls_and_custom_scrollbars()
+    {
+        var settingsPath = FindRepositoryFile("src", "GestureClip.App", "SettingsWindow.xaml");
+        var workstationPath = FindRepositoryFile("src", "GestureClip.App", "WorkstationDashboardWindow.xaml");
+        var controlsPath = FindRepositoryFile("src", "GestureClip.App", "Themes", "Controls.xaml");
+        var settings = File.ReadAllText(settingsPath);
+        var workstation = File.ReadAllText(workstationPath);
+        var controls = File.ReadAllText(controlsPath);
+
+        Assert.Contains("Width=\"42\"", settings);
+        Assert.Contains("Height=\"34\"", settings);
+        Assert.Contains("MinWidth=\"0\"", settings);
+        Assert.Contains("Focusable=\"False\"", settings);
+        Assert.Contains("FocusVisualStyle=\"{x:Null}\"", settings);
+        Assert.Contains("Width=\"42\"", workstation);
+        Assert.Contains("Height=\"34\"", workstation);
+        Assert.Contains("FocusVisualStyle=\"{x:Null}\"", workstation);
+        Assert.Contains("GlassScrollBarStyle", controls);
+        Assert.Contains("ScrollBarThumb", controls);
+        Assert.Contains("CornerRadius=\"6\"", controls);
+        Assert.Contains("Opacity=\"0.38\"", controls);
+    }
+
+    [Fact]
+    public void ClipboardOverlay_uses_large_image_preview_cards_without_base64_text_for_images()
+    {
+        var path = FindRepositoryFile("src", "GestureClip.App", "ClipboardOverlayWindow.xaml");
+        var xaml = File.ReadAllText(path);
+
+        Assert.Contains("图片缩略图", xaml);
+        Assert.Contains("SelectedImagePreviewPanel", xaml);
+        Assert.Contains("ImageItemPreviewTextBlock", xaml);
+        Assert.Contains("Height=\"260\"", xaml);
+        Assert.Contains("IsSelectedImage", xaml);
+    }
+
+    [Fact]
+    public void GestureBindingEditor_uses_readable_split_layout_and_large_pattern_preview()
+    {
+        var path = FindRepositoryFile("src", "GestureClip.App", "SettingsWindow.xaml");
+        var xaml = File.ReadAllText(path);
+
+        Assert.Contains("GestureDesignerPanel", xaml);
+        Assert.Contains("GestureBindingListPanel", xaml);
+        Assert.Contains("GestureBindingDetailPanel", xaml);
+        Assert.Contains("Width=\"420\"", xaml);
+        Assert.Contains("Height=\"190\"", xaml);
+        Assert.Contains("删除这个手势", xaml);
+    }
+
+    [Fact]
     public void SettingsWindow_keeps_gesture_page_simple_with_advanced_settings_expanded_without_left_button_trigger()
     {
         var path = FindRepositoryFile("src", "GestureClip.App", "SettingsWindow.xaml");
@@ -236,6 +287,98 @@ public sealed class ThemeResourceTests
         Assert.Contains("防误触间隔", xaml);
         Assert.DoesNotContain("停留 ms", xaml);
         Assert.DoesNotContain("冷却 ms", xaml);
+    }
+
+    [Fact]
+    public void WorkstationDashboardWindow_uses_glass_cards_and_plain_language_metrics()
+    {
+        var path = FindRepositoryFile("src", "GestureClip.App", "WorkstationDashboardWindow.xaml");
+        var xaml = File.ReadAllText(path);
+
+        Assert.Contains("工位小熊", xaml);
+        Assert.Contains("OffWorkCountdownText", xaml);
+        Assert.Contains("TodayEarnedText", xaml);
+        Assert.Contains("TodayFishingValueText", xaml);
+        Assert.Contains("ActionStatsText", xaml);
+        Assert.Contains("GlassCardStyle", xaml);
+    }
+
+    [Fact]
+    public void WorkstationDashboard_has_tray_and_lifecycle_entry()
+    {
+        var lifecyclePath = FindRepositoryFile("src", "GestureClip.App", "Services", "AppLifecycleService.cs");
+        var trayPath = FindRepositoryFile("src", "GestureClip.App", "Services", "TrayIconService.cs");
+        var lifecycle = File.ReadAllText(lifecyclePath);
+        var tray = File.ReadAllText(trayPath);
+
+        Assert.Contains("ShowWorkstationDashboardWindow", lifecycle);
+        Assert.Contains("WorkstationDashboardWindow", lifecycle);
+        Assert.Contains("工位小熊", tray);
+        Assert.Contains("ShowWorkstationDashboardWindow", tray);
+    }
+
+    [Fact]
+    public void TrayIconService_respects_workstation_enabled_setting_for_dashboard_entry()
+    {
+        var path = FindRepositoryFile("src", "GestureClip.App", "Services", "TrayIconService.cs");
+        var source = File.ReadAllText(path);
+
+        Assert.Contains("ISettingsService", source);
+        Assert.Contains("SettingKeys.WorkstationEnabled", source);
+        Assert.Contains("ShowWorkstationDashboardWindow", source);
+    }
+
+    [Fact]
+    public void SettingsWindow_exposes_workstation_dashboard_settings()
+    {
+        var path = FindRepositoryFile("src", "GestureClip.App", "SettingsWindow.xaml");
+        var xaml = File.ReadAllText(path);
+
+        Assert.Contains("TabItem Header=\"工位小熊\"", xaml);
+        Assert.Contains("WorkstationEnabled", xaml);
+        Assert.Contains("WorkstationMonthlySalary", xaml);
+        Assert.Contains("WorkstationWorkStartTime", xaml);
+        Assert.Contains("WorkstationWorkEndTime", xaml);
+        Assert.Contains("WorkstationWorkdays", xaml);
+        Assert.Contains("WorkstationPayday", xaml);
+        Assert.Contains("WorkstationShowFishingValue", xaml);
+        Assert.Contains("WorkstationDailyReportEnabled", xaml);
+        Assert.True(
+            xaml.IndexOf("TabItem Header=\"工位小熊\"", StringComparison.Ordinal) <
+            xaml.IndexOf("WorkstationWorkdays", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public void MainWindow_exposes_workstation_dashboard_button()
+    {
+        var xamlPath = FindRepositoryFile("src", "GestureClip.App", "MainWindow.xaml");
+        var sourcePath = FindRepositoryFile("src", "GestureClip.App", "MainWindow.xaml.cs");
+        var xaml = File.ReadAllText(xamlPath);
+        var source = File.ReadAllText(sourcePath);
+
+        Assert.Contains("工位小熊", xaml);
+        Assert.Contains("OpenWorkstationButton_Click", xaml);
+        Assert.Contains("ShowWorkstationDashboardWindow", source);
+    }
+
+    [Fact]
+    public void App_exposes_one_click_update_entry_to_latest_release()
+    {
+        var lifecyclePath = FindRepositoryFile("src", "GestureClip.App", "Services", "AppLifecycleService.cs");
+        var trayPath = FindRepositoryFile("src", "GestureClip.App", "Services", "TrayIconService.cs");
+        var settingsXamlPath = FindRepositoryFile("src", "GestureClip.App", "SettingsWindow.xaml");
+        var settingsSourcePath = FindRepositoryFile("src", "GestureClip.App", "SettingsWindow.xaml.cs");
+        var lifecycle = File.ReadAllText(lifecyclePath);
+        var tray = File.ReadAllText(trayPath);
+        var settingsXaml = File.ReadAllText(settingsXamlPath);
+        var settingsSource = File.ReadAllText(settingsSourcePath);
+
+        Assert.Contains("OpenLatestReleasePage", lifecycle);
+        Assert.Contains("https://github.com/hhuhuwang-gif/GestureClip.App/releases/latest", lifecycle);
+        Assert.Contains("一键更新", tray);
+        Assert.Contains("一键更新", settingsXaml);
+        Assert.Contains("UpdateButton_Click", settingsXaml);
+        Assert.Contains("OpenLatestReleasePage", settingsSource);
     }
 
     private static string FindRepositoryFile(params string[] segments)

@@ -2,6 +2,7 @@ using System.Drawing;
 using System.Diagnostics;
 using System.IO;
 using GestureClip.Core.Abstractions;
+using GestureClip.Core.Settings;
 using GestureClip.Infrastructure.Paths;
 using Microsoft.Extensions.Logging;
 using Forms = System.Windows.Forms;
@@ -13,6 +14,7 @@ public sealed class TrayIconService : IDisposable
     private readonly IAppLifecycleService _appLifecycleService;
     private readonly ClipboardOverlayService _clipboardOverlayService;
     private readonly IFeatureToggleService _featureToggleService;
+    private readonly ISettingsService _settingsService;
     private readonly AppPathProvider _paths;
     private readonly ILogger<TrayIconService> _logger;
     private Forms.NotifyIcon? _notifyIcon;
@@ -22,12 +24,14 @@ public sealed class TrayIconService : IDisposable
         IAppLifecycleService appLifecycleService,
         ClipboardOverlayService clipboardOverlayService,
         IFeatureToggleService featureToggleService,
+        ISettingsService settingsService,
         AppPathProvider paths,
         ILogger<TrayIconService> logger)
     {
         _appLifecycleService = appLifecycleService;
         _clipboardOverlayService = clipboardOverlayService;
         _featureToggleService = featureToggleService;
+        _settingsService = settingsService;
         _paths = paths;
         _logger = logger;
     }
@@ -79,6 +83,11 @@ public sealed class TrayIconService : IDisposable
         _menu.Items.Clear();
         var snapshot = _featureToggleService.GetSnapshot();
 
+        if (_settingsService.Get(SettingKeys.WorkstationEnabled, true))
+        {
+            _menu.Items.Add("工位小熊", null, (_, _) => _appLifecycleService.ShowWorkstationDashboardWindow());
+        }
+
         _menu.Items.Add("打开剪贴板历史", null, async (_, _) => await _clipboardOverlayService.ShowAsync());
         _menu.Items.Add("打开设置", null, (_, _) => _appLifecycleService.ShowSettingsWindow());
         _menu.Items.Add(new Forms.ToolStripSeparator());
@@ -93,6 +102,7 @@ public sealed class TrayIconService : IDisposable
         _menu.Items.Add(new Forms.ToolStripSeparator());
         _menu.Items.Add("查看日志", null, (_, _) => OpenDirectory(_paths.LogDirectory));
         _menu.Items.Add("打开数据目录", null, (_, _) => OpenDirectory(Path.GetDirectoryName(_paths.DatabasePath) ?? _paths.LogDirectory));
+        _menu.Items.Add("一键更新", null, (_, _) => _appLifecycleService.OpenLatestReleasePage());
         _menu.Items.Add(new Forms.ToolStripSeparator());
         _menu.Items.Add("退出", null, (_, _) => _appLifecycleService.ExitApplication());
     }

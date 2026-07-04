@@ -31,7 +31,7 @@ public sealed class GestureHudInfoProvider : IGestureHudInfoProvider
     {
         if (pattern == "-")
         {
-            return "按住右键拖动";
+            return "右键";
         }
 
         return pattern

@@ -208,7 +208,7 @@
                                                               Opacity="0.22" />
                                         </Border.Effect>
                                         <Grid>
-                                            <TextBlock Text="图片预览"
+                                            <TextBlock Text="图片缩略图"
                                                        Foreground="#7C8596"
                                                        FontSize="12"
                                                        HorizontalAlignment="Center"
@@ -238,7 +238,35 @@
                                                    FontWeight="SemiBold"
                                                    TextWrapping="Wrap"
                                                    TextTrimming="CharacterEllipsis"
-                                                   MaxHeight="42" />
+                                                   MaxHeight="42">
+                                            <TextBlock.Style>
+                                                <Style TargetType="TextBlock">
+                                                    <Setter Property="Visibility" Value="Visible" />
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding ContentType}" Value="image/png">
+                                                            <Setter Property="Visibility" Value="Collapsed" />
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </TextBlock.Style>
+                                        </TextBlock>
+                                        <TextBlock x:Name="ImageItemPreviewTextBlock"
+                                                   Text="图片记录 · 点复制可放回系统剪贴板"
+                                                   Foreground="{DynamicResource BrushTextPrimary}"
+                                                   FontSize="15"
+                                                   FontWeight="SemiBold"
+                                                   TextWrapping="Wrap">
+                                            <TextBlock.Style>
+                                                <Style TargetType="TextBlock">
+                                                    <Setter Property="Visibility" Value="Collapsed" />
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding ContentType}" Value="image/png">
+                                                            <Setter Property="Visibility" Value="Visible" />
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </TextBlock.Style>
+                                        </TextBlock>
                                         <StackPanel Orientation="Horizontal"
                                                     Margin="0,8,0,0">
                                             <TextBlock x:Name="SourceProcessBlock"
@@ -414,11 +442,22 @@
                                 </StackPanel>
                             </DockPanel>
 
-                            <Border Height="170"
+                            <Border x:Name="SelectedImagePreviewPanel"
+                                    Height="260"
                                     CornerRadius="16"
                                     BorderBrush="#33111827"
                                     BorderThickness="1"
                                     ClipToBounds="True">
+                                <Border.Style>
+                                    <Style TargetType="Border">
+                                        <Setter Property="Visibility" Value="Collapsed" />
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding IsSelectedImage}" Value="True">
+                                                <Setter Property="Visibility" Value="Visible" />
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </Border.Style>
                                 <Border.Background>
                                     <DrawingBrush TileMode="Tile"
                                                   Viewport="0,0,14,14"
@@ -446,35 +485,33 @@
                                     <Image Source="{Binding SelectedItem.TextContent, Converter={StaticResource ImageBase64ToSourceConverter}}"
                                            Stretch="Uniform"
                                            Margin="10"
-                                           RenderOptions.BitmapScalingMode="HighQuality">
-                                        <Image.Style>
-                                            <Style TargetType="Image">
-                                                <Setter Property="Visibility" Value="Collapsed" />
-                                                <Style.Triggers>
-                                                    <DataTrigger Binding="{Binding IsSelectedImage}" Value="True">
-                                                        <Setter Property="Visibility" Value="Visible" />
-                                                    </DataTrigger>
-                                                </Style.Triggers>
-                                            </Style>
-                                        </Image.Style>
-                                    </Image>
+                                           RenderOptions.BitmapScalingMode="HighQuality" />
+                                </Grid>
+                            </Border>
+
+                            <Border Height="170"
+                                    CornerRadius="16"
+                                    BorderBrush="#33111827"
+                                    BorderThickness="1"
+                                    Background="#FFFFFFFF"
+                                    ClipToBounds="True">
+                                <Border.Style>
+                                    <Style TargetType="Border">
+                                        <Setter Property="Visibility" Value="Collapsed" />
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding IsSelectedText}" Value="True">
+                                                <Setter Property="Visibility" Value="Visible" />
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </Border.Style>
+                                <Grid>
                                     <ScrollViewer Margin="14">
                                         <TextBlock Text="{Binding SelectedItem.TextContent}"
                                                    TextWrapping="Wrap"
                                                    FontSize="14"
                                                    LineHeight="22"
-                                                   Foreground="{DynamicResource BrushTextPrimary}">
-                                            <TextBlock.Style>
-                                                <Style TargetType="TextBlock">
-                                                    <Setter Property="Visibility" Value="Collapsed" />
-                                                    <Style.Triggers>
-                                                        <DataTrigger Binding="{Binding IsSelectedText}" Value="True">
-                                                            <Setter Property="Visibility" Value="Visible" />
-                                                        </DataTrigger>
-                                                    </Style.Triggers>
-                                                </Style>
-                                            </TextBlock.Style>
-                                        </TextBlock>
+                                                   Foreground="{DynamicResource BrushTextPrimary}" />
                                     </ScrollViewer>
                                 </Grid>
                             </Border>

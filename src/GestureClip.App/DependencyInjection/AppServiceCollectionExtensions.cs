@@ -28,8 +28,10 @@ public static class AppServiceCollectionExtensions
         services.AddTransient<SettingsViewModel>();
         services.AddTransient<ClipboardOverlayViewModel>();
         services.AddTransient<GestureOverlayViewModel>();
+        services.AddTransient<WorkstationDashboardViewModel>();
         services.AddTransient<ClipboardOverlayWindow>();
         services.AddTransient<GestureOverlayWindow>();
+        services.AddTransient<WorkstationDashboardWindow>();
         services.AddTransient<SettingsWindow>();
         services.AddSingleton<MainWindow>();
 

@@ -17,69 +17,155 @@
         <Canvas IsHitTestVisible="False">
             <Polyline Points="{Binding Points}"
                       Stroke="{Binding StrokeBrush}"
-                      StrokeThickness="6"
+                      StrokeThickness="3"
                       StrokeStartLineCap="Round"
                       StrokeEndLineCap="Round"
                       StrokeLineJoin="Round"
                       Opacity="0.95">
                 <Polyline.Effect>
                     <DropShadowEffect Color="#AA2563EB"
-                                      BlurRadius="18"
+                                      BlurRadius="10"
                                       ShadowDepth="0"
-                                      Opacity="0.46" />
+                                      Opacity="0.28" />
                 </Polyline.Effect>
             </Polyline>
         </Canvas>
         <Border HorizontalAlignment="Center"
                 VerticalAlignment="Bottom"
-                Margin="0,0,0,82"
-                MinWidth="520"
-                CornerRadius="26"
-                Padding="36,24"
-                Background="{DynamicResource BrushDarkPanel}">
+                Margin="0,0,0,70"
+                Width="860"
+                Height="178"
+                CornerRadius="24"
+                Padding="12"
+                Background="#D4111724"
+                BorderBrush="#38FFFFFF"
+                BorderThickness="1"
+                x:Name="CompactGameHud"
+                SnapsToDevicePixels="True">
             <Border.Effect>
-                <DropShadowEffect Color="#111827" BlurRadius="32" ShadowDepth="10" Opacity="0.30" />
+                <DropShadowEffect Color="#101827" BlurRadius="22" ShadowDepth="7" Opacity="0.26" />
             </Border.Effect>
-            <Grid>
-                <Grid.RowDefinitions>
-                    <RowDefinition Height="Auto" />
-                    <RowDefinition Height="Auto" />
-                    <RowDefinition Height="Auto" />
-                </Grid.RowDefinitions>
-                <TextBlock Grid.Row="0"
-                           Text="{Binding PresetName}"
-                           Foreground="#8F949E"
-                           FontSize="15"
-                           FontWeight="SemiBold"
-                           HorizontalAlignment="Center" />
-                <StackPanel Grid.Row="1"
-                            Orientation="Horizontal"
-                            HorizontalAlignment="Center"
-                            Margin="0,10,0,0">
+            <Grid x:Name="GestureActionStrip" SnapsToDevicePixels="True">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="78" />
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="170" />
+                </Grid.ColumnDefinitions>
+
+                <Border Width="64"
+                        Height="64"
+                        CornerRadius="19"
+                        Background="#264F8DF7"
+                        BorderBrush="#6693C5FD"
+                        BorderThickness="1"
+                        HorizontalAlignment="Left"
+                        VerticalAlignment="Center">
                     <TextBlock Text="{Binding DirectionText}"
-                               Foreground="{DynamicResource BrushPrimaryBright}"
-                               FontSize="52"
+                               Foreground="#FFFFFFFF"
+                               FontSize="31"
+                               FontWeight="Bold"
+                               HorizontalAlignment="Center"
+                               VerticalAlignment="Center"
+                               TextTrimming="CharacterEllipsis" />
+                </Border>
+
+                <StackPanel Grid.Column="1"
+                            VerticalAlignment="Center"
+                            Margin="2,0,12,0">
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock Text="工位小熊"
+                                   Foreground="#FFFDE68A"
+                                   FontSize="13"
+                                   FontWeight="SemiBold" />
+                        <TextBlock Text="  ·  "
+                                   Foreground="#668A94A8"
+                                   FontSize="13" />
+                        <TextBlock Text="{Binding PresetName}"
+                                   Foreground="#FFD8E1EE"
+                                   FontSize="13"
+                                   FontWeight="SemiBold"
+                                   TextTrimming="CharacterEllipsis" />
+                    </StackPanel>
+                    <TextBlock Text="{Binding ActionName}"
+                               Foreground="#FFFFFFFF"
+                               FontSize="25"
                                FontWeight="SemiBold"
-                               Margin="0,0,20,0" />
-                           <TextBlock Text="{Binding ActionName}"
-                               Foreground="White"
-                               FontSize="46"
-                               FontWeight="SemiBold" />
+                               Margin="0,3,0,0"
+                               TextTrimming="CharacterEllipsis" />
+                    <StackPanel Orientation="Horizontal" Margin="0,3,0,0">
+                        <TextBlock Text="{Binding ShortcutText}"
+                                   Foreground="#FFDCEBFF"
+                                   FontSize="12"
+                                   FontFamily="Cascadia Mono, Consolas, Microsoft YaHei UI"
+                                   FontWeight="SemiBold"
+                                   TextTrimming="CharacterEllipsis" />
+                        <TextBlock Text="   Pattern: "
+                                   Foreground="#FF8A94A8"
+                                   FontSize="12"
+                                   FontFamily="Cascadia Mono, Consolas, Microsoft YaHei UI"
+                                   FontWeight="SemiBold" />
+                        <TextBlock Text="{Binding Pattern}"
+                                   Foreground="#FF93C5FD"
+                                   FontSize="12"
+                                   FontFamily="Cascadia Mono, Consolas, Microsoft YaHei UI"
+                                   FontWeight="Bold" />
+                    </StackPanel>
+                    <Grid Margin="0,10,0,0">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="8" />
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="8" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+
+                        <Border CornerRadius="12" Background="#20FFFFFF" BorderBrush="#18FFFFFF" BorderThickness="1" Padding="10,6">
+                            <StackPanel>
+                                <TextBlock Text="今日工资" Foreground="#FF94A3B8" FontSize="10" FontWeight="SemiBold" />
+                                <TextBlock Text="{Binding TodayEarnedText}" Foreground="#FFFFFFFF" FontSize="14" FontWeight="SemiBold" Margin="0,2,0,0" TextTrimming="CharacterEllipsis" />
+                            </StackPanel>
+                        </Border>
+
+                        <Border Grid.Column="2" CornerRadius="12" Background="#20FFFFFF" BorderBrush="#18FFFFFF" BorderThickness="1" Padding="10,6">
+                            <StackPanel>
+                                <TextBlock Text="还有多久下班" Foreground="#FF94A3B8" FontSize="10" FontWeight="SemiBold" />
+                                <TextBlock Text="{Binding OffWorkCountdownText}" Foreground="#FFFDE68A" FontSize="14" FontWeight="SemiBold" Margin="0,2,0,0" TextTrimming="CharacterEllipsis" />
+                            </StackPanel>
+                        </Border>
+
+                        <Border Grid.Column="4" CornerRadius="12" Background="#20FFFFFF" BorderBrush="#18FFFFFF" BorderThickness="1" Padding="10,6">
+                            <StackPanel>
+                                <TextBlock Text="还有多久发薪水" Foreground="#FF94A3B8" FontSize="10" FontWeight="SemiBold" />
+                                <TextBlock Text="{Binding PaydayCountdownText}" Foreground="#FF93C5FD" FontSize="14" FontWeight="SemiBold" Margin="0,2,0,0" TextTrimming="CharacterEllipsis" />
+                            </StackPanel>
+                        </Border>
+                    </Grid>
+                    <StackPanel x:Name="TodayStatsLine" Orientation="Horizontal" Margin="0,7,0,0">
+                        <TextBlock Text="{Binding EfficiencyStatsText}" Foreground="#FFC9D4E5" FontSize="10" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" />
+                        <TextBlock Text="  ·  " Foreground="#556B7280" FontSize="10" />
+                        <TextBlock Text="{Binding SavedClicksText}" Foreground="#FF93C5FD" FontSize="10" FontWeight="SemiBold" />
+                    </StackPanel>
                 </StackPanel>
-                <StackPanel Grid.Row="2"
-                            Orientation="Horizontal"
-                            HorizontalAlignment="Center"
-                            Margin="0,10,0,0">
-                    <TextBlock Text="{Binding Pattern}"
-                               Foreground="{DynamicResource BrushPrimaryBright}"
-                               FontSize="17"
-                               FontWeight="SemiBold" />
-                    <TextBlock Text="  ·  "
-                               Foreground="#6B7280"
-                               FontSize="17" />
-                    <TextBlock Text="{Binding ShortcutText}"
-                               Foreground="#A7ADB8"
-                               FontSize="17" />
+
+                <StackPanel Grid.Column="2" VerticalAlignment="Center">
+                    <TextBlock Text="松开右键执行"
+                               Foreground="#FFFDE68A"
+                               FontSize="15"
+                               FontWeight="SemiBold"
+                               HorizontalAlignment="Right" />
+                    <TextBlock Text="{Binding WorkStatusText}"
+                               Foreground="#FF93C5FD"
+                               FontSize="12"
+                               FontWeight="SemiBold"
+                               HorizontalAlignment="Right"
+                               Margin="0,7,0,0"
+                               TextTrimming="CharacterEllipsis" />
+                    <TextBlock Text="普通右键不显示"
+                               Foreground="#FF8A94A8"
+                               FontSize="11"
+                               FontWeight="SemiBold"
+                               HorizontalAlignment="Right"
+                               Margin="0,6,0,0" />
                 </StackPanel>
             </Grid>
         </Border>

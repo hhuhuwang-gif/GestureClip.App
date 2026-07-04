@@ -44,6 +44,22 @@ public sealed class MouseGestureServiceTests
     }
 
     [Fact]
+    public async Task Right_click_without_threshold_does_not_show_overlay_hint()
+    {
+        var hook = new FakeLowLevelMouseHook();
+        var synthesizer = new FakeRightClickSynthesizer();
+        var overlay = new FakeGestureOverlayService();
+        var service = CreateService(hook, synthesizer: synthesizer, overlay: overlay);
+        await service.StartAsync(CancellationToken.None);
+
+        hook.Raise(MouseHookEventType.RightButtonDown, 0, 0);
+        hook.Raise(MouseHookEventType.RightButtonUp, 0, 0);
+        await WaitForAsync(() => synthesizer.Clicks.Count == 1);
+
+        Assert.Empty(overlay.Events);
+    }
+
+    [Fact]
     public async Task Right_click_without_threshold_synthesizes_click_at_original_down_position()
     {
         var hook = new FakeLowLevelMouseHook();
@@ -87,6 +103,23 @@ public sealed class MouseGestureServiceTests
         Assert.Equal(GestureRuntimeState.Idle, service.Diagnostics.State);
         Assert.Equal("U", service.Diagnostics.LastPattern);
         Assert.Equal(BuiltInGestureAction.Copy, service.Diagnostics.LastAction);
+    }
+
+    [Fact]
+    public async Task Gesture_active_records_gesture_count_after_action()
+    {
+        var hook = new FakeLowLevelMouseHook();
+        var executor = new FakeMouseGestureActionExecutor();
+        var dashboard = new FakeWorkstationDashboardService();
+        var service = CreateService(hook, executor, dashboard: dashboard, showOverlay: false);
+        await service.StartAsync(CancellationToken.None);
+
+        hook.Raise(MouseHookEventType.RightButtonDown, 0, 0);
+        hook.Raise(MouseHookEventType.Move, 0, -30);
+        hook.Raise(MouseHookEventType.RightButtonUp, 0, -50);
+        await WaitForAsync(() => executor.Actions.Count == 1);
+
+        Assert.Equal(1, dashboard.GestureCount);
     }
 
     [Fact]
@@ -173,6 +206,25 @@ public sealed class MouseGestureServiceTests
 
         Assert.True(down.Suppress);
         Assert.Equal(GestureRuntimeState.GestureActive, service.Diagnostics.State);
+        Assert.Contains(overlay.Events, entry => entry.StartsWith("start:", StringComparison.Ordinal));
+        Assert.Contains(overlay.Events, entry => entry.StartsWith("update:", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public async Task Overlay_starts_only_after_trigger_threshold_is_crossed()
+    {
+        var hook = new FakeLowLevelMouseHook();
+        var overlay = new FakeGestureOverlayService();
+        var service = CreateService(hook, overlay: overlay);
+        await service.StartAsync(CancellationToken.None);
+
+        hook.Raise(MouseHookEventType.RightButtonDown, 10, 10);
+        hook.Raise(MouseHookEventType.Move, 14, 14);
+
+        Assert.Empty(overlay.Events);
+
+        hook.Raise(MouseHookEventType.Move, 10, -20);
+
         Assert.Contains(overlay.Events, entry => entry.StartsWith("start:", StringComparison.Ordinal));
         Assert.Contains(overlay.Events, entry => entry.StartsWith("update:", StringComparison.Ordinal));
     }
@@ -536,7 +588,8 @@ public sealed class MouseGestureServiceTests
         bool gestureBlacklisted = false,
         bool middleButtonEnabled = false,
         bool xButton1Enabled = false,
-        bool xButton2Enabled = false)
+        bool xButton2Enabled = false,
+        FakeWorkstationDashboardService? dashboard = null)
     {
         return new MouseGestureService(
             hook,
@@ -549,6 +602,7 @@ public sealed class MouseGestureServiceTests
             overlay ?? new FakeGestureOverlayService(),
             new FakeForegroundAppService(),
             new FakeAppBlacklistService { GestureBlocked = gestureBlacklisted },
+            dashboard ?? new FakeWorkstationDashboardService(),
             NullLogger<MouseGestureService>.Instance);
     }
 
@@ -747,6 +801,32 @@ public sealed class MouseGestureServiceTests
         public Task RefreshAsync(CancellationToken cancellationToken) => Task.CompletedTask;
 
         public bool IsGestureBlockedCached(string? processName) => GestureBlocked;
+    }
+
+    private sealed class FakeWorkstationDashboardService : IWorkstationDashboardService
+    {
+        public int GestureCount { get; private set; }
+
+        public Task<Core.Workstation.WorkstationDashboardSnapshot> GetSnapshotAsync(DateTimeOffset now, CancellationToken cancellationToken)
+        {
+            throw new NotImplementedException();
+        }
+
+        public Task StartFishingAsync(DateTimeOffset now, CancellationToken cancellationToken) => Task.CompletedTask;
+
+        public Task EndFishingAsync(DateTimeOffset now, CancellationToken cancellationToken) => Task.CompletedTask;
+
+        public Task ResetTodayAsync(DateOnly date, CancellationToken cancellationToken) => Task.CompletedTask;
+
+        public Task RecordCopyAsync(DateTimeOffset now, CancellationToken cancellationToken) => Task.CompletedTask;
+
+        public Task RecordPasteAsync(DateTimeOffset now, CancellationToken cancellationToken) => Task.CompletedTask;
+
+        public Task RecordGestureAsync(DateTimeOffset now, CancellationToken cancellationToken)
+        {
+            GestureCount++;
+            return Task.CompletedTask;
+        }
     }
 }
 

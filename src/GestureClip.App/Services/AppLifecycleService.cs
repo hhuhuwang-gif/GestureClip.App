@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.Windows;
 using GestureClip.Core.Abstractions;
 using Microsoft.Extensions.DependencyInjection;
@@ -7,9 +8,12 @@ namespace GestureClip.App.Services;
 
 public sealed class AppLifecycleService : IAppLifecycleService
 {
+    private const string LatestReleaseUrl = "https://github.com/hhuhuwang-gif/GestureClip.App/releases/latest";
+
     private readonly IServiceProvider _serviceProvider;
     private readonly ILogger<AppLifecycleService> _logger;
     private SettingsWindow? _settingsWindow;
+    private WorkstationDashboardWindow? _workstationDashboardWindow;
     private int _exitStarted;
 
     public AppLifecycleService(IServiceProvider serviceProvider, ILogger<AppLifecycleService> logger)
@@ -38,6 +42,41 @@ public sealed class AppLifecycleService : IAppLifecycleService
 
         _settingsWindow.Activate();
         _logger.LogInformation("Settings window shown.");
+    }
+
+    public void ShowWorkstationDashboardWindow()
+    {
+        if (_workstationDashboardWindow is null)
+        {
+            _workstationDashboardWindow = _serviceProvider.GetRequiredService<WorkstationDashboardWindow>();
+            _workstationDashboardWindow.Closed += (_, _) => _workstationDashboardWindow = null;
+        }
+
+        _workstationDashboardWindow.Show();
+        if (_workstationDashboardWindow.WindowState == WindowState.Minimized)
+        {
+            _workstationDashboardWindow.WindowState = WindowState.Normal;
+        }
+
+        _workstationDashboardWindow.Activate();
+        _logger.LogInformation("Workstation dashboard window shown.");
+    }
+
+    public void OpenLatestReleasePage()
+    {
+        try
+        {
+            Process.Start(new ProcessStartInfo
+            {
+                FileName = LatestReleaseUrl,
+                UseShellExecute = true
+            });
+            _logger.LogInformation("Latest release page opened for update.");
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to open latest release page.");
+        }
     }
 
     public async void ExitApplication()

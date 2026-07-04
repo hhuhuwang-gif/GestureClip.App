@@ -25,4 +25,14 @@ public partial class MainWindow : Window
 
         base.OnClosing(e);
     }
+
+    private void OpenWorkstationButton_Click(object sender, RoutedEventArgs e)
+    {
+        _appLifecycleService.ShowWorkstationDashboardWindow();
+    }
+
+    private void OpenSettingsButton_Click(object sender, RoutedEventArgs e)
+    {
+        _appLifecycleService.ShowSettingsWindow();
+    }
 }

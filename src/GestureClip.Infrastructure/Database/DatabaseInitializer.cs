@@ -24,7 +24,8 @@ public sealed class DatabaseInitializer
 
         await _migrationRunner.RunAsync(connection, new[]
         {
-            new SqlMigration(1, "initial", InitialMigration.Sql)
+            new SqlMigration(1, "initial", InitialMigration.Sql),
+            new SqlMigration(2, "workstation_stats", WorkstationStatsMigration.Sql)
         }, cancellationToken);
 
         _logger.LogInformation("Database migrations initialized.");

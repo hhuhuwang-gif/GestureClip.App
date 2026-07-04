@@ -27,6 +27,8 @@ logs/
 *.db-shm
 *.db-wal
 artifacts/
+GestureClip.exe
+GestureClip-latest.exe
 
 # OS files
 Thumbs.db

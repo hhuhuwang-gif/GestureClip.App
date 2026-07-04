@@ -20,6 +20,7 @@ public sealed class ClipboardService : IClipboardService
     private readonly IForegroundAppService _foregroundAppService;
     private readonly IAppBlacklistService _appBlacklistService;
     private readonly ISettingsService _settingsService;
+    private readonly IWorkstationDashboardService _workstationDashboardService;
     private readonly ILogger<ClipboardService> _logger;
     private int _started;
 
@@ -33,6 +34,7 @@ public sealed class ClipboardService : IClipboardService
         IForegroundAppService foregroundAppService,
         IAppBlacklistService appBlacklistService,
         ISettingsService settingsService,
+        IWorkstationDashboardService workstationDashboardService,
         ILogger<ClipboardService> logger)
     {
         _clipboardListener = clipboardListener;
@@ -44,6 +46,7 @@ public sealed class ClipboardService : IClipboardService
         _foregroundAppService = foregroundAppService;
         _appBlacklistService = appBlacklistService;
         _settingsService = settingsService;
+        _workstationDashboardService = workstationDashboardService;
         _logger = logger;
         IsCaptureEnabled = _settingsService.Get(SettingKeys.ClipboardCaptureEnabled, true);
     }
@@ -160,6 +163,7 @@ public sealed class ClipboardService : IClipboardService
             null);
 
         await _clipboardRepository.InsertAsync(item, cancellationToken);
+        await _workstationDashboardService.RecordCopyAsync(now, cancellationToken);
         _logger.LogInformation("Clipboard text item captured.");
     }
 
@@ -179,6 +183,7 @@ public sealed class ClipboardService : IClipboardService
         {
             await CopyItemsAsync([item], cancellationToken);
             await _clipboardWriter.SendPasteHotkeyAsync(cancellationToken);
+            await _workstationDashboardService.RecordPasteAsync(DateTimeOffset.UtcNow, cancellationToken);
             return;
         }
 
@@ -191,6 +196,7 @@ public sealed class ClipboardService : IClipboardService
         await _clipboardWriter.SetTextAsync(item.TextContent, cancellationToken);
         await _clipboardWriter.SendPasteHotkeyAsync(cancellationToken);
         await _clipboardRepository.IncrementUseCountAsync(item.Id, cancellationToken);
+        await _workstationDashboardService.RecordPasteAsync(DateTimeOffset.UtcNow, cancellationToken);
         _logger.LogInformation("Clipboard text item pasted.");
     }
 
@@ -353,6 +359,7 @@ public sealed class ClipboardService : IClipboardService
                 now,
                 null),
             cancellationToken);
+        await _workstationDashboardService.RecordCopyAsync(now, cancellationToken);
         _logger.LogInformation("Clipboard image item captured.");
     }
 

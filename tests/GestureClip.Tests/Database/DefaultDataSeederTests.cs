@@ -47,8 +47,12 @@ public sealed class DefaultDataSeederTests
         var cooldownMs = await connection.ExecuteScalarAsync<string>("SELECT Value FROM Settings WHERE Key = 'EdgeTrigger.CooldownMs';");
         var slideLeftEnabled = await connection.ExecuteScalarAsync<string>("SELECT Value FROM Settings WHERE Key = 'EdgeTrigger.Slide.Left.Enabled';");
         var slideBottomAction = await connection.ExecuteScalarAsync<string>("SELECT Value FROM Settings WHERE Key = 'EdgeTrigger.Slide.Bottom.Action';");
+        var monthlySalary = await connection.ExecuteScalarAsync<string>("SELECT Value FROM Settings WHERE Key = 'Workstation.MonthlySalary';");
+        var workStart = await connection.ExecuteScalarAsync<string>("SELECT Value FROM Settings WHERE Key = 'Workstation.WorkStartTime';");
+        var workEnd = await connection.ExecuteScalarAsync<string>("SELECT Value FROM Settings WHERE Key = 'Workstation.WorkEndTime';");
+        var payday = await connection.ExecuteScalarAsync<string>("SELECT Value FROM Settings WHERE Key = 'Workstation.Payday';");
 
-        Assert.Equal(46, settingCount);
+        Assert.Equal(57, settingCount);
         Assert.Equal(7, blacklistCount);
         Assert.Equal(6, gestureCount);
         Assert.Equal("1000", maxItems);
@@ -68,6 +72,10 @@ public sealed class DefaultDataSeederTests
         Assert.Equal("56", slideThreshold);
         Assert.Equal("true", slideLeftEnabled);
         Assert.Equal(((int)BuiltInGestureAction.PasteAndEnter).ToString(), slideBottomAction);
+        Assert.Equal("0", monthlySalary);
+        Assert.Equal("\"09:00\"", workStart);
+        Assert.Equal("\"18:00\"", workEnd);
+        Assert.Equal("15", payday);
     }
 
     [Fact]
@@ -157,6 +165,40 @@ VALUES ('Hotkey.OpenClipboardOverlay.Key', '"Ctrl+Shift+V"', 'string', @UpdatedA
         var hotkey = await connection.ExecuteScalarAsync<string>("SELECT Value FROM Settings WHERE Key = 'Hotkey.OpenClipboardOverlay.Key';");
 
         Assert.Equal("\"Ctrl+Shift+V\"", hotkey);
+    }
+
+    [Fact]
+    public async Task SeedAsync_does_not_overwrite_existing_workstation_settings()
+    {
+        await using var connection = new SqliteConnection("Data Source=:memory:");
+        await connection.OpenAsync();
+
+        var runner = new SqlMigrationRunner(NullLogger<SqlMigrationRunner>.Instance);
+        await runner.RunAsync(connection, new[]
+        {
+            new SqlMigration(1, "initial", InitialMigration.Sql)
+        }, CancellationToken.None);
+
+        await connection.ExecuteAsync(
+            """
+INSERT INTO Settings (Key, Value, ValueType, UpdatedAt)
+VALUES ('Workstation.MonthlySalary', '18000', 'decimal', @UpdatedAt),
+       ('Workstation.WorkStartTime', '"10:00"', 'string', @UpdatedAt),
+       ('Workstation.Payday', '10', 'int', @UpdatedAt);
+""",
+            new { UpdatedAt = DateTimeOffset.UtcNow.ToString("O") });
+
+        var seeder = new DefaultDataSeeder(NullLogger<DefaultDataSeeder>.Instance);
+
+        await seeder.SeedAsync(connection, CancellationToken.None);
+
+        var monthlySalary = await connection.ExecuteScalarAsync<string>("SELECT Value FROM Settings WHERE Key = 'Workstation.MonthlySalary';");
+        var workStart = await connection.ExecuteScalarAsync<string>("SELECT Value FROM Settings WHERE Key = 'Workstation.WorkStartTime';");
+        var payday = await connection.ExecuteScalarAsync<string>("SELECT Value FROM Settings WHERE Key = 'Workstation.Payday';");
+
+        Assert.Equal("18000", monthlySalary);
+        Assert.Equal("\"10:00\"", workStart);
+        Assert.Equal("10", payday);
     }
 
     [Fact]

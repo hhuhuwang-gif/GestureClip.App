@@ -31,18 +31,28 @@
                         VerticalAlignment="Top"
                         Margin="12,0,0,0">
                 <Button Content="－"
-                        Width="32"
-                        Height="28"
+                        Width="42"
+                        Height="34"
+                        MinWidth="0"
                         Padding="0"
+                        Focusable="False"
+                        FocusVisualStyle="{x:Null}"
+                        FontSize="17"
+                        FontWeight="SemiBold"
                         Background="#00FFFFFF"
                         BorderBrush="#00000000"
                         ToolTip="最小化"
                         Click="MinimizeButton_Click" />
                 <Button Content="×"
-                        Width="32"
-                        Height="28"
+                        Width="42"
+                        Height="34"
+                        MinWidth="0"
                         Padding="0"
                         Margin="6,0,0,0"
+                        Focusable="False"
+                        FocusVisualStyle="{x:Null}"
+                        FontSize="17"
+                        FontWeight="SemiBold"
                         Background="#00FFFFFF"
                         BorderBrush="#00000000"
                         Foreground="{DynamicResource BrushTextSecondary}"
@@ -629,7 +639,8 @@
                                     <TextBlock Text="点方向按钮设计手势，也可以手动输入 U / D / L / R。最长 8 段。"
                                                Style="{StaticResource MutedTextStyle}"
                                                Margin="0,0,0,10" />
-                                    <Border Background="#F8FAFD"
+                                    <Border x:Name="GestureDesignerPanel"
+                                            Background="#F8FAFD"
                                             BorderBrush="{DynamicResource BrushBorder}"
                                             BorderThickness="1"
                                             CornerRadius="18"
@@ -637,8 +648,8 @@
                                             Margin="0,0,0,12">
                                         <StackPanel>
                                             <StackPanel Margin="0,0,0,14">
-                                                <Border Width="360"
-                                                        Height="160"
+                                                <Border Width="420"
+                                                        Height="190"
                                                         HorizontalAlignment="Left"
                                                         CornerRadius="18"
                                                         Background="#FFFFFFFF"
@@ -649,8 +660,9 @@
                                                         MouseMove="RecordGesturePad_MouseMove"
                                                         MouseLeftButtonUp="RecordGesturePad_MouseLeftButtonUp">
                                                     <Grid>
-                                                        <TextBlock Text="按住左键，在这里画一次手势"
+                                                        <TextBlock Text="在这里按住并拖动，松开后自动识别"
                                                                    Style="{StaticResource MutedTextStyle}"
+                                                                   FontSize="14"
                                                                    HorizontalAlignment="Center"
                                                                    VerticalAlignment="Center" />
                                                         <Canvas x:Name="RecordGestureCanvas"
@@ -675,23 +687,23 @@
                                                            Margin="0,4,0,0" />
                                             </StackPanel>
                                             <WrapPanel VerticalAlignment="Center">
-                                                <Button Content="↑" MinWidth="0" Width="58" Margin="0,0,8,8" Command="{Binding AppendGestureDirectionCommand}" CommandParameter="U" />
-                                                <Button Content="↓" MinWidth="0" Width="58" Margin="0,0,8,8" Command="{Binding AppendGestureDirectionCommand}" CommandParameter="D" />
-                                                <Button Content="←" MinWidth="0" Width="58" Margin="0,0,8,8" Command="{Binding AppendGestureDirectionCommand}" CommandParameter="L" />
-                                                <Button Content="→" MinWidth="0" Width="58" Margin="0,0,8,8" Command="{Binding AppendGestureDirectionCommand}" CommandParameter="R" />
-                                                <Button Content="退一格" MinWidth="0" Width="88" Margin="0,0,8,8" Command="{Binding RemoveLastGestureDirectionCommand}" />
-                                                <Button Content="清空" MinWidth="0" Width="76" Margin="0,0,8,8" Command="{Binding ClearNewGesturePatternCommand}" />
+                                                <Button Content="↑" MinWidth="0" Width="64" Height="36" Margin="0,0,8,8" Command="{Binding AppendGestureDirectionCommand}" CommandParameter="U" />
+                                                <Button Content="↓" MinWidth="0" Width="64" Height="36" Margin="0,0,8,8" Command="{Binding AppendGestureDirectionCommand}" CommandParameter="D" />
+                                                <Button Content="←" MinWidth="0" Width="64" Height="36" Margin="0,0,8,8" Command="{Binding AppendGestureDirectionCommand}" CommandParameter="L" />
+                                                <Button Content="→" MinWidth="0" Width="64" Height="36" Margin="0,0,8,8" Command="{Binding AppendGestureDirectionCommand}" CommandParameter="R" />
+                                                <Button Content="退一格" MinWidth="0" Width="96" Height="36" Margin="0,0,8,8" Command="{Binding RemoveLastGestureDirectionCommand}" />
+                                                <Button Content="清空" MinWidth="0" Width="84" Height="36" Margin="0,0,8,8" Command="{Binding ClearNewGesturePatternCommand}" />
                                             </WrapPanel>
                                             <TextBlock Text="常用折线模板"
                                                        Style="{StaticResource MutedTextStyle}"
                                                        Margin="0,8,0,8" />
                                             <WrapPanel>
-                                                <Button Content="↓←  左键点击" MinWidth="0" Width="132" Margin="0,0,8,8" Command="{Binding SetNewGesturePatternCommand}" CommandParameter="DL" />
-                                                <Button Content="↓→  右键点击" MinWidth="0" Width="132" Margin="0,0,8,8" Command="{Binding SetNewGesturePatternCommand}" CommandParameter="DR" />
-                                                <Button Content="↑→↓  下一标签" MinWidth="0" Width="140" Margin="0,0,8,8" Command="{Binding SetNewGesturePatternCommand}" CommandParameter="URD" />
-                                                <Button Content="↑←↓  上一标签" MinWidth="0" Width="140" Margin="0,0,8,8" Command="{Binding SetNewGesturePatternCommand}" CommandParameter="ULD" />
-                                                <Button Content="→↓←  截图" MinWidth="0" Width="120" Margin="0,0,8,8" Command="{Binding SetNewGesturePatternCommand}" CommandParameter="RDL" />
-                                                <Button Content="→↑↓  缩放重置" MinWidth="0" Width="132" Margin="0,0,8,8" Command="{Binding SetNewGesturePatternCommand}" CommandParameter="RUD" />
+                                                <Button Content="↓←  左键点击" MinWidth="0" Width="150" Height="34" Margin="0,0,8,8" Command="{Binding SetNewGesturePatternCommand}" CommandParameter="DL" />
+                                                <Button Content="↓→  右键点击" MinWidth="0" Width="150" Height="34" Margin="0,0,8,8" Command="{Binding SetNewGesturePatternCommand}" CommandParameter="DR" />
+                                                <Button Content="↑→↓  下一标签" MinWidth="0" Width="158" Height="34" Margin="0,0,8,8" Command="{Binding SetNewGesturePatternCommand}" CommandParameter="URD" />
+                                                <Button Content="↑←↓  上一标签" MinWidth="0" Width="158" Height="34" Margin="0,0,8,8" Command="{Binding SetNewGesturePatternCommand}" CommandParameter="ULD" />
+                                                <Button Content="→↓←  截图" MinWidth="0" Width="132" Height="34" Margin="0,0,8,8" Command="{Binding SetNewGesturePatternCommand}" CommandParameter="RDL" />
+                                                <Button Content="→↑↓  缩放重置" MinWidth="0" Width="150" Height="34" Margin="0,0,8,8" Command="{Binding SetNewGesturePatternCommand}" CommandParameter="RUD" />
                                             </WrapPanel>
                                         </StackPanel>
                                     </Border>
@@ -718,11 +730,13 @@
 
                             <Grid Margin="0,14,0,0">
                                 <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="2*" />
-                                    <ColumnDefinition Width="340" />
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="420" />
                                 </Grid.ColumnDefinitions>
 
-                                <Border Style="{StaticResource GlassCardStyle}" Padding="0">
+                                <Border x:Name="GestureBindingListPanel"
+                                        Style="{StaticResource GlassCardStyle}"
+                                        Padding="0">
                                     <DockPanel>
                                         <Grid DockPanel.Dock="Top" Margin="18,16,18,12">
                                             <StackPanel>
@@ -804,10 +818,11 @@
                                     </DockPanel>
                                 </Border>
 
-                                <Border Grid.Column="1"
+                                <Border x:Name="GestureBindingDetailPanel"
+                                        Grid.Column="1"
                                         Style="{StaticResource GlassCardStyle}"
                                         Margin="14,0,0,0"
-                                        Padding="20">
+                                        Padding="22">
                                     <StackPanel>
                                         <TextBlock Text="动作编辑器"
                                                    FontSize="18"
@@ -824,8 +839,8 @@
                                                 Margin="0,0,0,16">
                                             <StackPanel>
                                                 <controls:GesturePatternView Pattern="{Binding SelectedGestureBindingPattern}"
-                                                                             Width="260"
-                                                                             Height="132"
+                                                                             Width="320"
+                                                                             Height="170"
                                                                              HorizontalAlignment="Center" />
                                                 <TextBlock Text="{Binding SelectedGestureBindingDirectionText}"
                                                            FontSize="18"
@@ -915,6 +930,156 @@
                     </GroupBox>
                 </TabItem>
 
+                <TabItem Header="工位小熊">
+                    <ScrollViewer VerticalScrollBarVisibility="Auto">
+                        <StackPanel Margin="18">
+                            <GroupBox Header="工位小熊" Padding="12">
+                                <StackPanel>
+                                    <Border Style="{StaticResource SettingRowStyle}">
+                                        <StackPanel>
+                                            <TextBlock Text="用大白话看今天还要熬多久、赚了多少、摸鱼值多少钱。"
+                                                       FontWeight="SemiBold"
+                                                       TextWrapping="Wrap" />
+                                            <TextBlock Text="所有统计只在本地计算，不上传，也不记录剪贴板正文。"
+                                                       Style="{StaticResource MutedTextStyle}"
+                                                       Margin="0,6,0,0"
+                                                       TextWrapping="Wrap" />
+                                        </StackPanel>
+                                    </Border>
+
+                                    <Border Style="{StaticResource SettingRowStyle}">
+                                        <Grid>
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="150" />
+                                                <ColumnDefinition Width="*" />
+                                            </Grid.ColumnDefinitions>
+                                            <TextBlock Text="启用面板" FontWeight="SemiBold" VerticalAlignment="Center" />
+                                            <CheckBox Grid.Column="1"
+                                                      Content="显示工位小熊入口和统计"
+                                                      IsChecked="{Binding WorkstationEnabled, Mode=TwoWay}" />
+                                        </Grid>
+                                    </Border>
+
+                                    <Border Style="{StaticResource SettingRowStyle}">
+                                        <Grid>
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="150" />
+                                                <ColumnDefinition Width="*" />
+                                            </Grid.ColumnDefinitions>
+                                            <TextBlock Text="月薪" FontWeight="SemiBold" VerticalAlignment="Center" />
+                                            <StackPanel Grid.Column="1"
+                                                        Orientation="Horizontal">
+                                                <TextBox Width="150"
+                                                         Text="{Binding WorkstationMonthlySalary, Mode=TwoWay, UpdateSourceTrigger=LostFocus}" />
+                                                <TextBlock Text="元，用来估算今日已赚和摸鱼价值"
+                                                           Style="{StaticResource MutedTextStyle}"
+                                                           VerticalAlignment="Center"
+                                                           Margin="12,0,0,0" />
+                                            </StackPanel>
+                                        </Grid>
+                                    </Border>
+
+                                    <Border Style="{StaticResource SettingRowStyle}">
+                                        <Grid>
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="150" />
+                                                <ColumnDefinition Width="*" />
+                                            </Grid.ColumnDefinitions>
+                                            <TextBlock Text="工作时间" FontWeight="SemiBold" VerticalAlignment="Center" />
+                                            <WrapPanel Grid.Column="1"
+                                                       VerticalAlignment="Center">
+                                                <TextBlock Text="上班" VerticalAlignment="Center" Margin="0,0,8,0" />
+                                                <TextBox Width="100"
+                                                         Text="{Binding WorkstationWorkStartTime, Mode=TwoWay, UpdateSourceTrigger=LostFocus}" />
+                                                <TextBlock Text="下班" VerticalAlignment="Center" Margin="18,0,8,0" />
+                                                <TextBox Width="100"
+                                                         Text="{Binding WorkstationWorkEndTime, Mode=TwoWay, UpdateSourceTrigger=LostFocus}" />
+                                            </WrapPanel>
+                                        </Grid>
+                                    </Border>
+
+                                    <Border Style="{StaticResource SettingRowStyle}">
+                                        <Grid>
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="150" />
+                                                <ColumnDefinition Width="*" />
+                                            </Grid.ColumnDefinitions>
+                                            <TextBlock Text="午休时间" FontWeight="SemiBold" VerticalAlignment="Center" />
+                                            <WrapPanel Grid.Column="1"
+                                                       VerticalAlignment="Center">
+                                                <TextBlock Text="开始" VerticalAlignment="Center" Margin="0,0,8,0" />
+                                                <TextBox Width="100"
+                                                         Text="{Binding WorkstationLunchStartTime, Mode=TwoWay, UpdateSourceTrigger=LostFocus}" />
+                                                <TextBlock Text="结束" VerticalAlignment="Center" Margin="18,0,8,0" />
+                                                <TextBox Width="100"
+                                                         Text="{Binding WorkstationLunchEndTime, Mode=TwoWay, UpdateSourceTrigger=LostFocus}" />
+                                            </WrapPanel>
+                                        </Grid>
+                                    </Border>
+
+                                    <Border Style="{StaticResource SettingRowStyle}">
+                                        <Grid>
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="150" />
+                                                <ColumnDefinition Width="*" />
+                                            </Grid.ColumnDefinitions>
+                                            <TextBlock Text="工作日" FontWeight="SemiBold" VerticalAlignment="Center" />
+                                            <StackPanel Grid.Column="1"
+                                                        Orientation="Horizontal">
+                                                <TextBox Width="180"
+                                                         Text="{Binding WorkstationWorkdays, Mode=TwoWay, UpdateSourceTrigger=LostFocus}" />
+                                                <TextBlock Text="1=周一，5=周五，默认 1,2,3,4,5"
+                                                           Style="{StaticResource MutedTextStyle}"
+                                                           VerticalAlignment="Center"
+                                                           Margin="12,0,0,0" />
+                                            </StackPanel>
+                                        </Grid>
+                                    </Border>
+
+                                    <Border Style="{StaticResource SettingRowStyle}">
+                                        <Grid>
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="150" />
+                                                <ColumnDefinition Width="*" />
+                                            </Grid.ColumnDefinitions>
+                                            <TextBlock Text="发薪日" FontWeight="SemiBold" VerticalAlignment="Center" />
+                                            <StackPanel Grid.Column="1"
+                                                        Orientation="Horizontal">
+                                                <TextBox Width="90"
+                                                         Text="{Binding WorkstationPayday, Mode=TwoWay, UpdateSourceTrigger=LostFocus}" />
+                                                <TextBlock Text="每月几号，范围 1-28"
+                                                           Style="{StaticResource MutedTextStyle}"
+                                                           VerticalAlignment="Center"
+                                                           Margin="12,0,0,0" />
+                                            </StackPanel>
+                                        </Grid>
+                                    </Border>
+
+                                    <Border Style="{StaticResource SettingRowStyle}">
+                                        <Grid>
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="150" />
+                                                <ColumnDefinition Width="*" />
+                                            </Grid.ColumnDefinitions>
+                                            <TextBlock Text="显示内容" FontWeight="SemiBold" VerticalAlignment="Center" />
+                                            <WrapPanel Grid.Column="1">
+                                                <CheckBox Content="显示摸鱼价值"
+                                                          Margin="0,0,20,0"
+                                                          IsChecked="{Binding WorkstationShowFishingValue, Mode=TwoWay}" />
+                                                <CheckBox Content="显示下班倒计时"
+                                                          Margin="0,0,20,0"
+                                                          IsChecked="{Binding WorkstationShowOffWorkCountdown, Mode=TwoWay}" />
+                                                <CheckBox Content="每日存活报告"
+                                                          IsChecked="{Binding WorkstationDailyReportEnabled, Mode=TwoWay}" />
+                                            </WrapPanel>
+                                        </Grid>
+                                    </Border>
+                                </StackPanel>
+                            </GroupBox>
+                        </StackPanel>
+                    </ScrollViewer>
+                </TabItem>
+
                 <TabItem Header="诊断">
                     <GroupBox Header="诊断" Padding="12" Margin="18">
                         <StackPanel>
@@ -931,9 +1096,21 @@
 
                 <TabItem Header="关于">
                     <GroupBox Header="关于" Padding="12" Margin="18">
-                        <TextBlock TextWrapping="Wrap"
-                                   Style="{StaticResource MutedTextStyle}"
-                                   Text="GestureClip 是本地优先的 Windows 剪贴板历史与右键手势工具。剪贴板文本存储在本机 SQLite，日志不记录剪贴板正文。MVP 不保证控制管理员权限窗口，如需控制管理员窗口，请以管理员身份运行 GestureClip。" />
+                        <StackPanel>
+                            <TextBlock TextWrapping="Wrap"
+                                       Style="{StaticResource MutedTextStyle}"
+                                       Text="GestureClip 是本地优先的 Windows 剪贴板历史与右键手势工具。剪贴板文本存储在本机 SQLite，日志不记录剪贴板正文。MVP 不保证控制管理员权限窗口，如需控制管理员窗口，请以管理员身份运行 GestureClip。" />
+                            <Button Content="一键更新"
+                                    Width="120"
+                                    HorizontalAlignment="Left"
+                                    Margin="0,14,0,0"
+                                    Style="{StaticResource PrimaryButtonStyle}"
+                                    Click="UpdateButton_Click" />
+                            <TextBlock Text="会打开 GitHub 最新 Release 页面，下载新版后覆盖旧版即可。"
+                                       Style="{StaticResource MutedTextStyle}"
+                                       TextWrapping="Wrap"
+                                       Margin="0,8,0,0" />
+                        </StackPanel>
                     </GroupBox>
                 </TabItem>
                 </TabControl>

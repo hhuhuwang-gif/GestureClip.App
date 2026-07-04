@@ -44,4 +44,16 @@ public sealed class GestureHudInfoProviderTests
         Assert.Equal("未绑定", info.ActionName);
         Assert.Equal("暂无动作", info.ShortcutText);
     }
+
+    [Fact]
+    public void GetInfo_uses_short_direction_text_before_pattern_is_recognized()
+    {
+        var provider = new GestureHudInfoProvider(new GesturePresetProvider());
+
+        var info = provider.GetInfo(GesturePreset.EditEnhanced, null);
+
+        Assert.Equal("右键", info.DirectionText);
+        Assert.DoesNotContain("按住", info.DirectionText, StringComparison.Ordinal);
+        Assert.True(info.DirectionText.Length <= 2);
+    }
 }

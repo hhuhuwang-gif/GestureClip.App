@@ -349,6 +349,38 @@ public sealed class SettingsViewModelTests
     }
 
     [Fact]
+    public async Task Changing_workstation_dashboard_settings_saves_settings()
+    {
+        var settings = new FakeSettingsService();
+        var viewModel = CreateViewModel(settings: settings);
+
+        viewModel.WorkstationEnabled = false;
+        viewModel.WorkstationMonthlySalary = 18000m;
+        viewModel.WorkstationWorkStartTime = "09:30";
+        viewModel.WorkstationWorkEndTime = "18:30";
+        viewModel.WorkstationLunchStartTime = "12:10";
+        viewModel.WorkstationLunchEndTime = "13:20";
+        viewModel.WorkstationWorkdays = "1,2,3,4";
+        viewModel.WorkstationPayday = 8;
+        viewModel.WorkstationShowFishingValue = false;
+        viewModel.WorkstationShowOffWorkCountdown = false;
+        viewModel.WorkstationDailyReportEnabled = true;
+
+        await WaitForAsync(() =>
+            settings.Values.TryGetValue(SettingKeys.WorkstationEnabled, out var enabled) && Equals(enabled, false) &&
+            settings.Values.TryGetValue(SettingKeys.WorkstationMonthlySalary, out var salary) && Equals(salary, 18000m) &&
+            settings.Values.TryGetValue(SettingKeys.WorkstationWorkStartTime, out var start) && Equals(start, "09:30") &&
+            settings.Values.TryGetValue(SettingKeys.WorkstationWorkEndTime, out var end) && Equals(end, "18:30") &&
+            settings.Values.TryGetValue(SettingKeys.WorkstationLunchStartTime, out var lunchStart) && Equals(lunchStart, "12:10") &&
+            settings.Values.TryGetValue(SettingKeys.WorkstationLunchEndTime, out var lunchEnd) && Equals(lunchEnd, "13:20") &&
+            settings.Values.TryGetValue(SettingKeys.WorkstationWorkdays, out var workdays) && Equals(workdays, "1,2,3,4") &&
+            settings.Values.TryGetValue(SettingKeys.WorkstationPayday, out var payday) && Equals(payday, 8) &&
+            settings.Values.TryGetValue(SettingKeys.WorkstationShowFishingValue, out var showFishing) && Equals(showFishing, false) &&
+            settings.Values.TryGetValue(SettingKeys.WorkstationShowOffWorkCountdown, out var showCountdown) && Equals(showCountdown, false) &&
+            settings.Values.TryGetValue(SettingKeys.WorkstationDailyReportEnabled, out var dailyReport) && Equals(dailyReport, true));
+    }
+
+    [Fact]
     public void Edge_trigger_defaults_are_responsive()
     {
         var viewModel = CreateViewModel();

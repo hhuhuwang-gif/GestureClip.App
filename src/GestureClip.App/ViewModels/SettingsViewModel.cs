@@ -80,6 +80,17 @@ public sealed class SettingsViewModel : INotifyPropertyChanged
     private int _clipboardRetentionDays;
     private string _openClipboardHotkeyText;
     private string _gestureStrokeColor;
+    private bool _workstationEnabled;
+    private decimal _workstationMonthlySalary;
+    private string _workstationWorkStartTime = "09:00";
+    private string _workstationWorkEndTime = "18:00";
+    private string _workstationLunchStartTime = "12:00";
+    private string _workstationLunchEndTime = "13:00";
+    private string _workstationWorkdays = "1,2,3,4,5";
+    private int _workstationPayday;
+    private bool _workstationShowFishingValue;
+    private bool _workstationShowOffWorkCountdown;
+    private bool _workstationDailyReportEnabled;
     private string _newGesturePattern = "";
     private BuiltInGestureAction _newGestureAction = BuiltInGestureAction.Copy;
     private string _recordGestureStatusText = "按住左键在方框里画一次。";
@@ -164,6 +175,17 @@ public sealed class SettingsViewModel : INotifyPropertyChanged
         _gestureTriggerThreshold = _settingsService.Get(SettingKeys.GestureTriggerThreshold, 20);
         _clipboardMaxItems = _settingsService.Get(SettingKeys.ClipboardMaxItems, 1000);
         _clipboardRetentionDays = _settingsService.Get(SettingKeys.ClipboardRetentionDays, 30);
+        _workstationEnabled = _settingsService.Get(SettingKeys.WorkstationEnabled, true);
+        _workstationMonthlySalary = _settingsService.Get(SettingKeys.WorkstationMonthlySalary, 0m);
+        _workstationWorkStartTime = _settingsService.Get(SettingKeys.WorkstationWorkStartTime, "09:00");
+        _workstationWorkEndTime = _settingsService.Get(SettingKeys.WorkstationWorkEndTime, "18:00");
+        _workstationLunchStartTime = _settingsService.Get(SettingKeys.WorkstationLunchStartTime, "12:00");
+        _workstationLunchEndTime = _settingsService.Get(SettingKeys.WorkstationLunchEndTime, "13:00");
+        _workstationWorkdays = _settingsService.Get(SettingKeys.WorkstationWorkdays, "1,2,3,4,5");
+        _workstationPayday = _settingsService.Get(SettingKeys.WorkstationPayday, 15);
+        _workstationShowFishingValue = _settingsService.Get(SettingKeys.WorkstationShowFishingValue, true);
+        _workstationShowOffWorkCountdown = _settingsService.Get(SettingKeys.WorkstationShowOffWorkCountdown, true);
+        _workstationDailyReportEnabled = _settingsService.Get(SettingKeys.WorkstationDailyReportEnabled, false);
         _openClipboardHotkeyText = HotkeyDefinition.ParseOrDefault(_settingsService.Get(
             SettingKeys.HotkeyOpenClipboardOverlayKey,
             HotkeyDefinition.DefaultOpenClipboardOverlay)).DisplayText;
@@ -428,6 +450,144 @@ public sealed class SettingsViewModel : INotifyPropertyChanged
     }
 
     public string StartupModeWarning { get; }
+
+    public bool WorkstationEnabled
+    {
+        get => _workstationEnabled;
+        set
+        {
+            if (_workstationEnabled == value)
+            {
+                return;
+            }
+
+            _workstationEnabled = value;
+            OnPropertyChanged();
+            _ = _settingsService.SetAsync(SettingKeys.WorkstationEnabled, value, CancellationToken.None);
+        }
+    }
+
+    public decimal WorkstationMonthlySalary
+    {
+        get => _workstationMonthlySalary;
+        set
+        {
+            if (_workstationMonthlySalary == value)
+            {
+                return;
+            }
+
+            _workstationMonthlySalary = Math.Max(0m, value);
+            OnPropertyChanged();
+            _ = _settingsService.SetAsync(SettingKeys.WorkstationMonthlySalary, _workstationMonthlySalary, CancellationToken.None);
+        }
+    }
+
+    public string WorkstationWorkStartTime
+    {
+        get => _workstationWorkStartTime;
+        set => SetWorkstationTimeSetting(ref _workstationWorkStartTime, value, SettingKeys.WorkstationWorkStartTime);
+    }
+
+    public string WorkstationWorkEndTime
+    {
+        get => _workstationWorkEndTime;
+        set => SetWorkstationTimeSetting(ref _workstationWorkEndTime, value, SettingKeys.WorkstationWorkEndTime);
+    }
+
+    public string WorkstationLunchStartTime
+    {
+        get => _workstationLunchStartTime;
+        set => SetWorkstationTimeSetting(ref _workstationLunchStartTime, value, SettingKeys.WorkstationLunchStartTime);
+    }
+
+    public string WorkstationLunchEndTime
+    {
+        get => _workstationLunchEndTime;
+        set => SetWorkstationTimeSetting(ref _workstationLunchEndTime, value, SettingKeys.WorkstationLunchEndTime);
+    }
+
+    public string WorkstationWorkdays
+    {
+        get => _workstationWorkdays;
+        set
+        {
+            var normalized = string.IsNullOrWhiteSpace(value) ? "1,2,3,4,5" : value.Trim();
+            if (_workstationWorkdays == normalized)
+            {
+                return;
+            }
+
+            _workstationWorkdays = normalized;
+            OnPropertyChanged();
+            _ = _settingsService.SetAsync(SettingKeys.WorkstationWorkdays, normalized, CancellationToken.None);
+        }
+    }
+
+    public int WorkstationPayday
+    {
+        get => _workstationPayday;
+        set
+        {
+            var normalized = Math.Clamp(value, 1, 28);
+            if (_workstationPayday == normalized)
+            {
+                return;
+            }
+
+            _workstationPayday = normalized;
+            OnPropertyChanged();
+            _ = _settingsService.SetAsync(SettingKeys.WorkstationPayday, normalized, CancellationToken.None);
+        }
+    }
+
+    public bool WorkstationShowFishingValue
+    {
+        get => _workstationShowFishingValue;
+        set
+        {
+            if (_workstationShowFishingValue == value)
+            {
+                return;
+            }
+
+            _workstationShowFishingValue = value;
+            OnPropertyChanged();
+            _ = _settingsService.SetAsync(SettingKeys.WorkstationShowFishingValue, value, CancellationToken.None);
+        }
+    }
+
+    public bool WorkstationShowOffWorkCountdown
+    {
+        get => _workstationShowOffWorkCountdown;
+        set
+        {
+            if (_workstationShowOffWorkCountdown == value)
+            {
+                return;
+            }
+
+            _workstationShowOffWorkCountdown = value;
+            OnPropertyChanged();
+            _ = _settingsService.SetAsync(SettingKeys.WorkstationShowOffWorkCountdown, value, CancellationToken.None);
+        }
+    }
+
+    public bool WorkstationDailyReportEnabled
+    {
+        get => _workstationDailyReportEnabled;
+        set
+        {
+            if (_workstationDailyReportEnabled == value)
+            {
+                return;
+            }
+
+            _workstationDailyReportEnabled = value;
+            OnPropertyChanged();
+            _ = _settingsService.SetAsync(SettingKeys.WorkstationDailyReportEnabled, value, CancellationToken.None);
+        }
+    }
 
     public DiagnosticsSnapshot? Diagnostics
     {
@@ -1227,6 +1387,19 @@ public sealed class SettingsViewModel : INotifyPropertyChanged
             FileName = path,
             UseShellExecute = true
         });
+    }
+
+    private void SetWorkstationTimeSetting(ref string field, string value, string key, [CallerMemberName] string? propertyName = null)
+    {
+        var normalized = string.IsNullOrWhiteSpace(value) ? "00:00" : value.Trim();
+        if (field == normalized)
+        {
+            return;
+        }
+
+        field = normalized;
+        OnPropertyChanged(propertyName);
+        _ = _settingsService.SetAsync(key, normalized, CancellationToken.None);
     }
 
     private void UpdateGestureSettingsSnapshot()

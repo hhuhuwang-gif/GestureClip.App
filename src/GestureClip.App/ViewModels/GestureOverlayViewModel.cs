@@ -6,11 +6,18 @@ namespace GestureClip.App.ViewModels;
 
 public sealed class GestureOverlayViewModel : INotifyPropertyChanged
 {
-    private string _directionText = "按住右键拖动";
+    private string _directionText = "右键";
     private string _pattern = "-";
     private string _actionName = "未绑定";
     private string _shortcutText = "暂无动作";
     private string _presetName = "";
+    private string _workStatusText = "低功耗运行期";
+    private string _offWorkCountdownText = "--";
+    private string _paydayCountdownText = "--";
+    private string _todayEarnedText = "￥0.00";
+    private string _todayFishingValueText = "￥0.00";
+    private string _efficiencyStatsText = "复制 0 · 粘贴 0 · 手势 0";
+    private string _savedClicksText = "少点了 0 次";
     private PointCollection _points = [];
     private System.Windows.Media.Brush _strokeBrush = new SolidColorBrush(System.Windows.Media.Color.FromRgb(140, 200, 255));
 
@@ -87,6 +94,111 @@ public sealed class GestureOverlayViewModel : INotifyPropertyChanged
             }
 
             _presetName = value;
+            OnPropertyChanged();
+        }
+    }
+
+    public string WorkStatusText
+    {
+        get => _workStatusText;
+        set
+        {
+            if (_workStatusText == value)
+            {
+                return;
+            }
+
+            _workStatusText = value;
+            OnPropertyChanged();
+        }
+    }
+
+    public string OffWorkCountdownText
+    {
+        get => _offWorkCountdownText;
+        set
+        {
+            if (_offWorkCountdownText == value)
+            {
+                return;
+            }
+
+            _offWorkCountdownText = value;
+            OnPropertyChanged();
+        }
+    }
+
+    public string PaydayCountdownText
+    {
+        get => _paydayCountdownText;
+        set
+        {
+            if (_paydayCountdownText == value)
+            {
+                return;
+            }
+
+            _paydayCountdownText = value;
+            OnPropertyChanged();
+        }
+    }
+
+    public string TodayEarnedText
+    {
+        get => _todayEarnedText;
+        set
+        {
+            if (_todayEarnedText == value)
+            {
+                return;
+            }
+
+            _todayEarnedText = value;
+            OnPropertyChanged();
+        }
+    }
+
+    public string TodayFishingValueText
+    {
+        get => _todayFishingValueText;
+        set
+        {
+            if (_todayFishingValueText == value)
+            {
+                return;
+            }
+
+            _todayFishingValueText = value;
+            OnPropertyChanged();
+        }
+    }
+
+    public string EfficiencyStatsText
+    {
+        get => _efficiencyStatsText;
+        set
+        {
+            if (_efficiencyStatsText == value)
+            {
+                return;
+            }
+
+            _efficiencyStatsText = value;
+            OnPropertyChanged();
+        }
+    }
+
+    public string SavedClicksText
+    {
+        get => _savedClicksText;
+        set
+        {
+            if (_savedClicksText == value)
+            {
+                return;
+            }
+
+            _savedClicksText = value;
             OnPropertyChanged();
         }
     }

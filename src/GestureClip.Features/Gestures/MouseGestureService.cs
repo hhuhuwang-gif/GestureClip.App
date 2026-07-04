@@ -19,6 +19,7 @@ public sealed class MouseGestureService : IMouseGestureService
     private readonly IGestureOverlayService _gestureOverlayService;
     private readonly IForegroundAppService _foregroundAppService;
     private readonly IAppBlacklistService _appBlacklistService;
+    private readonly IWorkstationDashboardService _workstationDashboardService;
     private readonly ILogger<MouseGestureService> _logger;
     private readonly object _syncRoot = new();
     private int _started;
@@ -50,6 +51,7 @@ public sealed class MouseGestureService : IMouseGestureService
         IGestureOverlayService gestureOverlayService,
         IForegroundAppService foregroundAppService,
         IAppBlacklistService appBlacklistService,
+        IWorkstationDashboardService workstationDashboardService,
         ILogger<MouseGestureService> logger)
     {
         _mouseHook = mouseHook;
@@ -62,6 +64,7 @@ public sealed class MouseGestureService : IMouseGestureService
         _gestureOverlayService = gestureOverlayService;
         _foregroundAppService = foregroundAppService;
         _appBlacklistService = appBlacklistService;
+        _workstationDashboardService = workstationDashboardService;
         _logger = logger;
         IsEnabled = !IsDisabledByEnvironment() && _settingsProvider.GetCurrent().Enabled;
     }
@@ -238,12 +241,6 @@ public sealed class MouseGestureService : IMouseGestureService
                 args.Suppress = true;
                 LogDebug(_activeSettings, "{Button}Down: x={X}, y={Y}", triggerButton, mouseEvent.X, mouseEvent.Y);
                 LogDebug(_activeSettings, "Suppressed original {Button} button", triggerButton);
-                if (_activeSettings.ShowOverlay)
-                {
-                    var hudInfo = _hudInfoProvider.GetInfo(_activeSettings.Preset, null);
-                    _ = _gestureOverlayService.ShowGestureStartAsync(_startPoint, hudInfo, CancellationToken.None);
-                }
-
                 return null;
 
             case MouseHookEventType.Move:
@@ -278,10 +275,15 @@ public sealed class MouseGestureService : IMouseGestureService
                 {
                     _state = GestureRuntimeState.GestureActive;
                     LogDebug(_activeSettings, "GestureActive entered");
+                    if (_activeSettings.ShowOverlay)
+                    {
+                        var startHudInfo = _hudInfoProvider.GetInfo(_activeSettings.Preset, null);
+                        _ = _gestureOverlayService.ShowGestureStartAsync(_startPoint, startHudInfo, CancellationToken.None);
+                    }
                 }
 
                 LogMoveDebug(_activeSettings, mouseEvent.X, mouseEvent.Y, distanceFromStart, _state);
-                if (_activeSettings.ShowOverlay && _state != GestureRuntimeState.Idle)
+                if (_activeSettings.ShowOverlay && _state == GestureRuntimeState.GestureActive)
                 {
                     var preview = _recognizer.Recognize(_points, _activeSettings.Options);
                     var previewPattern = NormalizePreviewPattern(preview.Pattern);
@@ -337,10 +339,16 @@ public sealed class MouseGestureService : IMouseGestureService
 
                 if (_state != GestureRuntimeState.GestureActive || IsExpired(mouseEvent.Time, _activeSettings))
                 {
+                    var expired = IsExpired(mouseEvent.Time, _activeSettings);
+                    var shouldHideOverlay = _state == GestureRuntimeState.GestureActive || expired;
                     var clickPoint = _startPoint ?? upPoint;
                     var clickButton = _activeTriggerButton;
-                    ResetState(IsExpired(mouseEvent.Time, _activeSettings) ? "TimeoutReset" : "StateReset");
-                    _ = _gestureOverlayService.HideAsync(CancellationToken.None);
+                    ResetState(expired ? "TimeoutReset" : "StateReset");
+                    if (shouldHideOverlay)
+                    {
+                        _ = _gestureOverlayService.HideAsync(CancellationToken.None);
+                    }
+
                     _ = Task.Run(() => SynthesizeClickAsync(clickButton, clickPoint.X, clickPoint.Y));
                     return null;
                 }
@@ -423,6 +431,7 @@ public sealed class MouseGestureService : IMouseGestureService
             }
 
             await _actionExecutor.ExecuteAsync(action, CancellationToken.None);
+            await _workstationDashboardService.RecordGestureAsync(DateTimeOffset.UtcNow, CancellationToken.None);
             LogDebug(settings, "Action Executed: {Action}", action);
         }
         catch (Exception ex)
