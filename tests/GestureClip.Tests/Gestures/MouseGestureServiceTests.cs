@@ -39,8 +39,25 @@ public sealed class MouseGestureServiceTests
 
         Assert.True(down.Suppress);
         Assert.True(up.Suppress);
-        Assert.Equal((3, 3), synthesizer.Clicks.Single());
+        Assert.Equal((0, 0), synthesizer.Clicks.Single());
         Assert.Empty(executor.Actions);
+    }
+
+    [Fact]
+    public async Task Right_click_without_threshold_synthesizes_click_at_original_down_position()
+    {
+        var hook = new FakeLowLevelMouseHook();
+        var synthesizer = new FakeRightClickSynthesizer();
+        var service = CreateService(hook, synthesizer: synthesizer, showOverlay: false);
+        await service.StartAsync(CancellationToken.None);
+
+        hook.Raise(MouseHookEventType.RightButtonDown, 100, 200);
+        hook.Raise(MouseHookEventType.Move, 104, 203);
+        var up = hook.Raise(MouseHookEventType.RightButtonUp, 106, 205);
+        await WaitForAsync(() => synthesizer.Clicks.Count == 1);
+
+        Assert.True(up.Suppress);
+        Assert.Equal((100, 200), synthesizer.Clicks.Single());
     }
 
     [Fact]
@@ -122,7 +139,7 @@ public sealed class MouseGestureServiceTests
 
         Assert.True(down.Suppress);
         Assert.True(up.Suppress);
-        Assert.Equal((GestureTriggerButton.XButton1, 12, 12), synthesizer.MouseClicks.Single());
+        Assert.Equal((GestureTriggerButton.XButton1, 10, 10), synthesizer.MouseClicks.Single());
     }
 
     [Fact]
@@ -235,7 +252,7 @@ public sealed class MouseGestureServiceTests
 
         Assert.True(down.Suppress);
         Assert.True(up.Suppress);
-        Assert.Equal((2, 2), synthesizer.Clicks.Single());
+        Assert.Equal((0, 0), synthesizer.Clicks.Single());
     }
 
     [Fact]
@@ -481,7 +498,7 @@ public sealed class MouseGestureServiceTests
         Assert.True(down.Suppress);
         Assert.True(up.Suppress);
         Assert.Equal(GestureRuntimeState.Idle, service.Diagnostics.State);
-        Assert.Equal((12, 12), synthesizer.Clicks.Single());
+        Assert.Equal((10, 10), synthesizer.Clicks.Single());
     }
 
     [Fact]
