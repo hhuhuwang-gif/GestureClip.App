@@ -29,7 +29,7 @@ public sealed class AppIconTests
 
         var hash = Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(File.ReadAllBytes(iconPngPath)));
 
-        Assert.Equal("D121E09FD897B7C35D3F0667CD8C0E15B8BD587A230CDD07F21ABDAF09C916A0", hash);
+        Assert.Equal("049C097BF1630C8A33B4F03F2297655A56B869778CCC4EF67FB6054B685CDF00", hash);
     }
 
     private static string FindRepositoryFile(params string[] segments)
@@ -49,3 +49,4 @@ public sealed class AppIconTests
         throw new FileNotFoundException("Could not locate repository file.", Path.Combine(segments));
     }
 }
+

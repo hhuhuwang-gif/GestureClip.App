@@ -65,6 +65,37 @@ ON CONFLICT(Date) DO UPDATE SET
             });
     }
 
+    public async Task IncrementCountersAsync(
+        DateOnly date,
+        int copyDelta,
+        int pasteDelta,
+        int gestureDelta,
+        int savedClicksDelta,
+        CancellationToken cancellationToken)
+    {
+        await using var connection = await _connectionFactory.OpenConnectionAsync(cancellationToken);
+        await connection.ExecuteAsync(
+            """
+INSERT INTO WorkdayStats
+    (Date, CopyCount, PasteCount, GestureCount, EstimatedSavedClicks, FishingMinutes, FishingStartedAt)
+VALUES
+    (@Date, @CopyDelta, @PasteDelta, @GestureDelta, @SavedClicksDelta, 0, NULL)
+ON CONFLICT(Date) DO UPDATE SET
+    CopyCount = CopyCount + excluded.CopyCount,
+    PasteCount = PasteCount + excluded.PasteCount,
+    GestureCount = GestureCount + excluded.GestureCount,
+    EstimatedSavedClicks = EstimatedSavedClicks + excluded.EstimatedSavedClicks;
+""",
+            new
+            {
+                Date = ToKey(date),
+                CopyDelta = copyDelta,
+                PasteDelta = pasteDelta,
+                GestureDelta = gestureDelta,
+                SavedClicksDelta = savedClicksDelta
+            });
+    }
+
     public Task ResetAsync(DateOnly date, CancellationToken cancellationToken)
     {
         return SaveAsync(new WorkstationDailyStats(date), cancellationToken);

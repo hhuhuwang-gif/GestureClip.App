@@ -47,6 +47,7 @@ public sealed class ClipboardServiceTests
 
         await service.CaptureTextAsync(Capture("normal"), CancellationToken.None);
 
+        await WaitForAsync(() => dashboard.CopyCount == 1);
         Assert.Equal(1, dashboard.CopyCount);
     }
 
@@ -64,8 +65,57 @@ public sealed class ClipboardServiceTests
         Assert.Equal("hello", writer.Text);
         Assert.True(writer.PasteHotkeySent);
         Assert.True(service.SuppressCaptureUntil > DateTimeOffset.UtcNow);
+        await WaitForAsync(() => repository.IncrementedId == item.Id && dashboard.PasteCount == 1);
         Assert.Equal(item.Id, repository.IncrementedId);
         Assert.Equal(1, dashboard.PasteCount);
+    }
+
+    [Fact]
+    public async Task PasteAsync_returns_after_clipboard_write_without_waiting_for_usage_stats()
+    {
+        var repository = new FakeClipboardRepository();
+        var releaseIncrement = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        repository.IncrementUseCountHandler = async (_, cancellationToken) =>
+        {
+            await releaseIncrement.Task.WaitAsync(cancellationToken);
+        };
+        var writer = new FakeClipboardWriter();
+        var service = CreateService(repository, writer: writer);
+        var item = Item("hello");
+
+        var pasteTask = service.PasteAsync(item, new PasteOptions(false), CancellationToken.None);
+        await WaitForAsync(() => writer.PasteHotkeySent);
+
+        var completedWithoutRepository = await Task.WhenAny(pasteTask, Task.Delay(100)) == pasteTask;
+        releaseIncrement.SetResult();
+        await pasteTask;
+
+        Assert.True(completedWithoutRepository);
+    }
+
+    [Fact]
+    public async Task PasteAsync_image_returns_after_clipboard_write_without_waiting_for_usage_stats()
+    {
+        var repository = new FakeClipboardRepository();
+        var releaseIncrement = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        repository.IncrementUseCountHandler = async (_, cancellationToken) =>
+        {
+            await releaseIncrement.Task.WaitAsync(cancellationToken);
+        };
+        var writer = new FakeClipboardWriter();
+        var service = CreateService(repository, writer: writer);
+        var now = DateTimeOffset.UtcNow;
+        var image = new ClipboardItem(Guid.NewGuid(), "image/png", "png-base64", "图片", "hash", null, "Test", "test.exe", false, false, false, 0, now, now, null);
+
+        var pasteTask = service.PasteAsync(image, new PasteOptions(false), CancellationToken.None);
+        await WaitForAsync(() => writer.PasteHotkeySent);
+
+        var completedWithoutRepository = await Task.WhenAny(pasteTask, Task.Delay(100)) == pasteTask;
+        releaseIncrement.SetResult();
+        await pasteTask;
+
+        Assert.True(completedWithoutRepository);
+        Assert.Equal("png-base64", writer.ImagePngBase64);
     }
 
     [Fact]
@@ -80,7 +130,32 @@ public sealed class ClipboardServiceTests
         await service.CopyItemsAsync([first, second], CancellationToken.None);
 
         Assert.Equal("hello\r\nworld", writer.Text);
+        await WaitForAsync(() => repository.IncrementedIds.Count == 2);
         Assert.Equal([first.Id, second.Id], repository.IncrementedIds);
+    }
+
+    [Fact]
+    public async Task CopyItemsAsync_returns_after_clipboard_write_without_waiting_for_usage_updates()
+    {
+        var repository = new FakeClipboardRepository();
+        var releaseIncrement = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        repository.IncrementUseCountHandler = async (_, cancellationToken) =>
+        {
+            await releaseIncrement.Task.WaitAsync(cancellationToken);
+        };
+        var writer = new FakeClipboardWriter();
+        var service = CreateService(repository, writer: writer);
+        var first = Item("hello");
+        var second = Item("world");
+
+        var copyTask = service.CopyItemsAsync([first, second], CancellationToken.None);
+        await WaitForAsync(() => writer.Text == "hello\r\nworld");
+
+        var completedWithoutUsage = await Task.WhenAny(copyTask, Task.Delay(100)) == copyTask;
+        releaseIncrement.SetResult();
+        await copyTask;
+
+        Assert.True(completedWithoutUsage);
     }
 
     [Fact]
@@ -95,6 +170,7 @@ public sealed class ClipboardServiceTests
         await service.CopyItemsAsync([image], CancellationToken.None);
 
         Assert.Equal("png-base64", writer.ImagePngBase64);
+        await WaitForAsync(() => repository.IncrementedIds.Count == 1);
         Assert.Equal([image.Id], repository.IncrementedIds);
     }
 
@@ -163,6 +239,60 @@ public sealed class ClipboardServiceTests
     }
 
     [Fact]
+    public async Task Clipboard_changed_events_are_processed_serially()
+    {
+        var repository = new FakeClipboardRepository();
+        var firstInsertStarted = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var releaseFirstInsert = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var secondInsertStarted = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var insertCount = 0;
+        repository.InsertHandler = async (_, cancellationToken) =>
+        {
+            if (Interlocked.Increment(ref insertCount) == 1)
+            {
+                firstInsertStarted.SetResult();
+                await releaseFirstInsert.Task.WaitAsync(cancellationToken);
+                return;
+            }
+
+            secondInsertStarted.SetResult();
+        };
+
+        var listener = new FakeClipboardListener();
+        var reader = new FakeClipboardTextReader();
+        reader.TextQueue.Enqueue("first");
+        reader.TextQueue.Enqueue("second");
+        var service = CreateService(repository, listener: listener, reader: reader);
+
+        await service.StartAsync(CancellationToken.None);
+        listener.Raise();
+        listener.Raise();
+        await firstInsertStarted.Task.WaitAsync(TimeSpan.FromSeconds(2));
+
+        var secondStartedBeforeFirstReleased = await Task.WhenAny(secondInsertStarted.Task, Task.Delay(100)) == secondInsertStarted.Task;
+        releaseFirstInsert.SetResult();
+        await WaitForAsync(() => repository.Items.Count == 2);
+
+        Assert.False(secondStartedBeforeFirstReleased);
+    }
+
+    [Fact]
+    public async Task Clipboard_perf_setting_is_not_reloaded_for_every_perf_event()
+    {
+        var repository = new FakeClipboardRepository();
+        var listener = new FakeClipboardListener();
+        var reader = new FakeClipboardTextReader { Text = "normal" };
+        var settings = new FakeSettingsService();
+        var service = CreateService(repository, listener: listener, reader: reader, settings: settings);
+
+        await service.StartAsync(CancellationToken.None);
+        listener.Raise();
+        await WaitForAsync(() => repository.Items.Count == 1);
+
+        Assert.True(settings.GetCount(SettingKeys.ClipboardPerfLogEnabled) <= 1);
+    }
+
+    [Fact]
     public async Task StartAsync_and_StopAsync_are_idempotent()
     {
         var repository = new FakeClipboardRepository();
@@ -217,6 +347,8 @@ public sealed class ClipboardServiceTests
         public string? BlockedProcessName { get; set; }
         public Guid? IncrementedId { get; private set; }
         public List<Guid> IncrementedIds { get; } = [];
+        public Func<ClipboardItem, CancellationToken, Task>? InsertHandler { get; set; }
+        public Func<Guid, CancellationToken, Task>? IncrementUseCountHandler { get; set; }
 
         public Task<ClipboardItem?> FindByHashAsync(string hash, CancellationToken cancellationToken)
         {
@@ -228,11 +360,15 @@ public sealed class ClipboardServiceTests
             return Task.FromResult(Items.OrderByDescending(item => item.CreatedAt).FirstOrDefault());
         }
 
-        public Task IncrementUseCountAsync(Guid id, CancellationToken cancellationToken)
+        public async Task IncrementUseCountAsync(Guid id, CancellationToken cancellationToken)
         {
+            if (IncrementUseCountHandler is not null)
+            {
+                await IncrementUseCountHandler(id, cancellationToken);
+            }
+
             IncrementedId = id;
             IncrementedIds.Add(id);
-            return Task.CompletedTask;
         }
 
         public Task<int> DeleteAsync(IReadOnlyList<Guid> ids, CancellationToken cancellationToken)
@@ -263,10 +399,14 @@ public sealed class ClipboardServiceTests
             return Task.CompletedTask;
         }
 
-        public Task InsertAsync(ClipboardItem item, CancellationToken cancellationToken)
+        public async Task InsertAsync(ClipboardItem item, CancellationToken cancellationToken)
         {
+            if (InsertHandler is not null)
+            {
+                await InsertHandler(item, cancellationToken);
+            }
+
             Items.Add(item);
-            return Task.CompletedTask;
         }
 
         public Task<bool> IsProcessBlockedAsync(string? processName, CancellationToken cancellationToken)
@@ -343,8 +483,9 @@ public sealed class ClipboardServiceTests
     {
         public string? Text { get; set; }
         public string? ImagePngBase64 { get; set; }
+        public Queue<string?> TextQueue { get; } = [];
 
-        public string? TryReadText() => Text;
+        public string? TryReadText() => TextQueue.TryDequeue(out var text) ? text : Text;
 
         public string? TryReadImagePngBase64() => ImagePngBase64;
     }
@@ -405,13 +546,17 @@ public sealed class ClipboardServiceTests
     private sealed class FakeSettingsService : ISettingsService
     {
         public Dictionary<string, object?> Values { get; } = [];
+        private readonly Dictionary<string, int> _getCounts = [];
 
         public T Get<T>(string key, T defaultValue)
         {
+            _getCounts[key] = _getCounts.TryGetValue(key, out var count) ? count + 1 : 1;
             return Values.TryGetValue(key, out var value) ? (T)value! : defaultValue;
         }
 
         public Task SetAsync<T>(string key, T value, CancellationToken cancellationToken) => Task.CompletedTask;
+
+        public int GetCount(string key) => _getCounts.TryGetValue(key, out var count) ? count : 0;
     }
 
     private sealed class FakeWorkstationDashboardService : IWorkstationDashboardService

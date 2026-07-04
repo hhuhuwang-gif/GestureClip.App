@@ -19,6 +19,8 @@ public sealed class ClipboardOverlayViewModel : INotifyPropertyChanged
     private int _selectedCount;
     private IReadOnlyList<ClipboardItem> _lastSearchResults = [];
     private ClipboardOverlayFilter _selectedFilter = ClipboardOverlayFilter.All;
+    private bool _isLoading;
+    private string? _errorMessage;
 
     public ClipboardOverlayViewModel(IClipboardService clipboardService, TimeSpan? searchDebounceDelay = null)
     {
@@ -150,6 +152,39 @@ public sealed class ClipboardOverlayViewModel : INotifyPropertyChanged
         }
     }
 
+    public bool IsLoading
+    {
+        get => _isLoading;
+        private set
+        {
+            if (_isLoading == value)
+            {
+                return;
+            }
+
+            _isLoading = value;
+            OnPropertyChanged();
+        }
+    }
+
+    public string? ErrorMessage
+    {
+        get => _errorMessage;
+        private set
+        {
+            if (_errorMessage == value)
+            {
+                return;
+            }
+
+            _errorMessage = value;
+            OnPropertyChanged();
+            OnPropertyChanged(nameof(HasError));
+        }
+    }
+
+    public bool HasError => !string.IsNullOrWhiteSpace(ErrorMessage);
+
     public async Task LoadAsync()
     {
         await SearchAsync();
@@ -197,11 +232,29 @@ public sealed class ClipboardOverlayViewModel : INotifyPropertyChanged
         IReadOnlyList<ClipboardItem> results;
         try
         {
-            results = await _clipboardService.SearchAsync(SearchText, 50, cancellationToken);
+            IsLoading = true;
+            ErrorMessage = null;
+            var keyword = SearchText;
+            results = await Task.Run(
+                () => _clipboardService.SearchAsync(keyword, 50, cancellationToken),
+                cancellationToken);
         }
         catch (OperationCanceledException)
         {
             return;
+        }
+        catch (Exception ex)
+        {
+            ErrorMessage = $"加载剪贴板历史失败：{ex.Message}";
+            StatusText = "加载失败";
+            return;
+        }
+        finally
+        {
+            if (version == Volatile.Read(ref _searchVersion))
+            {
+                IsLoading = false;
+            }
         }
 
         if (cancellationToken.IsCancellationRequested || version != Volatile.Read(ref _searchVersion))

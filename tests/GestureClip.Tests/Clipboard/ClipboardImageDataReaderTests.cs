@@ -42,6 +42,27 @@ public sealed class ClipboardImageDataReaderTests
         Assert.Equal(OnePixelPngBase64, base64);
     }
 
+    [Fact]
+    public void WpfClipboardTextReader_checks_image_formats_before_reading_heavy_data()
+    {
+        var sourcePath = Path.GetFullPath(Path.Combine(
+            AppContext.BaseDirectory,
+            "..",
+            "..",
+            "..",
+            "..",
+            "..",
+            "src",
+            "GestureClip.Infrastructure",
+            "Clipboard",
+            "WpfClipboardTextReader.cs"));
+        var source = File.ReadAllText(sourcePath);
+
+        Assert.Contains("Clipboard.ContainsData(\"PNG\")", source);
+        Assert.Contains("Clipboard.ContainsData(System.Windows.DataFormats.Dib)", source);
+        Assert.Contains("Clipboard.ContainsImage()", source);
+    }
+
     private const string OnePixelPngBase64 =
         "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+/p9sAAAAASUVORK5CYII=";
 }

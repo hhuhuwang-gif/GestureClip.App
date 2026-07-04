@@ -84,6 +84,34 @@ public sealed class ClipboardOverlayViewModelTests
         await WaitForAsync(() => service.SearchKeywords.Count == 1);
 
         Assert.Equal(["abc"], service.SearchKeywords);
+        Assert.Equal([50], service.SearchLimits);
+    }
+
+    [Fact]
+    public async Task LoadAsync_uses_default_limit_50()
+    {
+        var service = new FakeClipboardService([TextItem("first")]);
+        var viewModel = new ClipboardOverlayViewModel(service, TimeSpan.Zero);
+
+        await viewModel.LoadAsync();
+
+        Assert.Equal([50], service.SearchLimits);
+    }
+
+    [Fact]
+    public async Task LoadAsync_sets_error_message_when_search_fails()
+    {
+        var service = new FakeClipboardService([])
+        {
+            SearchHandler = (_, _, _) => throw new InvalidOperationException("database busy")
+        };
+        var viewModel = new ClipboardOverlayViewModel(service, TimeSpan.Zero);
+
+        await viewModel.LoadAsync();
+
+        Assert.True(viewModel.HasError);
+        Assert.Contains("database busy", viewModel.ErrorMessage);
+        Assert.Equal("加载失败", viewModel.StatusText);
     }
 
     [Fact]
@@ -93,7 +121,7 @@ public sealed class ClipboardOverlayViewModelTests
         var newItem = TextItem("new");
         var service = new FakeClipboardService([])
         {
-            SearchHandler = async (keyword, cancellationToken) =>
+            SearchHandler = async (keyword, _, cancellationToken) =>
             {
                 if (keyword == "old")
                 {
@@ -289,13 +317,15 @@ public sealed class ClipboardOverlayViewModelTests
 
         public List<string> SearchKeywords { get; } = [];
 
+        public List<int> SearchLimits { get; } = [];
+
         public List<Guid> DeletedIds { get; } = [];
 
         public List<(Guid Id, bool IsPinned)> PinnedUpdates { get; } = [];
 
         public List<(Guid Id, bool IsFavorite)> FavoriteUpdates { get; } = [];
 
-        public Func<string, CancellationToken, Task<IReadOnlyList<ClipboardItem>>>? SearchHandler { get; set; }
+        public Func<string, int, CancellationToken, Task<IReadOnlyList<ClipboardItem>>>? SearchHandler { get; set; }
 
         public DateTimeOffset? SuppressCaptureUntil => null;
 
@@ -312,6 +342,7 @@ public sealed class ClipboardOverlayViewModelTests
         public Task<IReadOnlyList<ClipboardItem>> SearchAsync(string keyword, int limit, CancellationToken cancellationToken)
         {
             SearchKeywords.Add(keyword);
+            SearchLimits.Add(limit);
             var visibleItems = _items.Where(item => !DeletedIds.Contains(item.Id))
                 .Select(item =>
                 {
@@ -330,7 +361,7 @@ public sealed class ClipboardOverlayViewModelTests
 
             return SearchHandler is null
                 ? Task.FromResult<IReadOnlyList<ClipboardItem>>(visibleItems)
-                : SearchHandler(keyword, cancellationToken);
+                : SearchHandler(keyword, limit, cancellationToken);
         }
 
         public Task<ClipboardItem?> GetLatestAsync(CancellationToken cancellationToken) => Task.FromResult<ClipboardItem?>(null);

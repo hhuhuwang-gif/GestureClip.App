@@ -42,9 +42,14 @@ INSERT INTO ClipboardItems (
     Id, ContentType, TextContent, PreviewText, Hash, PlainTextHash, SourceApp, SourceProcess,
     IsPinned, IsFavorite, IsSensitive, UseCount, CreatedAt, UpdatedAt, LastUsedAt
 )
-VALUES (
+SELECT
     @Id, @ContentType, @TextContent, @PreviewText, @Hash, @PlainTextHash, @SourceApp, @SourceProcess,
     @IsPinned, @IsFavorite, @IsSensitive, @UseCount, @CreatedAt, @UpdatedAt, @LastUsedAt
+WHERE NOT EXISTS (
+    SELECT 1
+    FROM ClipboardItems
+    WHERE Hash = @Hash
+    LIMIT 1
 );
 """,
             ToRow(item));
@@ -57,21 +62,35 @@ VALUES (
         var safeLimit = Math.Clamp(limit, 1, 200);
         var normalizedKeyword = keyword.Trim();
 
+        if (normalizedKeyword.Length == 0)
+        {
+            var recent = await connection.QueryAsync<ClipboardItemRow>(
+                """
+SELECT
+    Id, ContentType, TextContent, PreviewText, Hash, PlainTextHash, SourceApp, SourceProcess,
+    IsPinned, IsFavorite, IsSensitive, UseCount, CreatedAt, UpdatedAt, LastUsedAt
+FROM ClipboardItems
+ORDER BY IsPinned DESC, CreatedAt DESC
+LIMIT @Limit;
+""",
+                new { Limit = safeLimit });
+
+            return recent.Select(row => row.ToModel()).ToArray();
+        }
+
         var results = await connection.QueryAsync<ClipboardItemRow>(
             """
 SELECT
     Id, ContentType, TextContent, PreviewText, Hash, PlainTextHash, SourceApp, SourceProcess,
     IsPinned, IsFavorite, IsSensitive, UseCount, CreatedAt, UpdatedAt, LastUsedAt
 FROM ClipboardItems
-WHERE @Keyword = ''
-   OR (ContentType = 'text' AND (TextContent LIKE @LikeKeyword OR PreviewText LIKE @LikeKeyword))
+WHERE (ContentType = 'text' AND (TextContent LIKE @LikeKeyword OR PreviewText LIKE @LikeKeyword))
    OR (ContentType <> 'text' AND PreviewText LIKE @LikeKeyword)
 ORDER BY IsPinned DESC, CreatedAt DESC
 LIMIT @Limit;
 """,
             new
             {
-                Keyword = normalizedKeyword,
                 LikeKeyword = $"%{EscapeLikeValue(normalizedKeyword)}%",
                 Limit = safeLimit
             });

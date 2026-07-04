@@ -8,5 +8,13 @@ public interface IWorkstationStatsRepository
 
     Task SaveAsync(WorkstationDailyStats stats, CancellationToken cancellationToken);
 
+    Task IncrementCountersAsync(
+        DateOnly date,
+        int copyDelta,
+        int pasteDelta,
+        int gestureDelta,
+        int savedClicksDelta,
+        CancellationToken cancellationToken);
+
     Task ResetAsync(DateOnly date, CancellationToken cancellationToken);
 }

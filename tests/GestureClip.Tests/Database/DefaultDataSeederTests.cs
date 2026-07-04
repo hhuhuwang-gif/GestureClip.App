@@ -33,6 +33,7 @@ public sealed class DefaultDataSeederTests
         var maxItems = await connection.ExecuteScalarAsync<string>("SELECT Value FROM Settings WHERE Key = 'Clipboard.MaxItems';");
         var retentionDays = await connection.ExecuteScalarAsync<string>("SELECT Value FROM Settings WHERE Key = 'Clipboard.RetentionDays';");
         var maxImageBytes = await connection.ExecuteScalarAsync<string>("SELECT Value FROM Settings WHERE Key = 'Clipboard.MaxImageBytes';");
+        var perfLogEnabled = await connection.ExecuteScalarAsync<string>("SELECT Value FROM Settings WHERE Key = 'Clipboard.PerfLogEnabled';");
         var hotkey = await connection.ExecuteScalarAsync<string>("SELECT Value FROM Settings WHERE Key = 'Hotkey.OpenClipboardOverlay.Key';");
         var edgeEnabled = await connection.ExecuteScalarAsync<string>("SELECT Value FROM Settings WHERE Key = 'EdgeTrigger.Enabled';");
         var middleEnabled = await connection.ExecuteScalarAsync<string>("SELECT Value FROM Settings WHERE Key = 'Gesture.Trigger.MiddleButton.Enabled';");
@@ -58,12 +59,13 @@ public sealed class DefaultDataSeederTests
         var funText = await connection.ExecuteScalarAsync<string>("SELECT Value FROM Settings WHERE Key = 'Hud.FunTextEnabled';");
         var statusLevel = await connection.ExecuteScalarAsync<string>("SELECT Value FROM Settings WHERE Key = 'Hud.StatusLevelEnabled';");
 
-        Assert.Equal(65, settingCount);
+        Assert.Equal(66, settingCount);
         Assert.Equal(7, blacklistCount);
         Assert.Equal(6, gestureCount);
         Assert.Equal("1000", maxItems);
         Assert.Equal("30", retentionDays);
         Assert.Equal("5242880", maxImageBytes);
+        Assert.Equal("false", perfLogEnabled);
         Assert.Equal("\"Ctrl + `\"", hotkey);
         Assert.Equal("true", middleEnabled);
         Assert.Equal("true", x1Enabled);

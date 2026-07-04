@@ -29,6 +29,7 @@ public sealed class SqliteConnectionFactory : ISqliteConnectionFactory
         try
         {
             await ExecutePragmaAsync(connection, "PRAGMA foreign_keys = ON;", cancellationToken);
+            await ExecutePragmaAsync(connection, "PRAGMA busy_timeout = 5000;", cancellationToken);
             await ExecutePragmaAsync(connection, "PRAGMA journal_mode = WAL;", cancellationToken);
             await ExecutePragmaAsync(connection, "PRAGMA synchronous = NORMAL;", cancellationToken);
         }

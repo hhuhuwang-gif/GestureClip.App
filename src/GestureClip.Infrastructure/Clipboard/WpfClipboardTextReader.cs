@@ -63,6 +63,11 @@ public sealed class WpfClipboardTextReader : IClipboardTextReader
     {
         try
         {
+            if (!System.Windows.Clipboard.ContainsData("PNG"))
+            {
+                return null;
+            }
+
             var data = System.Windows.Clipboard.GetData("PNG");
             return ClipboardImageDataReader.TryGetPngBase64(data);
         }
@@ -77,6 +82,11 @@ public sealed class WpfClipboardTextReader : IClipboardTextReader
     {
         try
         {
+            if (!System.Windows.Clipboard.ContainsData(System.Windows.DataFormats.Dib))
+            {
+                return null;
+            }
+
             var data = System.Windows.Clipboard.GetData(System.Windows.DataFormats.Dib);
             return ClipboardImageDataReader.TryEncodeDibAsPngBase64(data);
         }

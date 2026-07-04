@@ -172,6 +172,29 @@ public sealed class WorkstationDashboardServiceTests
             return Task.CompletedTask;
         }
 
+        public Task IncrementCountersAsync(
+            DateOnly date,
+            int copyDelta,
+            int pasteDelta,
+            int gestureDelta,
+            int savedClicksDelta,
+            CancellationToken cancellationToken)
+        {
+            if (Current.Date != date)
+            {
+                Current = new WorkstationDailyStats(date);
+            }
+
+            Current = Current with
+            {
+                CopyCount = Current.CopyCount + copyDelta,
+                PasteCount = Current.PasteCount + pasteDelta,
+                GestureCount = Current.GestureCount + gestureDelta,
+                EstimatedSavedClicks = Current.EstimatedSavedClicks + savedClicksDelta
+            };
+            return Task.CompletedTask;
+        }
+
         public Task ResetAsync(DateOnly date, CancellationToken cancellationToken)
         {
             Current = new WorkstationDailyStats(date);

@@ -99,8 +99,13 @@ public sealed class WorkstationDashboardService : IWorkstationDashboardService
             return;
         }
 
-        var stats = await _statsRepository.GetOrCreateAsync(DateOnly.FromDateTime(now.Date), cancellationToken);
-        await _statsRepository.SaveAsync(stats with { CopyCount = stats.CopyCount + 1 }, cancellationToken);
+        await _statsRepository.IncrementCountersAsync(
+            DateOnly.FromDateTime(now.Date),
+            copyDelta: 1,
+            pasteDelta: 0,
+            gestureDelta: 0,
+            savedClicksDelta: 0,
+            cancellationToken);
     }
 
     public async Task RecordPasteAsync(DateTimeOffset now, CancellationToken cancellationToken)
@@ -110,8 +115,13 @@ public sealed class WorkstationDashboardService : IWorkstationDashboardService
             return;
         }
 
-        var stats = await _statsRepository.GetOrCreateAsync(DateOnly.FromDateTime(now.Date), cancellationToken);
-        await _statsRepository.SaveAsync(stats with { PasteCount = stats.PasteCount + 1 }, cancellationToken);
+        await _statsRepository.IncrementCountersAsync(
+            DateOnly.FromDateTime(now.Date),
+            copyDelta: 0,
+            pasteDelta: 1,
+            gestureDelta: 0,
+            savedClicksDelta: 0,
+            cancellationToken);
     }
 
     public async Task RecordGestureAsync(DateTimeOffset now, CancellationToken cancellationToken)
@@ -121,12 +131,13 @@ public sealed class WorkstationDashboardService : IWorkstationDashboardService
             return;
         }
 
-        var stats = await _statsRepository.GetOrCreateAsync(DateOnly.FromDateTime(now.Date), cancellationToken);
-        await _statsRepository.SaveAsync(stats with
-        {
-            GestureCount = stats.GestureCount + 1,
-            EstimatedSavedClicks = stats.EstimatedSavedClicks + SavedClicksPerGesture
-        }, cancellationToken);
+        await _statsRepository.IncrementCountersAsync(
+            DateOnly.FromDateTime(now.Date),
+            copyDelta: 0,
+            pasteDelta: 0,
+            gestureDelta: 1,
+            savedClicksDelta: SavedClicksPerGesture,
+            cancellationToken);
     }
 
     private bool IsEnabled()

@@ -55,5 +55,30 @@ public sealed class SqlMigrationRunnerTests
         Assert.Equal(0, applied);
         Assert.Equal(0, brokenTable);
     }
+
+    [Fact]
+    public async Task ClipboardPerformanceMigration_creates_last_used_index()
+    {
+        await using var connection = new SqliteConnection("Data Source=:memory:");
+        await connection.OpenAsync();
+
+        var runner = new SqlMigrationRunner(NullLogger<SqlMigrationRunner>.Instance);
+
+        await runner.RunAsync(connection, new[]
+        {
+            new SqlMigration(1, "initial", InitialMigration.Sql),
+            new SqlMigration(3, "clipboard_performance_indexes", ClipboardPerformanceMigration.Sql)
+        }, CancellationToken.None);
+
+        var indexCount = await connection.ExecuteScalarAsync<int>(
+            """
+SELECT COUNT(*)
+FROM sqlite_master
+WHERE type = 'index'
+  AND name = 'IX_ClipboardItems_LastUsedAt';
+""");
+
+        Assert.Equal(1, indexCount);
+    }
 }
 

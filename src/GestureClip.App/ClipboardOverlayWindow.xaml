@@ -201,12 +201,6 @@
                                                 </DrawingBrush.Drawing>
                                             </DrawingBrush>
                                         </Border.Background>
-                                        <Border.Effect>
-                                            <DropShadowEffect Color="#9AA8BA"
-                                                              BlurRadius="12"
-                                                              ShadowDepth="1"
-                                                              Opacity="0.22" />
-                                        </Border.Effect>
                                         <Grid>
                                             <TextBlock Text="图片缩略图"
                                                        Foreground="#7C8596"
@@ -573,6 +567,33 @@
                             </WrapPanel>
                         </StackPanel>
                     </Grid>
+                </Border>
+
+                <Border Grid.ColumnSpan="2"
+                        Panel.ZIndex="10"
+                        HorizontalAlignment="Center"
+                        VerticalAlignment="Top"
+                        Margin="0,16,0,0"
+                        Padding="14,8"
+                        CornerRadius="14"
+                        Background="#EEFFFFFF"
+                        BorderBrush="#22111827"
+                        BorderThickness="1"
+                        IsHitTestVisible="False">
+                    <Border.Style>
+                        <Style TargetType="Border">
+                            <Setter Property="Visibility" Value="Collapsed" />
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding IsLoading}" Value="True">
+                                    <Setter Property="Visibility" Value="Visible" />
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </Border.Style>
+                    <TextBlock Text="正在加载剪贴板历史…"
+                               FontSize="12"
+                               FontWeight="SemiBold"
+                               Foreground="{DynamicResource BrushTextSecondary}" />
                 </Border>
             </Grid>
 

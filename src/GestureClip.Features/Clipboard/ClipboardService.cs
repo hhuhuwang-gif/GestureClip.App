@@ -1,3 +1,5 @@
+using System.Diagnostics;
+using System.Threading.Channels;
 using GestureClip.Core.Abstractions;
 using GestureClip.Core.Clipboard;
 using GestureClip.Core.Settings;
@@ -23,6 +25,10 @@ public sealed class ClipboardService : IClipboardService
     private readonly IWorkstationDashboardService _workstationDashboardService;
     private readonly ILogger<ClipboardService> _logger;
     private int _started;
+    private Channel<ClipboardChangedEventArgs>? _captureQueue;
+    private CancellationTokenSource? _queueCancellation;
+    private Task? _queueTask;
+    private readonly bool _perfLogEnabled;
 
     public ClipboardService(
         IClipboardListener clipboardListener,
@@ -49,6 +55,8 @@ public sealed class ClipboardService : IClipboardService
         _workstationDashboardService = workstationDashboardService;
         _logger = logger;
         IsCaptureEnabled = _settingsService.Get(SettingKeys.ClipboardCaptureEnabled, true);
+        _perfLogEnabled = _settingsService.Get(SettingKeys.ClipboardPerfLogEnabled, false) ||
+            _settingsService.Get(SettingKeys.GestureDebugEnabled, false);
     }
 
     public bool IsCaptureEnabled { get; private set; }
@@ -62,6 +70,14 @@ public sealed class ClipboardService : IClipboardService
             return Task.CompletedTask;
         }
 
+        _queueCancellation = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+        _captureQueue = Channel.CreateBounded<ClipboardChangedEventArgs>(new BoundedChannelOptions(128)
+        {
+            SingleReader = true,
+            SingleWriter = false,
+            FullMode = BoundedChannelFullMode.DropOldest
+        });
+        _queueTask = Task.Run(() => ProcessClipboardQueueAsync(_queueCancellation.Token), CancellationToken.None);
         _clipboardListener.ClipboardChanged += OnClipboardChanged;
         try
         {
@@ -71,6 +87,8 @@ public sealed class ClipboardService : IClipboardService
         catch
         {
             _clipboardListener.ClipboardChanged -= OnClipboardChanged;
+            _captureQueue.Writer.TryComplete();
+            _queueCancellation.Cancel();
             Interlocked.Exchange(ref _started, 0);
             throw;
         }
@@ -78,17 +96,37 @@ public sealed class ClipboardService : IClipboardService
         return Task.CompletedTask;
     }
 
-    public Task StopAsync(CancellationToken cancellationToken)
+    public async Task StopAsync(CancellationToken cancellationToken)
     {
         if (Interlocked.Exchange(ref _started, 0) == 0)
         {
-            return Task.CompletedTask;
+            return;
         }
 
         _clipboardListener.ClipboardChanged -= OnClipboardChanged;
         _clipboardListener.Stop();
+        _captureQueue?.Writer.TryComplete();
+        _queueCancellation?.Cancel();
+        if (_queueTask is not null)
+        {
+            try
+            {
+                await _queueTask.WaitAsync(TimeSpan.FromSeconds(1), cancellationToken);
+            }
+            catch (OperationCanceledException)
+            {
+            }
+            catch (TimeoutException)
+            {
+                _logger.LogWarning("Clipboard capture queue did not stop within timeout.");
+            }
+        }
+
+        _queueCancellation?.Dispose();
+        _queueCancellation = null;
+        _captureQueue = null;
+        _queueTask = null;
         _logger.LogInformation("Clipboard text history service stopped.");
-        return Task.CompletedTask;
     }
 
     public async Task SetCaptureEnabledAsync(bool enabled, CancellationToken cancellationToken)
@@ -129,8 +167,16 @@ public sealed class ClipboardService : IClipboardService
             return;
         }
 
+        var hashWatch = Stopwatch.StartNew();
         var hash = _clipboardHashService.ComputeHash(capture.Text);
+        var plainTextHash = _clipboardHashService.ComputePlainTextHash(capture.Text);
+        hashWatch.Stop();
+        LogPerf("HashMs", hashWatch.ElapsedMilliseconds, ("ContentType", "text"));
+
+        var dedupWatch = Stopwatch.StartNew();
         var existing = await _clipboardRepository.FindByHashAsync(hash, cancellationToken);
+        dedupWatch.Stop();
+        LogPerf("DedupQueryMs", dedupWatch.ElapsedMilliseconds, ("ContentType", "text"));
         if (existing is not null)
         {
             _logger.LogInformation("Clipboard capture skipped: duplicate hash.");
@@ -151,7 +197,7 @@ public sealed class ClipboardService : IClipboardService
             capture.Text,
             CreatePreview(capture.Text),
             hash,
-            _clipboardHashService.ComputePlainTextHash(capture.Text),
+            plainTextHash,
             capture.SourceApp,
             capture.SourceProcess,
             false,
@@ -162,14 +208,21 @@ public sealed class ClipboardService : IClipboardService
             now,
             null);
 
+        var insertWatch = Stopwatch.StartNew();
         await _clipboardRepository.InsertAsync(item, cancellationToken);
-        await _workstationDashboardService.RecordCopyAsync(now, cancellationToken);
+        insertWatch.Stop();
+        LogPerf("InsertMs", insertWatch.ElapsedMilliseconds, ("ContentType", "text"));
+        RecordCopyInBackground(now);
         _logger.LogInformation("Clipboard text item captured.");
     }
 
-    public Task<IReadOnlyList<ClipboardItem>> SearchAsync(string keyword, int limit, CancellationToken cancellationToken)
+    public async Task<IReadOnlyList<ClipboardItem>> SearchAsync(string keyword, int limit, CancellationToken cancellationToken)
     {
-        return _clipboardRepository.SearchAsync(keyword, limit, cancellationToken);
+        var watch = Stopwatch.StartNew();
+        var results = await _clipboardRepository.SearchAsync(keyword, limit, cancellationToken);
+        watch.Stop();
+        LogPerf("SearchMs", watch.ElapsedMilliseconds, ("ResultCount", results.Count));
+        return results;
     }
 
     public Task<ClipboardItem?> GetLatestAsync(CancellationToken cancellationToken)
@@ -179,11 +232,20 @@ public sealed class ClipboardService : IClipboardService
 
     public async Task PasteAsync(ClipboardItem item, PasteOptions options, CancellationToken cancellationToken)
     {
+        var pasteWatch = Stopwatch.StartNew();
         if (item.ContentType == "image/png")
         {
-            await CopyItemsAsync([item], cancellationToken);
+            if (string.IsNullOrWhiteSpace(item.TextContent))
+            {
+                return;
+            }
+
+            SuppressCaptureFor(TimeSpan.FromMilliseconds(1000));
+            await _clipboardWriter.SetImagePngBase64Async(item.TextContent, cancellationToken);
             await _clipboardWriter.SendPasteHotkeyAsync(cancellationToken);
-            await _workstationDashboardService.RecordPasteAsync(DateTimeOffset.UtcNow, cancellationToken);
+            RecordPasteUsageInBackground(item.Id, DateTimeOffset.UtcNow);
+            pasteWatch.Stop();
+            LogPerf("PasteMs", pasteWatch.ElapsedMilliseconds, ("ContentType", "image/png"));
             return;
         }
 
@@ -195,8 +257,9 @@ public sealed class ClipboardService : IClipboardService
         SuppressCaptureFor(TimeSpan.FromMilliseconds(1000));
         await _clipboardWriter.SetTextAsync(item.TextContent, cancellationToken);
         await _clipboardWriter.SendPasteHotkeyAsync(cancellationToken);
-        await _clipboardRepository.IncrementUseCountAsync(item.Id, cancellationToken);
-        await _workstationDashboardService.RecordPasteAsync(DateTimeOffset.UtcNow, cancellationToken);
+        RecordPasteUsageInBackground(item.Id, DateTimeOffset.UtcNow);
+        pasteWatch.Stop();
+        LogPerf("PasteMs", pasteWatch.ElapsedMilliseconds, ("ContentType", "text"));
         _logger.LogInformation("Clipboard text item pasted.");
     }
 
@@ -229,7 +292,7 @@ public sealed class ClipboardService : IClipboardService
             }
 
             await _clipboardWriter.SetImagePngBase64Async(image.TextContent, cancellationToken);
-            await _clipboardRepository.IncrementUseCountAsync(image.Id, cancellationToken);
+            RecordUseCountInBackground([image.Id]);
             _logger.LogInformation("Clipboard image item copied.");
             return;
         }
@@ -241,10 +304,7 @@ public sealed class ClipboardService : IClipboardService
         }
 
         await _clipboardWriter.SetTextAsync(text, cancellationToken);
-        foreach (var item in items)
-        {
-            await _clipboardRepository.IncrementUseCountAsync(item.Id, cancellationToken);
-        }
+        RecordUseCountInBackground(items.Select(item => item.Id).ToArray());
 
         _logger.LogInformation("Clipboard text items copied. Count={ClipboardItemCount}", items.Count);
     }
@@ -270,21 +330,62 @@ public sealed class ClipboardService : IClipboardService
 
     private void OnClipboardChanged(object? sender, ClipboardChangedEventArgs e)
     {
-        _ = HandleClipboardChangedAsync(e);
+        LogPerf("ListenerReceived", 0);
+        if (_captureQueue is { } queue && queue.Writer.TryWrite(e))
+        {
+            return;
+        }
+
+        _logger.LogDebug("Clipboard capture queue unavailable or full; clipboard event dropped.");
+    }
+
+    private async Task ProcessClipboardQueueAsync(CancellationToken cancellationToken)
+    {
+        var reader = _captureQueue?.Reader;
+        if (reader is null)
+        {
+            return;
+        }
+
+        try
+        {
+            await foreach (var item in reader.ReadAllAsync(cancellationToken))
+            {
+                await HandleClipboardChangedAsync(item, cancellationToken);
+            }
+        }
+        catch (OperationCanceledException)
+        {
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Clipboard capture queue stopped unexpectedly.");
+        }
     }
 
     private async Task HandleClipboardChangedAsync(ClipboardChangedEventArgs e)
     {
+        await HandleClipboardChangedAsync(e, CancellationToken.None);
+    }
+
+    private async Task HandleClipboardChangedAsync(ClipboardChangedEventArgs e, CancellationToken cancellationToken)
+    {
         try
         {
+            var imageWatch = Stopwatch.StartNew();
             var imagePngBase64 = _clipboardTextReader.TryReadImagePngBase64();
+            imageWatch.Stop();
+            LogPerf("ImageReadMs", imageWatch.ElapsedMilliseconds, ("HasImage", imagePngBase64 is not null));
             if (imagePngBase64 is not null)
             {
-                await CaptureImageAsync(imagePngBase64, e.ChangedAt, CancellationToken.None);
+                await CaptureImageAsync(imagePngBase64, e.ChangedAt, cancellationToken);
                 return;
             }
 
+            var textWatch = Stopwatch.StartNew();
             var text = _clipboardTextReader.TryReadText();
+            textWatch.Stop();
+            LogPerf("TextReadMs", textWatch.ElapsedMilliseconds, ("HasText", text is not null));
             if (text is null)
             {
                 return;
@@ -293,7 +394,10 @@ public sealed class ClipboardService : IClipboardService
             var foreground = _foregroundAppService.GetCurrent();
             await CaptureTextAsync(
                 new ClipboardCapture(text, foreground.WindowTitle, foreground.ProcessName, e.ChangedAt),
-                CancellationToken.None);
+                cancellationToken);
+        }
+        catch (OperationCanceledException)
+        {
         }
         catch (Exception ex)
         {
@@ -333,14 +437,23 @@ public sealed class ClipboardService : IClipboardService
             return;
         }
 
+        var hashWatch = Stopwatch.StartNew();
         var hash = _clipboardHashService.ComputeHash(pngBase64);
-        if (await _clipboardRepository.FindByHashAsync(hash, cancellationToken) is not null)
+        hashWatch.Stop();
+        LogPerf("HashMs", hashWatch.ElapsedMilliseconds, ("ContentType", "image/png"));
+
+        var dedupWatch = Stopwatch.StartNew();
+        var duplicate = await _clipboardRepository.FindByHashAsync(hash, cancellationToken);
+        dedupWatch.Stop();
+        LogPerf("DedupQueryMs", dedupWatch.ElapsedMilliseconds, ("ContentType", "image/png"));
+        if (duplicate is not null)
         {
             _logger.LogInformation("Clipboard image capture skipped: duplicate hash.");
             return;
         }
 
         var now = DateTimeOffset.UtcNow;
+        var insertWatch = Stopwatch.StartNew();
         await _clipboardRepository.InsertAsync(
             new ClipboardItem(
                 Guid.NewGuid(),
@@ -359,8 +472,92 @@ public sealed class ClipboardService : IClipboardService
                 now,
                 null),
             cancellationToken);
-        await _workstationDashboardService.RecordCopyAsync(now, cancellationToken);
+        insertWatch.Stop();
+        LogPerf("InsertMs", insertWatch.ElapsedMilliseconds, ("ContentType", "image/png"));
+        RecordCopyInBackground(now);
         _logger.LogInformation("Clipboard image item captured.");
+    }
+
+    private void RecordCopyInBackground(DateTimeOffset now)
+    {
+        _ = Task.Run(async () =>
+        {
+            try
+            {
+                await _workstationDashboardService.RecordCopyAsync(now, CancellationToken.None);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogDebug(ex, "Clipboard copy stats recording failed.");
+            }
+        });
+    }
+
+    private void RecordPasteUsageInBackground(Guid itemId, DateTimeOffset now)
+    {
+        _ = Task.Run(async () =>
+        {
+            try
+            {
+                await _clipboardRepository.IncrementUseCountAsync(itemId, CancellationToken.None);
+                await _workstationDashboardService.RecordPasteAsync(now, CancellationToken.None);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogDebug(ex, "Clipboard paste usage recording failed.");
+            }
+        });
+    }
+
+    private void RecordUseCountInBackground(IReadOnlyList<Guid> itemIds)
+    {
+        _ = Task.Run(async () =>
+        {
+            try
+            {
+                foreach (var itemId in itemIds)
+                {
+                    await _clipboardRepository.IncrementUseCountAsync(itemId, CancellationToken.None);
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogDebug(ex, "Clipboard use count recording failed.");
+            }
+        });
+    }
+
+    private void RecordPasteStatsInBackground(DateTimeOffset now)
+    {
+        _ = Task.Run(async () =>
+        {
+            try
+            {
+                await _workstationDashboardService.RecordPasteAsync(now, CancellationToken.None);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogDebug(ex, "Clipboard paste stats recording failed.");
+            }
+        });
+    }
+
+    private bool IsPerfLogEnabled()
+    {
+        return _perfLogEnabled;
+    }
+
+    private void LogPerf(string eventName, long elapsedMs, params (string Key, object? Value)[] values)
+    {
+        if (!IsPerfLogEnabled())
+        {
+            return;
+        }
+
+        var details = values.Length == 0
+            ? string.Empty
+            : " " + string.Join(" ", values.Select(value => $"{value.Key}={value.Value}"));
+        _logger.LogInformation("ClipboardPerf {EventName} ElapsedMs={ElapsedMs}{Details}", eventName, elapsedMs, details);
     }
 
     private int GetMaxImageBytes()

@@ -43,6 +43,24 @@ public sealed class WorkstationStatsRepositoryTests
     }
 
     [Fact]
+    public async Task IncrementCountersAsync_updates_counts_with_single_atomic_operation()
+    {
+        using var database = await TestDatabase.CreateAsync();
+        var repository = new WorkstationStatsRepository(database.ConnectionFactory);
+        var date = new DateOnly(2026, 7, 6);
+
+        await repository.IncrementCountersAsync(date, copyDelta: 1, pasteDelta: 0, gestureDelta: 0, savedClicksDelta: 0, CancellationToken.None);
+        await repository.IncrementCountersAsync(date, copyDelta: 0, pasteDelta: 1, gestureDelta: 0, savedClicksDelta: 0, CancellationToken.None);
+        await repository.IncrementCountersAsync(date, copyDelta: 0, pasteDelta: 0, gestureDelta: 1, savedClicksDelta: 3, CancellationToken.None);
+        var stored = await repository.GetOrCreateAsync(date, CancellationToken.None);
+
+        Assert.Equal(1, stored.CopyCount);
+        Assert.Equal(1, stored.PasteCount);
+        Assert.Equal(1, stored.GestureCount);
+        Assert.Equal(3, stored.EstimatedSavedClicks);
+    }
+
+    [Fact]
     public async Task ResetAsync_clears_existing_row()
     {
         using var database = await TestDatabase.CreateAsync();

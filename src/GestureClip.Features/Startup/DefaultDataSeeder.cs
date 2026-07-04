@@ -27,6 +27,7 @@ public sealed class DefaultDataSeeder
         await SeedSettingAsync(connection, SettingKeys.ClipboardMaxItems, "1000", "int", now);
         await SeedSettingAsync(connection, SettingKeys.ClipboardRetentionDays, "30", "int", now);
         await SeedSettingAsync(connection, SettingKeys.ClipboardMaxImageBytes, "5242880", "int", now);
+        await SeedSettingAsync(connection, SettingKeys.ClipboardPerfLogEnabled, "false", "bool", now);
         await SeedSettingAsync(connection, SettingKeys.HotkeyOpenClipboardOverlayEnabled, "true", "bool", now);
         await SeedSettingAsync(connection, SettingKeys.HotkeyOpenClipboardOverlayKey, "\"Ctrl + `\"", "string", now);
         await MigrateOldDefaultHotkeyAsync(connection, now);

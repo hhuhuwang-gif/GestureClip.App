@@ -11,6 +11,17 @@ namespace GestureClip.Tests.Clipboard;
 public sealed class ClipboardRepositoryTests
 {
     [Fact]
+    public async Task ConnectionFactory_sets_busy_timeout_for_clipboard_contention()
+    {
+        using var database = await TestDatabase.CreateAsync();
+        await using var connection = await database.ConnectionFactory.OpenConnectionAsync(CancellationToken.None);
+
+        var busyTimeout = await connection.ExecuteScalarAsync<int>("PRAGMA busy_timeout;");
+
+        Assert.Equal(5000, busyTimeout);
+    }
+
+    [Fact]
     public async Task InsertAsync_and_SearchAsync_return_pinned_items_first_then_newest()
     {
         using var database = await TestDatabase.CreateAsync();
@@ -25,6 +36,42 @@ public sealed class ClipboardRepositoryTests
         Assert.Equal(
             ["alpha pinned", "alpha newer", "alpha older"],
             results.Select(item => item.TextContent ?? "").ToArray());
+    }
+
+    [Fact]
+    public async Task InsertAsync_ignores_duplicate_hash()
+    {
+        using var database = await TestDatabase.CreateAsync();
+        var repository = new ClipboardRepository(database.ConnectionFactory);
+        var first = CreateItem("same", "first", isPinned: false, minutesAgo: 2);
+        var duplicate = CreateItem("same", "second", isPinned: false, minutesAgo: 1);
+
+        await repository.InsertAsync(first, CancellationToken.None);
+        await repository.InsertAsync(duplicate, CancellationToken.None);
+
+        var results = await repository.SearchAsync("", 10, CancellationToken.None);
+        Assert.Single(results);
+        Assert.Equal("first", results[0].TextContent);
+    }
+
+    [Fact]
+    public async Task SearchAsync_with_5000_items_returns_only_requested_limit()
+    {
+        using var database = await TestDatabase.CreateAsync();
+        var repository = new ClipboardRepository(database.ConnectionFactory);
+        var now = DateTimeOffset.UtcNow;
+        for (var index = 0; index < 5000; index++)
+        {
+            await repository.InsertAsync(
+                CreateItem($"bulk-{index}", $"bulk keyword {index}", isPinned: false, createdAt: now.AddSeconds(-index)),
+                CancellationToken.None);
+        }
+
+        var results = await repository.SearchAsync("keyword", 50, CancellationToken.None);
+
+        Assert.Equal(50, results.Count);
+        Assert.Equal("bulk keyword 0", results[0].TextContent);
+        Assert.Equal("bulk keyword 49", results[^1].TextContent);
     }
 
     [Fact]
