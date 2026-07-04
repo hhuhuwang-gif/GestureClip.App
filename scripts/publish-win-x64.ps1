@@ -5,6 +5,11 @@ $solution = Join-Path $repoRoot "GestureClip.sln"
 $project = Join-Path $repoRoot "src\GestureClip.App\GestureClip.App.csproj"
 $output = Join-Path $repoRoot "artifacts\release\GestureClip"
 $staging = Join-Path $repoRoot "artifacts\release\GestureClip.staging"
+$projectXml = [xml](Get-Content -LiteralPath $project -Raw)
+$version = $projectXml.Project.PropertyGroup.Version
+$zipPath = Join-Path $repoRoot "artifacts\release\GestureClip-v$version-win-x64.zip"
+$rootExe = Join-Path $repoRoot "GestureClip.exe"
+$latestExe = Join-Path $repoRoot "GestureClip-latest.exe"
 
 function Invoke-Checked {
     param(
@@ -44,4 +49,15 @@ Remove-Item $staging -Recurse -Force -ErrorAction SilentlyContinue
 Copy-Item (Join-Path $repoRoot "README.md") (Join-Path $output "README.md") -Force
 Remove-Item (Join-Path $output "*.pdb") -Force -ErrorAction SilentlyContinue
 
+Remove-Item $zipPath -Force -ErrorAction SilentlyContinue
+Compress-Archive -Path (Join-Path $output "*") -DestinationPath $zipPath -Force
+
+$publishedExe = Join-Path $output "GestureClip.exe"
+if (Test-Path -LiteralPath $publishedExe) {
+    Copy-Item -LiteralPath $publishedExe -Destination $rootExe -Force
+    Copy-Item -LiteralPath $publishedExe -Destination $latestExe -Force
+}
+
 Write-Host "Release package created:" $output
+Write-Host "Release zip created:" $zipPath
+Write-Host "Root executable updated:" $rootExe
