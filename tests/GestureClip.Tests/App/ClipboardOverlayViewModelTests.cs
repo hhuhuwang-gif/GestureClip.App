@@ -267,6 +267,25 @@ public sealed class ClipboardOverlayViewModelTests
         Assert.Equal("共 2 条 · 已选 2 条", viewModel.SummaryText);
     }
 
+    [Fact]
+    public async Task PasteSelectedAsync_shows_error_without_throwing_when_clipboard_write_fails()
+    {
+        var item = TextItem("paste me");
+        var service = new FakeClipboardService([item])
+        {
+            PasteHandler = (_, _, _) => throw new InvalidOperationException("clipboard busy")
+        };
+        var viewModel = new ClipboardOverlayViewModel(service, TimeSpan.Zero);
+        await viewModel.LoadAsync();
+
+        var pasted = await viewModel.PasteSelectedAsync();
+
+        Assert.False(pasted);
+        Assert.True(viewModel.HasError);
+        Assert.Contains("clipboard busy", viewModel.ErrorMessage);
+        Assert.Equal("粘贴失败", viewModel.StatusText);
+    }
+
     private static ClipboardItem TextItem(string text)
     {
         var now = DateTimeOffset.UtcNow;
@@ -327,6 +346,8 @@ public sealed class ClipboardOverlayViewModelTests
 
         public Func<string, int, CancellationToken, Task<IReadOnlyList<ClipboardItem>>>? SearchHandler { get; set; }
 
+        public Func<ClipboardItem, PasteOptions, CancellationToken, Task>? PasteHandler { get; set; }
+
         public DateTimeOffset? SuppressCaptureUntil => null;
 
         public Task StartAsync(CancellationToken cancellationToken) => Task.CompletedTask;
@@ -366,7 +387,12 @@ public sealed class ClipboardOverlayViewModelTests
 
         public Task<ClipboardItem?> GetLatestAsync(CancellationToken cancellationToken) => Task.FromResult<ClipboardItem?>(null);
 
-        public Task PasteAsync(ClipboardItem item, PasteOptions options, CancellationToken cancellationToken) => Task.CompletedTask;
+        public Task PasteAsync(ClipboardItem item, PasteOptions options, CancellationToken cancellationToken)
+        {
+            return PasteHandler is null
+                ? Task.CompletedTask
+                : PasteHandler(item, options, cancellationToken);
+        }
 
         public Task CopyItemsAsync(IReadOnlyList<ClipboardItem> items, CancellationToken cancellationToken) => Task.CompletedTask;
 

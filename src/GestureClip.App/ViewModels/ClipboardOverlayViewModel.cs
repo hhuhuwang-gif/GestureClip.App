@@ -325,8 +325,7 @@ public sealed class ClipboardOverlayViewModel : INotifyPropertyChanged
             return false;
         }
 
-        await _clipboardService.PasteAsync(SelectedItem, new PasteOptions(false), CancellationToken.None);
-        return true;
+        return await TryPasteAsync(SelectedItem);
     }
 
     public async Task<bool> PasteByIndexAsync(int index)
@@ -336,8 +335,23 @@ public sealed class ClipboardOverlayViewModel : INotifyPropertyChanged
             return false;
         }
 
-        await _clipboardService.PasteAsync(Items[index], new PasteOptions(false), CancellationToken.None);
-        return true;
+        return await TryPasteAsync(Items[index]);
+    }
+
+    private async Task<bool> TryPasteAsync(ClipboardItem item)
+    {
+        try
+        {
+            ErrorMessage = null;
+            await _clipboardService.PasteAsync(item, new PasteOptions(false), CancellationToken.None);
+            return true;
+        }
+        catch (Exception ex)
+        {
+            ErrorMessage = $"粘贴剪贴板历史失败：{ex.Message}";
+            StatusText = "粘贴失败";
+            return false;
+        }
     }
 
     public async Task<bool> CopySelectedAsync(IReadOnlyList<ClipboardItem> selectedItems)
