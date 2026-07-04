@@ -93,6 +93,35 @@ public sealed class WorkstationHudServiceTests
         Assert.True(reports.Count >= 2, string.Join(" | ", reports));
         Assert.All(reports, report => Assert.False(string.IsNullOrWhiteSpace(report)));
     }
+
+    [Fact]
+    public async Task BuildSnapshotAsync_reuses_dashboard_and_level_snapshots_for_one_second()
+    {
+        var settings = new FakeSettingsService();
+        settings.Values[SettingKeys.HudFunTextEnabled] = true;
+        settings.Values[SettingKeys.HudStatusLevelEnabled] = true;
+        settings.Values[SettingKeys.WorkerLevelShowLevelInHud] = true;
+        var dashboard = new FakeDashboardService();
+        var level = new FakeWorkerLevelService();
+        var service = new WorkstationHudService(settings, dashboard, level);
+        var hudInfo = new GestureHudInfo("↓", "D", "粘贴", "Ctrl + V", "自定义模式")
+        {
+            Action = BuiltInGestureAction.Paste
+        };
+        var now = DateTimeOffset.Parse("2026-07-04T10:00:00+08:00");
+
+        await service.BuildSnapshotAsync(hudInfo, gainedXp: 3, now, CancellationToken.None);
+        await service.BuildSnapshotAsync(hudInfo, gainedXp: 3, now.AddMilliseconds(500), CancellationToken.None);
+
+        Assert.Equal(1, dashboard.GetSnapshotCallCount);
+        Assert.Equal(1, level.GetSnapshotCallCount);
+
+        await service.BuildSnapshotAsync(hudInfo, gainedXp: 3, now.AddSeconds(2), CancellationToken.None);
+
+        Assert.Equal(2, dashboard.GetSnapshotCallCount);
+        Assert.Equal(2, level.GetSnapshotCallCount);
+    }
+
     private static WorkstationHudService CreateService()
     {
         var settings = new FakeSettingsService();
@@ -107,8 +136,11 @@ public sealed class WorkstationHudServiceTests
 
     private sealed class FakeDashboardService : IWorkstationDashboardService
     {
+        public int GetSnapshotCallCount { get; private set; }
+
         public Task<WorkstationDashboardSnapshot> GetSnapshotAsync(DateTimeOffset now, CancellationToken cancellationToken)
         {
+            GetSnapshotCallCount++;
             return Task.FromResult(new WorkstationDashboardSnapshot(
                 "工位小熊",
                 "今天也在低功耗运行",
@@ -137,8 +169,11 @@ public sealed class WorkstationHudServiceTests
 
     private sealed class FakeWorkerLevelService : IWorkerLevelService
     {
+        public int GetSnapshotCallCount { get; private set; }
+
         public Task<WorkerLevelSnapshot> GetSnapshotAsync(CancellationToken cancellationToken)
         {
+            GetSnapshotCallCount++;
             return Task.FromResult(new WorkerLevelSnapshot(
                 128,
                 42,

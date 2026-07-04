@@ -2,6 +2,7 @@ using System.Globalization;
 using GestureClip.Core.Abstractions;
 using GestureClip.Core.Gestures;
 using GestureClip.Core.Settings;
+using GestureClip.Core.WorkerLevel;
 using GestureClip.Core.Workstation;
 using GestureClip.Features.WorkerLevel;
 
@@ -9,9 +10,16 @@ namespace GestureClip.Features.Workstation;
 
 public sealed class WorkstationHudService : IWorkstationHudService
 {
+    private static readonly TimeSpan SnapshotCacheDuration = TimeSpan.FromSeconds(1);
+
     private readonly ISettingsService _settingsService;
     private readonly IWorkstationDashboardService _dashboardService;
     private readonly IWorkerLevelService _workerLevelService;
+    private readonly SemaphoreSlim _snapshotCacheLock = new(1, 1);
+
+    private DateTimeOffset? _snapshotCacheTimestamp;
+    private WorkstationDashboardSnapshot? _cachedDashboard;
+    private WorkerLevelSnapshot? _cachedLevel;
 
     public WorkstationHudService(
         ISettingsService settingsService,
@@ -29,8 +37,7 @@ public sealed class WorkstationHudService : IWorkstationHudService
         DateTimeOffset now,
         CancellationToken cancellationToken)
     {
-        var dashboard = await _dashboardService.GetSnapshotAsync(now, cancellationToken);
-        var level = await _workerLevelService.GetSnapshotAsync(cancellationToken);
+        var (dashboard, level) = await GetCachedSnapshotsAsync(now, cancellationToken);
         var showFun = _settingsService.Get(SettingKeys.HudFunTextEnabled, true);
         var showLevel = _settingsService.Get(SettingKeys.HudStatusLevelEnabled, true) &&
             _settingsService.Get(SettingKeys.WorkerLevelShowLevelInHud, true);
@@ -47,6 +54,58 @@ public sealed class WorkstationHudService : IWorkstationHudService
             $"手势 {dashboard.GestureCount} · 复制 {dashboard.CopyCount} · 粘贴 {dashboard.PasteCount} · 少点 {dashboard.EstimatedSavedClicks} 次",
             dashboard.WorkStatusText,
             showLevel);
+    }
+
+    private async Task<(WorkstationDashboardSnapshot Dashboard, WorkerLevelSnapshot Level)> GetCachedSnapshotsAsync(
+        DateTimeOffset now,
+        CancellationToken cancellationToken)
+    {
+        if (TryGetCachedSnapshots(now, out var cachedDashboard, out var cachedLevel))
+        {
+            return (cachedDashboard, cachedLevel);
+        }
+
+        await _snapshotCacheLock.WaitAsync(cancellationToken);
+        try
+        {
+            if (TryGetCachedSnapshots(now, out cachedDashboard, out cachedLevel))
+            {
+                return (cachedDashboard, cachedLevel);
+            }
+
+            var dashboard = await _dashboardService.GetSnapshotAsync(now, cancellationToken);
+            var level = await _workerLevelService.GetSnapshotAsync(cancellationToken);
+
+            _cachedDashboard = dashboard;
+            _cachedLevel = level;
+            _snapshotCacheTimestamp = now;
+
+            return (dashboard, level);
+        }
+        finally
+        {
+            _snapshotCacheLock.Release();
+        }
+    }
+
+    private bool TryGetCachedSnapshots(
+        DateTimeOffset now,
+        out WorkstationDashboardSnapshot dashboard,
+        out WorkerLevelSnapshot level)
+    {
+        if (_snapshotCacheTimestamp is { } cachedAt &&
+            _cachedDashboard is { } cachedDashboard &&
+            _cachedLevel is { } cachedLevel &&
+            (now - cachedAt).Duration() < SnapshotCacheDuration)
+        {
+            dashboard = cachedDashboard;
+            level = cachedLevel;
+            return true;
+        }
+
+        dashboard = null!;
+        level = null!;
+        return false;
     }
 
     private static int EstimateGestureXp(BuiltInGestureAction action)
