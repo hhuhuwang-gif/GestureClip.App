@@ -27,8 +27,9 @@ public sealed class GestureOverlayWindowTests
 
         Assert.Contains("VerticalAlignment=\"Bottom\"", xaml);
         Assert.Contains("HorizontalAlignment=\"Center\"", xaml);
-        Assert.Contains("MinWidth=\"500\"", xaml);
-        Assert.Contains("Style=\"{StaticResource GlassPanelStyle}\"", xaml);
+        Assert.Contains("MinWidth=\"520\"", xaml);
+        Assert.Contains("BrushDarkPanel", xaml);
+        Assert.Contains("CornerRadius=\"26\"", xaml);
         Assert.DoesNotContain("Canvas.Left=\"24\"", xaml);
         Assert.DoesNotContain("Canvas.Top=\"24\"", xaml);
     }

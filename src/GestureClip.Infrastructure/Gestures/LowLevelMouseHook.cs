@@ -21,7 +21,7 @@ public sealed class LowLevelMouseHook : ILowLevelMouseHook, IDisposable
 
     public LowLevelMouseHook(ILogger<LowLevelMouseHook> logger)
     {
-        _dispatcher = Application.Current.Dispatcher;
+        _dispatcher = System.Windows.Application.Current.Dispatcher;
         _logger = logger;
         _hookProc = HookCallback;
     }
@@ -130,8 +130,13 @@ public sealed class LowLevelMouseHook : ILowLevelMouseHook, IDisposable
             return;
         }
 
+        if (!_logger.IsEnabled(LogLevel.Debug))
+        {
+            return;
+        }
+
         var count = Interlocked.Increment(ref _receivedEventCount);
-        _logger.LogInformation(
+        _logger.LogDebug(
             "Low-level mouse hook event received: {Type}, x={X}, y={Y}, injected={Injected}, count={Count}",
             hookEvent.Type,
             hookEvent.X,

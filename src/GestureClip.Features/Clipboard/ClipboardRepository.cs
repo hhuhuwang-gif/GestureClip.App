@@ -63,8 +63,9 @@ SELECT
     Id, ContentType, TextContent, PreviewText, Hash, PlainTextHash, SourceApp, SourceProcess,
     IsPinned, IsFavorite, IsSensitive, UseCount, CreatedAt, UpdatedAt, LastUsedAt
 FROM ClipboardItems
-WHERE ContentType = 'text'
-  AND (@Keyword = '' OR TextContent LIKE @LikeKeyword OR PreviewText LIKE @LikeKeyword)
+WHERE @Keyword = ''
+   OR (ContentType = 'text' AND (TextContent LIKE @LikeKeyword OR PreviewText LIKE @LikeKeyword))
+   OR (ContentType <> 'text' AND PreviewText LIKE @LikeKeyword)
 ORDER BY IsPinned DESC, CreatedAt DESC
 LIMIT @Limit;
 """,
@@ -112,6 +113,73 @@ WHERE Id = @Id;
             {
                 Id = id.ToString(),
                 LastUsedAt = DateTimeOffset.UtcNow.ToString("O")
+            });
+    }
+
+    public async Task<int> DeleteAsync(IReadOnlyList<Guid> ids, CancellationToken cancellationToken)
+    {
+        var safeIds = ids.Distinct().Select(id => id.ToString()).ToArray();
+        if (safeIds.Length == 0)
+        {
+            return 0;
+        }
+
+        await using var connection = await _connectionFactory.OpenConnectionAsync(cancellationToken);
+        await using var transaction = await connection.BeginTransactionAsync(cancellationToken);
+        try
+        {
+            var deleted = await connection.ExecuteAsync(
+                """
+DELETE FROM ClipboardItems
+WHERE Id IN @Ids;
+""",
+                new { Ids = safeIds },
+                transaction);
+            await transaction.CommitAsync(cancellationToken);
+            return deleted;
+        }
+        catch
+        {
+            await transaction.RollbackAsync(cancellationToken);
+            throw;
+        }
+    }
+
+    public async Task SetPinnedAsync(Guid id, bool isPinned, CancellationToken cancellationToken)
+    {
+        await using var connection = await _connectionFactory.OpenConnectionAsync(cancellationToken);
+
+        await connection.ExecuteAsync(
+            """
+UPDATE ClipboardItems
+SET IsPinned = @IsPinned,
+    UpdatedAt = @UpdatedAt
+WHERE Id = @Id;
+""",
+            new
+            {
+                Id = id.ToString(),
+                IsPinned = isPinned ? 1 : 0,
+                UpdatedAt = DateTimeOffset.UtcNow.ToString("O")
+            });
+    }
+
+    public async Task SetFavoriteAsync(Guid id, bool isFavorite, CancellationToken cancellationToken)
+    {
+        await using var connection = await _connectionFactory.OpenConnectionAsync(cancellationToken);
+
+        await connection.ExecuteAsync(
+            """
+UPDATE ClipboardItems
+SET IsFavorite = @IsFavorite,
+    UpdatedAt = @UpdatedAt
+WHERE Id = @Id;
+""",
+            new
+            {
+                Id = id.ToString(),
+                IsFavorite = isFavorite ? 1 : 0,
+                UpdatedAt = DateTimeOffset.UtcNow.ToString("O")
             });
     }
 
@@ -167,7 +235,7 @@ WHERE BlockClipboard = 1
         try
         {
             var deleted = await connection.ExecuteAsync(
-                "DELETE FROM ClipboardItems WHERE IsPinned = 0;",
+                "DELETE FROM ClipboardItems WHERE IsPinned = 0 AND IsFavorite = 0;",
                 transaction: transaction);
             await transaction.CommitAsync(cancellationToken);
             return deleted;
@@ -196,6 +264,7 @@ WHERE BlockClipboard = 1
                     """
 DELETE FROM ClipboardItems
 WHERE IsPinned = 0
+  AND IsFavorite = 0
   AND CreatedAt < @Cutoff;
 """,
                     new { Cutoff = cutoff },
@@ -206,10 +275,12 @@ WHERE IsPinned = 0
                 """
 DELETE FROM ClipboardItems
 WHERE IsPinned = 0
+  AND IsFavorite = 0
   AND Id NOT IN (
       SELECT Id
       FROM ClipboardItems
       WHERE IsPinned = 0
+        AND IsFavorite = 0
       ORDER BY CreatedAt DESC
       LIMIT @Limit
   );

@@ -21,22 +21,29 @@
     <SolidColorBrush x:Key="BrushTabSelected" Color="{StaticResource ColorTabSelected}" />
     <SolidColorBrush x:Key="BrushTabSelectedText" Color="{StaticResource ColorTabSelectedText}" />
     <SolidColorBrush x:Key="BrushTabIdle" Color="{StaticResource ColorTabIdle}" />
+    <SolidColorBrush x:Key="BrushDarkPanel" Color="{StaticResource ColorDarkPanel}" />
+    <SolidColorBrush x:Key="BrushDarkPanelSoft" Color="{StaticResource ColorDarkPanelSoft}" />
+    <SolidColorBrush x:Key="BrushCoral" Color="{StaticResource ColorCoral}" />
     <LinearGradientBrush x:Key="BrushAppBackground" StartPoint="0,0" EndPoint="1,1">
-        <GradientStop Color="#F8FAFC" Offset="0" />
-        <GradientStop Color="#F2F5F9" Offset="0.5" />
-        <GradientStop Color="#EDF1F6" Offset="1" />
+        <GradientStop Color="#ECFBFCFF" Offset="0" />
+        <GradientStop Color="#E7F6F8FC" Offset="0.48" />
+        <GradientStop Color="#DCEEF2F8" Offset="1" />
     </LinearGradientBrush>
     <LinearGradientBrush x:Key="BrushGlassHighlight" StartPoint="0,0" EndPoint="1,1">
-        <GradientStop Color="#F2FFFFFF" Offset="0" />
-        <GradientStop Color="#CFFFFFFF" Offset="0.55" />
-        <GradientStop Color="#B8FFFFFF" Offset="1" />
+        <GradientStop Color="#FFFFFFFF" Offset="0" />
+        <GradientStop Color="#F1FFFFFF" Offset="0.62" />
+        <GradientStop Color="#E3FFFFFF" Offset="1" />
     </LinearGradientBrush>
     <LinearGradientBrush x:Key="BrushTabSelectedGradient" StartPoint="0,0" EndPoint="1,1">
-        <GradientStop Color="#F8FBFF" Offset="0" />
-        <GradientStop Color="#E8F1FF" Offset="1" />
+        <GradientStop Color="#171719" Offset="0" />
+        <GradientStop Color="#0D0D0F" Offset="1" />
     </LinearGradientBrush>
     <LinearGradientBrush x:Key="BrushPrimaryGradient" StartPoint="0,0" EndPoint="1,1">
         <GradientStop Color="#3B82F6" Offset="0" />
         <GradientStop Color="#2563EB" Offset="1" />
+    </LinearGradientBrush>
+    <LinearGradientBrush x:Key="BrushCoralGradient" StartPoint="0,0" EndPoint="1,1">
+        <GradientStop Color="#FF8A78" Offset="0" />
+        <GradientStop Color="#F36D64" Offset="1" />
     </LinearGradientBrush>
 </ResourceDictionary>

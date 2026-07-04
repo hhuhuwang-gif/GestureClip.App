@@ -91,6 +91,8 @@ public sealed class FeatureToggleServiceTests
             StopCount++;
             return Task.CompletedTask;
         }
+
+        public void RefreshSettings() { }
     }
 
     private sealed class FakeClipboardService : IClipboardService
@@ -101,7 +103,11 @@ public sealed class FeatureToggleServiceTests
         public Task CaptureTextAsync(ClipboardCapture capture, CancellationToken cancellationToken) => Task.CompletedTask;
         public Task<ClipboardItem?> GetLatestAsync(CancellationToken cancellationToken) => Task.FromResult<ClipboardItem?>(null);
         public Task PasteAsync(ClipboardItem item, PasteOptions options, CancellationToken cancellationToken) => Task.CompletedTask;
+        public Task CopyItemsAsync(IReadOnlyList<ClipboardItem> items, CancellationToken cancellationToken) => Task.CompletedTask;
         public Task<IReadOnlyList<ClipboardItem>> SearchAsync(string keyword, int limit, CancellationToken cancellationToken) => Task.FromResult<IReadOnlyList<ClipboardItem>>([]);
+        public Task<int> DeleteItemsAsync(IReadOnlyList<Guid> ids, CancellationToken cancellationToken) => Task.FromResult(ids.Count);
+        public Task SetPinnedAsync(Guid id, bool isPinned, CancellationToken cancellationToken) => Task.CompletedTask;
+        public Task SetFavoriteAsync(Guid id, bool isFavorite, CancellationToken cancellationToken) => Task.CompletedTask;
         public Task SetCaptureEnabledAsync(bool enabled, CancellationToken cancellationToken)
         {
             IsCaptureEnabled = enabled;

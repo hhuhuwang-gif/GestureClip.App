@@ -7,6 +7,10 @@ namespace GestureClip.Features.Clipboard;
 
 public sealed class ClipboardService : IClipboardService
 {
+    private const int DefaultMaxImageBytes = 5 * 1024 * 1024;
+    private const int MinMaxImageBytes = 128 * 1024;
+    private const int MaxMaxImageBytes = 20 * 1024 * 1024;
+
     private readonly IClipboardListener _clipboardListener;
     private readonly IClipboardTextReader _clipboardTextReader;
     private readonly IClipboardWriter _clipboardWriter;
@@ -171,6 +175,13 @@ public sealed class ClipboardService : IClipboardService
 
     public async Task PasteAsync(ClipboardItem item, PasteOptions options, CancellationToken cancellationToken)
     {
+        if (item.ContentType == "image/png")
+        {
+            await CopyItemsAsync([item], cancellationToken);
+            await _clipboardWriter.SendPasteHotkeyAsync(cancellationToken);
+            return;
+        }
+
         if (string.IsNullOrEmpty(item.TextContent))
         {
             return;
@@ -183,6 +194,74 @@ public sealed class ClipboardService : IClipboardService
         _logger.LogInformation("Clipboard text item pasted.");
     }
 
+    public async Task CopyItemsAsync(IReadOnlyList<ClipboardItem> items, CancellationToken cancellationToken)
+    {
+        if (items.Count == 0)
+        {
+            return;
+        }
+
+        var hasText = items.Any(item => item.ContentType == "text");
+        var hasImage = items.Any(item => item.ContentType == "image/png");
+        if (hasText && hasImage)
+        {
+            throw new NotSupportedException("混合内容暂不支持批量复制。");
+        }
+
+        SuppressCaptureFor(TimeSpan.FromMilliseconds(1000));
+        if (hasImage)
+        {
+            if (items.Count > 1)
+            {
+                throw new NotSupportedException("暂不支持批量复制多张图片。");
+            }
+
+            var image = items[0];
+            if (string.IsNullOrWhiteSpace(image.TextContent))
+            {
+                return;
+            }
+
+            await _clipboardWriter.SetImagePngBase64Async(image.TextContent, cancellationToken);
+            await _clipboardRepository.IncrementUseCountAsync(image.Id, cancellationToken);
+            _logger.LogInformation("Clipboard image item copied.");
+            return;
+        }
+
+        var text = string.Join("\r\n", items.Select(item => item.TextContent).Where(text => !string.IsNullOrEmpty(text)));
+        if (string.IsNullOrEmpty(text))
+        {
+            return;
+        }
+
+        await _clipboardWriter.SetTextAsync(text, cancellationToken);
+        foreach (var item in items)
+        {
+            await _clipboardRepository.IncrementUseCountAsync(item.Id, cancellationToken);
+        }
+
+        _logger.LogInformation("Clipboard text items copied. Count={ClipboardItemCount}", items.Count);
+    }
+
+    public async Task<int> DeleteItemsAsync(IReadOnlyList<Guid> ids, CancellationToken cancellationToken)
+    {
+        var deleted = await _clipboardRepository.DeleteAsync(ids, cancellationToken);
+        _logger.LogInformation("Clipboard items deleted. Count={ClipboardItemCount}", deleted);
+        return deleted;
+    }
+
+    public async Task SetPinnedAsync(Guid id, bool isPinned, CancellationToken cancellationToken)
+    {
+        await _clipboardRepository.SetPinnedAsync(id, isPinned, cancellationToken);
+        _logger.LogInformation("Clipboard item pin state changed. IsPinned={IsPinned}", isPinned);
+    }
+
+    public async Task SetFavoriteAsync(Guid id, bool isFavorite, CancellationToken cancellationToken)
+    {
+        await _clipboardRepository.SetFavoriteAsync(id, isFavorite, cancellationToken);
+        _logger.LogInformation("Clipboard item favorite state changed. IsFavorite={IsFavorite}", isFavorite);
+    }
+
     private void OnClipboardChanged(object? sender, ClipboardChangedEventArgs e)
     {
         _ = HandleClipboardChangedAsync(e);
@@ -192,6 +271,13 @@ public sealed class ClipboardService : IClipboardService
     {
         try
         {
+            var imagePngBase64 = _clipboardTextReader.TryReadImagePngBase64();
+            if (imagePngBase64 is not null)
+            {
+                await CaptureImageAsync(imagePngBase64, e.ChangedAt, CancellationToken.None);
+                return;
+            }
+
             var text = _clipboardTextReader.TryReadText();
             if (text is null)
             {
@@ -207,6 +293,111 @@ public sealed class ClipboardService : IClipboardService
         {
             _logger.LogError(ex, "Clipboard changed handling failed.");
         }
+    }
+
+    private async Task CaptureImageAsync(string pngBase64, DateTimeOffset changedAt, CancellationToken cancellationToken)
+    {
+        if (!IsCaptureEnabled)
+        {
+            _logger.LogInformation("Clipboard image capture skipped: disabled.");
+            return;
+        }
+
+        if (SuppressCaptureUntil is { } suppressUntil && DateTimeOffset.UtcNow < suppressUntil)
+        {
+            _logger.LogInformation("Clipboard image capture skipped: suppressed after internal paste.");
+            return;
+        }
+
+        var imageBytes = EstimateBase64DecodedByteCount(pngBase64);
+        var maxImageBytes = GetMaxImageBytes();
+        if (imageBytes > maxImageBytes)
+        {
+            _logger.LogInformation(
+                "Clipboard image capture skipped: image is too large. ImageBytes={ImageBytes}, MaxImageBytes={MaxImageBytes}",
+                imageBytes,
+                maxImageBytes);
+            return;
+        }
+
+        var foreground = _foregroundAppService.GetCurrent();
+        if (await _appBlacklistService.IsClipboardBlockedAsync(foreground.ProcessName, cancellationToken))
+        {
+            _logger.LogInformation("Clipboard image capture skipped: source process is blacklisted.");
+            return;
+        }
+
+        var hash = _clipboardHashService.ComputeHash(pngBase64);
+        if (await _clipboardRepository.FindByHashAsync(hash, cancellationToken) is not null)
+        {
+            _logger.LogInformation("Clipboard image capture skipped: duplicate hash.");
+            return;
+        }
+
+        var now = DateTimeOffset.UtcNow;
+        await _clipboardRepository.InsertAsync(
+            new ClipboardItem(
+                Guid.NewGuid(),
+                "image/png",
+                pngBase64,
+                "图片",
+                hash,
+                null,
+                foreground.WindowTitle,
+                foreground.ProcessName,
+                false,
+                false,
+                false,
+                0,
+                now,
+                now,
+                null),
+            cancellationToken);
+        _logger.LogInformation("Clipboard image item captured.");
+    }
+
+    private int GetMaxImageBytes()
+    {
+        var configured = _settingsService.Get(SettingKeys.ClipboardMaxImageBytes, DefaultMaxImageBytes);
+        if (configured <= 0)
+        {
+            return DefaultMaxImageBytes;
+        }
+
+        return Math.Clamp(configured, MinMaxImageBytes, MaxMaxImageBytes);
+    }
+
+    private static long EstimateBase64DecodedByteCount(string value)
+    {
+        var base64 = NormalizeBase64(value);
+        if (base64.Length == 0)
+        {
+            return 0;
+        }
+
+        var padding = 0;
+        if (base64.EndsWith("==", StringComparison.Ordinal))
+        {
+            padding = 2;
+        }
+        else if (base64.EndsWith("=", StringComparison.Ordinal))
+        {
+            padding = 1;
+        }
+
+        return (base64.Length * 3L / 4L) - padding;
+    }
+
+    private static string NormalizeBase64(string value)
+    {
+        var trimmed = value.Trim();
+        var commaIndex = trimmed.IndexOf(',', StringComparison.Ordinal);
+        if (trimmed.StartsWith("data:", StringComparison.OrdinalIgnoreCase) && commaIndex >= 0)
+        {
+            trimmed = trimmed[(commaIndex + 1)..];
+        }
+
+        return new string(trimmed.Where(character => !char.IsWhiteSpace(character)).ToArray());
     }
 
     private static string CreatePreview(string text)

@@ -22,6 +22,8 @@ public sealed class GestureBuiltInActionExecutorTests
     [InlineData(BuiltInGestureAction.Delete, "Delete")]
     [InlineData(BuiltInGestureAction.Backspace, "Backspace")]
     [InlineData(BuiltInGestureAction.NewTab, "Ctrl+T")]
+    [InlineData(BuiltInGestureAction.NextTab, "Ctrl+Tab")]
+    [InlineData(BuiltInGestureAction.PreviousTab, "Ctrl+Shift+Tab")]
     [InlineData(BuiltInGestureAction.ReopenClosedTab, "Ctrl+Shift+T")]
     [InlineData(BuiltInGestureAction.Refresh, "F5")]
     [InlineData(BuiltInGestureAction.CloseTab, "Ctrl+W")]
@@ -67,13 +69,34 @@ public sealed class GestureBuiltInActionExecutorTests
         Assert.Equal(["Ctrl+V", "Enter"], keyboard.Sent);
     }
 
-    private static GestureBuiltInActionExecutor CreateExecutor(FakeKeyboardInputSender keyboard)
+    [Theory]
+    [InlineData(BuiltInGestureAction.LeftMouseClick, GestureTriggerButton.Left)]
+    [InlineData(BuiltInGestureAction.RightMouseClick, GestureTriggerButton.Right)]
+    public async Task ExecuteAsync_synthesizes_mouse_click_actions(BuiltInGestureAction action, GestureTriggerButton expectedButton)
+    {
+        var mouse = new FakeRightClickSynthesizer();
+        var cursor = new FakeCursorPositionProvider();
+        var executor = CreateExecutor(new FakeKeyboardInputSender(), mouse, cursor);
+
+        await executor.ExecuteAsync(action, CancellationToken.None);
+
+        Assert.Equal(expectedButton, mouse.Clicks.Single().Button);
+        Assert.Equal(321, mouse.Clicks.Single().X);
+        Assert.Equal(654, mouse.Clicks.Single().Y);
+    }
+
+    private static GestureBuiltInActionExecutor CreateExecutor(
+        FakeKeyboardInputSender keyboard,
+        FakeRightClickSynthesizer? mouse = null,
+        FakeCursorPositionProvider? cursor = null)
     {
         return new GestureBuiltInActionExecutor(
             new FakeClipboardOverlayService(),
             new FakeClipboardService(),
             new FakeSettingsService(),
             keyboard,
+            mouse ?? new FakeRightClickSynthesizer(),
+            cursor ?? new FakeCursorPositionProvider(),
             NullLogger<GestureBuiltInActionExecutor>.Instance);
     }
 
@@ -132,7 +155,30 @@ public sealed class GestureBuiltInActionExecutorTests
     private sealed class FakeClipboardOverlayService : IClipboardOverlayService
     {
         public Task ShowAsync() => Task.CompletedTask;
+        public Task ToggleAsync() => Task.CompletedTask;
         public Task RefreshAsync() => Task.CompletedTask;
+    }
+
+    private sealed class FakeRightClickSynthesizer : IRightClickSynthesizer
+    {
+        public List<(GestureTriggerButton Button, int X, int Y)> Clicks { get; } = [];
+
+        public void SynthesizeRightClick(int x, int y)
+        {
+            SynthesizeClick(GestureTriggerButton.Right, x, y);
+        }
+
+        public void SynthesizeClick(GestureTriggerButton button, int x, int y)
+        {
+            Clicks.Add((button, x, y));
+        }
+    }
+
+    private sealed class FakeCursorPositionProvider : ICursorPositionProvider
+    {
+        public CursorPosition GetCurrentPosition() => new(321, 654, DateTimeOffset.UtcNow);
+
+        public ScreenBounds GetVirtualScreenBounds() => new(0, 0, 1920, 1080);
     }
 
     private sealed class FakeClipboardService : IClipboardService
@@ -143,7 +189,11 @@ public sealed class GestureBuiltInActionExecutorTests
         public Task CaptureTextAsync(ClipboardCapture capture, CancellationToken cancellationToken) => Task.CompletedTask;
         public Task<ClipboardItem?> GetLatestAsync(CancellationToken cancellationToken) => Task.FromResult<ClipboardItem?>(null);
         public Task PasteAsync(ClipboardItem item, PasteOptions options, CancellationToken cancellationToken) => Task.CompletedTask;
+        public Task CopyItemsAsync(IReadOnlyList<ClipboardItem> items, CancellationToken cancellationToken) => Task.CompletedTask;
         public Task<IReadOnlyList<ClipboardItem>> SearchAsync(string keyword, int limit, CancellationToken cancellationToken) => Task.FromResult<IReadOnlyList<ClipboardItem>>([]);
+        public Task<int> DeleteItemsAsync(IReadOnlyList<Guid> ids, CancellationToken cancellationToken) => Task.FromResult(ids.Count);
+        public Task SetPinnedAsync(Guid id, bool isPinned, CancellationToken cancellationToken) => Task.CompletedTask;
+        public Task SetFavoriteAsync(Guid id, bool isFavorite, CancellationToken cancellationToken) => Task.CompletedTask;
         public Task SetCaptureEnabledAsync(bool enabled, CancellationToken cancellationToken) => Task.CompletedTask;
         public Task StartAsync(CancellationToken cancellationToken) => Task.CompletedTask;
         public Task StopAsync(CancellationToken cancellationToken) => Task.CompletedTask;

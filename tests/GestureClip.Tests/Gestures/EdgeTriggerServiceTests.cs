@@ -46,6 +46,31 @@ public sealed class EdgeTriggerServiceTests
     }
 
     [Fact]
+    public async Task PollOnceAsync_reuses_cached_settings_without_reloading_each_tick()
+    {
+        var settings = new FakeSettingsService();
+        var service = CreateService(settings: settings);
+        settings.GetCount = 0;
+
+        await service.PollOnceAsync(CancellationToken.None);
+        await service.PollOnceAsync(CancellationToken.None);
+
+        Assert.Equal(0, settings.GetCount);
+    }
+
+    [Fact]
+    public void RefreshSettings_reloads_cached_settings_on_demand()
+    {
+        var settings = new FakeSettingsService();
+        var service = CreateService(settings: settings);
+        settings.GetCount = 0;
+
+        service.RefreshSettings();
+
+        Assert.True(settings.GetCount > 0);
+    }
+
+    [Fact]
     public async Task PollOnceAsync_requires_dwell_before_executing()
     {
         var now = DateTimeOffset.UtcNow;
@@ -124,6 +149,25 @@ public sealed class EdgeTriggerServiceTests
         await service.StopAsync(CancellationToken.None);
 
         Assert.Equal([BuiltInGestureAction.ShowDesktop], executor.Actions);
+    }
+
+    [Fact]
+    public async Task Left_edge_left_button_is_ignored_even_when_legacy_setting_is_enabled()
+    {
+        var hook = new FakeLowLevelMouseHook();
+        var executor = new FakeGestureActionExecutor();
+        var settings = new FakeSettingsService();
+        settings.Values[SettingKeys.EdgeTriggerLeftEdgeLeftButtonEnabled] = true;
+        settings.Values[SettingKeys.EdgeTriggerLeftEdgeLeftButtonAction] = BuiltInGestureAction.StartMenu;
+        var service = CreateService(hook: hook, executor: executor, settings: settings);
+
+        await service.StartAsync(CancellationToken.None);
+        var args = hook.Emit(new MouseHookEvent(MouseHookEventType.LeftButtonDown, 2, 500, DateTimeOffset.UtcNow));
+        await Task.Delay(80);
+        await service.StopAsync(CancellationToken.None);
+
+        Assert.False(args.Suppress);
+        Assert.Empty(executor.Actions);
     }
 
     [Fact]
@@ -280,9 +324,11 @@ public sealed class EdgeTriggerServiceTests
     private sealed class FakeSettingsService : ISettingsService
     {
         public Dictionary<string, object?> Values { get; } = [];
+        public int GetCount { get; set; }
 
         public T Get<T>(string key, T defaultValue)
         {
+            GetCount++;
             return Values.TryGetValue(key, out var value) ? (T)value! : defaultValue;
         }
 

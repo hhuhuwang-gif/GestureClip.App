@@ -15,6 +15,18 @@ public sealed class GesturePresetProviderTests
     [InlineData("R", BuiltInGestureAction.SendAltRight)]
     [InlineData("LR", BuiltInGestureAction.SelectAll)]
     [InlineData("RL", BuiltInGestureAction.Undo)]
+    [InlineData("DL", BuiltInGestureAction.LeftMouseClick)]
+    [InlineData("DR", BuiltInGestureAction.RightMouseClick)]
+    [InlineData("UR", BuiltInGestureAction.NewTab)]
+    [InlineData("UL", BuiltInGestureAction.ReopenClosedTab)]
+    [InlineData("RU", BuiltInGestureAction.Refresh)]
+    [InlineData("RD", BuiltInGestureAction.CloseTab)]
+    [InlineData("LD", BuiltInGestureAction.MinimizeForegroundWindow)]
+    [InlineData("RDL", BuiltInGestureAction.Screenshot)]
+    [InlineData("RUD", BuiltInGestureAction.ResetZoom)]
+    [InlineData("URD", BuiltInGestureAction.NextTab)]
+    [InlineData("ULD", BuiltInGestureAction.PreviousTab)]
+    [InlineData("RULD", BuiltInGestureAction.SystemSettings)]
     public void EditEnhanced_maps_patterns_to_editing_actions(string pattern, BuiltInGestureAction expected)
     {
         var provider = new GesturePresetProvider();
@@ -31,6 +43,18 @@ public sealed class GesturePresetProviderTests
     [InlineData("R", BuiltInGestureAction.SendAltRight)]
     [InlineData("LR", BuiltInGestureAction.SelectAll)]
     [InlineData("RL", BuiltInGestureAction.Undo)]
+    [InlineData("DL", BuiltInGestureAction.LeftMouseClick)]
+    [InlineData("DR", BuiltInGestureAction.RightMouseClick)]
+    [InlineData("UR", BuiltInGestureAction.NewTab)]
+    [InlineData("UL", BuiltInGestureAction.ReopenClosedTab)]
+    [InlineData("RU", BuiltInGestureAction.Refresh)]
+    [InlineData("RD", BuiltInGestureAction.CloseTab)]
+    [InlineData("LD", BuiltInGestureAction.MinimizeForegroundWindow)]
+    [InlineData("RDL", BuiltInGestureAction.Screenshot)]
+    [InlineData("RUD", BuiltInGestureAction.ResetZoom)]
+    [InlineData("URD", BuiltInGestureAction.NextTab)]
+    [InlineData("ULD", BuiltInGestureAction.PreviousTab)]
+    [InlineData("RULD", BuiltInGestureAction.SystemSettings)]
     public void ClipboardEnhanced_maps_patterns_to_clipboard_actions(string pattern, BuiltInGestureAction expected)
     {
         var provider = new GesturePresetProvider();
@@ -43,7 +67,7 @@ public sealed class GesturePresetProviderTests
     {
         var provider = new GesturePresetProvider();
 
-        Assert.Equal(BuiltInGestureAction.None, provider.GetAction(GesturePreset.EditEnhanced, "LD"));
+        Assert.Equal(BuiltInGestureAction.None, provider.GetAction(GesturePreset.EditEnhanced, "RDR"));
     }
 
     [Fact]

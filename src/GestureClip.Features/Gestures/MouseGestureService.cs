@@ -454,14 +454,6 @@ public sealed class MouseGestureService : IMouseGestureService
 
         var overflow = _points.Count - MaxTrackedPoints;
         _points.RemoveRange(0, overflow);
-        if (_startPoint is not null && !_points.Contains(_startPoint))
-        {
-            _points.Insert(0, _startPoint);
-            if (_points.Count > MaxTrackedPoints)
-            {
-                _points.RemoveAt(1);
-            }
-        }
     }
 
     private static string? NormalizePreviewPattern(string? pattern)

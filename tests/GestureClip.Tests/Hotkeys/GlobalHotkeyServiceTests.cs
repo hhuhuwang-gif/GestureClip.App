@@ -93,7 +93,7 @@ public sealed class GlobalHotkeyServiceTests
     }
 
     [Fact]
-    public async Task Hotkey_trigger_opens_clipboard_overlay()
+    public async Task Hotkey_trigger_toggles_clipboard_overlay()
     {
         var registrar = new FakeHotkeyRegistrar();
         var overlay = new FakeClipboardOverlayService();
@@ -101,9 +101,9 @@ public sealed class GlobalHotkeyServiceTests
         service.Start();
 
         registrar.RaiseHotkeyPressed();
-        await WaitForAsync(() => overlay.ShowCount == 1);
+        await WaitForAsync(() => overlay.ToggleCount == 1);
 
-        Assert.Equal(1, overlay.ShowCount);
+        Assert.Equal(1, overlay.ToggleCount);
     }
 
     private static GlobalHotkeyService CreateService(
@@ -185,11 +185,18 @@ public sealed class GlobalHotkeyServiceTests
     private sealed class FakeClipboardOverlayService : IClipboardOverlayService
     {
         public int ShowCount { get; private set; }
+        public int ToggleCount { get; private set; }
         public int RefreshCount { get; private set; }
 
         public Task ShowAsync()
         {
             ShowCount++;
+            return Task.CompletedTask;
+        }
+
+        public Task ToggleAsync()
+        {
+            ToggleCount++;
             return Task.CompletedTask;
         }
 

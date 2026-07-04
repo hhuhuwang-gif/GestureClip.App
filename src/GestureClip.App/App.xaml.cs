@@ -89,11 +89,19 @@ public partial class App : System.Windows.Application
 
     protected override void OnExit(ExitEventArgs e)
     {
-        _serviceProvider?.GetService<IGlobalHotkeyService>()?.Stop();
-        _serviceProvider?.GetService<IEdgeTriggerService>()?.StopAsync(CancellationToken.None).GetAwaiter().GetResult();
-        _serviceProvider?.GetService<IMouseGestureService>()?.StopAsync(CancellationToken.None).GetAwaiter().GetResult();
-        _serviceProvider?.GetService<IClipboardService>()?.StopAsync(CancellationToken.None).GetAwaiter().GetResult();
-        _trayIconService?.Dispose();
+        var lifecycle = _serviceProvider?.GetService<AppLifecycleService>();
+        if (lifecycle?.RuntimeStopped != true)
+        {
+            try
+            {
+                lifecycle?.StopRuntimeAsync().GetAwaiter().GetResult();
+            }
+            catch (Exception ex)
+            {
+                _serviceProvider?.GetService<ILogger<App>>()?.LogError(ex, "Failed while stopping runtime during application exit.");
+            }
+        }
+
         _serviceProvider?.GetService<ILogger<App>>()?.LogInformation("GestureClip exiting.");
         _serviceProvider?.Dispose();
         _singleInstanceService?.Dispose();

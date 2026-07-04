@@ -17,26 +17,29 @@
         <Canvas IsHitTestVisible="False">
             <Polyline Points="{Binding Points}"
                       Stroke="{Binding StrokeBrush}"
-                      StrokeThickness="7"
+                      StrokeThickness="6"
                       StrokeStartLineCap="Round"
                       StrokeEndLineCap="Round"
                       StrokeLineJoin="Round"
                       Opacity="0.95">
                 <Polyline.Effect>
-                    <DropShadowEffect Color="#805B8CFF"
-                                      BlurRadius="14"
+                    <DropShadowEffect Color="#AA2563EB"
+                                      BlurRadius="18"
                                       ShadowDepth="0"
-                                      Opacity="0.65" />
+                                      Opacity="0.46" />
                 </Polyline.Effect>
             </Polyline>
         </Canvas>
         <Border HorizontalAlignment="Center"
                 VerticalAlignment="Bottom"
                 Margin="0,0,0,82"
-                MinWidth="500"
-                Style="{StaticResource GlassPanelStyle}"
-                Padding="38,24"
-                Background="{DynamicResource BrushGlassStrong}">
+                MinWidth="520"
+                CornerRadius="26"
+                Padding="36,24"
+                Background="{DynamicResource BrushDarkPanel}">
+            <Border.Effect>
+                <DropShadowEffect Color="#111827" BlurRadius="32" ShadowDepth="10" Opacity="0.30" />
+            </Border.Effect>
             <Grid>
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto" />
@@ -45,7 +48,7 @@
                 </Grid.RowDefinitions>
                 <TextBlock Grid.Row="0"
                            Text="{Binding PresetName}"
-                           Foreground="{DynamicResource BrushTextSecondary}"
+                           Foreground="#8F949E"
                            FontSize="15"
                            FontWeight="SemiBold"
                            HorizontalAlignment="Center" />
@@ -58,8 +61,8 @@
                                FontSize="52"
                                FontWeight="SemiBold"
                                Margin="0,0,20,0" />
-                    <TextBlock Text="{Binding ActionName}"
-                               Foreground="{DynamicResource BrushTextPrimary}"
+                           <TextBlock Text="{Binding ActionName}"
+                               Foreground="White"
                                FontSize="46"
                                FontWeight="SemiBold" />
                 </StackPanel>
@@ -72,10 +75,10 @@
                                FontSize="17"
                                FontWeight="SemiBold" />
                     <TextBlock Text="  ·  "
-                               Foreground="{DynamicResource BrushTextMuted}"
+                               Foreground="#6B7280"
                                FontSize="17" />
                     <TextBlock Text="{Binding ShortcutText}"
-                               Foreground="{DynamicResource BrushTextSecondary}"
+                               Foreground="#A7ADB8"
                                FontSize="17" />
                 </StackPanel>
             </Grid>

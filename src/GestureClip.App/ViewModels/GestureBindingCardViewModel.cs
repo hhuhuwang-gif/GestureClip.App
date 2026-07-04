@@ -1,6 +1,7 @@
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using GestureClip.Core.Gestures;
+using System.Windows.Input;
 
 namespace GestureClip.App.ViewModels;
 
@@ -15,7 +16,8 @@ public sealed class GestureBindingCardViewModel : INotifyPropertyChanged
         string gestureName,
         BuiltInGestureAction selectedAction,
         IReadOnlyList<GestureActionOptionViewModel> actionOptions,
-        Func<GestureBindingCardViewModel, Task> saveAsync)
+        Func<GestureBindingCardViewModel, Task> saveAsync,
+        Func<GestureBindingCardViewModel, Task> deleteAsync)
     {
         Pattern = pattern;
         DirectionText = directionText;
@@ -23,6 +25,7 @@ public sealed class GestureBindingCardViewModel : INotifyPropertyChanged
         _selectedAction = selectedAction;
         ActionOptions = actionOptions;
         _saveAsync = saveAsync;
+        DeleteCommand = new AsyncRelayCommand(_ => deleteAsync(this));
     }
 
     public event PropertyChangedEventHandler? PropertyChanged;
@@ -34,6 +37,8 @@ public sealed class GestureBindingCardViewModel : INotifyPropertyChanged
     public string GestureName { get; }
 
     public IReadOnlyList<GestureActionOptionViewModel> ActionOptions { get; }
+
+    public ICommand DeleteCommand { get; }
 
     public BuiltInGestureAction SelectedAction
     {

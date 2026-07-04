@@ -1,5 +1,7 @@
+using System.IO;
 using System.Runtime.InteropServices;
 using System.Windows;
+using System.Windows.Media.Imaging;
 using System.Windows.Threading;
 using GestureClip.Core.Abstractions;
 using GestureClip.Infrastructure.Win32;
@@ -18,7 +20,7 @@ public sealed class WpfClipboardWriter : IClipboardWriter
 
     public WpfClipboardWriter(ILogger<WpfClipboardWriter> logger)
     {
-        _dispatcher = Application.Current.Dispatcher;
+        _dispatcher = System.Windows.Application.Current.Dispatcher;
         _logger = logger;
     }
 
@@ -28,6 +30,23 @@ public sealed class WpfClipboardWriter : IClipboardWriter
         {
             cancellationToken.ThrowIfCancellationRequested();
             System.Windows.Clipboard.SetText(text);
+        }).Task;
+    }
+
+    public Task SetImagePngBase64Async(string pngBase64, CancellationToken cancellationToken)
+    {
+        return _dispatcher.InvokeAsync(() =>
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            var bytes = Convert.FromBase64String(pngBase64);
+            using var stream = new MemoryStream(bytes);
+            var image = new BitmapImage();
+            image.BeginInit();
+            image.CacheOption = BitmapCacheOption.OnLoad;
+            image.StreamSource = stream;
+            image.EndInit();
+            image.Freeze();
+            System.Windows.Clipboard.SetImage(image);
         }).Task;
     }
 

@@ -11,6 +11,7 @@
                 <ResourceDictionary Source="Themes/Controls.xaml" />
             </ResourceDictionary.MergedDictionaries>
             <converters:ShortcutNumberConverter x:Key="ShortcutNumberConverter" />
+            <converters:ImageBase64ToSourceConverter x:Key="ImageBase64ToSourceConverter" />
         </ResourceDictionary>
     </Application.Resources>
 </Application>

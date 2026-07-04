@@ -82,6 +82,8 @@ public sealed class SettingsViewModel : INotifyPropertyChanged
     private string _gestureStrokeColor;
     private string _newGesturePattern = "";
     private BuiltInGestureAction _newGestureAction = BuiltInGestureAction.Copy;
+    private string _recordGestureStatusText = "按住左键在方框里画一次。";
+    private GestureBindingCardViewModel? _selectedGestureBindingCard;
     private readonly DispatcherTimer _diagnosticsTimer;
 
     public SettingsViewModel(
@@ -136,7 +138,7 @@ public sealed class SettingsViewModel : INotifyPropertyChanged
         _edgeTriggerTopRightAction = _settingsService.Get(SettingKeys.EdgeTriggerTopRightAction, BuiltInGestureAction.TaskSwitcher);
         _edgeTriggerBottomRightAction = _settingsService.Get(SettingKeys.EdgeTriggerBottomRightAction, BuiltInGestureAction.ShowDesktop);
         _edgeTriggerBottomLeftAction = _settingsService.Get(SettingKeys.EdgeTriggerBottomLeftAction, BuiltInGestureAction.SwitchApp);
-        _edgeTriggerLeftEdgeLeftButtonEnabled = _settingsService.Get(SettingKeys.EdgeTriggerLeftEdgeLeftButtonEnabled, true);
+        _edgeTriggerLeftEdgeLeftButtonEnabled = _settingsService.Get(SettingKeys.EdgeTriggerLeftEdgeLeftButtonEnabled, false);
         _edgeTriggerLeftEdgeMiddleButtonEnabled = _settingsService.Get(SettingKeys.EdgeTriggerLeftEdgeMiddleButtonEnabled, true);
         _edgeTriggerLeftEdgeXButton1Enabled = _settingsService.Get(SettingKeys.EdgeTriggerLeftEdgeXButton1Enabled, true);
         _edgeTriggerLeftEdgeXButton2Enabled = _settingsService.Get(SettingKeys.EdgeTriggerLeftEdgeXButton2Enabled, true);
@@ -147,9 +149,9 @@ public sealed class SettingsViewModel : INotifyPropertyChanged
         _edgeTriggerLeftEdgeXButton2Action = _settingsService.Get(SettingKeys.EdgeTriggerLeftEdgeXButton2Action, BuiltInGestureAction.TaskSwitcher);
         _edgeTriggerTopRightWheelAction = _settingsService.Get(SettingKeys.EdgeTriggerTopRightWheelAction, BuiltInGestureAction.TaskSwitcher);
         _edgeTriggerHotZoneSize = _settingsService.Get(SettingKeys.EdgeTriggerHotZoneSize, 8);
-        _edgeTriggerDwellMs = _settingsService.Get(SettingKeys.EdgeTriggerDwellMs, 350);
-        _edgeTriggerCooldownMs = _settingsService.Get(SettingKeys.EdgeTriggerCooldownMs, 1200);
-        _edgeTriggerSlideThreshold = _settingsService.Get(SettingKeys.EdgeTriggerSlideThreshold, 80);
+        _edgeTriggerDwellMs = _settingsService.Get(SettingKeys.EdgeTriggerDwellMs, 160);
+        _edgeTriggerCooldownMs = _settingsService.Get(SettingKeys.EdgeTriggerCooldownMs, 450);
+        _edgeTriggerSlideThreshold = _settingsService.Get(SettingKeys.EdgeTriggerSlideThreshold, 56);
         _edgeTriggerSlideLeftEnabled = _settingsService.Get(SettingKeys.EdgeTriggerSlideLeftEnabled, true);
         _edgeTriggerSlideRightEnabled = _settingsService.Get(SettingKeys.EdgeTriggerSlideRightEnabled, true);
         _edgeTriggerSlideTopEnabled = _settingsService.Get(SettingKeys.EdgeTriggerSlideTopEnabled, true);
@@ -157,7 +159,7 @@ public sealed class SettingsViewModel : INotifyPropertyChanged
         _edgeTriggerSlideLeftAction = _settingsService.Get(SettingKeys.EdgeTriggerSlideLeftAction, BuiltInGestureAction.SwitchApp);
         _edgeTriggerSlideRightAction = _settingsService.Get(SettingKeys.EdgeTriggerSlideRightAction, BuiltInGestureAction.TaskSwitcher);
         _edgeTriggerSlideTopAction = _settingsService.Get(SettingKeys.EdgeTriggerSlideTopAction, BuiltInGestureAction.StartMenu);
-        _edgeTriggerSlideBottomAction = _settingsService.Get(SettingKeys.EdgeTriggerSlideBottomAction, BuiltInGestureAction.ShowDesktop);
+        _edgeTriggerSlideBottomAction = _settingsService.Get(SettingKeys.EdgeTriggerSlideBottomAction, BuiltInGestureAction.PasteAndEnter);
         _selectedGesturePreset = _settingsService.Get(SettingKeys.GesturePreset, GesturePreset.EditEnhanced);
         _gestureTriggerThreshold = _settingsService.Get(SettingKeys.GestureTriggerThreshold, 20);
         _clipboardMaxItems = _settingsService.Get(SettingKeys.ClipboardMaxItems, 1000);
@@ -179,6 +181,11 @@ public sealed class SettingsViewModel : INotifyPropertyChanged
         ClearUnpinnedClipboardItemsCommand = new AsyncRelayCommand(_ => ClearUnpinnedClipboardItemsAsync());
         ApplyClipboardCleanupCommand = new AsyncRelayCommand(_ => ApplyClipboardCleanupAsync());
         AddCustomGestureBindingCommand = new AsyncRelayCommand(_ => AddCustomGestureBindingAsync());
+        DeleteSelectedGestureBindingCommand = new AsyncRelayCommand(_ => DeleteSelectedGestureBindingAsync());
+        SetNewGesturePatternCommand = new RelayCommand(SetNewGesturePattern);
+        AppendGestureDirectionCommand = new RelayCommand(AppendGestureDirection);
+        RemoveLastGestureDirectionCommand = new RelayCommand(_ => RemoveLastGestureDirection());
+        ClearNewGesturePatternCommand = new RelayCommand(_ => NewGesturePattern = "");
         ApplyBrowserEdgePresetCommand = new AsyncRelayCommand(_ => ApplyBrowserEdgePresetAsync());
         ApplySystemEdgePresetCommand = new AsyncRelayCommand(_ => ApplySystemEdgePresetAsync());
         ApplyClipboardEdgePresetCommand = new AsyncRelayCommand(_ => ApplyClipboardEdgePresetAsync());
@@ -232,16 +239,44 @@ public sealed class SettingsViewModel : INotifyPropertyChanged
 
     public ObservableCollection<GestureBindingCardViewModel> GestureBindingCards { get; } = [];
 
+    public GestureBindingCardViewModel? SelectedGestureBindingCard
+    {
+        get => _selectedGestureBindingCard;
+        set
+        {
+            if (ReferenceEquals(_selectedGestureBindingCard, value))
+            {
+                return;
+            }
+
+            _selectedGestureBindingCard = value;
+            OnPropertyChanged();
+            OnPropertyChanged(nameof(HasSelectedGestureBinding));
+            OnPropertyChanged(nameof(SelectedGestureBindingPattern));
+            OnPropertyChanged(nameof(SelectedGestureBindingDirectionText));
+            OnPropertyChanged(nameof(SelectedGestureBindingActionName));
+            OnPropertyChanged(nameof(SelectedGestureBindingShortcutText));
+        }
+    }
+
+    public bool HasSelectedGestureBinding => SelectedGestureBindingCard is not null;
+
+    public string SelectedGestureBindingPattern => SelectedGestureBindingCard?.Pattern ?? "-";
+
+    public string SelectedGestureBindingDirectionText => SelectedGestureBindingCard?.DirectionText ?? "先从左侧选择一个手势";
+
+    public string SelectedGestureBindingActionName => SelectedGestureBindingCard?.ActionName ?? "-";
+
+    public string SelectedGestureBindingShortcutText => SelectedGestureBindingCard?.ShortcutText ?? "";
+
     public IReadOnlyList<GestureTriggerModeViewModel> GestureTriggerModes { get; } =
     [
         new("鼠标右键", "已启用", true),
         new("鼠标中键", "默认开启", true),
-        new("鼠标左键", "暂未支持", false),
         new("鼠标侧键 1", "默认开启", true),
         new("鼠标侧键 2", "默认开启", true),
         new("屏幕四角热区", "默认开启", true),
         new("屏幕左边缘 + 鼠标中键", "默认开启", true),
-        new("屏幕左边缘 + 鼠标左键", "默认开启", true),
         new("屏幕左边缘 + 鼠标侧键 1", "默认开启", true),
         new("屏幕左边缘 + 鼠标侧键 2", "默认开启", true),
         new("屏幕右上角 + 鼠标碰撞", "已支持", true),
@@ -268,6 +303,16 @@ public sealed class SettingsViewModel : INotifyPropertyChanged
     public ICommand ApplyClipboardCleanupCommand { get; }
 
     public ICommand AddCustomGestureBindingCommand { get; }
+
+    public ICommand DeleteSelectedGestureBindingCommand { get; }
+
+    public ICommand SetNewGesturePatternCommand { get; }
+
+    public ICommand AppendGestureDirectionCommand { get; }
+
+    public ICommand RemoveLastGestureDirectionCommand { get; }
+
+    public ICommand ClearNewGesturePatternCommand { get; }
 
     public ICommand ApplyBrowserEdgePresetCommand { get; }
 
@@ -429,9 +474,12 @@ public sealed class SettingsViewModel : INotifyPropertyChanged
 
             _clipboardCaptureEnabled = value;
             OnPropertyChanged();
+            OnPropertyChanged(nameof(ClipboardCaptureStatusText));
             _ = ApplyClipboardCaptureEnabledAsync(value);
         }
     }
+
+    public string ClipboardCaptureStatusText => ClipboardCaptureEnabled ? "已开启" : "已暂停";
 
     public string GestureHookStatus => _gestureDiagnostics.HookStatus;
 
@@ -493,9 +541,12 @@ public sealed class SettingsViewModel : INotifyPropertyChanged
             _gestureEnabled = value;
             UpdateGestureSettingsSnapshot();
             OnPropertyChanged();
+            OnPropertyChanged(nameof(GestureStatusText));
             _ = ApplyGestureEnabledAsync(value);
         }
     }
+
+    public string GestureStatusText => GestureEnabled ? "已开启" : "已暂停";
 
     public bool GestureShowOverlay
     {
@@ -725,13 +776,13 @@ public sealed class SettingsViewModel : INotifyPropertyChanged
     public int EdgeTriggerDwellMs
     {
         get => _edgeTriggerDwellMs;
-        set => SetEdgeTriggerInt(ref _edgeTriggerDwellMs, Math.Clamp(value, 100, 2000), SettingKeys.EdgeTriggerDwellMs, nameof(EdgeTriggerDwellMs));
+        set => SetEdgeTriggerInt(ref _edgeTriggerDwellMs, Math.Clamp(value, 50, 2000), SettingKeys.EdgeTriggerDwellMs, nameof(EdgeTriggerDwellMs));
     }
 
     public int EdgeTriggerCooldownMs
     {
         get => _edgeTriggerCooldownMs;
-        set => SetEdgeTriggerInt(ref _edgeTriggerCooldownMs, Math.Clamp(value, 250, 5000), SettingKeys.EdgeTriggerCooldownMs, nameof(EdgeTriggerCooldownMs));
+        set => SetEdgeTriggerInt(ref _edgeTriggerCooldownMs, Math.Clamp(value, 150, 5000), SettingKeys.EdgeTriggerCooldownMs, nameof(EdgeTriggerCooldownMs));
     }
 
     public int EdgeTriggerSlideThreshold
@@ -842,6 +893,31 @@ public sealed class SettingsViewModel : INotifyPropertyChanged
             }
 
             _newGesturePattern = normalized;
+            OnPropertyChanged();
+            OnPropertyChanged(nameof(NewGestureDirectionPreview));
+            OnPropertyChanged(nameof(NewGestureAddButtonText));
+        }
+    }
+
+    public string NewGestureDirectionPreview => string.IsNullOrEmpty(NewGesturePattern)
+        ? "点击方向按钮设计手势"
+        : DirectionText(NewGesturePattern);
+
+    public string NewGestureAddButtonText => string.IsNullOrEmpty(NewGesturePattern)
+        ? "先选方向"
+        : "添加到列表";
+
+    public string RecordGestureStatusText
+    {
+        get => _recordGestureStatusText;
+        private set
+        {
+            if (_recordGestureStatusText == value)
+            {
+                return;
+            }
+
+            _recordGestureStatusText = value;
             OnPropertyChanged();
         }
     }
@@ -991,7 +1067,7 @@ public sealed class SettingsViewModel : INotifyPropertyChanged
             SettingKeys.EdgeTriggerSlideBottomAction => nameof(EdgeTriggerSlideBottomAction),
             _ => null
         });
-        _ = _settingsService.SetAsync(settingKey, value, CancellationToken.None);
+        _ = SaveEdgeTriggerSettingAndRefreshAsync(settingKey, value);
     }
 
     private void SetEdgeTriggerEnabled(ref bool field, bool value, string settingKey)
@@ -1015,7 +1091,7 @@ public sealed class SettingsViewModel : INotifyPropertyChanged
             SettingKeys.EdgeTriggerSlideBottomEnabled => nameof(EdgeTriggerSlideBottomEnabled),
             _ => null
         });
-        _ = _settingsService.SetAsync(settingKey, value, CancellationToken.None);
+        _ = SaveEdgeTriggerSettingAndRefreshAsync(settingKey, value);
     }
 
     private void SetEdgeTriggerInt(ref int field, int value, string settingKey, string propertyName)
@@ -1027,7 +1103,13 @@ public sealed class SettingsViewModel : INotifyPropertyChanged
 
         field = value;
         OnPropertyChanged(propertyName);
-        _ = _settingsService.SetAsync(settingKey, value, CancellationToken.None);
+        _ = SaveEdgeTriggerSettingAndRefreshAsync(settingKey, value);
+    }
+
+    private async Task SaveEdgeTriggerSettingAndRefreshAsync<T>(string settingKey, T value)
+    {
+        await _settingsService.SetAsync(settingKey, value, CancellationToken.None);
+        _edgeTriggerService.RefreshSettings();
     }
 
     private async Task ApplyBrowserEdgePresetAsync()
@@ -1093,7 +1175,7 @@ public sealed class SettingsViewModel : INotifyPropertyChanged
         EdgeTriggerSlideRightEnabled = true;
         EdgeTriggerSlideRightAction = BuiltInGestureAction.TaskSwitcher;
         EdgeTriggerSlideBottomEnabled = true;
-        EdgeTriggerSlideBottomAction = BuiltInGestureAction.ShowDesktop;
+        EdgeTriggerSlideBottomAction = BuiltInGestureAction.PasteAndEnter;
         await _settingsService.SetAsync(SettingKeys.EdgeTriggerEnabled, true, CancellationToken.None);
     }
 
@@ -1163,6 +1245,7 @@ public sealed class SettingsViewModel : INotifyPropertyChanged
 
     private void RefreshGestureBindingCards()
     {
+        var previousPattern = SelectedGestureBindingCard?.Pattern;
         GestureBindingCards.Clear();
         var bindings = _gesturePresetProvider.GetBindings(_selectedGesturePreset);
         var patterns = GesturePatterns
@@ -1180,11 +1263,47 @@ public sealed class SettingsViewModel : INotifyPropertyChanged
                 GestureName(pattern),
                 action,
                 GestureActionOptions,
-                ApplyGestureBindingAsync));
+                ApplyGestureBindingAsync,
+                DeleteGestureBindingAsync));
         }
+
+        SelectedGestureBindingCard = GestureBindingCards.FirstOrDefault(card => card.Pattern == previousPattern)
+            ?? GestureBindingCards.FirstOrDefault();
     }
 
     private async Task ApplyGestureBindingAsync(GestureBindingCardViewModel card)
+    {
+        if (ReferenceEquals(card, SelectedGestureBindingCard))
+        {
+            OnPropertyChanged(nameof(SelectedGestureBindingActionName));
+            OnPropertyChanged(nameof(SelectedGestureBindingShortcutText));
+        }
+
+        await SaveGestureBindingsAsync();
+    }
+
+    private async Task DeleteGestureBindingAsync(GestureBindingCardViewModel card)
+    {
+        var index = GestureBindingCards.IndexOf(card);
+        GestureBindingCards.Remove(card);
+        if (ReferenceEquals(card, SelectedGestureBindingCard))
+        {
+            SelectedGestureBindingCard = GestureBindingCards.Count == 0
+                ? null
+                : GestureBindingCards[Math.Min(index, GestureBindingCards.Count - 1)];
+        }
+
+        await SaveGestureBindingsAsync();
+    }
+
+    public Task DeleteSelectedGestureBindingAsync()
+    {
+        return SelectedGestureBindingCard is null
+            ? Task.CompletedTask
+            : DeleteGestureBindingAsync(SelectedGestureBindingCard);
+    }
+
+    private async Task SaveGestureBindingsAsync()
     {
         var bindings = GestureBindingCards.ToDictionary(item => item.Pattern, item => item.SelectedAction, StringComparer.Ordinal);
         var json = JsonSerializer.Serialize(bindings.ToDictionary(
@@ -1211,6 +1330,7 @@ public sealed class SettingsViewModel : INotifyPropertyChanged
         if (existing is not null)
         {
             existing.SelectedAction = NewGestureAction;
+            SelectedGestureBindingCard = existing;
             NewGesturePattern = "";
             return;
         }
@@ -1221,10 +1341,71 @@ public sealed class SettingsViewModel : INotifyPropertyChanged
             GestureName(pattern),
             NewGestureAction,
             GestureActionOptions,
-            ApplyGestureBindingAsync);
+            ApplyGestureBindingAsync,
+            DeleteGestureBindingAsync);
         GestureBindingCards.Add(card);
+        SelectedGestureBindingCard = card;
         NewGesturePattern = "";
         await ApplyGestureBindingAsync(card);
+    }
+
+    private void SetNewGesturePattern(object? parameter)
+    {
+        if (parameter is string pattern)
+        {
+            NewGesturePattern = pattern;
+        }
+    }
+
+    private void AppendGestureDirection(object? parameter)
+    {
+        if (parameter is not string direction || direction.Length != 1)
+        {
+            return;
+        }
+
+        var normalized = NormalizeGesturePattern(direction);
+        if (!IsValidGesturePattern(normalized))
+        {
+            return;
+        }
+
+        if (NewGesturePattern.Length >= 8)
+        {
+            return;
+        }
+
+        NewGesturePattern += normalized;
+    }
+
+    private void RemoveLastGestureDirection()
+    {
+        if (NewGesturePattern.Length == 0)
+        {
+            return;
+        }
+
+        NewGesturePattern = NewGesturePattern[..^1];
+    }
+
+    public void SetNewGesturePatternFromRecordedPoints(IReadOnlyList<GesturePoint> points)
+    {
+        var recognizer = new DirectionGestureRecognizer();
+        var result = recognizer.Recognize(
+            points,
+            new GestureOptions(
+                TriggerThreshold: Math.Max(20, GestureTriggerThreshold),
+                SegmentThreshold: 16,
+                MaxDurationMs: 5000,
+                MinGesturePoints: 2));
+        if (!result.IsValid || string.IsNullOrWhiteSpace(result.Pattern))
+        {
+            RecordGestureStatusText = "没识别出来，画得稍微长一点。";
+            return;
+        }
+
+        NewGesturePattern = result.Pattern;
+        RecordGestureStatusText = $"识别为 {DirectionText(result.Pattern)}，可以直接添加。";
     }
 
     private void RefreshGestureDiagnostics()
@@ -1294,6 +1475,8 @@ public sealed class SettingsViewModel : INotifyPropertyChanged
         ActionOption(BuiltInGestureAction.SendAltRight),
         ActionOption(BuiltInGestureAction.PasteAndEnter),
         ActionOption(BuiltInGestureAction.NewTab),
+        ActionOption(BuiltInGestureAction.NextTab),
+        ActionOption(BuiltInGestureAction.PreviousTab),
         ActionOption(BuiltInGestureAction.ReopenClosedTab),
         ActionOption(BuiltInGestureAction.Refresh),
         ActionOption(BuiltInGestureAction.CloseTab),
@@ -1321,7 +1504,9 @@ public sealed class SettingsViewModel : INotifyPropertyChanged
         ActionOption(BuiltInGestureAction.NextVirtualDesktop),
         ActionOption(BuiltInGestureAction.PreviousVirtualDesktop),
         ActionOption(BuiltInGestureAction.FullScreen),
-        ActionOption(BuiltInGestureAction.PinWindow)
+        ActionOption(BuiltInGestureAction.PinWindow),
+        ActionOption(BuiltInGestureAction.LeftMouseClick),
+        ActionOption(BuiltInGestureAction.RightMouseClick)
     ];
 
     private static GestureActionOptionViewModel ActionOption(BuiltInGestureAction action)
@@ -1329,7 +1514,11 @@ public sealed class SettingsViewModel : INotifyPropertyChanged
         return new GestureActionOptionViewModel(action, GestureActionText.Name(action), GestureActionText.Shortcut(action));
     }
 
-    private static readonly string[] GesturePatterns = ["U", "D", "UD", "DU", "L", "R", "LR", "RL"];
+    private static readonly string[] GesturePatterns =
+    [
+        "U", "D", "UD", "DU", "L", "R", "LR", "RL", "DL", "DR",
+        "UR", "UL", "RU", "RD", "LD", "RDL", "RUD", "URD", "ULD", "RULD"
+    ];
 
     private static string NormalizeGesturePattern(string? pattern)
     {
@@ -1362,6 +1551,18 @@ public sealed class SettingsViewModel : INotifyPropertyChanged
         "R" => "右划",
         "LR" => "左右划",
         "RL" => "右左划",
+        "DL" => "下左划",
+        "DR" => "下右划",
+        "UR" => "上右划",
+        "UL" => "上左划",
+        "RU" => "右上划",
+        "RD" => "右下划",
+        "LD" => "左下划",
+        "RDL" => "右下左划",
+        "RUD" => "右上下划",
+        "URD" => "上右下划",
+        "ULD" => "上左下划",
+        "RULD" => "右上左下划",
         _ => pattern
     };
 
@@ -1383,6 +1584,8 @@ public sealed class SettingsViewModel : INotifyPropertyChanged
         BuiltInGestureAction.PasteLatestClipboardItem => "PasteLatest",
         BuiltInGestureAction.PasteAndEnter => "Ctrl+V Enter",
         BuiltInGestureAction.NewTab => "Ctrl+T",
+        BuiltInGestureAction.NextTab => "Ctrl+Tab",
+        BuiltInGestureAction.PreviousTab => "Ctrl+Shift+Tab",
         BuiltInGestureAction.ReopenClosedTab => "Ctrl+Shift+T",
         BuiltInGestureAction.Refresh => "F5",
         BuiltInGestureAction.CloseTab => "Ctrl+W",
@@ -1411,6 +1614,8 @@ public sealed class SettingsViewModel : INotifyPropertyChanged
         BuiltInGestureAction.PreviousVirtualDesktop => "Ctrl+Win+Left",
         BuiltInGestureAction.FullScreen => "F11",
         BuiltInGestureAction.PinWindow => "Reserved",
+        BuiltInGestureAction.LeftMouseClick => "LeftClick",
+        BuiltInGestureAction.RightMouseClick => "RightClick",
         _ => ""
     };
 

@@ -25,6 +25,8 @@ public static class GestureActionText
         BuiltInGestureAction.CloseForegroundWindow => "关闭当前窗口",
         BuiltInGestureAction.PasteAndEnter => "粘贴并回车",
         BuiltInGestureAction.NewTab => "新建标签页",
+        BuiltInGestureAction.NextTab => "下一个标签页",
+        BuiltInGestureAction.PreviousTab => "上一个标签页",
         BuiltInGestureAction.ReopenClosedTab => "重新打开标签页",
         BuiltInGestureAction.Refresh => "刷新",
         BuiltInGestureAction.CloseTab => "关闭标签页",
@@ -53,6 +55,8 @@ public static class GestureActionText
         BuiltInGestureAction.PreviousVirtualDesktop => "上一个桌面",
         BuiltInGestureAction.FullScreen => "全屏",
         BuiltInGestureAction.PinWindow => "置顶窗口",
+        BuiltInGestureAction.LeftMouseClick => "鼠标左键点击",
+        BuiltInGestureAction.RightMouseClick => "鼠标右键点击",
         _ => action.ToString()
     };
 
@@ -74,6 +78,8 @@ public static class GestureActionText
         BuiltInGestureAction.PasteLatestClipboardItem => "历史最近一条",
         BuiltInGestureAction.PasteAndEnter => "Ctrl + V, Enter",
         BuiltInGestureAction.NewTab => "Ctrl + T",
+        BuiltInGestureAction.NextTab => "Ctrl + Tab",
+        BuiltInGestureAction.PreviousTab => "Ctrl + Shift + Tab",
         BuiltInGestureAction.ReopenClosedTab => "Ctrl + Shift + T",
         BuiltInGestureAction.Refresh => "F5",
         BuiltInGestureAction.CloseTab => "Ctrl + W",
@@ -102,6 +108,8 @@ public static class GestureActionText
         BuiltInGestureAction.PreviousVirtualDesktop => "Ctrl + Win + ←",
         BuiltInGestureAction.FullScreen => "F11",
         BuiltInGestureAction.PinWindow => "预留",
+        BuiltInGestureAction.LeftMouseClick => "鼠标左键",
+        BuiltInGestureAction.RightMouseClick => "鼠标右键",
         _ => ""
     };
 }

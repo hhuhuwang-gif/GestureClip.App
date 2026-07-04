@@ -42,7 +42,6 @@ public sealed record EdgeTriggerSettings(
 
     public BuiltInGestureAction GetLeftEdgeButtonAction(MouseHookEventType eventType) => eventType switch
     {
-        MouseHookEventType.LeftButtonDown when LeftEdgeLeftButtonEnabled => LeftEdgeLeftButtonAction,
         MouseHookEventType.MiddleButtonDown when LeftEdgeMiddleButtonEnabled => LeftEdgeMiddleButtonAction,
         MouseHookEventType.XButton1Down when LeftEdgeXButton1Enabled => LeftEdgeXButton1Action,
         MouseHookEventType.XButton2Down when LeftEdgeXButton2Enabled => LeftEdgeXButton2Action,

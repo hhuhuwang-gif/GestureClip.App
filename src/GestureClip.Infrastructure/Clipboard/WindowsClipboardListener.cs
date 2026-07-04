@@ -17,7 +17,7 @@ public sealed class WindowsClipboardListener : IClipboardListener, IDisposable
 
     public WindowsClipboardListener(ILogger<WindowsClipboardListener> logger)
     {
-        _dispatcher = Application.Current.Dispatcher;
+        _dispatcher = System.Windows.Application.Current.Dispatcher;
         _logger = logger;
     }
 

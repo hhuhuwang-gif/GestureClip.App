@@ -41,12 +41,13 @@ public sealed class ThemeResourceTests
         var colorsPath = FindRepositoryFile("src", "GestureClip.App", "Themes", "Colors.xaml");
         var colors = File.ReadAllText(colorsPath);
 
-        Assert.Contains("#F5F7FA", colors);
+        Assert.Contains("#F6F7FB", colors);
         Assert.Contains("#FFFFFFFF", colors);
-        Assert.Contains("#1C111827", colors);
-        Assert.Contains("#111827", colors);
-        Assert.Contains("#667085", colors);
-        Assert.Contains("#2563EB", colors);
+        Assert.Contains("#17182733", colors);
+        Assert.Contains("#15171D", colors);
+        Assert.Contains("#5E6675", colors);
+        Assert.Contains("#101011", colors);
+        Assert.Contains("#F36D64", colors);
         Assert.Contains("ColorTabSelected", colors);
     }
 
@@ -73,9 +74,119 @@ public sealed class ThemeResourceTests
         var path = FindRepositoryFile("src", "GestureClip.App", "ClipboardOverlayWindow.xaml");
         var xaml = File.ReadAllText(path);
 
+        Assert.Contains("Width=\"760\"", xaml);
+        Assert.Contains("Height=\"520\"", xaml);
         Assert.Contains("AllowsTransparency=\"True\"", xaml);
-        Assert.Contains("Style=\"{StaticResource GlassPanelStyle}\"", xaml);
+        Assert.Contains("CornerRadius=\"28\"", xaml);
+        Assert.Contains("Background=\"{DynamicResource BrushGlassStrong}\"", xaml);
+        Assert.Contains("IsSelected", xaml);
         Assert.Contains("ShortcutNumberConverter", xaml);
+    }
+
+    [Fact]
+    public void ClipboardOverlayWindow_exposes_detail_action_buttons()
+    {
+        var path = FindRepositoryFile("src", "GestureClip.App", "ClipboardOverlayWindow.xaml");
+        var xaml = File.ReadAllText(path);
+
+        Assert.Contains("x:Name=\"DetailCopyButton\"", xaml);
+        Assert.Contains("x:Name=\"DetailPasteButton\"", xaml);
+        Assert.Contains("x:Name=\"DetailPinButton\"", xaml);
+        Assert.Contains("x:Name=\"DetailFavoriteButton\"", xaml);
+        Assert.Contains("x:Name=\"DetailDeleteButton\"", xaml);
+    }
+
+    [Fact]
+    public void ClipboardOverlayWindow_exposes_per_item_quick_action_buttons()
+    {
+        var xamlPath = FindRepositoryFile("src", "GestureClip.App", "ClipboardOverlayWindow.xaml");
+        var sourcePath = FindRepositoryFile("src", "GestureClip.App", "ClipboardOverlayWindow.xaml.cs");
+        var xaml = File.ReadAllText(xamlPath);
+        var source = File.ReadAllText(sourcePath);
+
+        Assert.Contains("x:Name=\"ItemQuickCopyButton\"", xaml);
+        Assert.Contains("x:Name=\"ItemQuickPasteButton\"", xaml);
+        Assert.Contains("x:Name=\"ItemQuickPinButton\"", xaml);
+        Assert.Contains("x:Name=\"ItemQuickDeleteButton\"", xaml);
+        Assert.Contains("QuickCopyItemButton_Click", source);
+        Assert.Contains("QuickPasteItemButton_Click", source);
+        Assert.Contains("QuickPinItemButton_Click", source);
+        Assert.Contains("QuickDeleteItemButton_Click", source);
+        Assert.Contains("SelectSingleItem", source);
+    }
+
+    [Fact]
+    public void ClipboardOverlayWindow_supports_search_friendly_keyboard_shortcuts()
+    {
+        var path = FindRepositoryFile("src", "GestureClip.App", "ClipboardOverlayWindow.xaml.cs");
+        var source = File.ReadAllText(path);
+
+        Assert.Contains("ClearSearchAsync", source);
+        Assert.Contains("Key.F", source);
+        Assert.Contains("FocusSearchBox", source);
+    }
+
+    [Fact]
+    public void ClipboardOverlayWindow_exposes_clear_search_button()
+    {
+        var xamlPath = FindRepositoryFile("src", "GestureClip.App", "ClipboardOverlayWindow.xaml");
+        var sourcePath = FindRepositoryFile("src", "GestureClip.App", "ClipboardOverlayWindow.xaml.cs");
+        var xaml = File.ReadAllText(xamlPath);
+        var source = File.ReadAllText(sourcePath);
+
+        Assert.Contains("x:Name=\"ClearSearchButton\"", xaml);
+        Assert.Contains("Click=\"ClearSearchButton_Click\"", xaml);
+        Assert.Contains("ClearSearchButton_Click", source);
+        Assert.Contains("ClearSearchAsync", source);
+    }
+
+    [Fact]
+    public void ClipboardOverlayWindow_supports_fast_office_keyboard_shortcuts()
+    {
+        var path = FindRepositoryFile("src", "GestureClip.App", "ClipboardOverlayWindow.xaml.cs");
+        var source = File.ReadAllText(path);
+
+        Assert.Contains("Key.S", source);
+        Assert.Contains("ToggleSelectedFavoriteAsync", source);
+        Assert.Contains("Key.P", source);
+        Assert.Contains("ToggleSelectedPinnedAsync", source);
+        Assert.Contains("SelectFilterByShortcut", source);
+    }
+
+    [Fact]
+    public void ClipboardOverlayWindow_shows_office_shortcut_hints()
+    {
+        var path = FindRepositoryFile("src", "GestureClip.App", "ClipboardOverlayWindow.xaml");
+        var xaml = File.ReadAllText(path);
+
+        Assert.Contains("Ctrl + 1-5", xaml);
+        Assert.Contains("Ctrl + P", xaml);
+        Assert.Contains("Ctrl + S", xaml);
+        Assert.Contains("Delete", xaml);
+    }
+
+    [Fact]
+    public void ClipboardOverlayWindow_shows_selection_summary()
+    {
+        var xamlPath = FindRepositoryFile("src", "GestureClip.App", "ClipboardOverlayWindow.xaml");
+        var sourcePath = FindRepositoryFile("src", "GestureClip.App", "ClipboardOverlayWindow.xaml.cs");
+        var xaml = File.ReadAllText(xamlPath);
+        var source = File.ReadAllText(sourcePath);
+
+        Assert.Contains("Text=\"{Binding SummaryText}\"", xaml);
+        Assert.Contains("SelectionChanged=\"HistoryList_SelectionChanged\"", xaml);
+        Assert.Contains("UpdateSelectedCount", source);
+    }
+
+    [Fact]
+    public void MouseGestureService_does_not_reinsert_start_point_when_trimming_overlay_points()
+    {
+        var path = FindRepositoryFile("src", "GestureClip.Features", "Gestures", "MouseGestureService.cs");
+        var source = File.ReadAllText(path);
+
+        Assert.Contains("RemoveRange(0, overflow)", source);
+        Assert.DoesNotContain(".Insert(0", source);
+        Assert.DoesNotContain("_startPoint.Value", source);
     }
 
     [Fact]
@@ -100,7 +211,9 @@ public sealed class ThemeResourceTests
 
         Assert.Contains("WindowStyle=\"None\"", xaml);
         Assert.Contains("AllowsTransparency=\"True\"", xaml);
-        Assert.Contains("CornerRadius=\"22\"", xaml);
+        Assert.Contains("CornerRadius=\"28\"", xaml);
+        Assert.Contains("BrushDarkPanel", xaml);
+        Assert.Contains("搜索设置稍后开放", xaml);
         Assert.Contains("GestureStrokeColorOptions", xaml);
         Assert.Contains("NewGesturePattern", xaml);
         Assert.Contains("AddCustomGestureBindingCommand", xaml);
@@ -110,14 +223,15 @@ public sealed class ThemeResourceTests
     }
 
     [Fact]
-    public void SettingsWindow_keeps_gesture_page_simple_with_advanced_settings_collapsed()
+    public void SettingsWindow_keeps_gesture_page_simple_with_advanced_settings_expanded_without_left_button_trigger()
     {
         var path = FindRepositoryFile("src", "GestureClip.App", "SettingsWindow.xaml");
         var xaml = File.ReadAllText(path);
 
         Assert.Contains("按住右键，往一个方向划一下，松开右键就会执行动作。", xaml);
         Assert.Contains("Header=\"高级设置\"", xaml);
-        Assert.Contains("IsExpanded=\"False\"", xaml);
+        Assert.Contains("IsExpanded=\"True\"", xaml);
+        Assert.DoesNotContain("左边缘 + 鼠标左键", xaml);
         Assert.Contains("划多远才算手势", xaml);
         Assert.Contains("防误触间隔", xaml);
         Assert.DoesNotContain("停留 ms", xaml);

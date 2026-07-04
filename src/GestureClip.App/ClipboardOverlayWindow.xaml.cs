@@ -1,6 +1,9 @@
 using System.Windows;
+using System.Windows.Controls;
 using System.Windows.Input;
+using System.Windows.Media;
 using GestureClip.App.ViewModels;
+using GestureClip.Core.Clipboard;
 
 namespace GestureClip.App;
 
@@ -29,9 +32,65 @@ public partial class ClipboardOverlayWindow : Window
 
     private async void Window_KeyDown(object sender, System.Windows.Input.KeyEventArgs e)
     {
+        if ((Keyboard.Modifiers & ModifierKeys.Control) == ModifierKeys.Control &&
+            SelectFilterByShortcut(e.Key))
+        {
+            e.Handled = true;
+            return;
+        }
+
+        if (e.Key == Key.F && (Keyboard.Modifiers & ModifierKeys.Control) == ModifierKeys.Control)
+        {
+            FocusSearchBox();
+            e.Handled = true;
+            return;
+        }
+
         if (e.Key == Key.Escape)
         {
+            if (await _viewModel.ClearSearchAsync())
+            {
+                FocusSearchBox();
+                e.Handled = true;
+                return;
+            }
+
             Hide();
+            e.Handled = true;
+            return;
+        }
+
+        if (e.Key == Key.A && (Keyboard.Modifiers & ModifierKeys.Control) == ModifierKeys.Control)
+        {
+            HistoryList.SelectAll();
+            e.Handled = true;
+            return;
+        }
+
+        if (e.Key == Key.C && (Keyboard.Modifiers & ModifierKeys.Control) == ModifierKeys.Control)
+        {
+            await _viewModel.CopySelectedAsync(GetSelectedItems());
+            e.Handled = true;
+            return;
+        }
+
+        if (e.Key == Key.P && (Keyboard.Modifiers & ModifierKeys.Control) == ModifierKeys.Control)
+        {
+            await _viewModel.ToggleSelectedPinnedAsync();
+            e.Handled = true;
+            return;
+        }
+
+        if (e.Key == Key.S && (Keyboard.Modifiers & ModifierKeys.Control) == ModifierKeys.Control)
+        {
+            await _viewModel.ToggleSelectedFavoriteAsync();
+            e.Handled = true;
+            return;
+        }
+
+        if (e.Key == Key.Delete)
+        {
+            await _viewModel.DeleteItemsAsync(GetSelectedItems());
             e.Handled = true;
             return;
         }
@@ -59,12 +118,177 @@ public partial class ClipboardOverlayWindow : Window
         }
     }
 
+    private bool SelectFilterByShortcut(Key key)
+    {
+        var filterButton = key switch
+        {
+            Key.D1 or Key.NumPad1 => AllFilterButton,
+            Key.D2 or Key.NumPad2 => PinnedFilterButton,
+            Key.D3 or Key.NumPad3 => FavoritesFilterButton,
+            Key.D4 or Key.NumPad4 => TextFilterButton,
+            Key.D5 or Key.NumPad5 => ImagesFilterButton,
+            _ => null
+        };
+
+        if (filterButton is null)
+        {
+            return false;
+        }
+
+        filterButton.IsChecked = true;
+        return true;
+    }
+
+    private void HistoryList_PreviewMouseRightButtonDown(object sender, MouseButtonEventArgs e)
+    {
+        var item = FindAncestor<ListBoxItem>((DependencyObject)e.OriginalSource);
+        if (item is null)
+        {
+            return;
+        }
+
+        if (!item.IsSelected)
+        {
+            HistoryList.SelectedItems.Clear();
+            item.IsSelected = true;
+        }
+
+        item.Focus();
+    }
+
+    private void HistoryList_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        _viewModel.UpdateSelectedCount(HistoryList.SelectedItems.Count);
+    }
+
+    private async void ClearSearchButton_Click(object sender, RoutedEventArgs e)
+    {
+        await _viewModel.ClearSearchAsync();
+        FocusSearchBox();
+    }
+
     private async void HistoryList_MouseDoubleClick(object sender, MouseButtonEventArgs e)
     {
         if (await _viewModel.PasteSelectedAsync())
         {
             Hide();
         }
+    }
+
+    private void FilterRadioButton_Checked(object sender, RoutedEventArgs e)
+    {
+        if (sender is not System.Windows.Controls.RadioButton { Tag: string tag })
+        {
+            return;
+        }
+
+        _viewModel.SelectedFilter = tag switch
+        {
+            "Pinned" => ClipboardOverlayFilter.Pinned,
+            "Favorites" => ClipboardOverlayFilter.Favorites,
+            "Text" => ClipboardOverlayFilter.Text,
+            "Images" => ClipboardOverlayFilter.Images,
+            _ => ClipboardOverlayFilter.All
+        };
+    }
+
+    private async void CopySelectedMenuItem_Click(object sender, RoutedEventArgs e)
+    {
+        await _viewModel.CopySelectedAsync(GetSelectedItems());
+    }
+
+    private async void PasteSelectedMenuItem_Click(object sender, RoutedEventArgs e)
+    {
+        if (await _viewModel.PasteSelectedAsync())
+        {
+            Hide();
+        }
+    }
+
+    private async void TogglePinnedMenuItem_Click(object sender, RoutedEventArgs e)
+    {
+        await _viewModel.ToggleSelectedPinnedAsync();
+    }
+
+    private async void ToggleFavoriteMenuItem_Click(object sender, RoutedEventArgs e)
+    {
+        await _viewModel.ToggleSelectedFavoriteAsync();
+    }
+
+    private async void DeleteSelectedMenuItem_Click(object sender, RoutedEventArgs e)
+    {
+        await _viewModel.DeleteItemsAsync(GetSelectedItems());
+    }
+
+    private async void QuickCopyItemButton_Click(object sender, RoutedEventArgs e)
+    {
+        if (GetItemFromSender(sender) is not { } item)
+        {
+            return;
+        }
+
+        SelectSingleItem(item);
+        await _viewModel.CopySelectedAsync([item]);
+        e.Handled = true;
+    }
+
+    private async void QuickPasteItemButton_Click(object sender, RoutedEventArgs e)
+    {
+        if (GetItemFromSender(sender) is not { } item)
+        {
+            return;
+        }
+
+        SelectSingleItem(item);
+        if (await _viewModel.PasteSelectedAsync())
+        {
+            Hide();
+        }
+
+        e.Handled = true;
+    }
+
+    private async void QuickPinItemButton_Click(object sender, RoutedEventArgs e)
+    {
+        if (GetItemFromSender(sender) is not { } item)
+        {
+            return;
+        }
+
+        SelectSingleItem(item);
+        await _viewModel.ToggleSelectedPinnedAsync();
+        e.Handled = true;
+    }
+
+    private async void QuickDeleteItemButton_Click(object sender, RoutedEventArgs e)
+    {
+        if (GetItemFromSender(sender) is not { } item)
+        {
+            return;
+        }
+
+        SelectSingleItem(item);
+        await _viewModel.DeleteItemsAsync([item]);
+        e.Handled = true;
+    }
+
+    private IReadOnlyList<ClipboardItem> GetSelectedItems()
+    {
+        return HistoryList.SelectedItems.Cast<ClipboardItem>().ToArray();
+    }
+
+    private void SelectSingleItem(ClipboardItem item)
+    {
+        HistoryList.SelectedItems.Clear();
+        HistoryList.SelectedItem = item;
+        _viewModel.SelectedItem = item;
+    }
+
+    private static ClipboardItem? GetItemFromSender(object sender)
+    {
+        return sender is FrameworkElement { DataContext: ClipboardItem item }
+            ? item
+            : null;
     }
 
     private static int? GetDigitIndex(Key key)
@@ -79,6 +303,22 @@ public partial class ClipboardOverlayWindow : Window
         if (keyValue >= (int)Key.NumPad1 && keyValue <= (int)Key.NumPad9)
         {
             return keyValue - (int)Key.NumPad1;
+        }
+
+        return null;
+    }
+
+    private static T? FindAncestor<T>(DependencyObject? current)
+        where T : DependencyObject
+    {
+        while (current is not null)
+        {
+            if (current is T target)
+            {
+                return target;
+            }
+
+            current = VisualTreeHelper.GetParent(current);
         }
 
         return null;

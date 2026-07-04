@@ -5,7 +5,7 @@ namespace GestureClip.Features.Gestures;
 
 public sealed class DirectionGestureRecognizer : IMouseGestureRecognizer
 {
-    private static readonly HashSet<string> AllowedPatterns = ["L", "R", "U", "D", "LR", "RL", "UD", "DU"];
+    private const int MaxPatternSegments = 8;
 
     public GestureResult Recognize(IReadOnlyList<GesturePoint> points, GestureOptions options)
     {
@@ -54,7 +54,7 @@ public sealed class DirectionGestureRecognizer : IMouseGestureRecognizer
         }
 
         var pattern = new string(directions.ToArray());
-        return new GestureResult(pattern, AllowedPatterns.Contains(pattern));
+        return new GestureResult(pattern, pattern.Length <= MaxPatternSegments);
     }
 
     private static double Distance(GesturePoint first, GesturePoint second)

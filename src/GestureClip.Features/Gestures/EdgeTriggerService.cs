@@ -57,7 +57,7 @@ public sealed class EdgeTriggerService : IEdgeTriggerService
 
     public Task StartAsync(CancellationToken cancellationToken)
     {
-        var settings = LoadSettings();
+        var settings = RefreshSettingsCore();
         IsEnabled = settings.Enabled;
         if (!IsEnabled)
         {
@@ -138,23 +138,49 @@ public sealed class EdgeTriggerService : IEdgeTriggerService
 
     public async Task PollOnceAsync(CancellationToken cancellationToken)
     {
-        var settings = LoadSettings();
+        EdgeTriggerSettings settings;
         lock (_syncRoot)
         {
-            _currentSettings = settings;
+            settings = _currentSettings;
         }
 
         IsEnabled = settings.Enabled;
         if (!settings.Enabled)
         {
-            ResetTracking();
-            SetDiagnostics("轮询", "-", BuiltInGestureAction.None, "边缘触发未启用", null);
+            lock (_syncRoot)
+            {
+                ResetTracking();
+                SetDiagnostics("轮询", "-", BuiltInGestureAction.None, "边缘触发未启用", null);
+            }
+
             return;
         }
 
         var position = _cursorPositionProvider.GetCurrentPosition();
         var bounds = _cursorPositionProvider.GetVirtualScreenBounds();
         await EvaluateAsync(position, bounds, settings, cancellationToken);
+    }
+
+    public void RefreshSettings()
+    {
+        RefreshSettingsCore();
+    }
+
+    private EdgeTriggerSettings RefreshSettingsCore()
+    {
+        var settings = LoadSettings();
+        lock (_syncRoot)
+        {
+            _currentSettings = settings;
+            if (!settings.Enabled)
+            {
+                ResetTracking();
+            }
+
+            IsEnabled = settings.Enabled;
+        }
+
+        return settings;
     }
 
     private async Task RunAsync(CancellationToken cancellationToken)
@@ -289,7 +315,6 @@ public sealed class EdgeTriggerService : IEdgeTriggerService
 
         source = mouseEvent.Type switch
         {
-            MouseHookEventType.LeftButtonDown => "左边缘 + 鼠标左键",
             MouseHookEventType.MiddleButtonDown => "左边缘 + 鼠标中键",
             MouseHookEventType.XButton1Down => "左边缘 + 鼠标侧键 1",
             MouseHookEventType.XButton2Down => "左边缘 + 鼠标侧键 2",
@@ -407,14 +432,14 @@ public sealed class EdgeTriggerService : IEdgeTriggerService
         return new EdgeTriggerSettings(
             _settingsService.Get(SettingKeys.EdgeTriggerEnabled, true),
             Math.Clamp(_settingsService.Get(SettingKeys.EdgeTriggerHotZoneSize, 8), 2, 64),
-            Math.Clamp(_settingsService.Get(SettingKeys.EdgeTriggerDwellMs, 350), 100, 2000),
-            Math.Clamp(_settingsService.Get(SettingKeys.EdgeTriggerCooldownMs, 1200), 250, 5000),
-            Math.Clamp(_settingsService.Get(SettingKeys.EdgeTriggerSlideThreshold, 80), 24, 400),
+            Math.Clamp(_settingsService.Get(SettingKeys.EdgeTriggerDwellMs, 160), 50, 2000),
+            Math.Clamp(_settingsService.Get(SettingKeys.EdgeTriggerCooldownMs, 450), 150, 5000),
+            Math.Clamp(_settingsService.Get(SettingKeys.EdgeTriggerSlideThreshold, 56), 24, 400),
             _settingsService.Get(SettingKeys.EdgeTriggerTopLeftAction, BuiltInGestureAction.StartMenu),
             _settingsService.Get(SettingKeys.EdgeTriggerTopRightAction, BuiltInGestureAction.TaskSwitcher),
             _settingsService.Get(SettingKeys.EdgeTriggerBottomRightAction, BuiltInGestureAction.ShowDesktop),
             _settingsService.Get(SettingKeys.EdgeTriggerBottomLeftAction, BuiltInGestureAction.SwitchApp),
-            _settingsService.Get(SettingKeys.EdgeTriggerLeftEdgeLeftButtonEnabled, true),
+            _settingsService.Get(SettingKeys.EdgeTriggerLeftEdgeLeftButtonEnabled, false),
             _settingsService.Get(SettingKeys.EdgeTriggerLeftEdgeLeftButtonAction, BuiltInGestureAction.StartMenu),
             _settingsService.Get(SettingKeys.EdgeTriggerLeftEdgeMiddleButtonEnabled, true),
             _settingsService.Get(SettingKeys.EdgeTriggerLeftEdgeMiddleButtonAction, BuiltInGestureAction.ShowDesktop),
@@ -431,7 +456,7 @@ public sealed class EdgeTriggerService : IEdgeTriggerService
             _settingsService.Get(SettingKeys.EdgeTriggerSlideTopEnabled, true),
             _settingsService.Get(SettingKeys.EdgeTriggerSlideTopAction, BuiltInGestureAction.StartMenu),
             _settingsService.Get(SettingKeys.EdgeTriggerSlideBottomEnabled, true),
-            _settingsService.Get(SettingKeys.EdgeTriggerSlideBottomAction, BuiltInGestureAction.ShowDesktop));
+            _settingsService.Get(SettingKeys.EdgeTriggerSlideBottomAction, BuiltInGestureAction.PasteAndEnter));
     }
 
     private void ResetTracking()

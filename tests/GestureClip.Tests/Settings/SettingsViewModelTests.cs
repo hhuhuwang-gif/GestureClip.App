@@ -116,9 +116,14 @@ public sealed class SettingsViewModelTests
     {
         var viewModel = CreateViewModel();
 
-        Assert.Equal(8, viewModel.GestureBindingCards.Count);
+        Assert.True(viewModel.GestureBindingCards.Count >= 20);
         Assert.Contains(viewModel.GestureBindingCards, card => card.Pattern == "U" && card.SelectedAction == BuiltInGestureAction.Copy);
         Assert.Contains(viewModel.GestureBindingCards, card => card.Pattern == "D" && card.SelectedAction == BuiltInGestureAction.Paste);
+        Assert.Contains(viewModel.GestureBindingCards, card => card.Pattern == "DL" && card.SelectedAction == BuiltInGestureAction.LeftMouseClick);
+        Assert.Contains(viewModel.GestureBindingCards, card => card.Pattern == "DR" && card.SelectedAction == BuiltInGestureAction.RightMouseClick);
+        Assert.Contains(viewModel.GestureBindingCards, card => card.Pattern == "URD" && card.SelectedAction == BuiltInGestureAction.NextTab);
+        Assert.Contains(viewModel.GestureBindingCards, card => card.Pattern == "ULD" && card.SelectedAction == BuiltInGestureAction.PreviousTab);
+        Assert.Contains(viewModel.GestureBindingCards, card => card.Pattern == "RDL" && card.SelectedAction == BuiltInGestureAction.Screenshot);
     }
 
     [Fact]
@@ -140,7 +145,78 @@ public sealed class SettingsViewModelTests
         Assert.Contains(viewModel.GestureTriggerModes, mode => mode.Name == "鼠标侧键 1" && mode.IsEnabled && mode.Status == "默认开启");
         Assert.Contains(viewModel.GestureTriggerModes, mode => mode.Name == "屏幕左边缘 + 鼠标中键" && mode.IsEnabled && mode.Status == "默认开启");
         Assert.Contains(viewModel.GestureTriggerModes, mode => mode.Name == "屏幕右上角 + 滚轮" && mode.IsEnabled && mode.Status == "默认开启");
-        Assert.Contains(viewModel.GestureTriggerModes, mode => mode.Name == "鼠标左键" && !mode.IsEnabled && mode.Status == "暂未支持");
+        Assert.DoesNotContain(viewModel.GestureTriggerModes, mode => mode.Name == "鼠标左键");
+        Assert.DoesNotContain(viewModel.GestureTriggerModes, mode => mode.Name == "屏幕左边缘 + 鼠标左键");
+        Assert.Equal(BuiltInGestureAction.PasteAndEnter, viewModel.EdgeTriggerSlideBottomAction);
+    }
+
+    [Fact]
+    public void Custom_gesture_direction_buttons_build_pattern_preview()
+    {
+        var viewModel = CreateViewModel();
+
+        viewModel.AppendGestureDirectionCommand.Execute("D");
+        viewModel.AppendGestureDirectionCommand.Execute("R");
+
+        Assert.Equal("DR", viewModel.NewGesturePattern);
+        Assert.Equal("↓→", viewModel.NewGestureDirectionPreview);
+
+        viewModel.RemoveLastGestureDirectionCommand.Execute(null);
+
+        Assert.Equal("D", viewModel.NewGesturePattern);
+        Assert.Equal("↓", viewModel.NewGestureDirectionPreview);
+
+        viewModel.ClearNewGesturePatternCommand.Execute(null);
+
+        Assert.Equal("", viewModel.NewGesturePattern);
+        Assert.Equal("点击方向按钮设计手势", viewModel.NewGestureDirectionPreview);
+    }
+
+    [Fact]
+    public void Custom_gesture_template_buttons_set_complex_pattern()
+    {
+        var viewModel = CreateViewModel();
+
+        viewModel.SetNewGesturePatternCommand.Execute("URD");
+
+        Assert.Equal("URD", viewModel.NewGesturePattern);
+        Assert.Equal("↑→↓", viewModel.NewGestureDirectionPreview);
+        Assert.Equal("添加到列表", viewModel.NewGestureAddButtonText);
+    }
+
+    [Fact]
+    public void Recording_custom_gesture_sets_recognized_pattern()
+    {
+        var viewModel = CreateViewModel();
+        var now = DateTimeOffset.UtcNow;
+
+        viewModel.SetNewGesturePatternFromRecordedPoints(
+        [
+            new GesturePoint(0, 0, now),
+            new GesturePoint(60, 0, now.AddMilliseconds(80)),
+            new GesturePoint(60, 60, now.AddMilliseconds(160)),
+            new GesturePoint(0, 60, now.AddMilliseconds(240))
+        ]);
+
+        Assert.Equal("RDL", viewModel.NewGesturePattern);
+        Assert.Contains("识别为", viewModel.RecordGestureStatusText, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void Recording_short_custom_gesture_keeps_existing_pattern_and_shows_hint()
+    {
+        var viewModel = CreateViewModel();
+        viewModel.NewGesturePattern = "DR";
+        var now = DateTimeOffset.UtcNow;
+
+        viewModel.SetNewGesturePatternFromRecordedPoints(
+        [
+            new GesturePoint(0, 0, now),
+            new GesturePoint(2, 2, now.AddMilliseconds(50))
+        ]);
+
+        Assert.Equal("DR", viewModel.NewGesturePattern);
+        Assert.Equal("没识别出来，画得稍微长一点。", viewModel.RecordGestureStatusText);
     }
 
     [Fact]
@@ -174,6 +250,51 @@ public sealed class SettingsViewModelTests
         await WaitForAsync(() =>
             settings.Values.TryGetValue(SettingKeys.GestureCustomBindingsJson, out var json) &&
             json is string text && text.Contains("\"URDL\"", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public void Selecting_gesture_binding_updates_editor_card()
+    {
+        var viewModel = CreateViewModel();
+        var card = viewModel.GestureBindingCards.Single(item => item.Pattern == "DR");
+
+        viewModel.SelectedGestureBindingCard = card;
+
+        Assert.Same(card, viewModel.SelectedGestureBindingCard);
+        Assert.True(viewModel.HasSelectedGestureBinding);
+        Assert.Equal("DR", viewModel.SelectedGestureBindingPattern);
+        Assert.Equal(card.ActionName, viewModel.SelectedGestureBindingActionName);
+    }
+
+    [Fact]
+    public async Task Deleting_selected_gesture_binding_selects_next_card()
+    {
+        var settings = new FakeSettingsService();
+        var viewModel = CreateViewModel(settings: settings);
+        var card = viewModel.GestureBindingCards.Single(item => item.Pattern == "DL");
+
+        viewModel.SelectedGestureBindingCard = card;
+        await viewModel.DeleteSelectedGestureBindingAsync();
+
+        Assert.DoesNotContain(viewModel.GestureBindingCards, item => item.Pattern == "DL");
+        Assert.NotNull(viewModel.SelectedGestureBindingCard);
+        Assert.NotSame(card, viewModel.SelectedGestureBindingCard);
+    }
+
+    [Fact]
+    public async Task Deleting_gesture_binding_saves_custom_preset()
+    {
+        var settings = new FakeSettingsService();
+        var viewModel = CreateViewModel(settings: settings);
+        var card = viewModel.GestureBindingCards.Single(item => item.Pattern == "DL");
+
+        card.DeleteCommand.Execute(null);
+
+        Assert.DoesNotContain(viewModel.GestureBindingCards, item => item.Pattern == "DL");
+        await WaitForAsync(() =>
+            settings.Values.TryGetValue(SettingKeys.GestureCustomBindingsJson, out var json) &&
+            json is string text && !text.Contains("\"DL\"", StringComparison.Ordinal));
+        Assert.Equal(GesturePreset.Custom, viewModel.SelectedGesturePresetOption?.Value);
     }
 
     [Fact]
@@ -225,6 +346,16 @@ public sealed class SettingsViewModelTests
             settings.Values.TryGetValue(SettingKeys.EdgeTriggerEnabled, out var enabled) && Equals(enabled, true) &&
             settings.Values.TryGetValue(SettingKeys.EdgeTriggerTopLeftAction, out var topLeft) && Equals(topLeft, BuiltInGestureAction.ShowDesktop) &&
             settings.Values.TryGetValue(SettingKeys.EdgeTriggerBottomRightAction, out var bottomRight) && Equals(bottomRight, BuiltInGestureAction.StartMenu));
+    }
+
+    [Fact]
+    public void Edge_trigger_defaults_are_responsive()
+    {
+        var viewModel = CreateViewModel();
+
+        Assert.Equal(160, viewModel.EdgeTriggerDwellMs);
+        Assert.Equal(450, viewModel.EdgeTriggerCooldownMs);
+        Assert.Equal(56, viewModel.EdgeTriggerSlideThreshold);
     }
 
     private static SettingsViewModel CreateViewModel(
@@ -307,6 +438,9 @@ public sealed class SettingsViewModelTests
         public Task<IReadOnlyList<ClipboardItem>> SearchAsync(string keyword, int limit, CancellationToken cancellationToken) => Task.FromResult<IReadOnlyList<ClipboardItem>>([]);
         public Task<ClipboardItem?> GetLatestAsync(CancellationToken cancellationToken) => Task.FromResult<ClipboardItem?>(null);
         public Task IncrementUseCountAsync(Guid id, CancellationToken cancellationToken) => Task.CompletedTask;
+        public Task<int> DeleteAsync(IReadOnlyList<Guid> ids, CancellationToken cancellationToken) => Task.FromResult(ids.Count);
+        public Task SetPinnedAsync(Guid id, bool isPinned, CancellationToken cancellationToken) => Task.CompletedTask;
+        public Task SetFavoriteAsync(Guid id, bool isFavorite, CancellationToken cancellationToken) => Task.CompletedTask;
         public Task<bool> IsProcessBlockedAsync(string? processName, CancellationToken cancellationToken) => Task.FromResult(false);
     }
 
@@ -325,6 +459,7 @@ public sealed class SettingsViewModelTests
     {
         public int RefreshCount { get; private set; }
         public Task ShowAsync() => Task.CompletedTask;
+        public Task ToggleAsync() => Task.CompletedTask;
         public Task RefreshAsync()
         {
             RefreshCount++;
@@ -376,6 +511,8 @@ public sealed class SettingsViewModelTests
             StopCount++;
             return Task.CompletedTask;
         }
+
+        public void RefreshSettings() { }
     }
 
     private sealed class FakeGestureSettingsProvider : IGestureSettingsProvider
@@ -445,11 +582,16 @@ public sealed class SettingsViewModelTests
         public Task<IReadOnlyList<ClipboardItem>> SearchAsync(string keyword, int limit, CancellationToken cancellationToken) => Task.FromResult<IReadOnlyList<ClipboardItem>>([]);
         public Task<ClipboardItem?> GetLatestAsync(CancellationToken cancellationToken) => Task.FromResult<ClipboardItem?>(null);
         public Task PasteAsync(ClipboardItem item, PasteOptions options, CancellationToken cancellationToken) => Task.CompletedTask;
+        public Task CopyItemsAsync(IReadOnlyList<ClipboardItem> items, CancellationToken cancellationToken) => Task.CompletedTask;
+        public Task<int> DeleteItemsAsync(IReadOnlyList<Guid> ids, CancellationToken cancellationToken) => Task.FromResult(ids.Count);
+        public Task SetPinnedAsync(Guid id, bool isPinned, CancellationToken cancellationToken) => Task.CompletedTask;
+        public Task SetFavoriteAsync(Guid id, bool isFavorite, CancellationToken cancellationToken) => Task.CompletedTask;
     }
 
     private sealed class FakeClipboardWriter : IClipboardWriter
     {
         public Task SetTextAsync(string text, CancellationToken cancellationToken) => Task.CompletedTask;
+        public Task SetImagePngBase64Async(string pngBase64, CancellationToken cancellationToken) => Task.CompletedTask;
         public Task SendPasteHotkeyAsync(CancellationToken cancellationToken) => Task.CompletedTask;
     }
 }

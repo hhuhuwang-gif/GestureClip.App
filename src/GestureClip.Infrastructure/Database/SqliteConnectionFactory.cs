@@ -38,7 +38,7 @@ public sealed class SqliteConnectionFactory : ISqliteConnectionFactory
             throw;
         }
 
-        _logger.LogInformation("SQLite connection opened with required PRAGMA settings.");
+        _logger.LogDebug("SQLite connection opened with required PRAGMA settings.");
         return connection;
     }
 

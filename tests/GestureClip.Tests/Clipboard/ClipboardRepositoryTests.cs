@@ -79,6 +79,7 @@ public sealed class ClipboardRepositoryTests
         using var database = await TestDatabase.CreateAsync();
         var repository = new ClipboardRepository(database.ConnectionFactory);
         await repository.InsertAsync(CreateItem("pinned", "pinned", isPinned: true, minutesAgo: 1), CancellationToken.None);
+        await repository.InsertAsync(CreateItem("favorite", "favorite", isPinned: false, minutesAgo: 2) with { IsFavorite = true }, CancellationToken.None);
         await repository.InsertAsync(CreateItem("normal1", "normal1", isPinned: false, minutesAgo: 2), CancellationToken.None);
         await repository.InsertAsync(CreateItem("normal2", "normal2", isPinned: false, minutesAgo: 3), CancellationToken.None);
 
@@ -86,8 +87,62 @@ public sealed class ClipboardRepositoryTests
         var results = await repository.SearchAsync("", 10, CancellationToken.None);
 
         Assert.Equal(2, deleted);
-        Assert.Single(results);
+        Assert.Equal(["pinned", "favorite"], results.Select(item => item.TextContent ?? "").ToArray());
         Assert.True(results[0].IsPinned);
+        Assert.True(results[1].IsFavorite);
+    }
+
+    [Fact]
+    public async Task DeleteAsync_deletes_selected_items_and_returns_deleted_count()
+    {
+        using var database = await TestDatabase.CreateAsync();
+        var repository = new ClipboardRepository(database.ConnectionFactory);
+        var first = CreateItem("one", "one", isPinned: false, minutesAgo: 1);
+        var second = CreateItem("two", "two", isPinned: false, minutesAgo: 2);
+        var third = CreateItem("three", "three", isPinned: false, minutesAgo: 3);
+        await repository.InsertAsync(first, CancellationToken.None);
+        await repository.InsertAsync(second, CancellationToken.None);
+        await repository.InsertAsync(third, CancellationToken.None);
+
+        var deleted = await repository.DeleteAsync([first.Id, third.Id], CancellationToken.None);
+        var results = await repository.SearchAsync("", 10, CancellationToken.None);
+
+        Assert.Equal(2, deleted);
+        Assert.Equal(["two"], results.Select(item => item.TextContent ?? "").ToArray());
+    }
+
+    [Fact]
+    public async Task SetPinnedAsync_updates_pin_state()
+    {
+        using var database = await TestDatabase.CreateAsync();
+        var repository = new ClipboardRepository(database.ConnectionFactory);
+        var item = CreateItem("one", "one", isPinned: false, minutesAgo: 1);
+        await repository.InsertAsync(item, CancellationToken.None);
+
+        await repository.SetPinnedAsync(item.Id, true, CancellationToken.None);
+        var pinned = await repository.SearchAsync("", 10, CancellationToken.None);
+        await repository.SetPinnedAsync(item.Id, false, CancellationToken.None);
+        var unpinned = await repository.SearchAsync("", 10, CancellationToken.None);
+
+        Assert.True(pinned.Single().IsPinned);
+        Assert.False(unpinned.Single().IsPinned);
+    }
+
+    [Fact]
+    public async Task SetFavoriteAsync_updates_favorite_state()
+    {
+        using var database = await TestDatabase.CreateAsync();
+        var repository = new ClipboardRepository(database.ConnectionFactory);
+        var item = CreateItem("one", "one", isPinned: false, minutesAgo: 1);
+        await repository.InsertAsync(item, CancellationToken.None);
+
+        await repository.SetFavoriteAsync(item.Id, true, CancellationToken.None);
+        var favorite = await repository.SearchAsync("", 10, CancellationToken.None);
+        await repository.SetFavoriteAsync(item.Id, false, CancellationToken.None);
+        var normal = await repository.SearchAsync("", 10, CancellationToken.None);
+
+        Assert.True(favorite.Single().IsFavorite);
+        Assert.False(normal.Single().IsFavorite);
     }
 
     [Fact]
@@ -99,12 +154,13 @@ public sealed class ClipboardRepositoryTests
         await repository.InsertAsync(CreateItem("middle", "middle", isPinned: false, minutesAgo: 20), CancellationToken.None);
         await repository.InsertAsync(CreateItem("new", "new", isPinned: false, minutesAgo: 10), CancellationToken.None);
         await repository.InsertAsync(CreateItem("pinned", "pinned", isPinned: true, minutesAgo: 40), CancellationToken.None);
+        await repository.InsertAsync(CreateItem("favorite", "favorite", isPinned: false, minutesAgo: 50) with { IsFavorite = true }, CancellationToken.None);
 
         var deleted = await repository.CleanupAsync(maxItems: 2, retentionDays: 0, CancellationToken.None);
         var results = await repository.SearchAsync("", 10, CancellationToken.None);
 
         Assert.Equal(1, deleted);
-        Assert.Equal(["pinned", "new", "middle"], results.Select(item => item.TextContent ?? "").ToArray());
+        Assert.Equal(["pinned", "new", "middle", "favorite"], results.Select(item => item.TextContent ?? "").ToArray());
     }
 
     [Fact]
@@ -115,12 +171,13 @@ public sealed class ClipboardRepositoryTests
         await repository.InsertAsync(CreateItemDaysAgo("old", "old", isPinned: false, daysAgo: 40), CancellationToken.None);
         await repository.InsertAsync(CreateItemDaysAgo("recent", "recent", isPinned: false, daysAgo: 5), CancellationToken.None);
         await repository.InsertAsync(CreateItemDaysAgo("pinned-old", "pinned-old", isPinned: true, daysAgo: 60), CancellationToken.None);
+        await repository.InsertAsync(CreateItemDaysAgo("favorite-old", "favorite-old", isPinned: false, daysAgo: 90) with { IsFavorite = true }, CancellationToken.None);
 
         var deleted = await repository.CleanupAsync(maxItems: 1000, retentionDays: 30, CancellationToken.None);
         var results = await repository.SearchAsync("", 10, CancellationToken.None);
 
         Assert.Equal(1, deleted);
-        Assert.Equal(["pinned-old", "recent"], results.Select(item => item.TextContent ?? "").ToArray());
+        Assert.Equal(["pinned-old", "recent", "favorite-old"], results.Select(item => item.TextContent ?? "").ToArray());
     }
 
     [Fact]

@@ -48,5 +48,9 @@ public enum BuiltInGestureAction
     NextVirtualDesktop = 43,
     PreviousVirtualDesktop = 44,
     FullScreen = 45,
-    PinWindow = 46
+    PinWindow = 46,
+    LeftMouseClick = 47,
+    RightMouseClick = 48,
+    NextTab = 49,
+    PreviousTab = 50
 }

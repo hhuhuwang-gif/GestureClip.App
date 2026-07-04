@@ -14,11 +14,13 @@ public sealed class LowLevelMouseHookSourceTests
     }
 
     [Fact]
-    public void LowLevelMouseHook_logs_right_button_events_from_callback()
+    public void LowLevelMouseHook_does_not_write_each_mouse_event_at_information_level()
     {
         var source = File.ReadAllText(FindRepositoryFile("src", "GestureClip.Infrastructure", "Gestures", "LowLevelMouseHook.cs"));
 
         Assert.Contains("Low-level mouse hook event received", source);
+        Assert.Contains("LogDebug", source);
+        Assert.DoesNotContain("LogInformation(\r\n            \"Low-level mouse hook event received", source);
     }
 
     private static string FindRepositoryFile(params string[] segments)

@@ -37,10 +37,10 @@ public sealed class GestureHudInfoProviderTests
     {
         var provider = new GestureHudInfoProvider(new GesturePresetProvider());
 
-        var info = provider.GetInfo(GesturePreset.EditEnhanced, "LD");
+        var info = provider.GetInfo(GesturePreset.EditEnhanced, "RDR");
 
-        Assert.Equal("←↓", info.DirectionText);
-        Assert.Equal("LD", info.Pattern);
+        Assert.Equal("→↓→", info.DirectionText);
+        Assert.Equal("RDR", info.Pattern);
         Assert.Equal("未绑定", info.ActionName);
         Assert.Equal("暂无动作", info.ShortcutText);
     }

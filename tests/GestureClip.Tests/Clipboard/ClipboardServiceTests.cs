@@ -1,5 +1,6 @@
 using GestureClip.Core.Abstractions;
 using GestureClip.Core.Clipboard;
+using GestureClip.Core.Settings;
 using GestureClip.Core.SystemInfo;
 using GestureClip.Features.Clipboard;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -54,6 +55,100 @@ public sealed class ClipboardServiceTests
     }
 
     [Fact]
+    public async Task CopyItemsAsync_merges_multiple_text_items_with_new_lines()
+    {
+        var repository = new FakeClipboardRepository();
+        var writer = new FakeClipboardWriter();
+        var service = CreateService(repository, writer: writer);
+        var first = Item("hello");
+        var second = Item("world");
+
+        await service.CopyItemsAsync([first, second], CancellationToken.None);
+
+        Assert.Equal("hello\r\nworld", writer.Text);
+        Assert.Equal([first.Id, second.Id], repository.IncrementedIds);
+    }
+
+    [Fact]
+    public async Task CopyItemsAsync_restores_single_image_to_clipboard()
+    {
+        var repository = new FakeClipboardRepository();
+        var writer = new FakeClipboardWriter();
+        var service = CreateService(repository, writer: writer);
+        var now = DateTimeOffset.UtcNow;
+        var image = new ClipboardItem(Guid.NewGuid(), "image/png", "png-base64", "图片", "hash", null, "Test", "test.exe", false, false, false, 0, now, now, null);
+
+        await service.CopyItemsAsync([image], CancellationToken.None);
+
+        Assert.Equal("png-base64", writer.ImagePngBase64);
+        Assert.Equal([image.Id], repository.IncrementedIds);
+    }
+
+    [Fact]
+    public async Task CopyItemsAsync_rejects_mixed_text_and_image_items()
+    {
+        var repository = new FakeClipboardRepository();
+        var service = CreateService(repository);
+        var now = DateTimeOffset.UtcNow;
+        var image = new ClipboardItem(Guid.NewGuid(), "image/png", "png-base64", "图片", "hash", null, "Test", "test.exe", false, false, false, 0, now, now, null);
+
+        await Assert.ThrowsAsync<NotSupportedException>(() => service.CopyItemsAsync([Item("hello"), image], CancellationToken.None));
+    }
+
+    [Fact]
+    public async Task Clipboard_changed_captures_image_when_text_is_not_available()
+    {
+        var repository = new FakeClipboardRepository();
+        var listener = new FakeClipboardListener();
+        var reader = new FakeClipboardTextReader { ImagePngBase64 = "png-base64" };
+        var service = CreateService(repository, listener: listener, reader: reader);
+
+        await service.StartAsync(CancellationToken.None);
+        listener.Raise();
+        await WaitForAsync(() => repository.Items.Count == 1);
+
+        Assert.Equal("image/png", repository.Items[0].ContentType);
+        Assert.Equal("png-base64", repository.Items[0].TextContent);
+    }
+
+    [Fact]
+    public async Task Clipboard_changed_prefers_image_when_clipboard_contains_text_and_image()
+    {
+        var repository = new FakeClipboardRepository();
+        var listener = new FakeClipboardListener();
+        var reader = new FakeClipboardTextReader
+        {
+            Text = "image alt text",
+            ImagePngBase64 = "png-base64"
+        };
+        var service = CreateService(repository, listener: listener, reader: reader);
+
+        await service.StartAsync(CancellationToken.None);
+        listener.Raise();
+        await WaitForAsync(() => repository.Items.Count == 1);
+
+        Assert.Equal("image/png", repository.Items[0].ContentType);
+        Assert.Equal("png-base64", repository.Items[0].TextContent);
+    }
+
+    [Fact]
+    public async Task Clipboard_changed_skips_image_when_base64_exceeds_configured_limit()
+    {
+        var repository = new FakeClipboardRepository();
+        var listener = new FakeClipboardListener();
+        var settings = new FakeSettingsService();
+        settings.Values[SettingKeys.ClipboardMaxImageBytes] = 128 * 1024;
+        var reader = new FakeClipboardTextReader { ImagePngBase64 = Convert.ToBase64String(new byte[(128 * 1024) + 1]) };
+        var service = CreateService(repository, listener: listener, reader: reader, settings: settings);
+
+        await service.StartAsync(CancellationToken.None);
+        listener.Raise();
+        await Task.Delay(80);
+
+        Assert.Empty(repository.Items);
+    }
+
+    [Fact]
     public async Task StartAsync_and_StopAsync_are_idempotent()
     {
         var repository = new FakeClipboardRepository();
@@ -72,18 +167,20 @@ public sealed class ClipboardServiceTests
     private static ClipboardService CreateService(
         FakeClipboardRepository repository,
         FakeClipboardWriter? writer = null,
-        FakeClipboardListener? listener = null)
+        FakeClipboardListener? listener = null,
+        FakeClipboardTextReader? reader = null,
+        FakeSettingsService? settings = null)
     {
         return new ClipboardService(
             listener ?? new FakeClipboardListener(),
-            new FakeClipboardTextReader(),
+            reader ?? new FakeClipboardTextReader(),
             writer ?? new FakeClipboardWriter(),
             repository,
             new ClipboardHashService(),
             new SensitiveContentDetector(),
             new FakeForegroundAppService(),
             new FakeAppBlacklistService(repository),
-            new FakeSettingsService(),
+            settings ?? new FakeSettingsService(),
             NullLogger<ClipboardService>.Instance);
     }
 
@@ -103,6 +200,7 @@ public sealed class ClipboardServiceTests
         public List<ClipboardItem> Items { get; } = [];
         public string? BlockedProcessName { get; set; }
         public Guid? IncrementedId { get; private set; }
+        public List<Guid> IncrementedIds { get; } = [];
 
         public Task<ClipboardItem?> FindByHashAsync(string hash, CancellationToken cancellationToken)
         {
@@ -117,6 +215,35 @@ public sealed class ClipboardServiceTests
         public Task IncrementUseCountAsync(Guid id, CancellationToken cancellationToken)
         {
             IncrementedId = id;
+            IncrementedIds.Add(id);
+            return Task.CompletedTask;
+        }
+
+        public Task<int> DeleteAsync(IReadOnlyList<Guid> ids, CancellationToken cancellationToken)
+        {
+            var deleted = Items.RemoveAll(item => ids.Contains(item.Id));
+            return Task.FromResult(deleted);
+        }
+
+        public Task SetPinnedAsync(Guid id, bool isPinned, CancellationToken cancellationToken)
+        {
+            var index = Items.FindIndex(item => item.Id == id);
+            if (index >= 0)
+            {
+                Items[index] = Items[index] with { IsPinned = isPinned };
+            }
+
+            return Task.CompletedTask;
+        }
+
+        public Task SetFavoriteAsync(Guid id, bool isFavorite, CancellationToken cancellationToken)
+        {
+            var index = Items.FindIndex(item => item.Id == id);
+            if (index >= 0)
+            {
+                Items[index] = Items[index] with { IsFavorite = isFavorite };
+            }
+
             return Task.CompletedTask;
         }
 
@@ -164,6 +291,7 @@ public sealed class ClipboardServiceTests
     private sealed class FakeClipboardWriter : IClipboardWriter
     {
         public string? Text { get; private set; }
+        public string? ImagePngBase64 { get; private set; }
         public bool PasteHotkeySent { get; private set; }
 
         public Task SendPasteHotkeyAsync(CancellationToken cancellationToken)
@@ -175,6 +303,12 @@ public sealed class ClipboardServiceTests
         public Task SetTextAsync(string text, CancellationToken cancellationToken)
         {
             Text = text;
+            return Task.CompletedTask;
+        }
+
+        public Task SetImagePngBase64Async(string pngBase64, CancellationToken cancellationToken)
+        {
+            ImagePngBase64 = pngBase64;
             return Task.CompletedTask;
         }
     }
@@ -191,7 +325,28 @@ public sealed class ClipboardServiceTests
 
     private sealed class FakeClipboardTextReader : IClipboardTextReader
     {
-        public string? TryReadText() => null;
+        public string? Text { get; set; }
+        public string? ImagePngBase64 { get; set; }
+
+        public string? TryReadText() => Text;
+
+        public string? TryReadImagePngBase64() => ImagePngBase64;
+    }
+
+    private static async Task WaitForAsync(Func<bool> condition)
+    {
+        var deadline = DateTimeOffset.UtcNow.AddSeconds(2);
+        while (DateTimeOffset.UtcNow < deadline)
+        {
+            if (condition())
+            {
+                return;
+            }
+
+            await Task.Delay(20);
+        }
+
+        Assert.True(condition());
     }
 
     private sealed class FakeForegroundAppService : IForegroundAppService
@@ -233,7 +388,13 @@ public sealed class ClipboardServiceTests
 
     private sealed class FakeSettingsService : ISettingsService
     {
-        public T Get<T>(string key, T defaultValue) => defaultValue;
+        public Dictionary<string, object?> Values { get; } = [];
+
+        public T Get<T>(string key, T defaultValue)
+        {
+            return Values.TryGetValue(key, out var value) ? (T)value! : defaultValue;
+        }
+
         public Task SetAsync<T>(string key, T value, CancellationToken cancellationToken) => Task.CompletedTask;
     }
 }

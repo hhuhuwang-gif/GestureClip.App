@@ -23,4 +23,12 @@ public interface IClipboardService
     Task<ClipboardItem?> GetLatestAsync(CancellationToken cancellationToken);
 
     Task PasteAsync(ClipboardItem item, PasteOptions options, CancellationToken cancellationToken);
+
+    Task CopyItemsAsync(IReadOnlyList<ClipboardItem> items, CancellationToken cancellationToken);
+
+    Task<int> DeleteItemsAsync(IReadOnlyList<Guid> ids, CancellationToken cancellationToken);
+
+    Task SetPinnedAsync(Guid id, bool isPinned, CancellationToken cancellationToken);
+
+    Task SetFavoriteAsync(Guid id, bool isFavorite, CancellationToken cancellationToken);
 }

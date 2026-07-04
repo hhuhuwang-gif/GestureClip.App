@@ -6,6 +6,7 @@ public static class SettingKeys
     public const string ClipboardCaptureEnabled = "Clipboard.CaptureEnabled";
     public const string ClipboardMaxItems = "Clipboard.MaxItems";
     public const string ClipboardRetentionDays = "Clipboard.RetentionDays";
+    public const string ClipboardMaxImageBytes = "Clipboard.MaxImageBytes";
     public const string HotkeyOpenClipboardOverlayEnabled = "Hotkey.OpenClipboardOverlay.Enabled";
     public const string HotkeyOpenClipboardOverlayKey = "Hotkey.OpenClipboardOverlay.Key";
     public const string GestureEnabled = "Gesture.Enabled";

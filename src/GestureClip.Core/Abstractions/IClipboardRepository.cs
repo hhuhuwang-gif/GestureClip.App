@@ -14,6 +14,12 @@ public interface IClipboardRepository
 
     Task IncrementUseCountAsync(Guid id, CancellationToken cancellationToken);
 
+    Task<int> DeleteAsync(IReadOnlyList<Guid> ids, CancellationToken cancellationToken);
+
+    Task SetPinnedAsync(Guid id, bool isPinned, CancellationToken cancellationToken);
+
+    Task SetFavoriteAsync(Guid id, bool isFavorite, CancellationToken cancellationToken);
+
     Task<bool> IsProcessBlockedAsync(string? processName, CancellationToken cancellationToken);
 
     Task<int> GetCountAsync(CancellationToken cancellationToken);

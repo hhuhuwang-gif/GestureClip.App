@@ -18,16 +18,30 @@ public sealed class ClipboardOverlayService : IClipboardOverlayService
     {
         await System.Windows.Application.Current.Dispatcher.InvokeAsync(async () =>
         {
-            if (_window is null)
+            var window = EnsureWindow();
+
+            await window.LoadHistoryAsync();
+            window.Show();
+            window.Activate();
+            window.FocusSearchBox();
+        });
+    }
+
+    public async Task ToggleAsync()
+    {
+        await System.Windows.Application.Current.Dispatcher.InvokeAsync(async () =>
+        {
+            var window = EnsureWindow();
+            if (window.IsVisible)
             {
-                _window = _serviceProvider.GetRequiredService<ClipboardOverlayWindow>();
-                _window.Closed += (_, _) => _window = null;
+                window.Hide();
+                return;
             }
 
-            await _window.LoadHistoryAsync();
-            _window.Show();
-            _window.Activate();
-            _window.FocusSearchBox();
+            await window.LoadHistoryAsync();
+            window.Show();
+            window.Activate();
+            window.FocusSearchBox();
         });
     }
 
@@ -40,5 +54,17 @@ public sealed class ClipboardOverlayService : IClipboardOverlayService
                 await _window.LoadHistoryAsync();
             }
         });
+    }
+
+    private ClipboardOverlayWindow EnsureWindow()
+    {
+        if (_window is not null)
+        {
+            return _window;
+        }
+
+        _window = _serviceProvider.GetRequiredService<ClipboardOverlayWindow>();
+        _window.Closed += (_, _) => _window = null;
+        return _window;
     }
 }

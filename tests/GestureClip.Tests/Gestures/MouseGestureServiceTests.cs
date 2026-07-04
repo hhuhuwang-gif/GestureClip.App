@@ -347,12 +347,13 @@ public sealed class MouseGestureServiceTests
         hook.Raise(MouseHookEventType.RightButtonDown, 0, 0);
         hook.Raise(MouseHookEventType.Move, 40, 0);
         hook.Raise(MouseHookEventType.Move, 40, 40);
-        hook.Raise(MouseHookEventType.RightButtonUp, 40, 40);
+        hook.Raise(MouseHookEventType.Move, 80, 40);
+        hook.Raise(MouseHookEventType.RightButtonUp, 80, 40);
 
         await WaitForAsync(() => overlay.Events.Contains("hide"));
 
         Assert.Empty(executor.Actions);
-        Assert.Contains(overlay.HudInfos, info => info.Pattern == "RD" && info.ActionName == "未绑定");
+        Assert.Contains(overlay.HudInfos, info => info.Pattern == "RDR" && info.ActionName == "未绑定");
     }
 
     [Fact]
@@ -384,6 +385,7 @@ public sealed class MouseGestureServiceTests
         Assert.Empty(executor.Actions);
         Assert.Equal(GestureRuntimeState.Idle, service.Diagnostics.State);
         Assert.All(overlay.PointCounts, count => Assert.InRange(count, 1, 96));
+        Assert.Contains(overlay.PointSnapshots, points => points.Count == 96 && points[0] != new GesturePoint(100, 100, points[0].Time));
     }
 
     [Fact]
@@ -399,12 +401,12 @@ public sealed class MouseGestureServiceTests
         var down = hook.Raise(MouseHookEventType.RightButtonDown, 0, 0);
         hook.Raise(MouseHookEventType.Move, 60, 0);
         hook.Raise(MouseHookEventType.Move, 60, 60);
-        hook.Raise(MouseHookEventType.Move, 0, 60);
+        hook.Raise(MouseHookEventType.Move, 120, 60);
         await WaitForAsync(() => overlay.Events.Any(entry => entry.StartsWith("update:", StringComparison.Ordinal)));
 
         Assert.DoesNotContain("hide", overlay.Events);
 
-        var up = hook.Raise(MouseHookEventType.RightButtonUp, 0, 60);
+        var up = hook.Raise(MouseHookEventType.RightButtonUp, 120, 60);
         await WaitForAsync(() => overlay.Events.Contains("hide"));
 
         Assert.True(down.Suppress);
@@ -426,8 +428,8 @@ public sealed class MouseGestureServiceTests
         hook.Raise(MouseHookEventType.RightButtonDown, 0, 0);
         hook.Raise(MouseHookEventType.Move, 60, 0);
         hook.Raise(MouseHookEventType.Move, 60, 60);
-        hook.Raise(MouseHookEventType.Move, 0, 60);
-        hook.Raise(MouseHookEventType.RightButtonUp, 0, 60);
+        hook.Raise(MouseHookEventType.Move, 120, 60);
+        hook.Raise(MouseHookEventType.RightButtonUp, 120, 60);
 
         var down = hook.Raise(MouseHookEventType.RightButtonDown, 0, 0);
         hook.Raise(MouseHookEventType.Move, 0, -40);
@@ -623,10 +625,13 @@ public sealed class MouseGestureServiceTests
 
         public List<int> PointCounts { get; } = [];
 
+        public List<IReadOnlyList<GesturePoint>> PointSnapshots { get; } = [];
+
         public Task ShowGestureStartAsync(GesturePoint point, GestureHudInfo hudInfo, CancellationToken cancellationToken)
         {
             HudInfos.Add(hudInfo);
             PointCounts.Add(1);
+            PointSnapshots.Add([point]);
             Events.Add($"start:{point.X},{point.Y}");
             return Task.CompletedTask;
         }
@@ -635,6 +640,7 @@ public sealed class MouseGestureServiceTests
         {
             HudInfos.Add(hudInfo);
             PointCounts.Add(points.Count);
+            PointSnapshots.Add([.. points]);
             Events.Add($"update:{points.Count}:{hudInfo.Pattern}");
             return Task.CompletedTask;
         }
@@ -726,3 +732,4 @@ public sealed class MouseGestureServiceTests
         public bool IsGestureBlockedCached(string? processName) => GestureBlocked;
     }
 }
+

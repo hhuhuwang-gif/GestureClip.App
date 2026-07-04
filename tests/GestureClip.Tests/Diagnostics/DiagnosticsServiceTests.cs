@@ -52,6 +52,10 @@ public sealed class DiagnosticsServiceTests
         public Task<IReadOnlyList<Core.Clipboard.ClipboardItem>> SearchAsync(string keyword, int limit, CancellationToken cancellationToken) => Task.FromResult<IReadOnlyList<Core.Clipboard.ClipboardItem>>([]);
         public Task<Core.Clipboard.ClipboardItem?> GetLatestAsync(CancellationToken cancellationToken) => Task.FromResult<Core.Clipboard.ClipboardItem?>(null);
         public Task PasteAsync(Core.Clipboard.ClipboardItem item, Core.Clipboard.PasteOptions options, CancellationToken cancellationToken) => Task.CompletedTask;
+        public Task CopyItemsAsync(IReadOnlyList<Core.Clipboard.ClipboardItem> items, CancellationToken cancellationToken) => Task.CompletedTask;
+        public Task<int> DeleteItemsAsync(IReadOnlyList<Guid> ids, CancellationToken cancellationToken) => Task.FromResult(ids.Count);
+        public Task SetPinnedAsync(Guid id, bool isPinned, CancellationToken cancellationToken) => Task.CompletedTask;
+        public Task SetFavoriteAsync(Guid id, bool isFavorite, CancellationToken cancellationToken) => Task.CompletedTask;
     }
 
     private sealed class FakeMouseGestureService : IMouseGestureService

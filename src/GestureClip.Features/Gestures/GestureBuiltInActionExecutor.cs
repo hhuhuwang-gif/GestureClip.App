@@ -14,6 +14,8 @@ public sealed class GestureBuiltInActionExecutor : IMouseGestureActionExecutor
     private readonly IClipboardService _clipboardService;
     private readonly ISettingsService _settingsService;
     private readonly IKeyboardInputSender _keyboardInputSender;
+    private readonly IRightClickSynthesizer _mouseClickSynthesizer;
+    private readonly ICursorPositionProvider _cursorPositionProvider;
     private readonly ILogger<GestureBuiltInActionExecutor> _logger;
 
     public GestureBuiltInActionExecutor(
@@ -21,12 +23,16 @@ public sealed class GestureBuiltInActionExecutor : IMouseGestureActionExecutor
         IClipboardService clipboardService,
         ISettingsService settingsService,
         IKeyboardInputSender keyboardInputSender,
+        IRightClickSynthesizer mouseClickSynthesizer,
+        ICursorPositionProvider cursorPositionProvider,
         ILogger<GestureBuiltInActionExecutor> logger)
     {
         _clipboardOverlayService = clipboardOverlayService;
         _clipboardService = clipboardService;
         _settingsService = settingsService;
         _keyboardInputSender = keyboardInputSender;
+        _mouseClickSynthesizer = mouseClickSynthesizer;
+        _cursorPositionProvider = cursorPositionProvider;
         _logger = logger;
     }
 
@@ -104,6 +110,14 @@ public sealed class GestureBuiltInActionExecutor : IMouseGestureActionExecutor
 
             case BuiltInGestureAction.NewTab:
                 _keyboardInputSender.SendShortcut(KeyboardInputNativeMethods.VkControl, KeyboardInputNativeMethods.VkT);
+                break;
+
+            case BuiltInGestureAction.NextTab:
+                _keyboardInputSender.SendShortcut(KeyboardInputNativeMethods.VkControl, KeyboardInputNativeMethods.VkTab);
+                break;
+
+            case BuiltInGestureAction.PreviousTab:
+                _keyboardInputSender.SendShortcut(KeyboardInputNativeMethods.VkControl, KeyboardInputNativeMethods.VkShift, KeyboardInputNativeMethods.VkTab);
                 break;
 
             case BuiltInGestureAction.ReopenClosedTab:
@@ -218,6 +232,14 @@ public sealed class GestureBuiltInActionExecutor : IMouseGestureActionExecutor
                 _logger.LogInformation("PinWindow gesture action is reserved and not executed in this build.");
                 break;
 
+            case BuiltInGestureAction.LeftMouseClick:
+                SynthesizeMouseClick(GestureTriggerButton.Left);
+                break;
+
+            case BuiltInGestureAction.RightMouseClick:
+                SynthesizeMouseClick(GestureTriggerButton.Right);
+                break;
+
             case BuiltInGestureAction.MinimizeForegroundWindow:
                 MinimizeForegroundWindow();
                 break;
@@ -252,6 +274,12 @@ public sealed class GestureBuiltInActionExecutor : IMouseGestureActionExecutor
         {
             WindowNativeMethods.PostMessage(hwnd, WindowNativeMethods.WmClose, IntPtr.Zero, IntPtr.Zero);
         }
+    }
+
+    private void SynthesizeMouseClick(GestureTriggerButton button)
+    {
+        var position = _cursorPositionProvider.GetCurrentPosition();
+        _mouseClickSynthesizer.SynthesizeClick(button, position.X, position.Y);
     }
 
     private void StartProcess(string fileName, string? arguments = null)

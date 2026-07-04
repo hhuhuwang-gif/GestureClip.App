@@ -92,7 +92,7 @@ public sealed class GlobalHotkeyService : IGlobalHotkeyService
     {
         try
         {
-            await _clipboardOverlayService.ShowAsync();
+            await _clipboardOverlayService.ToggleAsync();
         }
         catch (Exception ex)
         {

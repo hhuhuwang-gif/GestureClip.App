@@ -18,7 +18,7 @@
         <Setter Property="MinWidth" Value="96" />
         <Setter Property="Padding" Value="18,0" />
         <Setter Property="Foreground" Value="{DynamicResource BrushTextPrimary}" />
-        <Setter Property="Background" Value="#EAF0F7" />
+        <Setter Property="Background" Value="#F0F2F7" />
         <Setter Property="BorderBrush" Value="{DynamicResource BrushBorder}" />
         <Setter Property="BorderThickness" Value="1" />
         <Setter Property="Cursor" Value="Hand" />
@@ -26,23 +26,29 @@
             <Setter.Value>
                 <ControlTemplate TargetType="Button">
                     <Border x:Name="Root"
-                            CornerRadius="12"
+                            CornerRadius="14"
                             Background="{TemplateBinding Background}"
                             BorderBrush="{TemplateBinding BorderBrush}"
                             BorderThickness="{TemplateBinding BorderThickness}">
-                        <ContentPresenter HorizontalAlignment="Center"
+                        <ContentPresenter x:Name="ContentHost"
+                                          HorizontalAlignment="Center"
                                           VerticalAlignment="Center"
+                                          TextElement.Foreground="{TemplateBinding Foreground}"
                                           RecognizesAccessKey="True" />
                     </Border>
                     <ControlTemplate.Triggers>
                         <Trigger Property="IsMouseOver" Value="True">
-                            <Setter TargetName="Root" Property="Background" Value="#DDE7F3" />
+                            <Setter TargetName="Root" Property="Background" Value="#E7EBF2" />
                         </Trigger>
                         <Trigger Property="IsPressed" Value="True">
                             <Setter TargetName="Root" Property="Opacity" Value="0.82" />
                         </Trigger>
                         <Trigger Property="IsEnabled" Value="False">
-                            <Setter TargetName="Root" Property="Opacity" Value="0.45" />
+                            <Setter TargetName="Root" Property="Background" Value="{DynamicResource BrushControlDisabled}" />
+                            <Setter TargetName="Root" Property="BorderBrush" Value="{DynamicResource BrushBorder}" />
+                            <Setter Property="Foreground" Value="{DynamicResource BrushTextMuted}" />
+                            <Setter TargetName="ContentHost" Property="TextElement.Foreground" Value="{DynamicResource BrushTextMuted}" />
+                            <Setter TargetName="Root" Property="Opacity" Value="0.92" />
                         </Trigger>
                     </ControlTemplate.Triggers>
                 </ControlTemplate>
@@ -51,7 +57,7 @@
     </Style>
 
     <Style x:Key="PrimaryButtonStyle" TargetType="Button" BasedOn="{StaticResource BaseButtonStyle}">
-        <Setter Property="Background" Value="#2563EB" />
+        <Setter Property="Background" Value="{DynamicResource BrushPrimaryGradient}" />
         <Setter Property="Foreground" Value="White" />
         <Setter Property="BorderBrush" Value="#44FFFFFF" />
     </Style>
@@ -72,14 +78,14 @@
         <Setter Property="VerticalContentAlignment" Value="Center" />
         <Setter Property="Foreground" Value="{DynamicResource BrushTextPrimary}" />
         <Setter Property="CaretBrush" Value="{DynamicResource BrushPrimaryBright}" />
-        <Setter Property="Background" Value="#F3F6FA" />
+        <Setter Property="Background" Value="#F8FAFD" />
         <Setter Property="BorderBrush" Value="{DynamicResource BrushBorder}" />
         <Setter Property="BorderThickness" Value="1" />
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="TextBox">
                     <Border x:Name="Root"
-                            CornerRadius="12"
+                            CornerRadius="14"
                             Background="{TemplateBinding Background}"
                             BorderBrush="{TemplateBinding BorderBrush}"
                             BorderThickness="{TemplateBinding BorderThickness}">
@@ -109,7 +115,7 @@
         <Setter Property="Height" Value="38" />
         <Setter Property="Padding" Value="10,0" />
         <Setter Property="Foreground" Value="{DynamicResource BrushTextPrimary}" />
-        <Setter Property="Background" Value="#F3F6FA" />
+        <Setter Property="Background" Value="#F8FAFD" />
         <Setter Property="BorderBrush" Value="{DynamicResource BrushBorder}" />
         <Setter Property="BorderThickness" Value="1" />
         <Setter Property="Template">
@@ -123,7 +129,7 @@
                             <ToggleButton.Template>
                                 <ControlTemplate TargetType="ToggleButton">
                                     <Border x:Name="Root"
-                                            CornerRadius="12"
+                                            CornerRadius="14"
                                             Background="{Binding Background, RelativeSource={RelativeSource AncestorType=ComboBox}}"
                                             BorderBrush="{DynamicResource BrushBorder}"
                                             BorderThickness="1">
@@ -234,14 +240,14 @@
         <Setter Property="Foreground" Value="{DynamicResource BrushTextSecondary}" />
         <Setter Property="Padding" Value="16,0" />
         <Setter Property="Margin" Value="0,0,0,7" />
-        <Setter Property="MinWidth" Value="200" />
-        <Setter Property="Height" Value="42" />
+        <Setter Property="MinWidth" Value="190" />
+        <Setter Property="Height" Value="44" />
         <Setter Property="FontWeight" Value="Medium" />
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="TabItem">
                     <Border x:Name="Root"
-                            CornerRadius="12"
+                            CornerRadius="14"
                             Background="{DynamicResource BrushTabIdle}"
                             BorderBrush="Transparent"
                             BorderThickness="1"
@@ -260,7 +266,7 @@
                         </Trigger>
                         <Trigger Property="IsSelected" Value="True">
                             <Setter TargetName="Root" Property="Background" Value="{DynamicResource BrushTabSelectedGradient}" />
-                            <Setter TargetName="Root" Property="BorderBrush" Value="#1F2563EB" />
+                            <Setter TargetName="Root" Property="BorderBrush" Value="#22000000" />
                             <Setter Property="Foreground" Value="{DynamicResource BrushTabSelectedText}" />
                             <Setter Property="FontWeight" Value="SemiBold" />
                         </Trigger>

@@ -10,6 +10,7 @@ public sealed class AppLifecycleService : IAppLifecycleService
     private readonly IServiceProvider _serviceProvider;
     private readonly ILogger<AppLifecycleService> _logger;
     private SettingsWindow? _settingsWindow;
+    private int _exitStarted;
 
     public AppLifecycleService(IServiceProvider serviceProvider, ILogger<AppLifecycleService> logger)
     {
@@ -18,6 +19,8 @@ public sealed class AppLifecycleService : IAppLifecycleService
     }
 
     public bool IsExplicitExit { get; private set; }
+
+    public bool RuntimeStopped { get; private set; }
 
     public void ShowSettingsWindow()
     {
@@ -37,11 +40,63 @@ public sealed class AppLifecycleService : IAppLifecycleService
         _logger.LogInformation("Settings window shown.");
     }
 
-    public void ExitApplication()
+    public async void ExitApplication()
     {
+        if (Interlocked.Exchange(ref _exitStarted, 1) == 1)
+        {
+            return;
+        }
+
         IsExplicitExit = true;
         _logger.LogInformation("Explicit application exit requested.");
-        System.Windows.Application.Current.Shutdown();
+        await StopRuntimeAsync();
+        await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
+        {
+            System.Windows.Application.Current.Shutdown();
+        });
+    }
+
+    public async Task StopRuntimeAsync()
+    {
+        if (RuntimeStopped)
+        {
+            return;
+        }
+
+        RuntimeStopped = true;
+        await StopStepAsync("global hotkey", () =>
+        {
+            _serviceProvider.GetService<IGlobalHotkeyService>()?.Stop();
+            return Task.CompletedTask;
+        });
+        await StopStepAsync("edge trigger service", () =>
+            _serviceProvider.GetService<IEdgeTriggerService>()?.StopAsync(CancellationToken.None) ?? Task.CompletedTask);
+        await StopStepAsync("mouse gesture service", () =>
+            _serviceProvider.GetService<IMouseGestureService>()?.StopAsync(CancellationToken.None) ?? Task.CompletedTask);
+        await StopStepAsync("clipboard service", () =>
+            _serviceProvider.GetService<IClipboardService>()?.StopAsync(CancellationToken.None) ?? Task.CompletedTask);
+        await StopStepAsync("tray icon", () =>
+        {
+            _serviceProvider.GetService<TrayIconService>()?.Dispose();
+            return Task.CompletedTask;
+        });
+    }
+
+    private async Task StopStepAsync(string name, Func<Task> stopAsync)
+    {
+        try
+        {
+            await stopAsync().WaitAsync(TimeSpan.FromSeconds(2));
+            _logger.LogInformation("Stopped {RuntimeComponent}.", name);
+        }
+        catch (TimeoutException)
+        {
+            _logger.LogWarning("Timed out while stopping {RuntimeComponent}; continuing shutdown.", name);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to stop {RuntimeComponent}; continuing shutdown.", name);
+        }
     }
 }
 

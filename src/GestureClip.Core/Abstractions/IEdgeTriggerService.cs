@@ -9,4 +9,6 @@ public interface IEdgeTriggerService
     Task StartAsync(CancellationToken cancellationToken);
 
     Task StopAsync(CancellationToken cancellationToken);
+
+    void RefreshSettings();
 }

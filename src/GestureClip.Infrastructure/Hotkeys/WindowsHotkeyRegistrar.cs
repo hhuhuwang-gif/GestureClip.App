@@ -17,7 +17,7 @@ public sealed class WindowsHotkeyRegistrar : IHotkeyRegistrar, IDisposable
 
     public WindowsHotkeyRegistrar()
     {
-        _dispatcher = Application.Current.Dispatcher;
+        _dispatcher = System.Windows.Application.Current.Dispatcher;
     }
 
     public event EventHandler? HotkeyPressed;

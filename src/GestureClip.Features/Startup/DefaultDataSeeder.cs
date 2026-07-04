@@ -26,6 +26,7 @@ public sealed class DefaultDataSeeder
         await SeedSettingAsync(connection, SettingKeys.ClipboardCaptureEnabled, "true", "bool", now);
         await SeedSettingAsync(connection, SettingKeys.ClipboardMaxItems, "1000", "int", now);
         await SeedSettingAsync(connection, SettingKeys.ClipboardRetentionDays, "30", "int", now);
+        await SeedSettingAsync(connection, SettingKeys.ClipboardMaxImageBytes, "5242880", "int", now);
         await SeedSettingAsync(connection, SettingKeys.HotkeyOpenClipboardOverlayEnabled, "true", "bool", now);
         await SeedSettingAsync(connection, SettingKeys.HotkeyOpenClipboardOverlayKey, "\"Ctrl + `\"", "string", now);
         await MigrateOldDefaultHotkeyAsync(connection, now);
@@ -42,14 +43,14 @@ public sealed class DefaultDataSeeder
         await SeedSettingAsync(connection, SettingKeys.GestureTriggerXButton2Enabled, "true", "bool", now);
         await SeedSettingAsync(connection, SettingKeys.EdgeTriggerEnabled, "true", "bool", now);
         await SeedSettingAsync(connection, SettingKeys.EdgeTriggerHotZoneSize, "8", "int", now);
-        await SeedSettingAsync(connection, SettingKeys.EdgeTriggerDwellMs, "350", "int", now);
-        await SeedSettingAsync(connection, SettingKeys.EdgeTriggerCooldownMs, "1200", "int", now);
-        await SeedSettingAsync(connection, SettingKeys.EdgeTriggerSlideThreshold, "80", "int", now);
+        await SeedSettingAsync(connection, SettingKeys.EdgeTriggerDwellMs, "160", "int", now);
+        await SeedSettingAsync(connection, SettingKeys.EdgeTriggerCooldownMs, "450", "int", now);
+        await SeedSettingAsync(connection, SettingKeys.EdgeTriggerSlideThreshold, "56", "int", now);
         await SeedSettingAsync(connection, SettingKeys.EdgeTriggerTopLeftAction, ((int)BuiltInGestureAction.StartMenu).ToString(), "int", now);
         await SeedSettingAsync(connection, SettingKeys.EdgeTriggerTopRightAction, ((int)BuiltInGestureAction.TaskSwitcher).ToString(), "int", now);
         await SeedSettingAsync(connection, SettingKeys.EdgeTriggerBottomRightAction, ((int)BuiltInGestureAction.ShowDesktop).ToString(), "int", now);
         await SeedSettingAsync(connection, SettingKeys.EdgeTriggerBottomLeftAction, ((int)BuiltInGestureAction.SwitchApp).ToString(), "int", now);
-        await SeedSettingAsync(connection, SettingKeys.EdgeTriggerLeftEdgeLeftButtonEnabled, "true", "bool", now);
+        await SeedSettingAsync(connection, SettingKeys.EdgeTriggerLeftEdgeLeftButtonEnabled, "false", "bool", now);
         await SeedSettingAsync(connection, SettingKeys.EdgeTriggerLeftEdgeLeftButtonAction, ((int)BuiltInGestureAction.StartMenu).ToString(), "int", now);
         await SeedSettingAsync(connection, SettingKeys.EdgeTriggerLeftEdgeMiddleButtonEnabled, "true", "bool", now);
         await SeedSettingAsync(connection, SettingKeys.EdgeTriggerLeftEdgeMiddleButtonAction, ((int)BuiltInGestureAction.ShowDesktop).ToString(), "int", now);
@@ -66,8 +67,11 @@ public sealed class DefaultDataSeeder
         await SeedSettingAsync(connection, SettingKeys.EdgeTriggerSlideTopEnabled, "true", "bool", now);
         await SeedSettingAsync(connection, SettingKeys.EdgeTriggerSlideTopAction, ((int)BuiltInGestureAction.StartMenu).ToString(), "int", now);
         await SeedSettingAsync(connection, SettingKeys.EdgeTriggerSlideBottomEnabled, "true", "bool", now);
-        await SeedSettingAsync(connection, SettingKeys.EdgeTriggerSlideBottomAction, ((int)BuiltInGestureAction.ShowDesktop).ToString(), "int", now);
+        await SeedSettingAsync(connection, SettingKeys.EdgeTriggerSlideBottomAction, ((int)BuiltInGestureAction.PasteAndEnter).ToString(), "int", now);
         await SeedSettingAsync(connection, SettingKeys.PrivacySuppressSensitive, "true", "bool", now);
+        await DisableLeftEdgeLeftButtonTriggerAsync(connection, now);
+        await MigrateOldBottomSlideDefaultAsync(connection, now);
+        await MigrateOldEdgeTimingDefaultsAsync(connection, now);
         await EnablePreviouslyDisabledGestureDefaultsAsync(connection, now);
 
         foreach (var processName in DefaultPrivacyBlacklist.ProcessNames)
@@ -143,7 +147,6 @@ WHERE Key = @Key AND Value = '"Ctrl+Alt+V"';
             SettingKeys.GestureTriggerXButton1Enabled,
             SettingKeys.GestureTriggerXButton2Enabled,
             SettingKeys.EdgeTriggerEnabled,
-            SettingKeys.EdgeTriggerLeftEdgeLeftButtonEnabled,
             SettingKeys.EdgeTriggerLeftEdgeMiddleButtonEnabled,
             SettingKeys.EdgeTriggerLeftEdgeXButton1Enabled,
             SettingKeys.EdgeTriggerLeftEdgeXButton2Enabled,
@@ -163,6 +166,77 @@ WHERE Key IN @Keys AND Value = 'false';
             new
             {
                 Keys = keys,
+                UpdatedAt = now
+            });
+    }
+
+    private static Task DisableLeftEdgeLeftButtonTriggerAsync(SqliteConnection connection, string now)
+    {
+        return connection.ExecuteAsync(
+            """
+UPDATE Settings
+SET Value = 'false', UpdatedAt = @UpdatedAt
+WHERE Key = @Key AND Value = 'true';
+""",
+            new
+            {
+                Key = SettingKeys.EdgeTriggerLeftEdgeLeftButtonEnabled,
+                UpdatedAt = now
+            });
+    }
+
+    private static Task MigrateOldBottomSlideDefaultAsync(SqliteConnection connection, string now)
+    {
+        return connection.ExecuteAsync(
+            """
+UPDATE Settings
+SET Value = @NewValue, UpdatedAt = @UpdatedAt
+WHERE Key = @Key AND Value = @OldValue;
+""",
+            new
+            {
+                Key = SettingKeys.EdgeTriggerSlideBottomAction,
+                OldValue = ((int)BuiltInGestureAction.ShowDesktop).ToString(),
+                NewValue = ((int)BuiltInGestureAction.PasteAndEnter).ToString(),
+                UpdatedAt = now
+            });
+    }
+
+    private static async Task MigrateOldEdgeTimingDefaultsAsync(SqliteConnection connection, string now)
+    {
+        await connection.ExecuteAsync(
+            """
+UPDATE Settings
+SET Value = '160', UpdatedAt = @UpdatedAt
+WHERE Key = @Key AND Value = '350';
+""",
+            new
+            {
+                Key = SettingKeys.EdgeTriggerDwellMs,
+                UpdatedAt = now
+            });
+
+        await connection.ExecuteAsync(
+            """
+UPDATE Settings
+SET Value = '450', UpdatedAt = @UpdatedAt
+WHERE Key = @Key AND Value = '1200';
+""",
+            new
+            {
+                Key = SettingKeys.EdgeTriggerCooldownMs,
+                UpdatedAt = now
+            });
+
+        await connection.ExecuteAsync(
+            """
+UPDATE Settings
+SET Value = '56', UpdatedAt = @UpdatedAt
+WHERE Key = @Key AND Value = '80';
+""",
+            new
+            {
+                Key = SettingKeys.EdgeTriggerSlideThreshold,
                 UpdatedAt = now
             });
     }

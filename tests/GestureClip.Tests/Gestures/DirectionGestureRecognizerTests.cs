@@ -72,14 +72,33 @@ public sealed class DirectionGestureRecognizerTests
     }
 
     [Fact]
-    public void Recognize_rejects_unlisted_patterns()
+    public void Recognize_accepts_custom_multi_direction_patterns()
     {
         var recognizer = new DirectionGestureRecognizer();
 
         var result = recognizer.Recognize([Point(0, 0, 0), Point(40, 0, 100), Point(40, 40, 200)], Options);
 
-        Assert.False(result.IsValid);
+        Assert.True(result.IsValid);
         Assert.Equal("RD", result.Pattern);
+    }
+
+    [Fact]
+    public void Recognize_accepts_long_custom_patterns_up_to_eight_segments()
+    {
+        var recognizer = new DirectionGestureRecognizer();
+
+        var result = recognizer.Recognize(
+            [
+                Point(0, 0, 0),
+                Point(40, 0, 100),
+                Point(40, 40, 200),
+                Point(0, 40, 300),
+                Point(0, 80, 400)
+            ],
+            Options);
+
+        Assert.True(result.IsValid);
+        Assert.Equal("RDLD", result.Pattern);
     }
 
     [Fact]

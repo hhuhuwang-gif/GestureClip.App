@@ -1,21 +1,40 @@
 # GestureClip
 
-GestureClip is a local Windows desktop tool for text clipboard history and right-button mouse gestures. It runs in the tray, stores data locally, and is designed for fast daily editing actions.
+GestureClip is a local Windows desktop tool for clipboard history and right-button mouse gestures. It runs in the tray, stores data locally, and is designed for fast daily office work.
 
 ## Current MVP Features
 
 - Tray resident WPF application
 - Single-instance startup guard
-- Text clipboard history with SQLite storage
-- Clipboard search and quick paste overlay
+- Text and image clipboard history with SQLite storage
+- Clipboard search, filters, thumbnails, quick copy, quick paste, pin, delete, and snippets
 - Global hotkey: Ctrl + \`
 - Global right-button mouse gestures
 - Gesture presets and action HUD
+- Edge trigger shortcuts
 - Clipboard and gesture pause/resume switches
 - Privacy blacklist by process name
 - Start with Windows
 - Diagnostics panel
 - Clipboard data cleanup
+
+## Clipboard Overlay
+
+Open clipboard history with `Ctrl + \``. Press it again to hide the overlay.
+
+Useful shortcuts:
+
+- `Enter`: paste selected item
+- `1-9`: paste by number
+- `Ctrl + F`: focus search
+- `Esc`: clear search first, close overlay when search is already empty
+- `Ctrl + 1-5`: switch filters
+- `Ctrl + C`: copy selected items
+- `Ctrl + P`: pin or unpin selected item
+- `Ctrl + S`: save or remove snippet
+- `Delete`: delete selected items
+
+Mouse-friendly controls are also available in each item row and in the detail panel.
 
 ## Default Gestures
 
@@ -40,6 +59,7 @@ Clipboard Enhanced mode keeps navigation and editing gestures, but uses:
 GestureClip is local-first:
 
 - Clipboard text is stored locally in SQLite.
+- Clipboard images are stored locally as PNG data.
 - No cloud upload or sync is implemented.
 - Clipboard recording can be paused.
 - Process-level privacy blacklist is supported.
@@ -71,13 +91,7 @@ Run from source:
 dotnet run --project .\src\GestureClip.App\GestureClip.App.csproj
 ```
 
-One-click launch from a downloaded repository:
-
-```text
-Start-GestureClip.bat
-```
-
-The launcher starts `artifacts/release/GestureClip/GestureClip.exe`. If the release executable is missing, it runs `scripts/publish-win-x64.ps1` first.
+For daily use, run the published `GestureClip.exe`.
 
 ## Release
 
@@ -113,4 +127,4 @@ Not reliably when GestureClip is running without administrator rights. Run Gestu
 
 ### Does GestureClip store images or files from the clipboard?
 
-No. The MVP only stores text clipboard history.
+GestureClip stores text and images. File, HTML, and RTF clipboard history are not implemented.
