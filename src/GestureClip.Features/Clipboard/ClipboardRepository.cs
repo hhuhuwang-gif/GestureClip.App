@@ -99,9 +99,9 @@ WHERE NOT EXISTS (
         var sql = $"""
 SELECT
     Id, ContentType,
-    CASE WHEN ContentType = 'image/png' THEN NULL ELSE TextContent END AS TextContent,
+    CASE WHEN ContentType LIKE 'image/%' THEN NULL ELSE TextContent END AS TextContent,
     CASE
-        WHEN ContentType = 'image/png' THEN ThumbnailContent
+        WHEN ContentType LIKE 'image/%' THEN ThumbnailContent
         ELSE ThumbnailContent
     END AS ThumbnailContent,
     PreviewText, Hash, PlainTextHash, SourceApp, SourceProcess,
@@ -441,7 +441,7 @@ WHERE IsPinned = 0
             ClipboardContentFilter.Pinned => "IsPinned = 1",
             ClipboardContentFilter.Favorites => "IsFavorite = 1",
             ClipboardContentFilter.Text => "ContentType = 'text'",
-            ClipboardContentFilter.Images => "ContentType = 'image/png'",
+            ClipboardContentFilter.Images => "ContentType LIKE 'image/%'",
             _ => ""
         };
     }

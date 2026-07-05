@@ -130,6 +130,8 @@ public sealed class AppLifecycleService : IAppLifecycleService
             _serviceProvider.GetService<IClipboardService>()?.StopAsync(CancellationToken.None) ?? Task.CompletedTask);
         await StopStepAsync("overwork reminder service", () =>
             _serviceProvider.GetService<IOverworkReminderService>()?.StopAsync(CancellationToken.None) ?? Task.CompletedTask);
+        await StopStepAsync("workbear daily report service", () =>
+            _serviceProvider.GetService<WorkBearDailyReportAutoService>()?.StopAsync(CancellationToken.None) ?? Task.CompletedTask);
         await StopStepAsync("tray icon", () =>
         {
             _serviceProvider.GetService<TrayIconService>()?.Dispose();

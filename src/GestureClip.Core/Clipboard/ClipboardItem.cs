@@ -16,4 +16,15 @@ public sealed record ClipboardItem(
     DateTimeOffset CreatedAt,
     DateTimeOffset UpdatedAt,
     DateTimeOffset? LastUsedAt,
-    string? ThumbnailContent = null);
+    string? ThumbnailContent = null)
+{
+    public bool IsText => string.Equals(ContentType, "text", StringComparison.OrdinalIgnoreCase);
+
+    public bool IsImage => ContentType.StartsWith("image/", StringComparison.OrdinalIgnoreCase);
+
+    public string ContentTypeLabel => IsImage
+        ? "图片"
+        : IsText
+            ? "文本"
+            : ContentType;
+}

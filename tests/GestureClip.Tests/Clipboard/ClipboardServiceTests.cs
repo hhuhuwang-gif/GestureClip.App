@@ -105,7 +105,7 @@ public sealed class ClipboardServiceTests
         var writer = new FakeClipboardWriter();
         var service = CreateService(repository, writer: writer);
         var now = DateTimeOffset.UtcNow;
-        var image = new ClipboardItem(Guid.NewGuid(), "image/png", "png-base64", "图片", "hash", null, "Test", "test.exe", false, false, false, 0, now, now, null);
+        var image = new ClipboardItem(Guid.NewGuid(), "image/jpeg", "png-base64", "图片", "hash", null, "Test", "test.exe", false, false, false, 0, now, now, null);
 
         var pasteTask = service.PasteAsync(image, new PasteOptions(false), CancellationToken.None);
         await WaitForAsync(() => writer.PasteHotkeySent);
@@ -228,7 +228,7 @@ public sealed class ClipboardServiceTests
         var writer = new FakeClipboardWriter();
         var service = CreateService(repository, writer: writer);
         var now = DateTimeOffset.UtcNow;
-        var image = new ClipboardItem(Guid.NewGuid(), "image/png", "png-base64", "图片", "hash", null, "Test", "test.exe", false, false, false, 0, now, now, null);
+        var image = new ClipboardItem(Guid.NewGuid(), "image/jpeg", "png-base64", "图片", "hash", null, "Test", "test.exe", false, false, false, 0, now, now, null);
 
         await service.CopyItemsAsync([image], CancellationToken.None);
 

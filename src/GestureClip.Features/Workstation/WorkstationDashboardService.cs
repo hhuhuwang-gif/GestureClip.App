@@ -1,3 +1,5 @@
+using System.Globalization;
+using System.Text;
 using GestureClip.Core.Abstractions;
 using GestureClip.Core.Settings;
 using GestureClip.Core.Workstation;
@@ -11,13 +13,23 @@ public sealed class WorkstationDashboardService : IWorkstationDashboardService
 
     private readonly ISettingsService _settingsService;
     private readonly IWorkstationStatsRepository _statsRepository;
+    private readonly IWorkTimeStageService _stageService;
+
+    public WorkstationDashboardService(
+        ISettingsService settingsService,
+        IWorkstationStatsRepository statsRepository,
+        IWorkTimeStageService stageService)
+    {
+        _settingsService = settingsService;
+        _statsRepository = statsRepository;
+        _stageService = stageService;
+    }
 
     public WorkstationDashboardService(
         ISettingsService settingsService,
         IWorkstationStatsRepository statsRepository)
+        : this(settingsService, statsRepository, new WorkTimeStageService(settingsService))
     {
-        _settingsService = settingsService;
-        _statsRepository = statsRepository;
     }
 
     public async Task<WorkstationDashboardSnapshot> GetSnapshotAsync(DateTimeOffset now, CancellationToken cancellationToken)
@@ -25,17 +37,33 @@ public sealed class WorkstationDashboardService : IWorkstationDashboardService
         var settings = GetSettings();
         var date = DateOnly.FromDateTime(now.Date);
         var stats = await _statsRepository.GetOrCreateAsync(date, cancellationToken);
+        var stageSnapshot = _stageService.GetSnapshot(now);
+        var textStyle = GetTextStyle();
         var minuteWage = GetMinuteWage(settings);
         var earnedMinutes = GetEffectiveWorkedMinutes(now, settings);
-        var currentFishingMinutes = stats.FishingStartedAt is null
-            ? 0
-            : Math.Max(0, (int)Math.Floor((now - stats.FishingStartedAt.Value).TotalMinutes));
+        var currentFishingMinutes = GetCurrentFishingMinutes(stats, now);
         var totalFishingMinutes = stats.FishingMinutes + currentFishingMinutes;
+        var workDuration = GetGrossWorkDuration(now, settings);
+        var overtime = GetOvertimeDuration(now, settings);
+        var untilOffWork = GetTimeUntilOffWork(now, settings);
+        var sprintActive = IsSprintActive(untilOffWork, stageSnapshot.Stage);
+        var rating = WorkBearTextProvider.Rating(workDuration, TimeSpan.FromMinutes(totalFishingMinutes), overtime, stats.EstimatedSavedClicks);
+        var report = BuildDailyReport(
+            date,
+            workDuration,
+            TimeSpan.FromMinutes((double)earnedMinutes),
+            earnedMinutes * minuteWage,
+            TimeSpan.FromMinutes(totalFishingMinutes),
+            totalFishingMinutes * minuteWage,
+            stats,
+            overtime,
+            rating,
+            WorkBearTextProvider.BearLine(stageSnapshot.Stage, textStyle, stats.FishingStartedAt is not null, untilOffWork));
 
         return new WorkstationDashboardSnapshot(
             "工位小熊",
-            "今天也在低功耗运行",
-            GetTimeUntilOffWork(now, settings),
+            "坐在你电脑里的打工人状态 Hub",
+            untilOffWork,
             earnedMinutes * minuteWage,
             GetMonthEarned(now, settings),
             GetDaysUntilPayday(now, settings.Payday),
@@ -47,12 +75,32 @@ public sealed class WorkstationDashboardService : IWorkstationDashboardService
             stats.PasteCount,
             stats.GestureCount,
             stats.EstimatedSavedClicks,
-            GetWorkStatusText(now));
+            stageSnapshot.Theme.ShortStatusText,
+            stageSnapshot.Stage,
+            WorkBearTextProvider.StageText(stageSnapshot.Stage),
+            WorkBearTextProvider.BearStatus(stageSnapshot.Stage, stats.FishingStartedAt is not null),
+            WorkBearTextProvider.BearLine(stageSnapshot.Stage, textStyle, stats.FishingStartedAt is not null, untilOffWork),
+            minuteWage,
+            TimeSpan.FromMinutes(totalFishingMinutes),
+            stats.OpenClipboardCount,
+            workDuration,
+            TimeSpan.FromMinutes((double)earnedMinutes),
+            stageSnapshot.EffectiveWorkedTime,
+            GetNextRestReminderAt(now),
+            stats.OverworkReminderCount,
+            WorkBearTextProvider.RestRisk(stageSnapshot.EffectiveWorkedTime, stageSnapshot.Stage),
+            IsRestReminderEnabledForToday(now),
+            sprintActive,
+            WorkBearTextProvider.SprintSuggestion(stageSnapshot.Stage, untilOffWork, textStyle),
+            overtime,
+            rating,
+            report.ReportText,
+            "仅供娱乐估算，不作财务或考勤依据；所有数据仅保存在本地。");
     }
 
     public async Task StartFishingAsync(DateTimeOffset now, CancellationToken cancellationToken)
     {
-        if (!IsEnabled())
+        if (!IsEnabled() || !_settingsService.Get(SettingKeys.EnableFishMode, true))
         {
             return;
         }
@@ -79,7 +127,7 @@ public sealed class WorkstationDashboardService : IWorkstationDashboardService
             return;
         }
 
-        var minutes = Math.Max(0, (int)Math.Floor((now - stats.FishingStartedAt.Value).TotalMinutes));
+        var minutes = GetCurrentFishingMinutes(stats, now);
         await _statsRepository.SaveAsync(stats with
         {
             FishingMinutes = stats.FishingMinutes + minutes,
@@ -92,69 +140,148 @@ public sealed class WorkstationDashboardService : IWorkstationDashboardService
         return _statsRepository.ResetAsync(date, cancellationToken);
     }
 
+    public Task ClearTodayFishingAsync(DateOnly date, CancellationToken cancellationToken)
+    {
+        return ClearTodayFishingCoreAsync(date, cancellationToken);
+    }
+
+    private async Task ClearTodayFishingCoreAsync(DateOnly date, CancellationToken cancellationToken)
+    {
+        var stats = await _statsRepository.GetOrCreateAsync(date, cancellationToken);
+        await _statsRepository.SaveAsync(stats with { FishingMinutes = 0, FishingStartedAt = null }, cancellationToken);
+    }
+
     public async Task RecordCopyAsync(DateTimeOffset now, CancellationToken cancellationToken)
     {
-        if (!IsEnabled())
-        {
-            return;
-        }
-
-        await _statsRepository.IncrementCountersAsync(
-            DateOnly.FromDateTime(now.Date),
-            copyDelta: 1,
-            pasteDelta: 0,
-            gestureDelta: 0,
-            savedClicksDelta: 0,
-            cancellationToken);
+        if (!IsEnabled()) return;
+        await _statsRepository.IncrementCountersAsync(DateOnly.FromDateTime(now.Date), 1, 0, 0, 0, cancellationToken);
     }
 
     public async Task RecordPasteAsync(DateTimeOffset now, CancellationToken cancellationToken)
     {
-        if (!IsEnabled())
-        {
-            return;
-        }
-
-        await _statsRepository.IncrementCountersAsync(
-            DateOnly.FromDateTime(now.Date),
-            copyDelta: 0,
-            pasteDelta: 1,
-            gestureDelta: 0,
-            savedClicksDelta: 0,
-            cancellationToken);
+        if (!IsEnabled()) return;
+        await _statsRepository.IncrementCountersAsync(DateOnly.FromDateTime(now.Date), 0, 1, 0, 0, cancellationToken);
     }
 
     public async Task RecordGestureAsync(DateTimeOffset now, CancellationToken cancellationToken)
     {
-        if (!IsEnabled())
-        {
-            return;
-        }
+        if (!IsEnabled()) return;
+        await _statsRepository.IncrementCountersAsync(DateOnly.FromDateTime(now.Date), 0, 0, 1, SavedClicksPerGesture, cancellationToken);
+    }
 
-        await _statsRepository.IncrementCountersAsync(
-            DateOnly.FromDateTime(now.Date),
-            copyDelta: 0,
-            pasteDelta: 0,
-            gestureDelta: 1,
-            savedClicksDelta: SavedClicksPerGesture,
-            cancellationToken);
+    public async Task RecordClipboardOpenAsync(DateTimeOffset now, CancellationToken cancellationToken)
+    {
+        if (!IsEnabled()) return;
+        await _statsRepository.IncrementHubCountersAsync(DateOnly.FromDateTime(now.Date), 1, 0, cancellationToken);
+    }
+
+    public async Task RecordOverworkReminderAsync(DateTimeOffset now, CancellationToken cancellationToken)
+    {
+        if (!IsEnabled()) return;
+        await _statsRepository.IncrementHubCountersAsync(DateOnly.FromDateTime(now.Date), 0, 1, cancellationToken);
+    }
+
+    public Task SetSprintModeAsync(bool enabled, CancellationToken cancellationToken)
+    {
+        return _settingsService.SetAsync(SettingKeys.WorkBearSprintManualEnabled, enabled, cancellationToken);
+    }
+
+    public async Task<WorkBearDailyReport> GenerateDailyReportAsync(DateTimeOffset now, CancellationToken cancellationToken)
+    {
+        var settings = GetSettings();
+        var date = DateOnly.FromDateTime(now.Date);
+        var stats = await _statsRepository.GetOrCreateAsync(date, cancellationToken);
+        var stage = _stageService.GetSnapshot(now).Stage;
+        var minuteWage = GetMinuteWage(settings);
+        var earnedMinutes = GetEffectiveWorkedMinutes(now, settings);
+        var currentFishingMinutes = GetCurrentFishingMinutes(stats, now);
+        var totalFishingMinutes = stats.FishingMinutes + currentFishingMinutes;
+        var workDuration = GetGrossWorkDuration(now, settings);
+        var overtime = GetOvertimeDuration(now, settings);
+        var rating = WorkBearTextProvider.Rating(workDuration, TimeSpan.FromMinutes(totalFishingMinutes), overtime, stats.EstimatedSavedClicks);
+        return BuildDailyReport(
+            date,
+            workDuration,
+            TimeSpan.FromMinutes((double)earnedMinutes),
+            earnedMinutes * minuteWage,
+            TimeSpan.FromMinutes(totalFishingMinutes),
+            totalFishingMinutes * minuteWage,
+            stats,
+            overtime,
+            rating,
+            WorkBearTextProvider.BearLine(stage, GetTextStyle(), stats.FishingStartedAt is not null, GetTimeUntilOffWork(now, settings)));
     }
 
     private bool IsEnabled()
     {
-        return _settingsService.Get(SettingKeys.WorkstationEnabled, true);
+        return _settingsService.Get(SettingKeys.WorkstationEnabled, true) &&
+               _settingsService.Get(SettingKeys.EnableWorkBearHub, true);
+    }
+
+    private bool IsSprintActive(TimeSpan untilOffWork, WorkTimeStage stage)
+    {
+        if (!_settingsService.Get(SettingKeys.EnableWorkSprintMode, true))
+        {
+            return false;
+        }
+
+        return _settingsService.Get(SettingKeys.WorkBearSprintManualEnabled, false) ||
+               stage == WorkTimeStage.Overtime ||
+               (untilOffWork > TimeSpan.Zero && untilOffWork <= TimeSpan.FromMinutes(30));
+    }
+
+    private WorkBearTextStyle GetTextStyle()
+    {
+        var text = _settingsService.Get(SettingKeys.WorkBearTextStyle,
+            _settingsService.Get(SettingKeys.WorkstationCopywritingStyle, "打工人模式"));
+        return WorkBearTextProvider.ParseStyle(text);
     }
 
     private WorkstationSettings GetSettings()
     {
         return new WorkstationSettings(
-            _settingsService.Get(SettingKeys.WorkstationMonthlySalary, 0m),
+            Math.Max(0, _settingsService.Get(SettingKeys.WorkstationMonthlySalary, 0m)),
             ParseTime(_settingsService.Get(SettingKeys.WorkstationWorkStartTime, "09:00"), new TimeOnly(9, 0)),
             ParseTime(_settingsService.Get(SettingKeys.WorkstationWorkEndTime, "18:00"), new TimeOnly(18, 0)),
             ParseTime(_settingsService.Get(SettingKeys.WorkstationLunchStartTime, "12:00"), new TimeOnly(12, 0)),
             ParseTime(_settingsService.Get(SettingKeys.WorkstationLunchEndTime, "13:00"), new TimeOnly(13, 0)),
             ParseWorkdays(_settingsService.Get(SettingKeys.WorkstationWorkdays, "1,2,3,4,5")),
             Math.Clamp(_settingsService.Get(SettingKeys.WorkstationPayday, 15), 1, 28));
+    }
+
+    private DateTimeOffset? GetNextRestReminderAt(DateTimeOffset now)
+    {
+        if (!IsRestReminderEnabledForToday(now))
+        {
+            return null;
+        }
+
+        var snoozedUntil = _settingsService.Get(SettingKeys.WorkBearRestReminderSnoozedUntil, string.Empty);
+        if (DateTimeOffset.TryParse(snoozedUntil, out var until) && until > now)
+        {
+            return until;
+        }
+
+        var interval = Math.Clamp(_settingsService.Get(SettingKeys.WorkstationOverworkReminderIntervalMinutes, 60), 30, 180);
+        return now.AddMinutes(interval);
+    }
+
+    private bool IsRestReminderEnabledForToday(DateTimeOffset now)
+    {
+        if (!_settingsService.Get(SettingKeys.WorkstationEnableOverworkReminder, true))
+        {
+            return false;
+        }
+
+        var mutedDate = _settingsService.Get(SettingKeys.WorkBearRestReminderMutedDate, string.Empty);
+        return !DateOnly.TryParse(mutedDate, out var date) || date != DateOnly.FromDateTime(now.Date);
+    }
+
+    private static int GetCurrentFishingMinutes(WorkstationDailyStats stats, DateTimeOffset now)
+    {
+        return stats.FishingStartedAt is null
+            ? 0
+            : Math.Max(0, (int)Math.Floor((now - stats.FishingStartedAt.Value).TotalMinutes));
     }
 
     private static TimeOnly ParseTime(string value, TimeOnly fallback)
@@ -185,6 +312,11 @@ public sealed class WorkstationDashboardService : IWorkstationDashboardService
 
     private static decimal GetMinuteWage(WorkstationSettings settings)
     {
+        if (settings.MonthlySalary <= 0)
+        {
+            return 0m;
+        }
+
         var dailySalary = settings.MonthlySalary / WorkdaysPerMonth;
         var workMinutes = Math.Max(1, GetDailyWorkMinutes(settings));
         return dailySalary / workMinutes;
@@ -192,8 +324,15 @@ public sealed class WorkstationDashboardService : IWorkstationDashboardService
 
     private static int GetDailyWorkMinutes(WorkstationSettings settings)
     {
+        if (settings.WorkEndTime <= settings.WorkStartTime)
+        {
+            return 1;
+        }
+
         var total = (int)(settings.WorkEndTime - settings.WorkStartTime).TotalMinutes;
-        var lunch = Math.Max(0, (int)(settings.LunchEndTime - settings.LunchStartTime).TotalMinutes);
+        var lunch = settings.LunchEndTime > settings.LunchStartTime
+            ? Math.Max(0, (int)(settings.LunchEndTime - settings.LunchStartTime).TotalMinutes)
+            : 0;
         return Math.Max(1, total - lunch);
     }
 
@@ -219,7 +358,7 @@ public sealed class WorkstationDashboardService : IWorkstationDashboardService
 
     private static decimal GetEffectiveWorkedMinutes(DateTimeOffset now, WorkstationSettings settings)
     {
-        if (!settings.Workdays.Contains(now.DayOfWeek))
+        if (!settings.Workdays.Contains(now.DayOfWeek) || settings.WorkEndTime <= settings.WorkStartTime)
         {
             return 0;
         }
@@ -232,19 +371,51 @@ public sealed class WorkstationDashboardService : IWorkstationDashboardService
 
         var end = current < settings.WorkEndTime ? current : settings.WorkEndTime;
         var minutes = Math.Max(0, (decimal)(end - settings.WorkStartTime).TotalMinutes);
-        var lunchOverlapStart = Max(settings.WorkStartTime, settings.LunchStartTime);
-        var lunchOverlapEnd = Min(end, settings.LunchEndTime);
-        if (lunchOverlapEnd > lunchOverlapStart)
+        if (settings.LunchEndTime > settings.LunchStartTime)
         {
-            minutes -= (decimal)(lunchOverlapEnd - lunchOverlapStart).TotalMinutes;
+            var lunchOverlapStart = Max(settings.WorkStartTime, settings.LunchStartTime);
+            var lunchOverlapEnd = Min(end, settings.LunchEndTime);
+            if (lunchOverlapEnd > lunchOverlapStart)
+            {
+                minutes -= (decimal)(lunchOverlapEnd - lunchOverlapStart).TotalMinutes;
+            }
         }
 
         return Math.Max(0, minutes);
     }
 
+    private static TimeSpan GetGrossWorkDuration(DateTimeOffset now, WorkstationSettings settings)
+    {
+        if (!settings.Workdays.Contains(now.DayOfWeek) || settings.WorkEndTime <= settings.WorkStartTime)
+        {
+            return TimeSpan.Zero;
+        }
+
+        var current = TimeOnly.FromDateTime(now.DateTime);
+        if (current <= settings.WorkStartTime)
+        {
+            return TimeSpan.Zero;
+        }
+
+        var start = now.Date + settings.WorkStartTime.ToTimeSpan();
+        var end = now.Date + (current < settings.WorkEndTime ? current : settings.WorkEndTime).ToTimeSpan();
+        return end > start ? end - start : TimeSpan.Zero;
+    }
+
+    private static TimeSpan GetOvertimeDuration(DateTimeOffset now, WorkstationSettings settings)
+    {
+        if (!settings.Workdays.Contains(now.DayOfWeek) || settings.WorkEndTime <= settings.WorkStartTime)
+        {
+            return TimeSpan.Zero;
+        }
+
+        var offWork = now.Date + settings.WorkEndTime.ToTimeSpan();
+        return now.DateTime > offWork ? now.DateTime - offWork : TimeSpan.Zero;
+    }
+
     private static TimeSpan GetTimeUntilOffWork(DateTimeOffset now, WorkstationSettings settings)
     {
-        if (!settings.Workdays.Contains(now.DayOfWeek))
+        if (!settings.Workdays.Contains(now.DayOfWeek) || settings.WorkEndTime <= settings.WorkStartTime)
         {
             return TimeSpan.Zero;
         }
@@ -267,15 +438,62 @@ public sealed class WorkstationDashboardService : IWorkstationDashboardService
         return Math.Max(0, (payDate.Date - current.Date).Days);
     }
 
-    private static string GetWorkStatusText(DateTimeOffset now)
+    private static WorkBearDailyReport BuildDailyReport(
+        DateOnly date,
+        TimeSpan workDuration,
+        TimeSpan effectiveWorkDuration,
+        decimal todayEarned,
+        TimeSpan fishingDuration,
+        decimal fishingValue,
+        WorkstationDailyStats stats,
+        TimeSpan overtime,
+        string rating,
+        string bearLine)
     {
-        var time = TimeOnly.FromDateTime(now.DateTime);
-        if (time < new TimeOnly(10, 0)) return "开机缓冲期";
-        if (time < new TimeOnly(12, 0)) return "假装高效期";
-        if (time < new TimeOnly(14, 0)) return "灵魂离线期";
-        if (time < new TimeOnly(17, 30)) return "低功耗运行期";
-        if (time < new TimeOnly(18, 0)) return "禁止新增需求期";
-        return "非法占用人生时间";
+        var text = new StringBuilder();
+        text.AppendLine("今日牛马生存报告：");
+        text.AppendLine(CultureInfo.InvariantCulture, $"今天你在工位坚守了 {FormatDuration(workDuration)}。");
+        text.AppendLine(CultureInfo.InvariantCulture, $"有效工位时间约 {FormatDuration(effectiveWorkDuration)}，加班 {FormatDuration(overtime)}。");
+        text.AppendLine(CultureInfo.InvariantCulture, $"老板已为你支出 {FormatMoney(todayEarned)}。");
+        text.AppendLine(CultureInfo.InvariantCulture, $"复制 {stats.CopyCount} 次，粘贴 {stats.PasteCount} 次，手势 {stats.GestureCount} 次，打开剪贴板 {stats.OpenClipboardCount} 次。");
+        text.AppendLine(CultureInfo.InvariantCulture, $"你通过 GestureClip 少点了 {stats.EstimatedSavedClicks} 次鼠标。");
+        text.AppendLine(CultureInfo.InvariantCulture, $"今日摸鱼 {FormatDuration(fishingDuration)}，约值 {FormatMoney(fishingValue)}。");
+        text.AppendLine(CultureInfo.InvariantCulture, $"今日休息提醒 {stats.OverworkReminderCount} 次。");
+        text.AppendLine(CultureInfo.InvariantCulture, $"工位小熊评价：{rating}。");
+        text.AppendLine(CultureInfo.InvariantCulture, $"小熊一句话：{bearLine}");
+        text.Append("隐私：报告不包含剪贴板正文、图片内容、浏览器内容或敏感路径。");
+
+        return new WorkBearDailyReport(
+            date,
+            workDuration,
+            effectiveWorkDuration,
+            todayEarned,
+            fishingDuration,
+            fishingValue,
+            stats.CopyCount,
+            stats.PasteCount,
+            stats.GestureCount,
+            stats.EstimatedSavedClicks,
+            stats.OpenClipboardCount,
+            stats.OverworkReminderCount,
+            overtime,
+            rating,
+            bearLine,
+            text.ToString());
+    }
+
+    private static string FormatMoney(decimal value) => string.Create(CultureInfo.InvariantCulture, $"￥{value:0.00}");
+
+    private static string FormatDuration(TimeSpan value)
+    {
+        if (value <= TimeSpan.Zero)
+        {
+            return "0 分钟";
+        }
+
+        return value.TotalHours >= 1
+            ? $"{(int)value.TotalHours} 小时 {value.Minutes} 分钟"
+            : $"{Math.Max(0, value.Minutes)} 分钟";
     }
 
     private static TimeOnly Max(TimeOnly first, TimeOnly second) => first > second ? first : second;

@@ -7,4 +7,8 @@ public interface IOverworkReminderService
     Task StopAsync(CancellationToken cancellationToken);
 
     Task CheckNowAsync(DateTimeOffset now, CancellationToken cancellationToken);
+
+    Task SnoozeAsync(DateTimeOffset now, CancellationToken cancellationToken) => Task.CompletedTask;
+
+    Task MuteTodayAsync(DateTimeOffset now, CancellationToken cancellationToken) => Task.CompletedTask;
 }

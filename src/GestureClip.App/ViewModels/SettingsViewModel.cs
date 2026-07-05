@@ -97,6 +97,12 @@ public sealed class SettingsViewModel : INotifyPropertyChanged
     private bool _workstationShowFishingValue;
     private bool _workstationShowOffWorkCountdown;
     private bool _workstationDailyReportEnabled;
+    private bool _autoShowDailyWorkReport;
+    private bool _enableFishMode;
+    private bool _enableWorkSprintMode;
+    private bool _enableWorkBearShareCard;
+    private bool _enableWorkBearHudStatusText;
+    private bool _enableWorkBearHudThemeColor;
     private string _workstationCopywritingStyle = "打工人模式";
     private bool _workstationEnableOverworkReminder;
     private int _workstationOverworkReminderIntervalMinutes;
@@ -212,8 +218,14 @@ public sealed class SettingsViewModel : INotifyPropertyChanged
         _workstationPayday = _settingsService.Get(SettingKeys.WorkstationPayday, 15);
         _workstationShowFishingValue = _settingsService.Get(SettingKeys.WorkstationShowFishingValue, true);
         _workstationShowOffWorkCountdown = _settingsService.Get(SettingKeys.WorkstationShowOffWorkCountdown, true);
-        _workstationDailyReportEnabled = _settingsService.Get(SettingKeys.WorkstationDailyReportEnabled, false);
-        _workstationCopywritingStyle = _settingsService.Get(SettingKeys.WorkstationCopywritingStyle, "打工人模式");
+        _workstationDailyReportEnabled = _settingsService.Get(SettingKeys.EnableWorkReport, _settingsService.Get(SettingKeys.WorkstationDailyReportEnabled, false));
+        _autoShowDailyWorkReport = _settingsService.Get(SettingKeys.AutoShowDailyWorkReport, true);
+        _enableFishMode = _settingsService.Get(SettingKeys.EnableFishMode, true);
+        _enableWorkSprintMode = _settingsService.Get(SettingKeys.EnableWorkSprintMode, true);
+        _enableWorkBearShareCard = _settingsService.Get(SettingKeys.EnableWorkBearShareCard, true);
+        _enableWorkBearHudStatusText = _settingsService.Get(SettingKeys.EnableWorkBearHudStatusText, true);
+        _enableWorkBearHudThemeColor = _settingsService.Get(SettingKeys.EnableWorkBearHudThemeColor, true);
+        _workstationCopywritingStyle = _settingsService.Get(SettingKeys.WorkBearTextStyle, _settingsService.Get(SettingKeys.WorkstationCopywritingStyle, "打工人模式"));
         _workstationEnableOverworkReminder = _settingsService.Get(SettingKeys.WorkstationEnableOverworkReminder, true);
         _workstationOverworkReminderIntervalMinutes = Math.Clamp(_settingsService.Get(SettingKeys.WorkstationOverworkReminderIntervalMinutes, 60), 30, 180);
         _workstationOverworkHighRiskAfterHours = Math.Clamp(_settingsService.Get(SettingKeys.WorkstationOverworkHighRiskAfterHours, 8d), 6d, 12d);
@@ -782,6 +794,7 @@ public sealed class SettingsViewModel : INotifyPropertyChanged
             OnPropertyChanged();
             NotifyWorkstationPreviewChanged();
             _ = _settingsService.SetAsync(SettingKeys.WorkstationCopywritingStyle, normalized, CancellationToken.None);
+            _ = _settingsService.SetAsync(SettingKeys.WorkBearTextStyle, normalized, CancellationToken.None);
         }
     }
 
@@ -833,6 +846,83 @@ public sealed class SettingsViewModel : INotifyPropertyChanged
             OnPropertyChanged();
             NotifyWorkstationPreviewChanged();
             _ = _settingsService.SetAsync(SettingKeys.WorkstationDailyReportEnabled, value, CancellationToken.None);
+            _ = _settingsService.SetAsync(SettingKeys.EnableWorkReport, value, CancellationToken.None);
+        }
+    }
+
+    public bool AutoShowDailyWorkReport
+    {
+        get => _autoShowDailyWorkReport;
+        set
+        {
+            if (_autoShowDailyWorkReport == value) return;
+            _autoShowDailyWorkReport = value;
+            OnPropertyChanged();
+            _ = _settingsService.SetAsync(SettingKeys.AutoShowDailyWorkReport, value, CancellationToken.None);
+        }
+    }
+
+    public bool EnableFishMode
+    {
+        get => _enableFishMode;
+        set
+        {
+            if (_enableFishMode == value) return;
+            _enableFishMode = value;
+            OnPropertyChanged();
+            _ = _settingsService.SetAsync(SettingKeys.EnableFishMode, value, CancellationToken.None);
+        }
+    }
+
+    public bool EnableWorkSprintMode
+    {
+        get => _enableWorkSprintMode;
+        set
+        {
+            if (_enableWorkSprintMode == value) return;
+            _enableWorkSprintMode = value;
+            OnPropertyChanged();
+            _ = _settingsService.SetAsync(SettingKeys.EnableWorkSprintMode, value, CancellationToken.None);
+        }
+    }
+
+    public bool EnableWorkBearShareCard
+    {
+        get => _enableWorkBearShareCard;
+        set
+        {
+            if (_enableWorkBearShareCard == value) return;
+            _enableWorkBearShareCard = value;
+            OnPropertyChanged();
+            _ = _settingsService.SetAsync(SettingKeys.EnableWorkBearShareCard, value, CancellationToken.None);
+        }
+    }
+
+    public bool EnableWorkBearHudStatusText
+    {
+        get => _enableWorkBearHudStatusText;
+        set
+        {
+            if (_enableWorkBearHudStatusText == value) return;
+            _enableWorkBearHudStatusText = value;
+            OnPropertyChanged();
+            _ = _settingsService.SetAsync(SettingKeys.EnableWorkBearHudStatusText, value, CancellationToken.None);
+        }
+    }
+
+    public bool EnableWorkBearHudThemeColor
+    {
+        get => _enableWorkBearHudThemeColor;
+        set
+        {
+            if (_enableWorkBearHudThemeColor == value) return;
+            _enableWorkBearHudThemeColor = value;
+            _workstationEnableHudTimeColor = value;
+            OnPropertyChanged();
+            OnPropertyChanged(nameof(WorkstationEnableHudTimeColor));
+            NotifyOverworkPreviewChanged();
+            _ = _settingsService.SetAsync(SettingKeys.EnableWorkBearHudThemeColor, value, CancellationToken.None);
+            _ = _settingsService.SetAsync(SettingKeys.WorkstationEnableHudTimeColor, value, CancellationToken.None);
         }
     }
 
@@ -900,9 +990,12 @@ public sealed class SettingsViewModel : INotifyPropertyChanged
             }
 
             _workstationEnableHudTimeColor = value;
+            _enableWorkBearHudThemeColor = value;
             OnPropertyChanged();
+            OnPropertyChanged(nameof(EnableWorkBearHudThemeColor));
             NotifyOverworkPreviewChanged();
             _ = _settingsService.SetAsync(SettingKeys.WorkstationEnableHudTimeColor, value, CancellationToken.None);
+            _ = _settingsService.SetAsync(SettingKeys.EnableWorkBearHudThemeColor, value, CancellationToken.None);
         }
     }
 

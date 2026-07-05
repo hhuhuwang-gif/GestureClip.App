@@ -1,35 +1,39 @@
+using System.IO;
 using System.Runtime.InteropServices;
-using System.Windows;
-using System.Windows.Threading;
 using GestureClip.Core.Abstractions;
 using GestureClip.Infrastructure.Win32;
 using Microsoft.Extensions.Logging;
 
 namespace GestureClip.Infrastructure.Clipboard;
 
-public sealed class WpfClipboardWriter : IClipboardWriter
+public sealed class WpfClipboardWriter : IClipboardWriter, IDisposable
 {
     private const ushort VkControl = 0x11;
     private const ushort VkV = 0x56;
     private const uint InputKeyboard = 1;
     private const uint KeyEventKeyUp = 0x0002;
-    private readonly Dispatcher _dispatcher;
+    private readonly ClipboardStaDispatcher _clipboardStaThread;
     private readonly ILogger<WpfClipboardWriter> _logger;
 
     public WpfClipboardWriter(ILogger<WpfClipboardWriter> logger)
     {
-        _dispatcher = System.Windows.Application.Current.Dispatcher;
+        _clipboardStaThread = new ClipboardStaDispatcher("GestureClip Clipboard Writer");
         _logger = logger;
+    }
+
+    public void Dispose()
+    {
+        _clipboardStaThread.Dispose();
     }
 
     public Task SetTextAsync(string text, CancellationToken cancellationToken)
     {
         return ClipboardRetryPolicy.RunAsync(
-            () => _dispatcher.InvokeAsync(() =>
+            () => _clipboardStaThread.InvokeAsync(() =>
             {
                 cancellationToken.ThrowIfCancellationRequested();
                 System.Windows.Clipboard.SetText(text);
-            }, DispatcherPriority.Send, cancellationToken).Task,
+            }, cancellationToken),
             retryCount: 3,
             delay: TimeSpan.FromMilliseconds(35),
             cancellationToken);
@@ -37,16 +41,28 @@ public sealed class WpfClipboardWriter : IClipboardWriter
 
     public async Task SetImagePngBase64Async(string pngBase64, CancellationToken cancellationToken)
     {
-        var image = await Task.Run(
-            () => ClipboardImageFactory.CreateFrozenBitmapImage(pngBase64),
+        var imageData = await Task.Run(
+            () =>
+            {
+                var pngBytes = ClipboardImageFactory.GetPngBytes(pngBase64);
+                var image = ClipboardImageFactory.CreateFrozenBitmapImage(pngBytes);
+                return new ClipboardImageData(
+                    pngBytes,
+                    image,
+                    ClipboardImageFactory.CreateDibBytes(image));
+            },
             cancellationToken);
 
         await ClipboardRetryPolicy.RunAsync(
-            () => _dispatcher.InvokeAsync(() =>
+            () => _clipboardStaThread.InvokeAsync(() =>
             {
                 cancellationToken.ThrowIfCancellationRequested();
-                System.Windows.Clipboard.SetImage(image);
-            }, DispatcherPriority.Send, cancellationToken).Task,
+                var dataObject = new System.Windows.DataObject();
+                dataObject.SetImage(imageData.Image);
+                dataObject.SetData("PNG", new MemoryStream(imageData.PngBytes, writable: false), autoConvert: false);
+                dataObject.SetData(System.Windows.DataFormats.Dib, new MemoryStream(imageData.DibBytes, writable: false), autoConvert: false);
+                System.Windows.Clipboard.SetDataObject(dataObject, copy: true);
+            }, cancellationToken),
             retryCount: 3,
             delay: TimeSpan.FromMilliseconds(35),
             cancellationToken);
@@ -98,4 +114,9 @@ public sealed class WpfClipboardWriter : IClipboardWriter
             }
         };
     }
+
+    private sealed record ClipboardImageData(
+        byte[] PngBytes,
+        System.Windows.Media.Imaging.BitmapSource Image,
+        byte[] DibBytes);
 }

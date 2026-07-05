@@ -263,7 +263,7 @@ public sealed class ClipboardService : IClipboardService
     public async Task PasteAsync(ClipboardItem item, PasteOptions options, CancellationToken cancellationToken)
     {
         var pasteWatch = Stopwatch.StartNew();
-        if (item.ContentType == "image/png")
+        if (item.IsImage)
         {
             var image = await EnsureFullContentAsync(item, cancellationToken);
             if (string.IsNullOrWhiteSpace(image.TextContent))
@@ -302,8 +302,8 @@ public sealed class ClipboardService : IClipboardService
             return;
         }
 
-        var hasText = items.Any(item => item.ContentType == "text");
-        var hasImage = items.Any(item => item.ContentType == "image/png");
+        var hasText = items.Any(item => item.IsText);
+        var hasImage = items.Any(item => item.IsImage);
         if (hasText && hasImage)
         {
             throw new NotSupportedException("混合内容暂不支持批量复制。");

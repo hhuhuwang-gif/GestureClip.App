@@ -10,6 +10,8 @@ namespace GestureClip.App.ViewModels;
 public sealed class ClipboardOverlayViewModel : INotifyPropertyChanged
 {
     private const int PageSize = 50;
+    private const int SelectedImagePreviewPixelWidth = 320;
+    private const int MaxInlineImagePreviewBytes = 512 * 1024;
 
     private readonly IClipboardService _clipboardService;
     private readonly TimeSpan _searchDebounceDelay;
@@ -109,17 +111,11 @@ public sealed class ClipboardOverlayViewModel : INotifyPropertyChanged
 
     public bool HasSelectedItem => SelectedItem is not null;
 
-    public bool IsSelectedImage => string.Equals(SelectedItem?.ContentType, "image/png", StringComparison.OrdinalIgnoreCase);
+    public bool IsSelectedImage => SelectedItem?.IsImage == true;
 
-    public bool IsSelectedText => string.Equals(SelectedItem?.ContentType, "text", StringComparison.OrdinalIgnoreCase);
+    public bool IsSelectedText => SelectedItem?.IsText == true;
 
-    public string SelectedContentTypeText => SelectedItem?.ContentType switch
-    {
-        "image/png" => "图片",
-        "text" => "文本",
-        null => "-",
-        _ => SelectedItem.ContentType
-    };
+    public string SelectedContentTypeText => SelectedItem?.ContentTypeLabel ?? "-";
 
     public string SelectedSourceText => string.IsNullOrWhiteSpace(SelectedItem?.SourceProcess)
         ? "来源未知"
@@ -400,8 +396,8 @@ public sealed class ClipboardOverlayViewModel : INotifyPropertyChanged
         {
             ClipboardOverlayFilter.Pinned => item.IsPinned,
             ClipboardOverlayFilter.Favorites => item.IsFavorite,
-            ClipboardOverlayFilter.Text => string.Equals(item.ContentType, "text", StringComparison.OrdinalIgnoreCase),
-            ClipboardOverlayFilter.Images => string.Equals(item.ContentType, "image/png", StringComparison.OrdinalIgnoreCase),
+            ClipboardOverlayFilter.Text => item.IsText,
+            ClipboardOverlayFilter.Images => item.IsImage,
             _ => true
         };
     }
@@ -479,7 +475,11 @@ public sealed class ClipboardOverlayViewModel : INotifyPropertyChanged
             ErrorMessage = null;
             await _clipboardService.CopyItemsAsync(selectedItems, CancellationToken.None);
             MarkItemsUsed(selectedItems.Select(item => item.Id).ToArray());
-            StatusText = selectedItems.Count == 1 ? "已复制到剪贴板" : $"已合并复制 {selectedItems.Count} 条";
+            StatusText = selectedItems.Count == 1 && selectedItems[0].IsImage
+                ? "图片已复制到系统剪贴板"
+                : selectedItems.Count == 1
+                    ? "已复制到剪贴板"
+                    : $"已合并复制 {selectedItems.Count} 条";
             return true;
         }
         catch (NotSupportedException ex)
@@ -490,7 +490,9 @@ public sealed class ClipboardOverlayViewModel : INotifyPropertyChanged
         catch (Exception ex)
         {
             ErrorMessage = $"复制剪贴板历史失败：{ex.Message}";
-            StatusText = "复制失败";
+            StatusText = selectedItems.Count == 1 && selectedItems[0].IsImage
+                ? $"图片复制失败：{ex.Message}"
+                : "复制失败";
             return false;
         }
     }
@@ -592,9 +594,7 @@ public sealed class ClipboardOverlayViewModel : INotifyPropertyChanged
                 return;
             }
 
-            var previewContent = !string.IsNullOrWhiteSpace(fullItem.ThumbnailContent)
-                ? fullItem.ThumbnailContent
-                : fullItem.TextContent;
+            var previewContent = await GetImagePreviewContentAsync(fullItem, cancellationToken: CancellationToken.None);
             if (string.IsNullOrWhiteSpace(previewContent) || SelectedItem?.Id != item.Id)
             {
                 return;
@@ -602,7 +602,7 @@ public sealed class ClipboardOverlayViewModel : INotifyPropertyChanged
 
             UpdateItem(item.Id, current => current with
             {
-                TextContent = current.ContentType == "image/png" ? null : current.TextContent,
+                TextContent = current.IsImage ? null : current.TextContent,
                 ThumbnailContent = previewContent
             });
         }
@@ -615,8 +615,65 @@ public sealed class ClipboardOverlayViewModel : INotifyPropertyChanged
     private static bool NeedsImagePreview(ClipboardItem? item)
     {
         return item is not null &&
-            string.Equals(item.ContentType, "image/png", StringComparison.OrdinalIgnoreCase) &&
+            item.IsImage &&
             string.IsNullOrWhiteSpace(item.ThumbnailContent);
+    }
+
+    private static async Task<string?> GetImagePreviewContentAsync(ClipboardItem item, CancellationToken cancellationToken)
+    {
+        if (!string.IsNullOrWhiteSpace(item.ThumbnailContent))
+        {
+            return item.ThumbnailContent;
+        }
+
+        if (!item.IsImage || string.IsNullOrWhiteSpace(item.TextContent))
+        {
+            return item.TextContent;
+        }
+
+        var thumbnail = await Task.Run(
+            () => GestureClip.Infrastructure.Clipboard.ClipboardImageFactory.TryCreateThumbnailPngBase64(
+                item.TextContent,
+                SelectedImagePreviewPixelWidth),
+            cancellationToken);
+        if (!string.IsNullOrWhiteSpace(thumbnail))
+        {
+            return thumbnail;
+        }
+
+        return EstimateBase64DecodedByteCount(item.TextContent) <= MaxInlineImagePreviewBytes
+            ? item.TextContent
+            : null;
+    }
+
+    private static long EstimateBase64DecodedByteCount(string value)
+    {
+        var base64 = NormalizeBase64(value);
+        if (base64.Length == 0)
+        {
+            return 0;
+        }
+
+        var padding = base64.EndsWith("==", StringComparison.Ordinal)
+            ? 2
+            : base64.EndsWith("=", StringComparison.Ordinal)
+                ? 1
+                : 0;
+        return (base64.Length * 3L / 4L) - padding;
+    }
+
+    private static string NormalizeBase64(string value)
+    {
+        var trimmed = value.Trim();
+        var commaIndex = trimmed.IndexOf(',', StringComparison.Ordinal);
+        if (trimmed.StartsWith("data:", StringComparison.OrdinalIgnoreCase) && commaIndex >= 0)
+        {
+            trimmed = trimmed[(commaIndex + 1)..].Trim();
+        }
+
+        return trimmed.Any(char.IsWhiteSpace)
+            ? new string(trimmed.Where(character => !char.IsWhiteSpace(character)).ToArray())
+            : trimmed;
     }
 
     private void RemoveItems(IReadOnlyList<Guid> ids)

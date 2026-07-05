@@ -61,8 +61,8 @@ public interface IClipboardService
         {
             ClipboardContentFilter.Pinned => item.IsPinned,
             ClipboardContentFilter.Favorites => item.IsFavorite,
-            ClipboardContentFilter.Text => string.Equals(item.ContentType, "text", StringComparison.OrdinalIgnoreCase),
-            ClipboardContentFilter.Images => string.Equals(item.ContentType, "image/png", StringComparison.OrdinalIgnoreCase),
+            ClipboardContentFilter.Text => item.IsText,
+            ClipboardContentFilter.Images => item.IsImage,
             _ => true
         };
     }

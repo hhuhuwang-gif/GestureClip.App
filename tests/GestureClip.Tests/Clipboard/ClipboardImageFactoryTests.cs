@@ -19,6 +19,24 @@ public sealed class ClipboardImageFactoryTests
     }
 
     [Fact]
+    public void GetPngBytes_returns_png_signature_bytes()
+    {
+        var bytes = ClipboardImageFactory.GetPngBytes(OnePixelPngBase64);
+
+        Assert.True(bytes.Take(4).SequenceEqual(new byte[] { 0x89, 0x50, 0x4E, 0x47 }));
+    }
+
+    [Fact]
+    public void CreateDibBytes_returns_clipboard_dib_without_bitmap_file_header()
+    {
+        var dib = ClipboardImageFactory.CreateDibBytes(OnePixelPngBase64);
+
+        Assert.True(dib.Length > 40);
+        Assert.Equal(40, BitConverter.ToInt32(dib, 0));
+        Assert.False(dib[0] == (byte)'B' && dib[1] == (byte)'M');
+    }
+
+    [Fact]
     public void TryCreateThumbnailPngBase64_returns_decodable_thumbnail()
     {
         var thumbnail = ClipboardImageFactory.TryCreateThumbnailPngBase64(OnePixelPngBase64, 96);

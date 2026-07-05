@@ -12,7 +12,8 @@
         ShowInTaskbar="False"
         ResizeMode="NoResize"
         WindowStartupLocation="CenterScreen"
-        KeyDown="Window_KeyDown">
+        KeyDown="Window_KeyDown"
+        Deactivated="Window_Deactivated">
     <Border CornerRadius="28"
             Margin="16"
             Padding="22"
@@ -30,15 +31,27 @@
             </Grid.RowDefinitions>
 
             <DockPanel Margin="2,0,2,12">
-                <Border DockPanel.Dock="Right"
-                        CornerRadius="13"
-                        Background="#F0F2F7"
-                        Padding="12,6"
-                        VerticalAlignment="Center">
-                    <TextBlock Text="Ctrl + `"
-                               Foreground="{DynamicResource BrushTextSecondary}"
-                               FontWeight="SemiBold" />
-                </Border>
+                <StackPanel DockPanel.Dock="Right"
+                            Orientation="Horizontal"
+                            VerticalAlignment="Center">
+                    <Button x:Name="AlwaysVisibleButton"
+                            Content="常显"
+                            Width="58"
+                            Height="30"
+                            MinWidth="0"
+                            Padding="0"
+                            FontSize="12"
+                            Margin="0,0,10,0"
+                            Click="AlwaysVisibleButton_Click" />
+                    <Border CornerRadius="13"
+                            Background="#F0F2F7"
+                            Padding="12,6"
+                            VerticalAlignment="Center">
+                        <TextBlock Text="Ctrl + `"
+                                   Foreground="{DynamicResource BrushTextSecondary}"
+                                   FontWeight="SemiBold" />
+                    </Border>
+                </StackPanel>
                 <StackPanel>
                     <TextBlock Text="剪贴板历史"
                                FontSize="22"
@@ -133,7 +146,9 @@
                      PreviewMouseRightButtonDown="HistoryList_PreviewMouseRightButtonDown"
                      MouseDoubleClick="HistoryList_MouseDoubleClick">
                 <ListBox.ContextMenu>
-                    <ContextMenu DataContext="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource Self}}">
+                    <ContextMenu DataContext="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource Self}}"
+                                 Opened="ContextMenu_Opened"
+                                 Closed="ContextMenu_Closed">
                         <MenuItem Header="复制选中" Click="CopySelectedMenuItem_Click" />
                         <MenuItem Header="粘贴选中" Click="PasteSelectedMenuItem_Click" />
                         <Separator />
@@ -223,7 +238,7 @@
                                             <Style TargetType="Border">
                                                 <Setter Property="Visibility" Value="Collapsed" />
                                                 <Style.Triggers>
-                                                    <DataTrigger Binding="{Binding ContentType}" Value="image/png">
+                                                    <DataTrigger Binding="{Binding IsImage}" Value="True">
                                                         <Setter Property="Visibility" Value="Visible" />
                                                     </DataTrigger>
                                                 </Style.Triggers>
@@ -245,7 +260,7 @@
                                                 <Style TargetType="TextBlock">
                                                     <Setter Property="Visibility" Value="Visible" />
                                                     <Style.Triggers>
-                                                        <DataTrigger Binding="{Binding ContentType}" Value="image/png">
+                                                        <DataTrigger Binding="{Binding IsImage}" Value="True">
                                                             <Setter Property="Visibility" Value="Collapsed" />
                                                         </DataTrigger>
                                                     </Style.Triggers>
@@ -253,7 +268,7 @@
                                             </TextBlock.Style>
                                         </TextBlock>
                                         <TextBlock x:Name="ImageItemPreviewTextBlock"
-                                                   Text="图片记录 · 点复制可放回系统剪贴板"
+                                                   Text="图片记录 · 双击或点复制，可放回系统剪贴板"
                                                    Foreground="{DynamicResource BrushTextPrimary}"
                                                    FontSize="15"
                                                    FontWeight="SemiBold"
@@ -262,7 +277,7 @@
                                                 <Style TargetType="TextBlock">
                                                     <Setter Property="Visibility" Value="Collapsed" />
                                                     <Style.Triggers>
-                                                        <DataTrigger Binding="{Binding ContentType}" Value="image/png">
+                                                        <DataTrigger Binding="{Binding IsImage}" Value="True">
                                                             <Setter Property="Visibility" Value="Visible" />
                                                         </DataTrigger>
                                                     </Style.Triggers>
@@ -389,18 +404,7 @@
                 </ListBox.ItemTemplate>
             </ListBox>
 
-                <Button Grid.Column="0"
-                        Content="加载更多"
-                        MinWidth="0"
-                        Width="116"
-                        Height="34"
-                        VerticalAlignment="Bottom"
-                        HorizontalAlignment="Center"
-                        Margin="0,0,12,4"
-                        IsEnabled="{Binding CanLoadMore}"
-                        Click="LoadMoreButton_Click" />
-
-                <Border Grid.Column="1"
+                  <Border Grid.Column="1"
                         Background="#F7F8FB"
                         BorderBrush="#17111827"
                         BorderThickness="1"

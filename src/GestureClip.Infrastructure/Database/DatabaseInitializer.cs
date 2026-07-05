@@ -31,6 +31,13 @@ public sealed class DatabaseInitializer
             new SqlMigration(5, "clipboard_image_thumbnails", ClipboardThumbnailMigration.Sql)
         }, cancellationToken);
 
+        await WorkstationHubMigration.EnsureAsync(connection);
+
+        await _migrationRunner.RunAsync(connection, new[]
+        {
+            new SqlMigration(6, "workstation_hub_stats", WorkstationHubMigration.Sql)
+        }, cancellationToken);
+
         _logger.LogInformation("Database migrations initialized.");
     }
 }

@@ -102,7 +102,7 @@ public sealed class ThemeResourceTests
 
 
     [Fact]
-    public void ClipboardOverlayWindow_exposes_load_more_entry_point()
+    public void ClipboardOverlayWindow_uses_scroll_to_load_more_without_covering_button()
     {
         var xamlPath = FindRepositoryFile("src", "GestureClip.App", "ClipboardOverlayWindow.xaml");
         var sourcePath = FindRepositoryFile("src", "GestureClip.App", "ClipboardOverlayWindow.xaml.cs");
@@ -110,8 +110,7 @@ public sealed class ThemeResourceTests
         var source = File.ReadAllText(sourcePath);
 
         Assert.Contains("ScrollChanged=\"HistoryList_ScrollChanged\"", xaml);
-        Assert.Contains("加载更多", xaml);
-        Assert.Contains("CanLoadMore", xaml);
+        Assert.DoesNotContain("加载更多", xaml);
         Assert.Contains("LoadMoreAsync", source);
     }
 
@@ -246,7 +245,8 @@ public sealed class ThemeResourceTests
         Assert.Contains("WindowStyle=\"None\"", xaml);
         Assert.Contains("AllowsTransparency=\"True\"", xaml);
         Assert.Contains("CornerRadius=\"28\"", xaml);
-        Assert.Contains("BrushDarkPanel", xaml);
+        Assert.Contains("Background=\"#CCFFFFFF\"", xaml);
+        Assert.Contains("BorderBrush=\"{DynamicResource BrushBorder}\"", xaml);
         Assert.Contains("搜索设置稍后开放", xaml);
         Assert.Contains("GestureStrokeColorOptions", xaml);
         Assert.Contains("NewGesturePattern", xaml);
@@ -284,9 +284,12 @@ public sealed class ThemeResourceTests
     public void ClipboardOverlay_uses_large_image_preview_cards_without_base64_text_for_images()
     {
         var path = FindRepositoryFile("src", "GestureClip.App", "ClipboardOverlayWindow.xaml");
+        var codeBehindPath = FindRepositoryFile("src", "GestureClip.App", "ClipboardOverlayWindow.xaml.cs");
         var xaml = File.ReadAllText(path);
+        var codeBehind = File.ReadAllText(codeBehindPath);
 
         Assert.Contains("图片缩略图", xaml);
+        Assert.Contains("双击或点复制，可放回系统剪贴板", xaml);
         Assert.Contains("SelectedImagePreviewPanel", xaml);
         Assert.Contains("ImageItemPreviewTextBlock", xaml);
         Assert.Contains("Height=\"260\"", xaml);
@@ -295,10 +298,12 @@ public sealed class ThemeResourceTests
         Assert.Contains("Image Source=\"{Binding SelectedItem.ThumbnailContent, IsAsync=True", xaml);
         Assert.DoesNotContain("Image Source=\"{Binding TextContent", xaml);
         Assert.DoesNotContain("Image Source=\"{Binding SelectedItem.TextContent", xaml);
+        Assert.Contains("_viewModel.SelectedItem?.IsImage == true", codeBehind);
+        Assert.Contains("CopySelectedAsync(GetSelectedItems())", codeBehind);
     }
 
     [Fact]
-    public void GestureBindingEditor_uses_readable_split_layout_and_large_pattern_preview()
+    public void GestureBindingEditor_uses_single_scroll_flow_and_large_pattern_preview()
     {
         var path = FindRepositoryFile("src", "GestureClip.App", "SettingsWindow.xaml");
         var xaml = File.ReadAllText(path);
@@ -310,6 +315,16 @@ public sealed class ThemeResourceTests
         Assert.Contains("Click=\"ScrollToCustomGestureDesigner_Click\"", xaml);
         Assert.Contains("MinHeight=\"220\"", xaml);
         Assert.Contains("删除这个手势", xaml);
+        Assert.Contains("动作编辑器会跟着页面一起滑动，不会固定挡住内容。", xaml);
+        Assert.Contains("FocusVisualStyle=\"{x:Null}\"", xaml);
+
+        var detailStart = xaml.IndexOf("x:Name=\"GestureBindingDetailPanel\"", StringComparison.Ordinal);
+        Assert.True(detailStart >= 0);
+        var detailEnd = xaml.IndexOf("</Border>", detailStart, StringComparison.Ordinal);
+        var detailHeader = xaml[detailStart..detailEnd];
+        Assert.DoesNotContain("Grid.Column=\"1\"", detailHeader);
+        Assert.DoesNotContain("Margin=\"14,0,0,0\"", detailHeader);
+        Assert.Contains("Margin=\"0,14,0,0\"", detailHeader);
     }
 
     [Fact]
@@ -375,7 +390,7 @@ public sealed class ThemeResourceTests
         var path = FindRepositoryFile("src", "GestureClip.App", "SettingsWindow.xaml");
         var xaml = File.ReadAllText(path);
 
-        Assert.Contains("TabItem Header=\"工位小熊\"", xaml);
+        Assert.Contains("TabItem Header=\"小熊\"", xaml);
         Assert.Contains("WorkstationEnabled", xaml);
         Assert.Contains("WorkstationMonthlySalary", xaml);
         Assert.Contains("WorkstationWorkStartTime", xaml);
@@ -385,7 +400,7 @@ public sealed class ThemeResourceTests
         Assert.Contains("WorkstationShowFishingValue", xaml);
         Assert.Contains("WorkstationDailyReportEnabled", xaml);
         Assert.True(
-            xaml.IndexOf("TabItem Header=\"工位小熊\"", StringComparison.Ordinal) <
+            xaml.IndexOf("TabItem Header=\"小熊\"", StringComparison.Ordinal) <
             xaml.IndexOf("WorkstationWorkdays", StringComparison.Ordinal));
     }
 

@@ -3,20 +3,27 @@ using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
 using GestureClip.App.ViewModels;
+using GestureClip.Core.Abstractions;
 using GestureClip.Core.Clipboard;
+using GestureClip.Core.Settings;
 
 namespace GestureClip.App;
 
 public partial class ClipboardOverlayWindow : Window
 {
     private readonly ClipboardOverlayViewModel _viewModel;
+    private readonly ISettingsService _settingsService;
+    private bool _alwaysVisible;
+    private bool _isContextMenuOpen;
 
-    public ClipboardOverlayWindow(ClipboardOverlayViewModel viewModel)
+    public ClipboardOverlayWindow(ClipboardOverlayViewModel viewModel, ISettingsService settingsService)
     {
         _viewModel = viewModel;
+        _settingsService = settingsService;
         InitializeComponent();
         DataContext = _viewModel;
         HistoryList.AlternationCount = 10;
+        SetAlwaysVisible(_settingsService.Get(SettingKeys.ClipboardOverlayAlwaysVisible, false), persist: false);
     }
 
     public Task LoadHistoryAsync()
@@ -118,6 +125,44 @@ public partial class ClipboardOverlayWindow : Window
         }
     }
 
+    private void Window_Deactivated(object sender, EventArgs e)
+    {
+        if (_alwaysVisible || _isContextMenuOpen)
+        {
+            return;
+        }
+
+        Hide();
+    }
+
+    private async void AlwaysVisibleButton_Click(object sender, RoutedEventArgs e)
+    {
+        SetAlwaysVisible(!_alwaysVisible, persist: true);
+        await _settingsService.SetAsync(SettingKeys.ClipboardOverlayAlwaysVisible, _alwaysVisible, CancellationToken.None);
+    }
+
+    private void SetAlwaysVisible(bool enabled, bool persist)
+    {
+        _alwaysVisible = enabled;
+        Topmost = enabled;
+        if (AlwaysVisibleButton is not null)
+        {
+            AlwaysVisibleButton.Content = enabled ? "常显中" : "常显";
+            AlwaysVisibleButton.ToolTip = enabled ? "点击关闭常显；当前点击外部不会关闭" : "点击开启常显；默认点击外部自动关闭";
+            AlwaysVisibleButton.FontWeight = enabled ? FontWeights.SemiBold : FontWeights.Normal;
+        }
+    }
+
+    private void ContextMenu_Opened(object sender, RoutedEventArgs e)
+    {
+        _isContextMenuOpen = true;
+    }
+
+    private void ContextMenu_Closed(object sender, RoutedEventArgs e)
+    {
+        _isContextMenuOpen = false;
+    }
+
     private bool SelectFilterByShortcut(Key key)
     {
         var filterButton = key switch
@@ -189,6 +234,13 @@ public partial class ClipboardOverlayWindow : Window
 
     private async void HistoryList_MouseDoubleClick(object sender, MouseButtonEventArgs e)
     {
+        if (_viewModel.SelectedItem?.IsImage == true)
+        {
+            await _viewModel.CopySelectedAsync(GetSelectedItems());
+            e.Handled = true;
+            return;
+        }
+
         if (await _viewModel.PasteSelectedAsync())
         {
             Hide();

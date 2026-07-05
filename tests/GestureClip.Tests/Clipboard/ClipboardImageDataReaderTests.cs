@@ -61,6 +61,8 @@ public sealed class ClipboardImageDataReaderTests
         Assert.Contains("Clipboard.ContainsData(\"PNG\")", source);
         Assert.Contains("Clipboard.ContainsData(System.Windows.DataFormats.Dib)", source);
         Assert.Contains("Clipboard.ContainsImage()", source);
+        Assert.Contains("ClipboardStaDispatcher", source);
+        Assert.DoesNotContain("Application.Current.Dispatcher", source);
     }
 
 
@@ -111,6 +113,70 @@ public sealed class ClipboardImageDataReaderTests
         Assert.Contains("return new ImageClipboardSnapshot(rawPngBytes", method);
         Assert.Contains("return new ImageClipboardSnapshot(null, dibBytes", method);
         Assert.DoesNotContain("TryReadRawPngBytes(),", method);
+    }
+
+    [Fact]
+    public void WpfClipboardWriter_uses_background_sta_dispatcher_instead_of_ui_dispatcher()
+    {
+        var sourcePath = Path.GetFullPath(Path.Combine(
+            AppContext.BaseDirectory,
+            "..",
+            "..",
+            "..",
+            "..",
+            "..",
+            "src",
+            "GestureClip.Infrastructure",
+            "Clipboard",
+            "WpfClipboardWriter.cs"));
+        var source = File.ReadAllText(sourcePath);
+
+        Assert.Contains("ClipboardStaDispatcher", source);
+        Assert.DoesNotContain("Application.Current.Dispatcher", source);
+    }
+
+    [Fact]
+    public void WpfClipboardWriter_writes_png_bitmap_and_dib_formats_for_images()
+    {
+        var sourcePath = Path.GetFullPath(Path.Combine(
+            AppContext.BaseDirectory,
+            "..",
+            "..",
+            "..",
+            "..",
+            "..",
+            "src",
+            "GestureClip.Infrastructure",
+            "Clipboard",
+            "WpfClipboardWriter.cs"));
+        var source = File.ReadAllText(sourcePath);
+
+        Assert.Contains("SetDataObject(dataObject, copy: true)", source);
+        Assert.Contains("dataObject.SetImage", source);
+        Assert.Contains("dataObject.SetData(\"PNG\"", source);
+        Assert.Contains("DataFormats.Dib", source);
+    }
+
+    [Fact]
+    public void ClipboardStaDispatcher_runs_clipboard_work_on_background_sta_thread()
+    {
+        var sourcePath = Path.GetFullPath(Path.Combine(
+            AppContext.BaseDirectory,
+            "..",
+            "..",
+            "..",
+            "..",
+            "..",
+            "src",
+            "GestureClip.Infrastructure",
+            "Clipboard",
+            "ClipboardStaDispatcher.cs"));
+        var source = File.ReadAllText(sourcePath);
+
+        Assert.Contains("IsBackground = true", source);
+        Assert.Contains("SetApartmentState(ApartmentState.STA)", source);
+        Assert.Contains("Dispatcher.Run()", source);
+        Assert.Contains("BeginInvokeShutdown", source);
     }
 
     private const string OnePixelPngBase64 =

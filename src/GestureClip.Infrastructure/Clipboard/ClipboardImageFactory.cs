@@ -5,10 +5,24 @@ namespace GestureClip.Infrastructure.Clipboard;
 
 public static class ClipboardImageFactory
 {
+    private const int BitmapFileHeaderSize = 14;
+
+    public static byte[] GetPngBytes(string pngBase64)
+    {
+        return Convert.FromBase64String(NormalizeBase64(pngBase64));
+    }
+
     public static BitmapImage CreateFrozenBitmapImage(string pngBase64)
     {
-        var bytes = Convert.FromBase64String(NormalizeBase64(pngBase64));
-        using var stream = new MemoryStream(bytes);
+        var bytes = GetPngBytes(pngBase64);
+        return CreateFrozenBitmapImage(bytes);
+    }
+
+    public static BitmapImage CreateFrozenBitmapImage(byte[] pngBytes)
+    {
+        ArgumentNullException.ThrowIfNull(pngBytes);
+
+        using var stream = new MemoryStream(pngBytes);
         var image = new BitmapImage();
         image.BeginInit();
         image.CacheOption = BitmapCacheOption.OnLoad;
@@ -19,11 +33,37 @@ public static class ClipboardImageFactory
         return image;
     }
 
+    public static byte[] CreateDibBytes(string pngBase64)
+    {
+        var image = CreateFrozenBitmapImage(pngBase64);
+        return CreateDibBytes(image);
+    }
+
+    public static byte[] CreateDibBytes(BitmapSource image)
+    {
+        ArgumentNullException.ThrowIfNull(image);
+
+        var encoder = new BmpBitmapEncoder();
+        encoder.Frames.Add(BitmapFrame.Create(image));
+        using var bitmapStream = new MemoryStream();
+        encoder.Save(bitmapStream);
+
+        var bitmapBytes = bitmapStream.ToArray();
+        if (bitmapBytes.Length <= BitmapFileHeaderSize ||
+            bitmapBytes[0] != (byte)'B' ||
+            bitmapBytes[1] != (byte)'M')
+        {
+            throw new InvalidDataException("Invalid BMP bytes generated for clipboard DIB.");
+        }
+
+        return bitmapBytes[BitmapFileHeaderSize..];
+    }
+
     public static string? TryCreateThumbnailPngBase64(string pngBase64, int decodePixelWidth)
     {
         try
         {
-            var bytes = Convert.FromBase64String(NormalizeBase64(pngBase64));
+            var bytes = GetPngBytes(pngBase64);
             using var input = new MemoryStream(bytes);
             var image = new BitmapImage();
             image.BeginInit();

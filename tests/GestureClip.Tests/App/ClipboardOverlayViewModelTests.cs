@@ -44,7 +44,7 @@ public sealed class ClipboardOverlayViewModelTests
     public void SelectedItem_exposes_image_details()
     {
         var now = DateTimeOffset.UtcNow;
-        var image = new ClipboardItem(
+        var pngImage = new ClipboardItem(
             Guid.NewGuid(),
             "image/png",
             "png-base64",
@@ -62,7 +62,7 @@ public sealed class ClipboardOverlayViewModelTests
             null);
         var viewModel = new ClipboardOverlayViewModel(new FakeClipboardService([]));
 
-        viewModel.SelectedItem = image;
+        viewModel.SelectedItem = pngImage;
 
         Assert.True(viewModel.IsSelectedImage);
         Assert.False(viewModel.IsSelectedText);
@@ -305,6 +305,41 @@ public sealed class ClipboardOverlayViewModelTests
     }
 
     [Fact]
+    public async Task Selecting_large_legacy_image_does_not_push_full_image_into_ui_preview_when_thumbnail_fails()
+    {
+        var now = DateTimeOffset.UtcNow;
+        var listImage = new ClipboardItem(
+            Guid.NewGuid(),
+            "image/png",
+            null,
+            "图片",
+            "hash-large-image",
+            null,
+            "Test",
+            "test.exe",
+            false,
+            false,
+            false,
+            0,
+            now,
+            now,
+            null,
+            null);
+        var largeInvalidImageBase64 = new string('A', 900_000);
+        var fullImage = listImage with { TextContent = largeInvalidImageBase64 };
+        var service = new FakeClipboardService([listImage]);
+        service.FullItems[listImage.Id] = fullImage;
+        var viewModel = new ClipboardOverlayViewModel(service, TimeSpan.Zero);
+
+        await viewModel.LoadAsync();
+        await WaitForAsync(() => service.GetByIdRequests.Contains(listImage.Id));
+        await Task.Delay(80);
+
+        Assert.Null(viewModel.SelectedItem?.ThumbnailContent);
+        Assert.NotEqual(largeInvalidImageBase64, viewModel.SelectedItem?.ThumbnailContent);
+    }
+
+    [Fact]
     public async Task DeleteItemsAsync_deletes_selected_items_and_refreshes()
     {
         var first = TextItem("first");
@@ -419,7 +454,7 @@ public sealed class ClipboardOverlayViewModelTests
         var pinnedText = TextItem("pinned") with { IsPinned = true };
         var favoriteText = TextItem("favorite") with { IsFavorite = true };
         var normalText = TextItem("normal");
-        var image = new ClipboardItem(
+        var pngImage = new ClipboardItem(
             Guid.NewGuid(),
             "image/png",
             "png-base64",
@@ -435,7 +470,8 @@ public sealed class ClipboardOverlayViewModelTests
             DateTimeOffset.UtcNow,
             DateTimeOffset.UtcNow,
             null);
-        var viewModel = new ClipboardOverlayViewModel(new FakeClipboardService([pinnedText, favoriteText, normalText, image]), TimeSpan.Zero);
+        var jpegImage = ImageItem("JPEG 图片", "image/jpeg");
+        var viewModel = new ClipboardOverlayViewModel(new FakeClipboardService([pinnedText, favoriteText, normalText, pngImage, jpegImage]), TimeSpan.Zero);
         await viewModel.LoadAsync();
 
         viewModel.SelectedFilter = ClipboardOverlayFilter.Pinned;
@@ -447,16 +483,16 @@ public sealed class ClipboardOverlayViewModelTests
         Assert.Equal(["favorite"], viewModel.Items.Select(item => item.PreviewText ?? "").ToArray());
 
         viewModel.SelectedFilter = ClipboardOverlayFilter.Images;
-        await WaitForAsync(() => viewModel.Items.Count == 1 && viewModel.Items.FirstOrDefault()?.PreviewText == "图片");
-        Assert.Equal(["图片"], viewModel.Items.Select(item => item.PreviewText ?? "").ToArray());
+        await WaitForAsync(() => viewModel.Items.Count == 2);
+        Assert.Equal(["JPEG 图片", "图片"], viewModel.Items.Select(item => item.PreviewText ?? "").ToArray());
 
         viewModel.SelectedFilter = ClipboardOverlayFilter.Text;
         await WaitForAsync(() => viewModel.Items.Count == 3 && viewModel.Items.All(item => item.ContentType == "text"));
         Assert.Equal(["pinned", "normal", "favorite"], viewModel.Items.Select(item => item.PreviewText ?? "").ToArray());
 
         viewModel.SelectedFilter = ClipboardOverlayFilter.All;
-        await WaitForAsync(() => viewModel.Items.Count == 4);
-        Assert.Equal(["pinned", "图片", "normal", "favorite"], viewModel.Items.Select(item => item.PreviewText ?? "").ToArray());
+        await WaitForAsync(() => viewModel.Items.Count == 5);
+        Assert.Equal(["pinned", "JPEG 图片", "图片", "normal", "favorite"], viewModel.Items.Select(item => item.PreviewText ?? "").ToArray());
     }
 
     [Fact]
@@ -601,6 +637,39 @@ public sealed class ClipboardOverlayViewModelTests
         Assert.Equal("复制失败", viewModel.StatusText);
     }
 
+    [Fact]
+    public async Task CopySelectedAsync_shows_clear_status_for_image_copy()
+    {
+        var image = ImageItem("图片");
+        var service = new FakeClipboardService([image]);
+        var viewModel = new ClipboardOverlayViewModel(service, TimeSpan.Zero);
+        await viewModel.LoadAsync();
+
+        var copied = await viewModel.CopySelectedAsync([image]);
+
+        Assert.True(copied);
+        Assert.Equal("图片已复制到系统剪贴板", viewModel.StatusText);
+    }
+
+    [Fact]
+    public async Task CopySelectedAsync_shows_image_error_message_when_image_copy_fails()
+    {
+        var image = ImageItem("图片");
+        var service = new FakeClipboardService([image])
+        {
+            CopyHandler = (_, _) => throw new InvalidOperationException("image clipboard busy")
+        };
+        var viewModel = new ClipboardOverlayViewModel(service, TimeSpan.Zero);
+        await viewModel.LoadAsync();
+
+        var copied = await viewModel.CopySelectedAsync([image]);
+
+        Assert.False(copied);
+        Assert.True(viewModel.HasError);
+        Assert.Contains("image clipboard busy", viewModel.ErrorMessage);
+        Assert.Equal("图片复制失败：image clipboard busy", viewModel.StatusText);
+    }
+
     private static ClipboardItem TextItem(string text)
     {
         var now = DateTimeOffset.UtcNow;
@@ -622,12 +691,12 @@ public sealed class ClipboardOverlayViewModelTests
             null);
     }
 
-    private static ClipboardItem ImageItem(string previewText)
+    private static ClipboardItem ImageItem(string previewText, string contentType = "image/png")
     {
         var now = DateTimeOffset.UtcNow;
         return new ClipboardItem(
             Guid.NewGuid(),
-            "image/png",
+            contentType,
             null,
             previewText,
             $"hash-{previewText}",
@@ -759,8 +828,8 @@ public sealed class ClipboardOverlayViewModelTests
             {
                 ClipboardContentFilter.Pinned => item.IsPinned,
                 ClipboardContentFilter.Favorites => item.IsFavorite,
-                ClipboardContentFilter.Text => string.Equals(item.ContentType, "text", StringComparison.OrdinalIgnoreCase),
-                ClipboardContentFilter.Images => string.Equals(item.ContentType, "image/png", StringComparison.OrdinalIgnoreCase),
+                ClipboardContentFilter.Text => item.IsText,
+                ClipboardContentFilter.Images => item.IsImage,
                 _ => true
             };
         }

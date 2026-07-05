@@ -87,6 +87,7 @@ public partial class App : System.Windows.Application
             await _serviceProvider.GetRequiredService<IEdgeTriggerService>().StartAsync(CancellationToken.None);
             _serviceProvider.GetRequiredService<IGlobalHotkeyService>().Start();
             await _serviceProvider.GetRequiredService<IOverworkReminderService>().StartAsync(CancellationToken.None);
+            await _serviceProvider.GetRequiredService<WorkBearDailyReportAutoService>().StartAsync(CancellationToken.None);
 
             _serviceProvider.GetRequiredService<AppLifecycleService>().ShowSettingsWindow();
             logger.LogInformation("GestureClip v{AppVersion} started.", appVersion);

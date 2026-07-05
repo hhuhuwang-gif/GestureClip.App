@@ -34,6 +34,7 @@ public sealed class DefaultDataSeederTests
         var retentionDays = await connection.ExecuteScalarAsync<string>("SELECT Value FROM Settings WHERE Key = 'Clipboard.RetentionDays';");
         var maxImageBytes = await connection.ExecuteScalarAsync<string>("SELECT Value FROM Settings WHERE Key = 'Clipboard.MaxImageBytes';");
         var perfLogEnabled = await connection.ExecuteScalarAsync<string>("SELECT Value FROM Settings WHERE Key = 'Clipboard.PerfLogEnabled';");
+        var overlayAlwaysVisible = await connection.ExecuteScalarAsync<string>("SELECT Value FROM Settings WHERE Key = 'Clipboard.Overlay.AlwaysVisible';");
         var hotkey = await connection.ExecuteScalarAsync<string>("SELECT Value FROM Settings WHERE Key = 'Hotkey.OpenClipboardOverlay.Key';");
         var edgeEnabled = await connection.ExecuteScalarAsync<string>("SELECT Value FROM Settings WHERE Key = 'EdgeTrigger.Enabled';");
         var rightEnabled = await connection.ExecuteScalarAsync<string>("SELECT Value FROM Settings WHERE Key = 'Gesture.Trigger.RightButton.Enabled';");
@@ -69,14 +70,20 @@ public sealed class DefaultDataSeederTests
         var strongWarning = await connection.ExecuteScalarAsync<string>("SELECT Value FROM Settings WHERE Key = 'Workstation.OverworkReminder.StrongWarning.Enabled';");
         var canSnooze = await connection.ExecuteScalarAsync<string>("SELECT Value FROM Settings WHERE Key = 'Workstation.OverworkReminder.CanSnooze';");
         var snoozeMinutes = await connection.ExecuteScalarAsync<string>("SELECT Value FROM Settings WHERE Key = 'Workstation.OverworkReminder.SnoozeMinutes';");
+        var autoReport = await connection.ExecuteScalarAsync<string>("SELECT Value FROM Settings WHERE Key = 'WorkBear.AutoShowDailyReport';");
+        var lastShownReport = await connection.ExecuteScalarAsync<string>("SELECT Value FROM Settings WHERE Key = 'WorkBear.DailyReport.LastShownDate';");
+        var mutedReport = await connection.ExecuteScalarAsync<string>("SELECT Value FROM Settings WHERE Key = 'WorkBear.DailyReport.MutedDate';");
+        var restSnoozed = await connection.ExecuteScalarAsync<string>("SELECT Value FROM Settings WHERE Key = 'WorkBear.RestReminder.SnoozedUntil';");
+        var restMuted = await connection.ExecuteScalarAsync<string>("SELECT Value FROM Settings WHERE Key = 'WorkBear.RestReminder.MutedDate';");
 
-        Assert.Equal(76, settingCount);
+        Assert.Equal(92, settingCount);
         Assert.Equal(7, blacklistCount);
         Assert.Equal(12, gestureCount);
         Assert.Equal("1000", maxItems);
         Assert.Equal("30", retentionDays);
         Assert.Equal("5242880", maxImageBytes);
         Assert.Equal("false", perfLogEnabled);
+        Assert.Equal("false", overlayAlwaysVisible);
         Assert.Equal("\"Ctrl + `\"", hotkey);
         Assert.Equal("true", rightEnabled);
         Assert.Equal("false", leftEnabled);
@@ -111,6 +118,11 @@ public sealed class DefaultDataSeederTests
         Assert.Equal("false", strongWarning);
         Assert.Equal("true", canSnooze);
         Assert.Equal("15", snoozeMinutes);
+        Assert.Equal("true", autoReport);
+        Assert.Equal("\"\"", lastShownReport);
+        Assert.Equal("\"\"", mutedReport);
+        Assert.Equal("\"\"", restSnoozed);
+        Assert.Equal("\"\"", restMuted);
     }
 
     [Fact]

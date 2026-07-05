@@ -6,7 +6,7 @@ GestureClip 覆盖更新说明。
 
 1. 右键托盘图标，选择退出 GestureClip。
 2. 打开任务管理器，确认没有 `GestureClip.exe` 进程。
-3. 下载 `GestureClip-v0.5.1-beta-update-win-x64.zip`。
+3. 下载 `GestureClip-v0.6.0-beta-update-win-x64.zip`。
 4. 解压新版文件。
 5. 将新版文件复制到旧程序目录并覆盖。
 6. 双击 `GestureClip.exe` 启动。
@@ -51,3 +51,4 @@ GestureClip 覆盖更新说明。
 - 不要把旧数据库复制到程序目录。
 - 不要删除 `%LOCALAPPDATA%\GestureClip\`，除非你明确想清空所有数据。
 - 不要在程序还运行时覆盖 exe。
+

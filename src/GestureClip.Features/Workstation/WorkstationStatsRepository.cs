@@ -20,7 +20,7 @@ public sealed class WorkstationStatsRepository : IWorkstationStatsRepository
         var key = ToKey(date);
         var row = await connection.QuerySingleOrDefaultAsync<WorkstationStatsRow>(
             """
-SELECT Date, CopyCount, PasteCount, GestureCount, EstimatedSavedClicks, FishingMinutes, FishingStartedAt
+SELECT Date, CopyCount, PasteCount, GestureCount, EstimatedSavedClicks, OpenClipboardCount, OverworkReminderCount, FishingMinutes, FishingStartedAt
 FROM WorkdayStats
 WHERE Date = @Date;
 """,
@@ -42,14 +42,16 @@ WHERE Date = @Date;
         await connection.ExecuteAsync(
             """
 INSERT INTO WorkdayStats
-    (Date, CopyCount, PasteCount, GestureCount, EstimatedSavedClicks, FishingMinutes, FishingStartedAt)
+    (Date, CopyCount, PasteCount, GestureCount, EstimatedSavedClicks, OpenClipboardCount, OverworkReminderCount, FishingMinutes, FishingStartedAt)
 VALUES
-    (@Date, @CopyCount, @PasteCount, @GestureCount, @EstimatedSavedClicks, @FishingMinutes, @FishingStartedAt)
+    (@Date, @CopyCount, @PasteCount, @GestureCount, @EstimatedSavedClicks, @OpenClipboardCount, @OverworkReminderCount, @FishingMinutes, @FishingStartedAt)
 ON CONFLICT(Date) DO UPDATE SET
     CopyCount = excluded.CopyCount,
     PasteCount = excluded.PasteCount,
     GestureCount = excluded.GestureCount,
     EstimatedSavedClicks = excluded.EstimatedSavedClicks,
+    OpenClipboardCount = excluded.OpenClipboardCount,
+    OverworkReminderCount = excluded.OverworkReminderCount,
     FishingMinutes = excluded.FishingMinutes,
     FishingStartedAt = excluded.FishingStartedAt;
 """,
@@ -60,6 +62,8 @@ ON CONFLICT(Date) DO UPDATE SET
                 stats.PasteCount,
                 stats.GestureCount,
                 stats.EstimatedSavedClicks,
+                stats.OpenClipboardCount,
+                stats.OverworkReminderCount,
                 stats.FishingMinutes,
                 FishingStartedAt = stats.FishingStartedAt?.ToString("O")
             });
@@ -77,9 +81,9 @@ ON CONFLICT(Date) DO UPDATE SET
         await connection.ExecuteAsync(
             """
 INSERT INTO WorkdayStats
-    (Date, CopyCount, PasteCount, GestureCount, EstimatedSavedClicks, FishingMinutes, FishingStartedAt)
+    (Date, CopyCount, PasteCount, GestureCount, EstimatedSavedClicks, OpenClipboardCount, OverworkReminderCount, FishingMinutes, FishingStartedAt)
 VALUES
-    (@Date, @CopyDelta, @PasteDelta, @GestureDelta, @SavedClicksDelta, 0, NULL)
+    (@Date, @CopyDelta, @PasteDelta, @GestureDelta, @SavedClicksDelta, 0, 0, 0, NULL)
 ON CONFLICT(Date) DO UPDATE SET
     CopyCount = CopyCount + excluded.CopyCount,
     PasteCount = PasteCount + excluded.PasteCount,
@@ -93,6 +97,31 @@ ON CONFLICT(Date) DO UPDATE SET
                 PasteDelta = pasteDelta,
                 GestureDelta = gestureDelta,
                 SavedClicksDelta = savedClicksDelta
+            });
+    }
+
+    public async Task IncrementHubCountersAsync(
+        DateOnly date,
+        int openClipboardDelta,
+        int overworkReminderDelta,
+        CancellationToken cancellationToken)
+    {
+        await using var connection = await _connectionFactory.OpenConnectionAsync(cancellationToken);
+        await connection.ExecuteAsync(
+            """
+INSERT INTO WorkdayStats
+    (Date, CopyCount, PasteCount, GestureCount, EstimatedSavedClicks, OpenClipboardCount, OverworkReminderCount, FishingMinutes, FishingStartedAt)
+VALUES
+    (@Date, 0, 0, 0, 0, @OpenClipboardDelta, @OverworkReminderDelta, 0, NULL)
+ON CONFLICT(Date) DO UPDATE SET
+    OpenClipboardCount = OpenClipboardCount + excluded.OpenClipboardCount,
+    OverworkReminderCount = OverworkReminderCount + excluded.OverworkReminderCount;
+""",
+            new
+            {
+                Date = ToKey(date),
+                OpenClipboardDelta = openClipboardDelta,
+                OverworkReminderDelta = overworkReminderDelta
             });
     }
 
@@ -114,7 +143,9 @@ ON CONFLICT(Date) DO UPDATE SET
             row.FishingMinutes,
             string.IsNullOrWhiteSpace(row.FishingStartedAt)
                 ? null
-                : DateTimeOffset.Parse(row.FishingStartedAt));
+                : DateTimeOffset.Parse(row.FishingStartedAt),
+            row.OpenClipboardCount,
+            row.OverworkReminderCount);
     }
 
     private sealed class WorkstationStatsRow
@@ -128,6 +159,10 @@ ON CONFLICT(Date) DO UPDATE SET
         public int GestureCount { get; init; }
 
         public int EstimatedSavedClicks { get; init; }
+
+        public int OpenClipboardCount { get; init; }
+
+        public int OverworkReminderCount { get; init; }
 
         public int FishingMinutes { get; init; }
 

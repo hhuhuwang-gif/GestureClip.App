@@ -20,6 +20,7 @@ public static class AppServiceCollectionExtensions
         services.AddSingleton<AppLifecycleService>();
         services.AddSingleton<IAppLifecycleService>(provider => provider.GetRequiredService<AppLifecycleService>());
         services.AddSingleton<TrayIconService>();
+        services.AddSingleton<WorkBearDailyReportAutoService>();
         services.AddSingleton<IConfirmationService, WpfConfirmationService>();
         services.AddSingleton<ClipboardOverlayService>();
         services.AddSingleton<IClipboardOverlayService>(provider => provider.GetRequiredService<ClipboardOverlayService>());
@@ -27,6 +28,7 @@ public static class AppServiceCollectionExtensions
         services.AddSingleton<IGestureOverlayService>(provider => provider.GetRequiredService<GestureOverlayService>());
         services.AddSingleton<IOverworkReminderToastService, OverworkReminderToastService>();
         services.AddSingleton<IWorkerLevelUpService, WorkerLevelUpService>();
+        services.AddSingleton<IWorkBearShareCardService, WorkBearShareCardService>();
         services.AddTransient<SettingsViewModel>();
         services.AddTransient<ClipboardOverlayViewModel>();
         services.AddTransient<GestureOverlayViewModel>();

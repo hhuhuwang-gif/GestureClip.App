@@ -16,5 +16,19 @@ public interface IWorkstationStatsRepository
         int savedClicksDelta,
         CancellationToken cancellationToken);
 
+    async Task IncrementHubCountersAsync(
+        DateOnly date,
+        int openClipboardDelta,
+        int overworkReminderDelta,
+        CancellationToken cancellationToken)
+    {
+        var stats = await GetOrCreateAsync(date, cancellationToken);
+        await SaveAsync(stats with
+        {
+            OpenClipboardCount = stats.OpenClipboardCount + openClipboardDelta,
+            OverworkReminderCount = stats.OverworkReminderCount + overworkReminderDelta
+        }, cancellationToken);
+    }
+
     Task ResetAsync(DateOnly date, CancellationToken cancellationToken);
 }

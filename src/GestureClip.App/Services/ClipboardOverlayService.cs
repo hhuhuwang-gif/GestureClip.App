@@ -10,6 +10,7 @@ namespace GestureClip.App.Services;
 public sealed class ClipboardOverlayService : IClipboardOverlayService
 {
     private readonly IServiceProvider _serviceProvider;
+    private readonly IWorkstationDashboardService _workstationDashboardService;
     private readonly ILogger<ClipboardOverlayService> _logger;
     private readonly bool _perfLogEnabled;
     private ClipboardOverlayWindow? _window;
@@ -17,9 +18,11 @@ public sealed class ClipboardOverlayService : IClipboardOverlayService
     public ClipboardOverlayService(
         IServiceProvider serviceProvider,
         ISettingsService settingsService,
+        IWorkstationDashboardService workstationDashboardService,
         ILogger<ClipboardOverlayService> logger)
     {
         _serviceProvider = serviceProvider;
+        _workstationDashboardService = workstationDashboardService;
         _logger = logger;
         _perfLogEnabled = settingsService.Get(SettingKeys.ClipboardPerfLogEnabled, false) ||
             settingsService.Get(SettingKeys.GestureDebugEnabled, false);
@@ -33,6 +36,7 @@ public sealed class ClipboardOverlayService : IClipboardOverlayService
             window.Show();
             window.Activate();
             window.FocusSearchBox();
+            RecordOpenInBackground();
             _ = LoadHistoryWithPerfAsync(window);
         });
     }
@@ -51,7 +55,23 @@ public sealed class ClipboardOverlayService : IClipboardOverlayService
             window.Show();
             window.Activate();
             window.FocusSearchBox();
+            RecordOpenInBackground();
             _ = LoadHistoryWithPerfAsync(window);
+        });
+    }
+
+    private void RecordOpenInBackground()
+    {
+        _ = Task.Run(async () =>
+        {
+            try
+            {
+                await _workstationDashboardService.RecordClipboardOpenAsync(DateTimeOffset.UtcNow, CancellationToken.None);
+            }
+            catch
+            {
+                // optional local stat; overlay must stay fast.
+            }
         });
     }
 

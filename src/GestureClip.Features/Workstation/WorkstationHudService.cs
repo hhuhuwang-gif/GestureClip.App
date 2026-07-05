@@ -11,6 +11,7 @@ namespace GestureClip.Features.Workstation;
 public sealed class WorkstationHudService : IWorkstationHudService
 {
     private static readonly TimeSpan SnapshotCacheDuration = TimeSpan.FromSeconds(1);
+    private static readonly TimeSpan ActionMergeWindow = TimeSpan.FromMilliseconds(1500);
 
     private readonly ISettingsService _settingsService;
     private readonly IWorkstationDashboardService _dashboardService;
@@ -21,6 +22,10 @@ public sealed class WorkstationHudService : IWorkstationHudService
     private DateTimeOffset? _snapshotCacheTimestamp;
     private WorkstationDashboardSnapshot? _cachedDashboard;
     private WorkerLevelSnapshot? _cachedLevel;
+    private readonly object _mergeLock = new();
+    private BuiltInGestureAction _lastMergedAction = BuiltInGestureAction.None;
+    private DateTimeOffset _lastMergedAt = DateTimeOffset.MinValue;
+    private int _mergedActionCount;
 
     public WorkstationHudService(
         ISettingsService settingsService,
@@ -45,13 +50,17 @@ public sealed class WorkstationHudService : IWorkstationHudService
         var showLevel = _settingsService.Get(SettingKeys.HudStatusLevelEnabled, true) &&
             _settingsService.Get(SettingKeys.WorkerLevelShowLevelInHud, true);
         var stageSnapshot = _workTimeStageService.GetSnapshot(now);
-        var enableTimeColor = _settingsService.Get(SettingKeys.WorkstationEnableHudTimeColor, true);
+        var showStatusText = _settingsService.Get(SettingKeys.EnableWorkBearHudStatusText, true);
+        var enableTimeColor = _settingsService.Get(
+            SettingKeys.EnableWorkBearHudThemeColor,
+            _settingsService.Get(SettingKeys.WorkstationEnableHudTimeColor, true));
         var theme = enableTimeColor
             ? stageSnapshot.Theme
             : WorkTimeStageThemeProvider.GetTheme(WorkTimeStage.OffWork);
 
         var displayXp = gainedXp > 0 ? gainedXp : EstimateGestureXp(hudInfo.Action);
         var funText = showFun ? GetFunText(hudInfo.Action) : string.Empty;
+        var mergedActionCount = GetMergedActionCount(hudInfo.Action, now);
         if (showFun && enableTimeColor && !string.IsNullOrWhiteSpace(funText))
         {
             funText = $"{funText} · {theme.ShortStatusText}";
@@ -63,9 +72,9 @@ public sealed class WorkstationHudService : IWorkstationHudService
             showLevel ? level.LevelText : string.Empty,
             showLevel ? level.XpText : string.Empty,
             showLevel ? level.ProgressPercent : 0d,
-            $"今日 {FormatMoney(dashboard.TodayEarned)} · 下班 {FormatDuration(dashboard.TimeUntilOffWork)} · 发薪 {FormatPayday(dashboard.DaysUntilPayday)}",
-            $"手势 {dashboard.GestureCount} · 复制 {dashboard.CopyCount} · 粘贴 {dashboard.PasteCount} · 少点 {dashboard.EstimatedSavedClicks} 次",
-            theme.ShortStatusText,
+            showStatusText ? GetWorkSummaryText(dashboard, hudInfo, mergedActionCount) : string.Empty,
+            showStatusText ? $"手势 {dashboard.GestureCount} · 复制 {dashboard.CopyCount} · 粘贴 {dashboard.PasteCount} · 少点 {dashboard.EstimatedSavedClicks} 次" : string.Empty,
+            showStatusText ? theme.ShortStatusText : string.Empty,
             showLevel,
             stageSnapshot.Stage,
             theme.Key,
@@ -132,6 +141,46 @@ public sealed class WorkstationHudService : IWorkstationHudService
         return action == BuiltInGestureAction.None
             ? 0
             : WorkerLevelService.GetActionXp(action) + 2;
+    }
+
+    private int GetMergedActionCount(BuiltInGestureAction action, DateTimeOffset now)
+    {
+        if (action is BuiltInGestureAction.None)
+        {
+            return 1;
+        }
+
+        lock (_mergeLock)
+        {
+            if (action == _lastMergedAction && now - _lastMergedAt <= ActionMergeWindow)
+            {
+                _mergedActionCount++;
+            }
+            else
+            {
+                _lastMergedAction = action;
+                _mergedActionCount = 1;
+            }
+
+            _lastMergedAt = now;
+            return _mergedActionCount;
+        }
+    }
+
+    private static string GetWorkSummaryText(WorkstationDashboardSnapshot dashboard, GestureHudInfo hudInfo, int mergedActionCount)
+    {
+        var actionPrefix = hudInfo.Action switch
+        {
+            BuiltInGestureAction.Copy => mergedActionCount > 1 ? $"复制 +{mergedActionCount} · 少点 +{mergedActionCount}" : "复制成功 · 少点 +1",
+            BuiltInGestureAction.Paste => mergedActionCount > 1 ? $"粘贴 +{mergedActionCount} · 今日已赚 {FormatMoney(dashboard.TodayEarned)}" : $"粘贴成功 · 今日已赚 {FormatMoney(dashboard.TodayEarned)}",
+            BuiltInGestureAction.OpenClipboardOverlay => $"剪贴板打开 · 今日 {dashboard.OpenClipboardCount} 次",
+            _ when dashboard.SprintActive => "手势完成 · 已进入下班冲刺",
+            _ => $"今日 {FormatMoney(dashboard.TodayEarned)} · 下班 {FormatDuration(dashboard.TimeUntilOffWork)} · 发薪 {FormatPayday(dashboard.DaysUntilPayday)}"
+        };
+
+        return actionPrefix.Length <= 36
+            ? actionPrefix
+            : actionPrefix[..36];
     }
     private static string GetFunText(BuiltInGestureAction action)
     {

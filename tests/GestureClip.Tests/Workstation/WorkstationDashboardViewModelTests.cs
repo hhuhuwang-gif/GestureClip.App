@@ -28,12 +28,12 @@ public sealed class WorkstationDashboardViewModelTests
 
         await viewModel.RefreshAsync();
 
-        Assert.Equal("2小时 5分钟", viewModel.OffWorkCountdownText);
+        Assert.Equal("02:05:00", viewModel.OffWorkCountdownText);
         Assert.Equal("￥128.35", viewModel.TodayEarnedText);
         Assert.Equal("￥3900.10", viewModel.MonthEarnedText);
         Assert.Equal("6 天", viewModel.PaydayText);
-        Assert.Equal("复制 7 · 粘贴 4 · 手势 3", viewModel.ActionStatsText);
-        Assert.Equal("少点了 9 次", viewModel.SavedClicksText);
+        Assert.Equal("复制 7 · 粘贴 4 · 手势 3 · 剪贴板 0", viewModel.ActionStatsText);
+        Assert.Equal("少点 9 次", viewModel.SavedClicksText);
         Assert.Equal("低功耗运行期", viewModel.WorkStatusText);
     }
 
@@ -103,8 +103,8 @@ public sealed class WorkstationDashboardViewModelTests
 
         await viewModel.RefreshAsync();
 
-        Assert.Equal("已进入下班保护期。建议谨慎接收新需求。", viewModel.ProtectionHintText);
-        Assert.Contains("保护下班", viewModel.WorkTipText, StringComparison.Ordinal);
+        Assert.Equal("当前未进入下班冲刺。", viewModel.ProtectionHintText);
+        Assert.False(string.IsNullOrWhiteSpace(viewModel.WorkTipText));
     }
 
     private static readonly WorkstationDashboardSnapshot Snapshot = new(

@@ -1,6 +1,6 @@
 # KNOWN_ISSUES
 
-GestureClip v0.5.1 Beta 当前已知问题。
+GestureClip v0.6.0 Beta 当前已知问题。
 
 ## 已知问题
 
@@ -20,3 +20,4 @@ GestureClip v0.5.1 Beta 当前已知问题。
 - 诊断信息或诊断包
 
 不要上传敏感剪贴板内容、密码、token、cookie。
+

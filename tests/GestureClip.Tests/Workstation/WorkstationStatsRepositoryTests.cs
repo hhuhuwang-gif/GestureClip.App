@@ -101,6 +101,13 @@ public sealed class WorkstationStatsRepositoryTests
                     new SqlMigration(2, "workstation_stats", WorkstationStatsMigration.Sql)
                 ],
                 CancellationToken.None);
+            await WorkstationHubMigration.EnsureAsync(connection);
+            await runner.RunAsync(
+                connection,
+                [
+                    new SqlMigration(6, "workstation_hub_stats", WorkstationHubMigration.Sql)
+                ],
+                CancellationToken.None);
             return database;
         }
 

@@ -12,6 +12,7 @@ public sealed class OverworkReminderService : IOverworkReminderService, IDisposa
     private readonly ISettingsService _settingsService;
     private readonly IWorkTimeStageService _stageService;
     private readonly IOverworkReminderToastService _toastService;
+    private readonly IWorkstationDashboardService _dashboardService;
     private readonly object _syncRoot = new();
 
     private Timer? _timer;
@@ -23,11 +24,21 @@ public sealed class OverworkReminderService : IOverworkReminderService, IDisposa
     public OverworkReminderService(
         ISettingsService settingsService,
         IWorkTimeStageService stageService,
-        IOverworkReminderToastService toastService)
+        IOverworkReminderToastService toastService,
+        IWorkstationDashboardService dashboardService)
     {
         _settingsService = settingsService;
         _stageService = stageService;
         _toastService = toastService;
+        _dashboardService = dashboardService;
+    }
+
+    public OverworkReminderService(
+        ISettingsService settingsService,
+        IWorkTimeStageService stageService,
+        IOverworkReminderToastService toastService)
+        : this(settingsService, stageService, toastService, NullWorkstationDashboardService.Instance)
+    {
     }
 
     public Task StartAsync(CancellationToken cancellationToken)
@@ -60,6 +71,11 @@ public sealed class OverworkReminderService : IOverworkReminderService, IDisposa
             return;
         }
 
+        if (IsMutedTodayFromSettings(now) || IsSnoozedFromSettings(now))
+        {
+            return;
+        }
+
         if (now < _nextAllowedReminderAt)
         {
             return;
@@ -73,6 +89,7 @@ public sealed class OverworkReminderService : IOverworkReminderService, IDisposa
         }
 
         var result = await _toastService.ShowAsync(notification, cancellationToken);
+        await _dashboardService.RecordOverworkReminderAsync(now, cancellationToken);
         ApplyToastResult(result, now);
     }
 
@@ -147,11 +164,11 @@ public sealed class OverworkReminderService : IOverworkReminderService, IDisposa
             switch (result)
             {
                 case OverworkReminderToastResult.Snooze:
-                    var snoozeMinutes = Math.Clamp(_settingsService.Get(SettingKeys.WorkstationOverworkSnoozeMinutes, 15), 5, 60);
-                    _nextAllowedReminderAt = now.AddMinutes(snoozeMinutes);
+                    _ = SnoozeAsync(now, CancellationToken.None);
                     break;
                 case OverworkReminderToastResult.MuteToday:
                     _mutedDate = DateOnly.FromDateTime(now.Date);
+                    _ = MuteTodayAsync(now, CancellationToken.None);
                     break;
                 default:
                     var interval = Math.Clamp(_settingsService.Get(SettingKeys.WorkstationOverworkReminderIntervalMinutes, 60), 30, 180);
@@ -161,9 +178,67 @@ public sealed class OverworkReminderService : IOverworkReminderService, IDisposa
         }
     }
 
+    public Task SnoozeAsync(DateTimeOffset now, CancellationToken cancellationToken)
+    {
+        var snoozeMinutes = Math.Clamp(_settingsService.Get(SettingKeys.WorkstationOverworkSnoozeMinutes, 15), 5, 60);
+        var snoozedUntil = now.AddMinutes(snoozeMinutes);
+        lock (_syncRoot)
+        {
+            _nextAllowedReminderAt = snoozedUntil;
+        }
+
+        return _settingsService.SetAsync(SettingKeys.WorkBearRestReminderSnoozedUntil, snoozedUntil.ToString("O"), cancellationToken);
+    }
+
+    public Task MuteTodayAsync(DateTimeOffset now, CancellationToken cancellationToken)
+    {
+        var date = DateOnly.FromDateTime(now.Date);
+        lock (_syncRoot)
+        {
+            _mutedDate = date;
+        }
+
+        return _settingsService.SetAsync(SettingKeys.WorkBearRestReminderMutedDate, date.ToString("yyyy-MM-dd"), cancellationToken);
+    }
+
+    private bool IsMutedTodayFromSettings(DateTimeOffset now)
+    {
+        var mutedDate = _settingsService.Get(SettingKeys.WorkBearRestReminderMutedDate, string.Empty);
+        return DateOnly.TryParse(mutedDate, out var date) && date == DateOnly.FromDateTime(now.Date);
+    }
+
+    private bool IsSnoozedFromSettings(DateTimeOffset now)
+    {
+        var snoozedUntil = _settingsService.Get(SettingKeys.WorkBearRestReminderSnoozedUntil, string.Empty);
+        return DateTimeOffset.TryParse(snoozedUntil, out var until) && until > now;
+    }
+
     public void Dispose()
     {
         _timer?.Dispose();
         _timer = null;
+    }
+
+    private sealed class NullWorkstationDashboardService : IWorkstationDashboardService
+    {
+        public static NullWorkstationDashboardService Instance { get; } = new();
+
+        public Task<WorkstationDashboardSnapshot> GetSnapshotAsync(DateTimeOffset now, CancellationToken cancellationToken) =>
+            Task.FromResult(new WorkstationDashboardSnapshot("工位小熊", "", TimeSpan.Zero, 0, 0, 0, false, TimeSpan.Zero, 0, 0, 0, 0, 0, 0, ""));
+
+        public Task StartFishingAsync(DateTimeOffset now, CancellationToken cancellationToken) => Task.CompletedTask;
+        public Task EndFishingAsync(DateTimeOffset now, CancellationToken cancellationToken) => Task.CompletedTask;
+        public Task ResetTodayAsync(DateOnly date, CancellationToken cancellationToken) => Task.CompletedTask;
+        public Task RecordCopyAsync(DateTimeOffset now, CancellationToken cancellationToken) => Task.CompletedTask;
+        public Task RecordPasteAsync(DateTimeOffset now, CancellationToken cancellationToken) => Task.CompletedTask;
+        public Task RecordGestureAsync(DateTimeOffset now, CancellationToken cancellationToken) => Task.CompletedTask;
+        public Task RecordClipboardOpenAsync(DateTimeOffset now, CancellationToken cancellationToken) => Task.CompletedTask;
+        public Task RecordOverworkReminderAsync(DateTimeOffset now, CancellationToken cancellationToken) => Task.CompletedTask;
+        public Task SetSprintModeAsync(bool enabled, CancellationToken cancellationToken) => Task.CompletedTask;
+        public Task ClearTodayFishingAsync(DateOnly date, CancellationToken cancellationToken) => Task.CompletedTask;
+        public Task SnoozeAsync(DateTimeOffset now, CancellationToken cancellationToken) => Task.CompletedTask;
+        public Task MuteTodayAsync(DateTimeOffset now, CancellationToken cancellationToken) => Task.CompletedTask;
+        public Task<WorkBearDailyReport> GenerateDailyReportAsync(DateTimeOffset now, CancellationToken cancellationToken) =>
+            Task.FromResult(new WorkBearDailyReport(DateOnly.FromDateTime(now.Date), TimeSpan.Zero, TimeSpan.Zero, 0, TimeSpan.Zero, 0, 0, 0, 0, 0, 0, 0, TimeSpan.Zero, "", "", ""));
     }
 }

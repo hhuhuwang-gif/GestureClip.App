@@ -7,4 +7,6 @@ public sealed record WorkstationDailyStats(
     int GestureCount = 0,
     int EstimatedSavedClicks = 0,
     int FishingMinutes = 0,
-    DateTimeOffset? FishingStartedAt = null);
+    DateTimeOffset? FishingStartedAt = null,
+    int OpenClipboardCount = 0,
+    int OverworkReminderCount = 0);

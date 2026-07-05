@@ -2,28 +2,32 @@ using System.IO;
 using System.Windows;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
-using System.Windows.Threading;
 using GestureClip.Core.Abstractions;
 using Microsoft.Extensions.Logging;
 
 namespace GestureClip.Infrastructure.Clipboard;
 
-public sealed class WpfClipboardTextReader : IClipboardTextReader
+public sealed class WpfClipboardTextReader : IClipboardTextReader, IDisposable
 {
-    private readonly Dispatcher _dispatcher;
+    private readonly ClipboardStaDispatcher _clipboardStaThread;
     private readonly ILogger<WpfClipboardTextReader> _logger;
 
     public WpfClipboardTextReader(ILogger<WpfClipboardTextReader> logger)
     {
-        _dispatcher = System.Windows.Application.Current.Dispatcher;
+        _clipboardStaThread = new ClipboardStaDispatcher("GestureClip Clipboard Reader");
         _logger = logger;
+    }
+
+    public void Dispose()
+    {
+        _clipboardStaThread.Dispose();
     }
 
     public string? TryReadText()
     {
         try
         {
-            return _dispatcher.Invoke(() =>
+            return _clipboardStaThread.Invoke(() =>
             {
                 if (!System.Windows.Clipboard.ContainsText())
                 {
@@ -44,7 +48,7 @@ public sealed class WpfClipboardTextReader : IClipboardTextReader
     {
         try
         {
-            var snapshot = _dispatcher.Invoke(CaptureImageSnapshot);
+            var snapshot = _clipboardStaThread.Invoke(CaptureImageSnapshot);
             return EncodeImageSnapshot(snapshot);
         }
         catch (Exception ex)
