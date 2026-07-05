@@ -1,26 +1,19 @@
 # GestureClip
 
-Windows 本地优先的剪贴板历史 + 鼠标手势快捷工具。
+> Windows 本地优先的剪贴板历史 + 鼠标手势快捷工具。  
+> 大白话：复制过的文字和图片能找回来；按住鼠标右键一划，可以复制、粘贴、回车、后退；还能带一个“工位小熊”HUD，顺手看今天赚了多少、多久下班。
 
-大白话：复制过的文字和图片能找回来；按住鼠标右键一划，可以复制、粘贴、回车、后退；也可以自己设计常用手势。所有数据默认只放在你自己的电脑里。
+![GestureClip 首页](docs/images/settings-home.png)
 
-## 最新版本
+## 现在是什么版本？
 
-```text
-v0.6.0 Beta
-```
+当前版本：**v0.6.0 Beta**
 
-推荐下载：
+下载地址：
 
-```text
-GestureClip-v0.6.0-beta-win-x64.zip
-```
-
-老用户覆盖更新：
-
-```text
-GestureClip-v0.6.0-beta-update-win-x64.zip
-```
+- [完整包 GestureClip-v0.6.0-beta-win-x64.zip](https://github.com/hhuhuwang-gif/GestureClip.App/releases/download/v0.6.0-beta/GestureClip-v0.6.0-beta-win-x64.zip)
+- [覆盖更新包 GestureClip-v0.6.0-beta-update-win-x64.zip](https://github.com/hhuhuwang-gif/GestureClip.App/releases/download/v0.6.0-beta/GestureClip-v0.6.0-beta-update-win-x64.zip)
+- [Release 页面](https://github.com/hhuhuwang-gif/GestureClip.App/releases/tag/v0.6.0-beta)
 
 解压后双击：
 
@@ -28,39 +21,51 @@ GestureClip-v0.6.0-beta-update-win-x64.zip
 GestureClip.exe
 ```
 
-当前发布包是 Windows x64 self-contained 版本，通常不需要额外安装 .NET Runtime。
+发布包是 Windows x64 self-contained 版本，通常不用额外安装 .NET Runtime。
 
-## 主要功能
+## 它能解决什么问题？
 
-- 文本 / 图片剪贴板历史
-- `Ctrl + `` 打开或关闭剪贴板面板
-- 搜索、删除、固定、收藏剪贴板记录
-- 多选文本后合并复制
-- 图片缩略图预览，点击可重新复制图片
-- 右键鼠标手势
-- 自定义手势绑定
-- R+L：按住右键后点一下左键，可作为组合手势
-- 黑名单应用，不记录敏感软件剪贴板，不触发手势
-- 开机自启
-- 数据清理
-- 工位小熊 HUD
-- 今日工资、下班倒计时、发薪日倒计时
-- 打工人等级 / XP
-- 过劳提醒 / 猝死提醒
-- HUD 根据工作时间阶段变色
-- 复制诊断信息 / 导出诊断包，方便反馈问题
+平时办公经常会遇到这些事：
 
-## 默认快捷键
+- 刚复制过一段话，下一秒被别的内容覆盖了。
+- 经常复制、粘贴、回车、后退，手离键盘很麻烦。
+- 想用鼠标做快捷动作，但又不想安装太重的软件。
+- 复制过图片或截图，后面想重新找回来。
+- 想知道今天复制/粘贴/手势用了多少次，顺便看看“打工人状态”。
 
-打开 / 关闭剪贴板面板：
+GestureClip 就是把这些都放进一个本地小工具里。
+
+## 核心功能
+
+### 1. 剪贴板历史
+
+- 保存文本剪贴板历史。
+- 保存图片/截图剪贴板历史。
+- 支持搜索。
+- 支持固定常用记录。
+- 支持收藏片段。
+- 支持删除单条、删除选中、清空历史。
+- 支持多选文本后合并复制。
+- 图片显示缩略图，点击可重新复制回系统剪贴板。
+- 可暂停剪贴板记录。
+
+![剪贴板设置与数据清理](docs/images/settings-clipboard.png)
+
+### 2. 快捷键打开剪贴板
+
+默认快捷键：
 
 ```text
 Ctrl + `
 ```
 
-## 默认右键手势
+作用：打开 / 关闭剪贴板历史面板。
 
-按住鼠标右键滑动：
+### 3. 鼠标右键手势
+
+按住鼠标右键，往一个方向划一下，松开就执行动作。
+
+默认常用手势：
 
 | 手势 | 动作 |
 | --- | --- |
@@ -73,65 +78,194 @@ Ctrl + `
 | 左右划 | 全选 `Ctrl + A` |
 | 右左划 | 撤销 `Ctrl + Z` |
 | 下左划 | 粘贴并回车 |
-| 右键按住 + 左键点击 | 粘贴并回车 |
+| 右键按住 + 左键点击 | 组合手势，可绑定动作 |
+
+![鼠标手势设置](docs/images/settings-gestures.png)
+
+### 4. 自定义手势绑定
+
+可以自己设计常用动作，例如：
+
+- 粘贴并回车
+- Google 搜索选中文本
+- 百度搜索选中文本
+- 新建标签页
+- 下一标签页 / 上一标签页
+- 截图
+- 缩放重置
+
+常用手势默认显示，高级手势默认收起，避免一打开就很乱。
+
+![手势绑定页面](docs/images/gesture-bindings.png)
+
+### 5. 手势 HUD + 工位小熊
+
+右键划动时会出现 HUD。它不只是提示“执行了什么动作”，还会显示一点打工人状态：
+
+- 当前动作
+- 快捷键
+- 手势码
+- 当前模式
+- 今日工资估算
+- 距离下班多久
+- 距离发薪日多久
+- 今日复制次数
+- 今日粘贴次数
+- 今日手势次数
+- 打工人等级 / XP
+
+![手势 HUD](docs/images/gesture-hud-workbear.png)
+
+### 6. 工位小熊面板
+
+工位小熊是一个轻量娱乐状态面板，主要给办公过程一点反馈感。
+
+它可以显示：
+
+- 今日已赚多少钱。
+- 还有多久下班。
+- 还有多久发薪水。
+- 今日复制 / 粘贴 / 手势次数。
+- 休息提醒。
+- 过劳提醒。
+- 下班后生存报告。
+
+所有统计默认只在本机计算，不上传。
+
+![工位小熊设置](docs/images/workbear-panel.png)
 
 ## 数据与隐私
 
 GestureClip 默认本地运行：
 
-- 不上传剪贴板内容
-- 不需要账号
-- 数据库默认在 `%LOCALAPPDATA%\GestureClip\gestureclip.db`
-- 日志默认在 `%LOCALAPPDATA%\GestureClip\logs\`
-- 日志不应记录剪贴板正文
-- 可暂停剪贴板记录
-- 可暂停鼠标手势
-- 可配置应用黑名单
-- 诊断包不包含数据库和图片原始内容
+- 不需要账号。
+- 不上传剪贴板内容。
+- 不上传图片。
+- 不上传工资和工位小熊统计。
+- 不读取浏览器正文、密码、Token、Cookie。
+- 日志不记录剪贴板正文。
+- 诊断包不包含数据库和图片原始内容。
+- 可以暂停剪贴板记录。
+- 可以暂停鼠标手势。
+- 可以配置应用黑名单。
 
-## 如何覆盖更新
+默认数据目录：
 
-看 `UPDATE.md`。简单说：
+```text
+%LOCALAPPDATA%\GestureClip\gestureclip.db
+```
 
-1. 先退出 GestureClip。
+默认日志目录：
+
+```text
+%LOCALAPPDATA%\GestureClip\logs\
+```
+
+覆盖更新程序文件，不会删除你的历史记录和设置。
+
+## 如何覆盖更新？
+
+老用户推荐下载：
+
+```text
+GestureClip-v0.6.0-beta-update-win-x64.zip
+```
+
+步骤：
+
+1. 退出 GestureClip。
 2. 任务管理器确认没有 `GestureClip.exe`。
 3. 解压新版 zip。
 4. 覆盖旧程序目录。
 5. 双击 `GestureClip.exe`。
 
-用户数据在 `%LOCALAPPDATA%\GestureClip\`，不在程序目录，覆盖程序文件不会删除历史记录和设置。
-
 ## 常见问题
 
 ### Windows 提示未知发布者？
 
-当前 Beta 包未签名，SmartScreen 可能提示未知发布者。
+当前 Beta 包还没有代码签名，SmartScreen 可能提示未知发布者。
 
 ### 管理员窗口里手势不生效？
 
 普通权限运行的 GestureClip 可能无法控制管理员权限窗口。如确实需要，请以管理员身份运行 GestureClip。
 
-### 剪贴板图片很多时卡？
+### 图片为什么搜不到？
 
-图片历史首次加载缩略图可能需要一点时间。可以在设置页清理历史记录。
+如果搜索框里有文字，图片可能被搜索过滤掉。请清空搜索框，或者点击“图片”筛选。
 
-### 如何反馈问题？
+### 剪贴板图片复制到别的软件无效？
 
-请优先附：
+v0.6.0 Beta 已增强图片兼容性：复制图片时会同时写入 Bitmap、PNG、DIB 三种剪贴板格式。
 
-- GestureClip 版本
-- Windows 版本
-- 复现步骤
-- 截图或录屏
-- 设置页里的诊断信息或诊断包
+### 页面看起来还不够完美？
 
-不要上传密码、token、cookie、剪贴板正文等敏感内容。
+这是 Beta 版本，还在持续打磨。当前优先级是：稳定、不丢数据、不卡、手势准确、剪贴板图片可用。
 
-## 工位小熊 Hub 隐私边界
+## 开发与发布
 
-工位小熊 Hub 只做本地办公陪伴统计：今日工资估算、下班倒计时、复制/粘贴/手势次数、少点次数、手动摸鱼时长、休息提醒次数、今日生存报告和 PNG 分享卡片。工资与摸鱼价值仅供娱乐估算，不作财务或考勤依据。
+构建：
 
-隐私约束：不上传数据，不自动分享，不记录剪贴板正文到报告/日志/分享卡片，不包含图片历史原始内容，不读取浏览器内容、网页标题、具体网址、密码、Token、Cookie。分享卡片默认保存到桌面 `WorkBear-Report-YYYYMMDD.png`，由用户自行决定是否分享。
+```powershell
+dotnet build .\GestureClip.sln -c Release
+```
 
-下班后自动报告默认每天最多弹出一次，可在 Hub 或设置中关闭，也可点“今天不再显示”。休息提醒支持稍后提醒、今天不再提醒、关闭提醒。HUD 可显示工位状态短文案、按工作阶段变色，并在高频复制/粘贴时合并为“复制 +5”这类短提示。
+测试：
 
+```powershell
+dotnet test .\GestureClip.sln
+```
+
+发布 Windows x64：
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\scripts\publish-win-x64.ps1
+```
+
+发布产物默认在：
+
+```text
+artifacts\release\GestureClip\
+```
+
+## linux.do 分享文案
+
+标题可以写：
+
+```text
+我做了一个 Windows 本地剪贴板历史 + 鼠标手势工具：GestureClip
+```
+
+正文可以直接用：
+
+```text
+最近在做一个 Windows 小工具 GestureClip。
+
+它主要做两件事：
+
+1. 剪贴板历史
+复制过的文字和图片可以找回来，支持搜索、固定、删除、数据清理。默认数据都存在本机 SQLite，不上传。
+
+2. 鼠标右键手势
+按住右键划一下就能执行动作，比如上划复制、下划粘贴、左划后退、右划前进、下左粘贴并回车。也可以自己绑定手势。
+
+我还加了一个比较抽象的“工位小熊”HUD：右键划手势的时候，会顺手显示今日工资、距离下班多久、发薪日倒计时、复制/粘贴/手势次数，有点像打工人状态栏。
+
+目前是 v0.6.0 Beta，Windows x64，解压双击 GestureClip.exe 就能跑。还在持续优化 UI、图片剪贴板兼容性和手势体验。
+
+项目地址：
+https://github.com/hhuhuwang-gif/GestureClip.App
+```
+
+## 截图总览
+
+![首页](docs/images/settings-home.png)
+
+![剪贴板](docs/images/settings-clipboard.png)
+
+![手势](docs/images/settings-gestures.png)
+
+![动作绑定](docs/images/gesture-bindings.png)
+
+![HUD](docs/images/gesture-hud-workbear.png)
+
+![小熊](docs/images/workbear-panel.png)
