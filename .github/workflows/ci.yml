@@ -1,0 +1,30 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  build-test:
+    name: Restore, build, test
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+
+      - name: Restore
+        run: dotnet restore .\GestureClip.sln
+
+      - name: Build
+        run: dotnet build .\GestureClip.sln -c Release --no-restore
+
+      - name: Test
+        run: dotnet test .\GestureClip.sln -c Release --no-build --verbosity normal
