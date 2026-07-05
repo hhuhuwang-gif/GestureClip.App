@@ -2153,8 +2153,9 @@ public sealed class SettingsViewModel : INotifyPropertyChanged
         if (existing is not null)
         {
             existing.SelectedAction = NewGestureAction;
-            SelectedGestureBindingCard = existing;
             NewGesturePattern = "";
+            await ApplyGestureBindingAsync(existing);
+            SelectGestureBindingAfterRefresh(pattern);
             return;
         }
 
@@ -2176,9 +2177,16 @@ public sealed class SettingsViewModel : INotifyPropertyChanged
         {
             AdvancedGestureBindingCards.Add(card);
         }
-        SelectedGestureBindingCard = card;
         NewGesturePattern = "";
         await ApplyGestureBindingAsync(card);
+        SelectGestureBindingAfterRefresh(pattern);
+    }
+
+    private void SelectGestureBindingAfterRefresh(string pattern)
+    {
+        RefreshGestureBindingCards();
+        SelectedGestureBindingCard = GestureBindingCards.FirstOrDefault(card => string.Equals(card.Pattern, pattern, StringComparison.Ordinal))
+            ?? SelectedGestureBindingCard;
     }
 
     private void SetNewGesturePattern(object? parameter)
@@ -2276,22 +2284,68 @@ public sealed class SettingsViewModel : INotifyPropertyChanged
 
     public void SetNewGesturePatternFromRecordedPoints(IReadOnlyList<GesturePoint> points)
     {
-        var recognizer = new DirectionGestureRecognizer();
-        var result = recognizer.Recognize(
-            points,
-            new GestureOptions(
-                TriggerThreshold: Math.Max(20, GestureTriggerThreshold),
-                SegmentThreshold: 16,
-                MaxDurationMs: 5000,
-                MinGesturePoints: 2));
-        if (!result.IsValid || string.IsNullOrWhiteSpace(result.Pattern))
+        var pattern = RecognizeDesignerGesturePattern(points);
+        if (string.IsNullOrWhiteSpace(pattern))
         {
             RecordGestureStatusText = "没识别出来，画得稍微长一点。";
             return;
         }
 
-        NewGesturePattern = result.Pattern;
-        RecordGestureStatusText = $"识别为 {DirectionText(result.Pattern)}，可以直接添加。";
+        NewGesturePattern = pattern;
+        RecordGestureStatusText = $"识别为 {DirectionText(pattern)}，可以直接添加。";
+    }
+
+    private static string RecognizeDesignerGesturePattern(IReadOnlyList<GesturePoint> points)
+    {
+        const int designerTriggerThreshold = 20;
+        const int designerDirectionThreshold = 18;
+
+        if (points.Count < 2 || TotalDistance(points) < designerTriggerThreshold)
+        {
+            return "";
+        }
+
+        var directions = new List<char>();
+        var anchor = points[0];
+        foreach (var point in points.Skip(1))
+        {
+            var dx = point.X - anchor.X;
+            var dy = point.Y - anchor.Y;
+            if (Math.Max(Math.Abs(dx), Math.Abs(dy)) < designerDirectionThreshold)
+            {
+                continue;
+            }
+
+            var direction = Math.Abs(dx) >= Math.Abs(dy)
+                ? dx < 0 ? 'L' : 'R'
+                : dy < 0 ? 'U' : 'D';
+
+            if (directions.Count == 0 || directions[^1] != direction)
+            {
+                directions.Add(direction);
+                if (directions.Count > 8)
+                {
+                    break;
+                }
+            }
+
+            anchor = point;
+        }
+
+        return directions.Count == 0 ? "" : new string(directions.ToArray());
+    }
+
+    private static double TotalDistance(IReadOnlyList<GesturePoint> points)
+    {
+        var total = 0d;
+        for (var i = 1; i < points.Count; i++)
+        {
+            var dx = points[i].X - points[i - 1].X;
+            var dy = points[i].Y - points[i - 1].Y;
+            total += Math.Sqrt(dx * dx + dy * dy);
+        }
+
+        return total;
     }
 
     private void RefreshGestureDiagnostics()
@@ -2357,12 +2411,12 @@ public sealed class SettingsViewModel : INotifyPropertyChanged
     private static readonly string[] GesturePatterns =
     [
         "U", "D", "UD", "DU", "L", "R", "LR", "RL", "DL", "DR",
-        "UR", "UL", "RU", "RD", "LD", "RDL", "RUD", "URD", "ULD", "RULD"
+        "R+L", "UR", "UL", "RU", "RD", "LD", "RDL", "RUD", "URD", "ULD", "RULD"
     ];
 
     private static readonly HashSet<string> PrimaryGesturePatterns = new(StringComparer.Ordinal)
     {
-        "U", "D", "UD", "DU", "L", "R", "LR", "RL", "DL", "DR"
+        "U", "D", "UD", "DU", "L", "R", "LR", "RL", "DL", "DR", "R+L"
     };
 
     private static string NormalizeGesturePattern(string? pattern)

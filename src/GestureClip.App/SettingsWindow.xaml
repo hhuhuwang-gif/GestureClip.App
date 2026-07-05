@@ -598,14 +598,17 @@
                 </TabItem>
 
                 <TabItem Header="手势绑定">
-                    <ScrollViewer VerticalScrollBarVisibility="Auto">
-                        <StackPanel Margin="18">
-                            <Grid Margin="0,0,0,0">
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="*" />
-                                    <ColumnDefinition Width="420" />
-                                </Grid.ColumnDefinitions>
+                    <Grid Margin="18">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="420" />
+                        </Grid.ColumnDefinitions>
 
+                        <ScrollViewer x:Name="GestureBindingPageScrollViewer"
+                                      Grid.Column="0"
+                                      VerticalScrollBarVisibility="Auto"
+                                      CanContentScroll="False">
+                            <StackPanel Margin="0,0,14,0">
                                 <Border x:Name="GestureBindingListPanel"
                                         Style="{StaticResource GlassCardStyle}"
                                         Padding="0">
@@ -615,7 +618,7 @@
                                                 <TextBlock Text="常用手势"
                                                            FontSize="17"
                                                            FontWeight="SemiBold" />
-                                                <TextBlock Text="默认只显示高频和已绑定手势。右键按住时点一下左键，可以作为组合手势来绑定动作。"
+                                                <TextBlock Text="默认只显示高频和已绑定手势。右键按住时点一下左键，就是 R+L 组合手势。"
                                                            Style="{StaticResource MutedTextStyle}"
                                                            Margin="0,4,0,0" />
                                             </StackPanel>
@@ -650,44 +653,16 @@
                                                                 <ColumnDefinition Width="*" />
                                                                 <ColumnDefinition Width="170" />
                                                             </Grid.ColumnDefinitions>
-
-                                                            <Border Width="82"
-                                                                    Height="60"
-                                                                    CornerRadius="14"
-                                                                    Background="#18FFFFFF"
-                                                                    BorderBrush="#26768AA8"
-                                                                    BorderThickness="1">
-                                                                <controls:GesturePatternView Pattern="{Binding Pattern}"
-                                                                                             Width="82"
-                                                                                             Height="60" />
+                                                            <Border Width="82" Height="60" CornerRadius="14" Background="#18FFFFFF" BorderBrush="#26768AA8" BorderThickness="1">
+                                                                <controls:GesturePatternView Pattern="{Binding Pattern}" Width="82" Height="60" />
                                                             </Border>
-
-                                                            <StackPanel Grid.Column="1"
-                                                                        VerticalAlignment="Center">
-                                                                <TextBlock Text="{Binding GestureName}"
-                                                                           FontSize="15"
-                                                                           FontWeight="SemiBold"
-                                                                           TextTrimming="CharacterEllipsis" />
-                                                                <TextBlock Text="{Binding PatternText}"
-                                                                           Style="{StaticResource MutedTextStyle}"
-                                                                           TextTrimming="CharacterEllipsis"
-                                                                           Margin="0,4,0,0" />
+                                                            <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                                                <TextBlock Text="{Binding GestureName}" FontSize="15" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" />
+                                                                <TextBlock Text="{Binding PatternText}" Style="{StaticResource MutedTextStyle}" TextTrimming="CharacterEllipsis" Margin="0,4,0,0" />
                                                             </StackPanel>
-
-                                                            <StackPanel Grid.Column="2"
-                                                                        VerticalAlignment="Center"
-                                                                        HorizontalAlignment="Right">
-                                                                <TextBlock Text="{Binding ActionName}"
-                                                                           FontWeight="SemiBold"
-                                                                           MaxWidth="160"
-                                                                           TextTrimming="CharacterEllipsis"
-                                                                           TextAlignment="Right" />
-                                                                <TextBlock Text="{Binding ShortcutText}"
-                                                                           Style="{StaticResource MutedTextStyle}"
-                                                                           MaxWidth="160"
-                                                                           TextTrimming="CharacterEllipsis"
-                                                                           TextAlignment="Right"
-                                                                           Margin="0,4,0,0" />
+                                                            <StackPanel Grid.Column="2" VerticalAlignment="Center" HorizontalAlignment="Right">
+                                                                <TextBlock Text="{Binding ActionName}" FontWeight="SemiBold" MaxWidth="160" TextTrimming="CharacterEllipsis" TextAlignment="Right" />
+                                                                <TextBlock Text="{Binding ShortcutText}" Style="{StaticResource MutedTextStyle}" MaxWidth="160" TextTrimming="CharacterEllipsis" TextAlignment="Right" Margin="0,4,0,0" />
                                                             </StackPanel>
                                                         </Grid>
                                                     </Border>
@@ -695,9 +670,7 @@
                                             </ListBox.ItemTemplate>
                                         </ListBox>
 
-                                        <Expander Header="更多手势 / 高级手势"
-                                                  Margin="12,10,12,14"
-                                                  IsExpanded="False">
+                                        <Expander Header="更多手势 / 高级手势" Margin="12,10,12,14" IsExpanded="False">
                                             <ListBox ItemsSource="{Binding AdvancedGestureBindingCards}"
                                                      SelectedItem="{Binding SelectedGestureBindingCard, Mode=TwoWay}"
                                                      BorderThickness="0"
@@ -716,51 +689,23 @@
                                                 </ListBox.ItemContainerStyle>
                                                 <ListBox.ItemTemplate>
                                                     <DataTemplate>
-                                                        <Border Background="#F8FAFD"
-                                                                BorderBrush="{DynamicResource BrushBorder}"
-                                                                BorderThickness="0,1,0,0"
-                                                                MinHeight="78"
-                                                                Padding="12,10">
+                                                        <Border Background="#F8FAFD" BorderBrush="{DynamicResource BrushBorder}" BorderThickness="0,1,0,0" MinHeight="78" Padding="12,10">
                                                             <Grid>
                                                                 <Grid.ColumnDefinitions>
                                                                     <ColumnDefinition Width="82" />
                                                                     <ColumnDefinition Width="*" />
                                                                     <ColumnDefinition Width="150" />
                                                                 </Grid.ColumnDefinitions>
-                                                                <Border Width="68"
-                                                                        Height="50"
-                                                                        CornerRadius="12"
-                                                                        Background="#12FFFFFF"
-                                                                        BorderBrush="#20768AA8"
-                                                                        BorderThickness="1">
-                                                                    <controls:GesturePatternView Pattern="{Binding Pattern}"
-                                                                                                 Width="68"
-                                                                                                 Height="50" />
+                                                                <Border Width="68" Height="50" CornerRadius="12" Background="#12FFFFFF" BorderBrush="#20768AA8" BorderThickness="1">
+                                                                    <controls:GesturePatternView Pattern="{Binding Pattern}" Width="68" Height="50" />
                                                                 </Border>
                                                                 <StackPanel Grid.Column="1" VerticalAlignment="Center">
-                                                                    <TextBlock Text="{Binding GestureName}"
-                                                                               FontSize="14"
-                                                                               FontWeight="SemiBold"
-                                                                               TextTrimming="CharacterEllipsis" />
-                                                                    <TextBlock Text="{Binding PatternText}"
-                                                                               Style="{StaticResource MutedTextStyle}"
-                                                                               TextTrimming="CharacterEllipsis"
-                                                                               Margin="0,4,0,0" />
+                                                                    <TextBlock Text="{Binding GestureName}" FontSize="14" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" />
+                                                                    <TextBlock Text="{Binding PatternText}" Style="{StaticResource MutedTextStyle}" TextTrimming="CharacterEllipsis" Margin="0,4,0,0" />
                                                                 </StackPanel>
-                                                                <StackPanel Grid.Column="2"
-                                                                            VerticalAlignment="Center"
-                                                                            HorizontalAlignment="Right">
-                                                                    <TextBlock Text="{Binding ActionName}"
-                                                                               FontWeight="SemiBold"
-                                                                               MaxWidth="140"
-                                                                               TextTrimming="CharacterEllipsis"
-                                                                               TextAlignment="Right" />
-                                                                    <TextBlock Text="{Binding ShortcutText}"
-                                                                               Style="{StaticResource MutedTextStyle}"
-                                                                               MaxWidth="140"
-                                                                               TextTrimming="CharacterEllipsis"
-                                                                               TextAlignment="Right"
-                                                                               Margin="0,4,0,0" />
+                                                                <StackPanel Grid.Column="2" VerticalAlignment="Center" HorizontalAlignment="Right">
+                                                                    <TextBlock Text="{Binding ActionName}" FontWeight="SemiBold" MaxWidth="140" TextTrimming="CharacterEllipsis" TextAlignment="Right" />
+                                                                    <TextBlock Text="{Binding ShortcutText}" Style="{StaticResource MutedTextStyle}" MaxWidth="140" TextTrimming="CharacterEllipsis" TextAlignment="Right" Margin="0,4,0,0" />
                                                                 </StackPanel>
                                                             </Grid>
                                                         </Border>
@@ -771,248 +716,185 @@
                                     </DockPanel>
                                 </Border>
 
-                                <Border x:Name="GestureBindingDetailPanel"
-                                        Grid.Column="1"
-                                        Style="{StaticResource GlassCardStyle}"
-                                        Margin="14,0,0,0"
-                                        Padding="22">
-                                    <StackPanel>
-                                        <TextBlock Text="动作编辑器"
-                                                   FontSize="18"
-                                                   FontWeight="SemiBold" />
-                                        <TextBlock Text="选中一个手势后，在这里修改动作。"
-                                                   Style="{StaticResource MutedTextStyle}"
-                                                   TextWrapping="Wrap"
-                                                   Margin="0,8,0,16" />
-                                        <Border Background="#F8FAFD"
-                                                BorderBrush="{DynamicResource BrushBorder}"
-                                                BorderThickness="1"
-                                                CornerRadius="18"
-                                                Padding="16"
-                                                Margin="0,0,0,16">
-                                            <StackPanel>
-                                                <controls:GesturePatternView Pattern="{Binding SelectedGestureBindingPattern}"
-                                                                             Width="320"
-                                                                             Height="170"
-                                                                             HorizontalAlignment="Center" />
-                                                <TextBlock Text="{Binding SelectedGestureBindingDirectionText}"
-                                                           FontSize="18"
-                                                           FontWeight="SemiBold"
-                                                           Foreground="{DynamicResource BrushPrimaryBright}"
-                                                           HorizontalAlignment="Center"
-                                                           Margin="0,10,0,0" />
-                                                <TextBlock Text="{Binding SelectedGestureBindingPattern, StringFormat=手势码：{0}}"
-                                                           Style="{StaticResource MutedTextStyle}"
-                                                           HorizontalAlignment="Center"
-                                                           Margin="0,4,0,0" />
-                                            </StackPanel>
-                                        </Border>
-                                        <TextBlock Text="当前动作"
-                                                   FontWeight="SemiBold"
-                                                   Margin="0,0,0,8" />
-                                        <TextBlock Text="{Binding SelectedGestureBindingActionName}"
-                                                   FontSize="16"
-                                                   FontWeight="SemiBold" />
-                                        <TextBlock Text="{Binding SelectedGestureBindingShortcutText}"
-                                                   Style="{StaticResource MutedTextStyle}"
-                                                   Margin="0,4,0,12" />
-                                        <TextBlock Text="{Binding SelectedGestureBindingEmptyText}"
-                                                   Style="{StaticResource MutedTextStyle}"
-                                                   TextWrapping="Wrap"
-                                                   Margin="0,0,0,12" />
-                                        <TextBlock Text="常用动作"
-                                                   FontWeight="SemiBold"
-                                                   Margin="0,0,0,8" />
-                                        <WrapPanel Margin="0,0,0,12">
-                                            <TextBlock Text="提示：左键点击是确认当前手势，不是可绑定的执行动作。右键画出手势后，点一下左键会立即执行该手势。"
-                                                       Style="{StaticResource MutedTextStyle}"
-                                                       TextWrapping="Wrap"
-                                                       Margin="0,0,8,8" />
-                                            <Button Content="Google 搜索" MinWidth="0" Width="106" Height="32" Margin="0,0,8,8" Command="{Binding SetSelectedGestureActionCommand}" CommandParameter="SearchSelectedTextWithGoogle" />
-                                            <Button Content="百度搜索" MinWidth="0" Width="96" Height="32" Margin="0,0,8,8" Command="{Binding SetSelectedGestureActionCommand}" CommandParameter="SearchSelectedTextWithBaidu" />
-                                        </WrapPanel>
-                                        <ComboBox ItemsSource="{Binding GestureActionOptionsView}"
-                                                  DisplayMemberPath="DisplayName"
-                                                  SelectedValuePath="Action"
-                                                  SelectedValue="{Binding SelectedGestureBindingCard.SelectedAction, Mode=TwoWay}"
-                                                  IsEnabled="{Binding HasSelectedGestureBinding}">
-                                            <ComboBox.GroupStyle>
-                                                <GroupStyle>
-                                                    <GroupStyle.HeaderTemplate>
-                                                        <DataTemplate>
-                                                            <TextBlock Text="{Binding Name}"
-                                                                       FontSize="12"
-                                                                       FontWeight="SemiBold"
-                                                                       Foreground="{DynamicResource BrushTextSecondary}"
-                                                                       Margin="10,8,10,4" />
-                                                        </DataTemplate>
-                                                    </GroupStyle.HeaderTemplate>
-                                                </GroupStyle>
-                                            </ComboBox.GroupStyle>
-                                        </ComboBox>
-                                        <Button Content="删除这个手势"
-                                                MinWidth="0"
-                                                Height="38"
-                                                Margin="0,14,0,0"
-                                                Background="#F0F2F7"
-                                                Foreground="#667085"
-                                                BorderBrush="{DynamicResource BrushBorder}"
-                                                IsEnabled="{Binding HasSelectedGestureBinding}"
-                                                Command="{Binding DeleteSelectedGestureBindingCommand}" />
-                                        <TextBlock Text="提示"
-                                                   FontWeight="SemiBold"
-                                                   Margin="0,18,0,0" />
-                                        <TextBlock Text="手势最多 8 段。重复方向会自动合并，例如一直向右只算 R。"
-                                                   Style="{StaticResource MutedTextStyle}"
-                                                   TextWrapping="Wrap"
-                                                   Margin="0,8,0,0" />
-                                    </StackPanel>
-                                </Border>
-                            </Grid>
-
-                            <Border Style="{StaticResource GlassCardStyle}" Padding="18" Margin="0,14,0,0">
-                                <Grid>
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="*" />
-                                        <ColumnDefinition Width="Auto" />
-                                    </Grid.ColumnDefinitions>
-                                    <StackPanel>
-                                        <TextBlock Text="创建你的专属手势" FontSize="18" FontWeight="SemiBold" />
-                                        <TextBlock Text="先画手势，再绑定动作。常用的粘贴并回车、搜索、标签页操作都能一键套模板。"
-                                                   Style="{StaticResource MutedTextStyle}"
-                                                   Margin="0,6,0,0"
-                                                   TextWrapping="Wrap" />
-                                    </StackPanel>
-                                    <Button Grid.Column="1"
-                                            Content="+ 新建自定义手势"
-                                            Style="{StaticResource PrimaryButtonStyle}"
-                                            MinWidth="0"
-                                            Width="160"
-                                            Height="38"
-                                            Command="{Binding AddCustomGestureBindingCommand}" />
-                                </Grid>
-                            </Border>
-
-                            <Expander Header="+ 新建自定义手势" IsExpanded="True" Margin="0,14,0,0">
-                                <Border Style="{StaticResource GlassCardStyle}" Padding="18">
-                                <StackPanel>
-                                    <TextBlock Text="按住鼠标右键画出手势，即可执行对应动作。也可以在这里设计自己的手势。"
-                                               Style="{StaticResource MutedTextStyle}"
-                                               Margin="0,0,0,10" />
-                                    <Border x:Name="GestureDesignerPanel"
-                                            Background="#F8FAFD"
-                                            BorderBrush="{DynamicResource BrushBorder}"
-                                            BorderThickness="1"
-                                            CornerRadius="18"
-                                            Padding="16"
-                                            Margin="0,0,0,12">
+                                <Border Style="{StaticResource GlassCardStyle}" Padding="18" Margin="0,14,0,0">
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="Auto" />
+                                        </Grid.ColumnDefinitions>
                                         <StackPanel>
-                                            <StackPanel Margin="0,0,0,14">
-                                                <Border Width="420"
-                                                        Height="190"
-                                                        HorizontalAlignment="Left"
-                                                        CornerRadius="18"
-                                                        Background="#FFFFFFFF"
-                                                        BorderBrush="#26768AA8"
-                                                        BorderThickness="1"
-                                                        ClipToBounds="True"
-                                                        MouseLeftButtonDown="RecordGesturePad_MouseLeftButtonDown"
-                                                        MouseMove="RecordGesturePad_MouseMove"
-                                                        MouseLeftButtonUp="RecordGesturePad_MouseLeftButtonUp">
-                                                    <Grid>
-                                                        <TextBlock Text="在这里按住并拖动，松开后自动识别"
-                                                                   Style="{StaticResource MutedTextStyle}"
-                                                                   FontSize="14"
-                                                                   HorizontalAlignment="Center"
-                                                                   VerticalAlignment="Center" />
-                                                        <Canvas x:Name="RecordGestureCanvas"
-                                                                Background="Transparent"
-                                                                IsHitTestVisible="False">
-                                                            <Polyline x:Name="RecordGesturePolyline"
-                                                                      Stroke="{DynamicResource BrushPrimaryBright}"
-                                                                      StrokeThickness="5"
-                                                                      StrokeStartLineCap="Round"
-                                                                      StrokeEndLineCap="Round"
-                                                                      StrokeLineJoin="Round" />
-                                                        </Canvas>
-                                                    </Grid>
-                                                </Border>
-                                                <TextBlock Text="{Binding NewGestureDirectionPreview}"
-                                                           FontSize="15"
-                                                           FontWeight="SemiBold"
-                                                           Foreground="{DynamicResource BrushPrimaryBright}"
-                                                           Margin="0,10,0,0" />
-                                                <TextBlock Text="{Binding RecordGestureStatusText}"
-                                                           Style="{StaticResource MutedTextStyle}"
-                                                           Margin="0,4,0,0" />
-                                            </StackPanel>
-                                            <WrapPanel VerticalAlignment="Center">
-                                                <Button Content="↑" MinWidth="0" Width="64" Height="36" Margin="0,0,8,8" Command="{Binding AppendGestureDirectionCommand}" CommandParameter="U" />
-                                                <Button Content="↓" MinWidth="0" Width="64" Height="36" Margin="0,0,8,8" Command="{Binding AppendGestureDirectionCommand}" CommandParameter="D" />
-                                                <Button Content="←" MinWidth="0" Width="64" Height="36" Margin="0,0,8,8" Command="{Binding AppendGestureDirectionCommand}" CommandParameter="L" />
-                                                <Button Content="→" MinWidth="0" Width="64" Height="36" Margin="0,0,8,8" Command="{Binding AppendGestureDirectionCommand}" CommandParameter="R" />
-                                                <Button Content="退一格" MinWidth="0" Width="96" Height="36" Margin="0,0,8,8" Command="{Binding RemoveLastGestureDirectionCommand}" />
-                                                <Button Content="清空" MinWidth="0" Width="84" Height="36" Margin="0,0,8,8" Command="{Binding ClearNewGesturePatternCommand}" />
-                                            </WrapPanel>
-                                            <TextBlock Text="常用手势模板"
+                                            <TextBlock Text="创建你的专属手势" FontSize="18" FontWeight="SemiBold" />
+                                            <TextBlock Text="先画手势，再绑定动作。常用的粘贴并回车、搜索、标签页操作都能一键套模板。"
                                                        Style="{StaticResource MutedTextStyle}"
-                                                       Margin="0,8,0,8" />
-                                            <TextBlock Text="办公高频" FontWeight="SemiBold" Margin="0,2,0,6" />
-                                            <WrapPanel>
-                                                <Button Content="↓←  粘贴并回车" MinWidth="0" Width="150" Height="34" Margin="0,0,8,8" Command="{Binding SetNewGestureTemplateCommand}" CommandParameter="DL|PasteAndEnter" />
-                                                <Button Content="↑↓  回车确认" MinWidth="0" Width="140" Height="34" Margin="0,0,8,8" Command="{Binding SetNewGestureTemplateCommand}" CommandParameter="UD|Enter" />
-                                                <Button Content="↓↑  取消 Esc" MinWidth="0" Width="132" Height="34" Margin="0,0,8,8" Command="{Binding SetNewGestureTemplateCommand}" CommandParameter="DU|Escape" />
-                                                <Button Content="←→  全选" MinWidth="0" Width="118" Height="34" Margin="0,0,8,8" Command="{Binding SetNewGestureTemplateCommand}" CommandParameter="LR|SelectAll" />
+                                                       Margin="0,6,0,0"
+                                                       TextWrapping="Wrap" />
+                                        </StackPanel>
+                                        <Button Grid.Column="1"
+                                                Content="开始设计"
+                                                Style="{StaticResource PrimaryButtonStyle}"
+                                                MinWidth="0"
+                                                Width="136"
+                                                Height="38"
+                                                Focusable="False"
+                                                Click="ScrollToCustomGestureDesigner_Click" />
+                                    </Grid>
+                                </Border>
+
+                                <Expander Header="+ 新建自定义手势" IsExpanded="True" Margin="0,14,0,0">
+                                    <Border Style="{StaticResource GlassCardStyle}" Padding="18">
+                                        <StackPanel>
+                                            <TextBlock Text="在下面画手势，识别成功后选动作，再点“添加到列表”。"
+                                                       Style="{StaticResource MutedTextStyle}"
+                                                       Margin="0,0,0,10" />
+                                            <Border x:Name="GestureDesignerPanel"
+                                                    Background="#F8FAFD"
+                                                    BorderBrush="{DynamicResource BrushBorder}"
+                                                    BorderThickness="1"
+                                                    CornerRadius="18"
+                                                    Padding="16"
+                                                    Margin="0,0,0,12">
+                                                <StackPanel>
+                                                    <StackPanel Margin="0,0,0,14">
+                                                        <Border MinHeight="240"
+                                                                HorizontalAlignment="Stretch"
+                                                                CornerRadius="18"
+                                                                Background="#FFFFFFFF"
+                                                                BorderBrush="#26768AA8"
+                                                                BorderThickness="1"
+                                                                ClipToBounds="True"
+                                                                MouseLeftButtonDown="RecordGesturePad_MouseLeftButtonDown"
+                                                                MouseMove="RecordGesturePad_MouseMove"
+                                                                MouseLeftButtonUp="RecordGesturePad_MouseLeftButtonUp">
+                                                            <Grid>
+                                                                <TextBlock Text="按住左键在这里画，松开后自动识别"
+                                                                           Style="{StaticResource MutedTextStyle}"
+                                                                           FontSize="16"
+                                                                           FontWeight="SemiBold"
+                                                                           HorizontalAlignment="Center"
+                                                                           VerticalAlignment="Center" />
+                                                                <Canvas x:Name="RecordGestureCanvas" Background="Transparent" IsHitTestVisible="False">
+                                                                    <Polyline x:Name="RecordGesturePolyline"
+                                                                              Stroke="{DynamicResource BrushPrimaryBright}"
+                                                                              StrokeThickness="4"
+                                                                              StrokeStartLineCap="Round"
+                                                                              StrokeEndLineCap="Round"
+                                                                              StrokeLineJoin="Round" />
+                                                                </Canvas>
+                                                            </Grid>
+                                                        </Border>
+                                                        <TextBlock Text="{Binding NewGestureDirectionPreview}" FontSize="15" FontWeight="SemiBold" Foreground="{DynamicResource BrushPrimaryBright}" Margin="0,10,0,0" />
+                                                        <TextBlock Text="{Binding RecordGestureStatusText}" Style="{StaticResource MutedTextStyle}" Margin="0,4,0,0" />
+                                                    </StackPanel>
+                                                    <WrapPanel VerticalAlignment="Center">
+                                                        <Button Content="↑" MinWidth="0" Width="64" Height="36" Margin="0,0,8,8" Command="{Binding AppendGestureDirectionCommand}" CommandParameter="U" />
+                                                        <Button Content="↓" MinWidth="0" Width="64" Height="36" Margin="0,0,8,8" Command="{Binding AppendGestureDirectionCommand}" CommandParameter="D" />
+                                                        <Button Content="←" MinWidth="0" Width="64" Height="36" Margin="0,0,8,8" Command="{Binding AppendGestureDirectionCommand}" CommandParameter="L" />
+                                                        <Button Content="→" MinWidth="0" Width="64" Height="36" Margin="0,0,8,8" Command="{Binding AppendGestureDirectionCommand}" CommandParameter="R" />
+                                                        <Button Content="退一格" MinWidth="0" Width="96" Height="36" Margin="0,0,8,8" Command="{Binding RemoveLastGestureDirectionCommand}" />
+                                                        <Button Content="清空" MinWidth="0" Width="84" Height="36" Margin="0,0,8,8" Command="{Binding ClearNewGesturePatternCommand}" />
+                                                    </WrapPanel>
+                                                    <TextBlock Text="常用手势模板" Style="{StaticResource MutedTextStyle}" Margin="0,8,0,8" />
+                                                    <TextBlock Text="办公高频" FontWeight="SemiBold" Margin="0,2,0,6" />
+                                                    <WrapPanel>
+                                                        <Button Content="↓←  粘贴并回车" MinWidth="0" Width="150" Height="34" Margin="0,0,8,8" Command="{Binding SetNewGestureTemplateCommand}" CommandParameter="DL|PasteAndEnter" />
+                                                        <Button Content="右键+左键  粘贴并回车" MinWidth="0" Width="190" Height="34" Margin="0,0,8,8" Command="{Binding SetNewGestureTemplateCommand}" CommandParameter="R+L|PasteAndEnter" />
+                                                        <Button Content="↑↓  回车确认" MinWidth="0" Width="140" Height="34" Margin="0,0,8,8" Command="{Binding SetNewGestureTemplateCommand}" CommandParameter="UD|Enter" />
+                                                        <Button Content="↓↑  取消 Esc" MinWidth="0" Width="132" Height="34" Margin="0,0,8,8" Command="{Binding SetNewGestureTemplateCommand}" CommandParameter="DU|Escape" />
+                                                        <Button Content="←→  全选" MinWidth="0" Width="118" Height="34" Margin="0,0,8,8" Command="{Binding SetNewGestureTemplateCommand}" CommandParameter="LR|SelectAll" />
+                                                    </WrapPanel>
+                                                    <TextBlock Text="浏览高频" FontWeight="SemiBold" Margin="0,8,0,6" />
+                                                    <WrapPanel>
+                                                        <Button Content="↓→  新建标签" MinWidth="0" Width="150" Height="34" Margin="0,0,8,8" Command="{Binding SetNewGestureTemplateCommand}" CommandParameter="DR|NewTab" />
+                                                        <Button Content="↑→↓  下一标签" MinWidth="0" Width="158" Height="34" Margin="0,0,8,8" Command="{Binding SetNewGestureTemplateCommand}" CommandParameter="URD|NextTab" />
+                                                        <Button Content="↑←↓  上一标签" MinWidth="0" Width="158" Height="34" Margin="0,0,8,8" Command="{Binding SetNewGestureTemplateCommand}" CommandParameter="ULD|PreviousTab" />
+                                                    </WrapPanel>
+                                                    <TextBlock Text="实用动作" FontWeight="SemiBold" Margin="0,8,0,6" />
+                                                    <WrapPanel>
+                                                        <Button Content="→↓↑  Google 搜索" MinWidth="0" Width="164" Height="34" Margin="0,0,8,8" Command="{Binding SetNewGestureTemplateCommand}" CommandParameter="RDU|SearchSelectedTextWithGoogle" />
+                                                        <Button Content="←↓↑  百度搜索" MinWidth="0" Width="154" Height="34" Margin="0,0,8,8" Command="{Binding SetNewGestureTemplateCommand}" CommandParameter="LDU|SearchSelectedTextWithBaidu" />
+                                                        <Button Content="→↓←  截图" MinWidth="0" Width="132" Height="34" Margin="0,0,8,8" Command="{Binding SetNewGestureTemplateCommand}" CommandParameter="RDL|Screenshot" />
+                                                        <Button Content="→↑↓  缩放重置" MinWidth="0" Width="150" Height="34" Margin="0,0,8,8" Command="{Binding SetNewGestureTemplateCommand}" CommandParameter="RUD|ResetZoom" />
+                                                    </WrapPanel>
+                                                </StackPanel>
+                                            </Border>
+                                            <TextBlock Text="选择要执行的动作" FontWeight="SemiBold" Margin="0,0,0,8" />
+                                            <WrapPanel Margin="0,0,0,10">
+                                                <TextBlock Text="说明：右键按住 + 左键点击是手势触发方式；这里选择的是触发后要执行的动作。"
+                                                           Style="{StaticResource MutedTextStyle}"
+                                                           TextWrapping="Wrap"
+                                                           Margin="0,0,8,8" />
+                                                <Button Content="Google 搜索" MinWidth="0" Width="106" Height="32" Margin="0,0,8,8" Command="{Binding SetNewGestureActionCommand}" CommandParameter="SearchSelectedTextWithGoogle" />
+                                                <Button Content="百度搜索" MinWidth="0" Width="96" Height="32" Margin="0,0,8,8" Command="{Binding SetNewGestureActionCommand}" CommandParameter="SearchSelectedTextWithBaidu" />
                                             </WrapPanel>
-                                            <TextBlock Text="浏览高频" FontWeight="SemiBold" Margin="0,8,0,6" />
                                             <WrapPanel>
-                                                <Button Content="↓→  新建标签" MinWidth="0" Width="150" Height="34" Margin="0,0,8,8" Command="{Binding SetNewGestureTemplateCommand}" CommandParameter="DR|NewTab" />
-                                                <Button Content="↑→↓  下一标签" MinWidth="0" Width="158" Height="34" Margin="0,0,8,8" Command="{Binding SetNewGestureTemplateCommand}" CommandParameter="URD|NextTab" />
-                                                <Button Content="↑←↓  上一标签" MinWidth="0" Width="158" Height="34" Margin="0,0,8,8" Command="{Binding SetNewGestureTemplateCommand}" CommandParameter="ULD|PreviousTab" />
-                                            </WrapPanel>
-                                            <TextBlock Text="实用动作" FontWeight="SemiBold" Margin="0,8,0,6" />
-                                            <WrapPanel>
-                                                <Button Content="→↓↑  Google 搜索" MinWidth="0" Width="164" Height="34" Margin="0,0,8,8" Command="{Binding SetNewGestureTemplateCommand}" CommandParameter="RDU|SearchSelectedTextWithGoogle" />
-                                                <Button Content="←↓↑  百度搜索" MinWidth="0" Width="154" Height="34" Margin="0,0,8,8" Command="{Binding SetNewGestureTemplateCommand}" CommandParameter="LDU|SearchSelectedTextWithBaidu" />
-                                                <Button Content="→↓←  截图" MinWidth="0" Width="132" Height="34" Margin="0,0,8,8" Command="{Binding SetNewGestureTemplateCommand}" CommandParameter="RDL|Screenshot" />
-                                                <Button Content="→↑↓  缩放重置" MinWidth="0" Width="150" Height="34" Margin="0,0,8,8" Command="{Binding SetNewGestureTemplateCommand}" CommandParameter="RUD|ResetZoom" />
+                                                <TextBox Width="120" Text="{Binding NewGesturePattern, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                                                <ComboBox Width="220" Margin="10,0,0,0" ItemsSource="{Binding GestureActionOptionsView}" DisplayMemberPath="DisplayName" SelectedValuePath="Action" SelectedValue="{Binding NewGestureAction, Mode=TwoWay}" />
+                                                <Button Content="{Binding NewGestureAddButtonText}"
+                                                        MinWidth="0"
+                                                        Width="108"
+                                                        Height="34"
+                                                        Margin="10,0,0,0"
+                                                        Style="{StaticResource SecondaryButtonStyle}"
+                                                        Focusable="False"
+                                                        Command="{Binding AddCustomGestureBindingCommand}" />
                                             </WrapPanel>
                                         </StackPanel>
                                     </Border>
-                                    <TextBlock Text="选择要执行的动作"
-                                               FontWeight="SemiBold"
-                                               Margin="0,0,0,8" />
-                                    <WrapPanel Margin="0,0,0,10">
-                                        <TextBlock Text="说明：鼠标左键点击用于确认刚画好的手势，不是这里要绑定的动作。"
-                                                   Style="{StaticResource MutedTextStyle}"
-                                                   TextWrapping="Wrap"
-                                                   Margin="0,0,8,8" />
-                                        <Button Content="Google 搜索" MinWidth="0" Width="106" Height="32" Margin="0,0,8,8" Command="{Binding SetNewGestureActionCommand}" CommandParameter="SearchSelectedTextWithGoogle" />
-                                        <Button Content="百度搜索" MinWidth="0" Width="96" Height="32" Margin="0,0,8,8" Command="{Binding SetNewGestureActionCommand}" CommandParameter="SearchSelectedTextWithBaidu" />
-                                    </WrapPanel>
-                                    <WrapPanel>
-                                        <TextBox Width="120"
-                                                 Text="{Binding NewGesturePattern, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
-                                        <ComboBox Width="220"
-                                                  Margin="10,0,0,0"
-                                                  ItemsSource="{Binding GestureActionOptionsView}"
-                                                  DisplayMemberPath="DisplayName"
-                                                  SelectedValuePath="Action"
-                                                  SelectedValue="{Binding NewGestureAction, Mode=TwoWay}" />
-                                        <Button Content="{Binding NewGestureAddButtonText}"
-                                                MinWidth="0"
-                                                Width="108"
-                                                Margin="10,0,0,0"
-                                                Background="#F0F2F7"
-                                                Foreground="#111827"
-                                                BorderBrush="{DynamicResource BrushBorder}"
-                                                Command="{Binding AddCustomGestureBindingCommand}" />
-                                    </WrapPanel>
-                                </StackPanel>
+                                </Expander>
+                            </StackPanel>
+                        </ScrollViewer>
+
+                        <Border x:Name="GestureBindingDetailPanel"
+                                Grid.Column="1"
+                                Style="{StaticResource GlassCardStyle}"
+                                Margin="14,0,0,0"
+                                Padding="22"
+                                VerticalAlignment="Top">
+                            <StackPanel>
+                                <TextBlock Text="动作编辑器" FontSize="18" FontWeight="SemiBold" />
+                                <TextBlock Text="选中左侧手势后，在这里修改动作。右侧会固定显示，方便边看边滚动左侧。"
+                                           Style="{StaticResource MutedTextStyle}"
+                                           TextWrapping="Wrap"
+                                           Margin="0,8,0,16" />
+                                <Border Background="#F8FAFD" BorderBrush="{DynamicResource BrushBorder}" BorderThickness="1" CornerRadius="18" Padding="16" Margin="0,0,0,16">
+                                    <StackPanel>
+                                        <controls:GesturePatternView Pattern="{Binding SelectedGestureBindingPattern}" Width="300" Height="150" HorizontalAlignment="Center" />
+                                        <TextBlock Text="{Binding SelectedGestureBindingDirectionText}" FontSize="18" FontWeight="SemiBold" Foreground="{DynamicResource BrushPrimaryBright}" HorizontalAlignment="Center" Margin="0,10,0,0" />
+                                        <TextBlock Text="{Binding SelectedGestureBindingPattern, StringFormat=手势码：{0}}" Style="{StaticResource MutedTextStyle}" HorizontalAlignment="Center" Margin="0,4,0,0" />
+                                    </StackPanel>
                                 </Border>
-                            </Expander>
-                        </StackPanel>
-                    </ScrollViewer>
+                                <TextBlock Text="当前动作" FontWeight="SemiBold" Margin="0,0,0,8" />
+                                <TextBlock Text="{Binding SelectedGestureBindingActionName}" FontSize="16" FontWeight="SemiBold" />
+                                <TextBlock Text="{Binding SelectedGestureBindingShortcutText}" Style="{StaticResource MutedTextStyle}" Margin="0,4,0,12" />
+                                <TextBlock Text="{Binding SelectedGestureBindingEmptyText}" Style="{StaticResource MutedTextStyle}" TextWrapping="Wrap" Margin="0,0,0,12" />
+                                <TextBlock Text="常用动作" FontWeight="SemiBold" Margin="0,0,0,8" />
+                                <WrapPanel Margin="0,0,0,12">
+                                    <Button Content="复制" MinWidth="0" Width="76" Height="32" Margin="0,0,8,8" Command="{Binding SetSelectedGestureActionCommand}" CommandParameter="Copy" />
+                                    <Button Content="粘贴" MinWidth="0" Width="76" Height="32" Margin="0,0,8,8" Command="{Binding SetSelectedGestureActionCommand}" CommandParameter="Paste" />
+                                    <Button Content="粘贴并回车" MinWidth="0" Width="110" Height="32" Margin="0,0,8,8" Command="{Binding SetSelectedGestureActionCommand}" CommandParameter="PasteAndEnter" />
+                                    <Button Content="Google 搜索" MinWidth="0" Width="106" Height="32" Margin="0,0,8,8" Command="{Binding SetSelectedGestureActionCommand}" CommandParameter="SearchSelectedTextWithGoogle" />
+                                    <Button Content="百度搜索" MinWidth="0" Width="96" Height="32" Margin="0,0,8,8" Command="{Binding SetSelectedGestureActionCommand}" CommandParameter="SearchSelectedTextWithBaidu" />
+                                </WrapPanel>
+                                <ComboBox ItemsSource="{Binding GestureActionOptionsView}" DisplayMemberPath="DisplayName" SelectedValuePath="Action" SelectedValue="{Binding SelectedGestureBindingCard.SelectedAction, Mode=TwoWay}" IsEnabled="{Binding HasSelectedGestureBinding}">
+                                    <ComboBox.GroupStyle>
+                                        <GroupStyle>
+                                            <GroupStyle.HeaderTemplate>
+                                                <DataTemplate>
+                                                    <TextBlock Text="{Binding Name}" FontSize="12" FontWeight="SemiBold" Foreground="{DynamicResource BrushTextSecondary}" Margin="10,8,10,4" />
+                                                </DataTemplate>
+                                            </GroupStyle.HeaderTemplate>
+                                        </GroupStyle>
+                                    </ComboBox.GroupStyle>
+                                </ComboBox>
+                                <Button Content="删除这个手势" MinWidth="0" Height="38" Margin="0,14,0,0" Background="#F0F2F7" Foreground="#667085" BorderBrush="{DynamicResource BrushBorder}" IsEnabled="{Binding HasSelectedGestureBinding}" Command="{Binding DeleteSelectedGestureBindingCommand}" />
+                                <TextBlock Text="提示" FontWeight="SemiBold" Margin="0,18,0,0" />
+                                <TextBlock Text="手势最多 8 段。重复方向会自动合并，例如一直向右只算 R。"
+                                           Style="{StaticResource MutedTextStyle}"
+                                           TextWrapping="Wrap"
+                                           Margin="0,8,0,0" />
+                            </StackPanel>
+                        </Border>
+                    </Grid>
                 </TabItem>
 
                 <TabItem Header="隐私黑名单">

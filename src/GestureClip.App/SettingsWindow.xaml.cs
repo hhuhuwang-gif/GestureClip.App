@@ -92,6 +92,21 @@ public partial class SettingsWindow : Window
         _appLifecycleService.OpenLatestReleasePage();
     }
 
+    private void ScrollToCustomGestureDesigner_Click(object sender, RoutedEventArgs e)
+    {
+        try
+        {
+            var target = GestureDesignerPanel.TransformToAncestor(GestureBindingPageScrollViewer)
+                .Transform(new System.Windows.Point(0, 0));
+            GestureBindingPageScrollViewer.ScrollToVerticalOffset(
+                Math.Max(0, GestureBindingPageScrollViewer.VerticalOffset + target.Y - 24));
+        }
+        catch (InvalidOperationException)
+        {
+            GestureBindingPageScrollViewer.ScrollToEnd();
+        }
+    }
+
     private void RecordGesturePad_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
     {
         if (sender is not FrameworkElement element || DataContext is not SettingsViewModel)
@@ -196,12 +211,8 @@ public partial class SettingsWindow : Window
         }
 
         e.Handled = true;
-        var parent = FindAncestor<ScrollViewer>(sender as DependencyObject);
-        parent?.RaiseEvent(new MouseWheelEventArgs(e.MouseDevice, e.Timestamp, e.Delta)
-        {
-            RoutedEvent = UIElement.MouseWheelEvent,
-            Source = sender
-        });
+        GestureBindingPageScrollViewer.ScrollToVerticalOffset(
+            GestureBindingPageScrollViewer.VerticalOffset - e.Delta);
     }
 
     private static T? FindAncestor<T>(DependencyObject? source)

@@ -304,8 +304,9 @@ public sealed class ThemeResourceTests
         Assert.Contains("GestureDesignerPanel", xaml);
         Assert.Contains("GestureBindingListPanel", xaml);
         Assert.Contains("GestureBindingDetailPanel", xaml);
-        Assert.Contains("Width=\"420\"", xaml);
-        Assert.Contains("Height=\"190\"", xaml);
+        Assert.Contains("GestureBindingPageScrollViewer", xaml);
+        Assert.Contains("Click=\"ScrollToCustomGestureDesigner_Click\"", xaml);
+        Assert.Contains("MinHeight=\"220\"", xaml);
         Assert.Contains("删除这个手势", xaml);
     }
 
@@ -495,7 +496,8 @@ public sealed class ThemeResourceTests
         var path = FindRepositoryFile("src", "GestureClip.App", "SettingsWindow.xaml");
         var xaml = File.ReadAllText(path);
 
-        Assert.Contains("左键点击是确认当前手势，不是可绑定的执行动作", xaml);
+        Assert.Contains("R+L 组合手势", xaml);
+        Assert.Contains("CommandParameter=\"R+L|PasteAndEnter\"", xaml);
         Assert.DoesNotContain("CommandParameter=\"LeftMouseClick\"", xaml);
         Assert.DoesNotContain("CommandParameter=\"RightMouseClick\"", xaml);
         Assert.DoesNotContain("GestureLeftButtonEnabled, Mode=TwoWay", xaml);

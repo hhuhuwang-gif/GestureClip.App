@@ -19,6 +19,7 @@ public sealed class GesturePresetProvider : IGesturePresetProvider
             ["LR"] = BuiltInGestureAction.SelectAll,
             ["RL"] = BuiltInGestureAction.Undo,
             ["DL"] = BuiltInGestureAction.PasteAndEnter,
+            ["R+L"] = BuiltInGestureAction.PasteAndEnter,
             ["DR"] = BuiltInGestureAction.NewTab,
             ["UR"] = BuiltInGestureAction.SearchSelectedTextWithGoogle,
             ["UL"] = BuiltInGestureAction.SearchSelectedTextWithBaidu
@@ -36,6 +37,7 @@ public sealed class GesturePresetProvider : IGesturePresetProvider
             ["LR"] = BuiltInGestureAction.SelectAll,
             ["RL"] = BuiltInGestureAction.Undo,
             ["DL"] = BuiltInGestureAction.PasteAndEnter,
+            ["R+L"] = BuiltInGestureAction.PasteAndEnter,
             ["DR"] = BuiltInGestureAction.NewTab,
             ["UR"] = BuiltInGestureAction.SearchSelectedTextWithGoogle,
             ["UL"] = BuiltInGestureAction.SearchSelectedTextWithBaidu

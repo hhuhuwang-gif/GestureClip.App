@@ -132,7 +132,9 @@ public sealed class SettingsViewModelTests
         Assert.Contains(viewModel.GestureBindingCards, card => card.Pattern == "U" && card.SelectedAction == BuiltInGestureAction.Copy);
         Assert.Contains(viewModel.GestureBindingCards, card => card.Pattern == "D" && card.SelectedAction == BuiltInGestureAction.Paste);
         Assert.Contains(viewModel.GestureBindingCards, card => card.Pattern == "DL" && card.SelectedAction == BuiltInGestureAction.PasteAndEnter);
+        Assert.Contains(viewModel.GestureBindingCards, card => card.Pattern == "R+L" && card.SelectedAction == BuiltInGestureAction.PasteAndEnter);
         Assert.Contains(viewModel.PrimaryGestureBindingCards, card => card.Pattern == "DL");
+        Assert.Contains(viewModel.PrimaryGestureBindingCards, card => card.Pattern == "R+L");
         Assert.Contains(viewModel.PrimaryGestureBindingCards, card => card.Pattern == "DR" && card.SelectedAction == BuiltInGestureAction.NewTab);
         Assert.Contains(viewModel.PrimaryGestureBindingCards, card => card.Pattern == "UR" && card.SelectedAction == BuiltInGestureAction.SearchSelectedTextWithGoogle);
         Assert.Contains(viewModel.PrimaryGestureBindingCards, card => card.Pattern == "UL" && card.SelectedAction == BuiltInGestureAction.SearchSelectedTextWithBaidu);
@@ -428,6 +430,62 @@ public sealed class SettingsViewModelTests
             settings.Values.TryGetValue(SettingKeys.WorkstationShowFishingValue, out var showFishing) && Equals(showFishing, false) &&
             settings.Values.TryGetValue(SettingKeys.WorkstationShowOffWorkCountdown, out var showCountdown) && Equals(showCountdown, false) &&
             settings.Values.TryGetValue(SettingKeys.WorkstationDailyReportEnabled, out var dailyReport) && Equals(dailyReport, true));
+    }
+
+    [Fact]
+    public async Task Adding_custom_gesture_refreshes_visible_primary_list_and_selects_added_card()
+    {
+        var settings = new FakeSettingsService();
+        var viewModel = CreateViewModel(settings: settings);
+
+        viewModel.NewGesturePattern = "RDLU";
+        viewModel.NewGestureAction = BuiltInGestureAction.SearchSelectedTextWithGoogle;
+
+        viewModel.AddCustomGestureBindingCommand.Execute(null);
+
+        await WaitForAsync(() => viewModel.PrimaryGestureBindingCards.Any(card => card.Pattern == "RDLU"));
+        Assert.Equal("RDLU", viewModel.SelectedGestureBindingCard?.Pattern);
+        Assert.Contains(viewModel.PrimaryGestureBindingCards, card => card.Pattern == "RDLU" && card.SelectedAction == BuiltInGestureAction.SearchSelectedTextWithGoogle);
+    }
+
+    [Fact]
+    public void Recording_custom_gesture_uses_designer_threshold_not_global_runtime_threshold()
+    {
+        var settings = new FakeSettingsService();
+        settings.Values[SettingKeys.GestureTriggerThreshold] = 120;
+        var viewModel = CreateViewModel(settings: settings);
+        var now = DateTimeOffset.UtcNow;
+
+        viewModel.SetNewGesturePatternFromRecordedPoints(
+        [
+            new GesturePoint(0, 0, now),
+            new GesturePoint(36, 0, now.AddMilliseconds(80)),
+            new GesturePoint(36, 36, now.AddMilliseconds(160))
+        ]);
+
+        Assert.Equal("RD", viewModel.NewGesturePattern);
+        Assert.Contains("识别为", viewModel.RecordGestureStatusText, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void Recording_custom_gesture_smooths_noisy_rectangle_path()
+    {
+        var viewModel = CreateViewModel();
+        var now = DateTimeOffset.UtcNow;
+
+        viewModel.SetNewGesturePatternFromRecordedPoints(
+        [
+            new GesturePoint(20, 30, now),
+            new GesturePoint(70, 30, now.AddMilliseconds(40)),
+            new GesturePoint(125, 31, now.AddMilliseconds(80)),
+            new GesturePoint(126, 64, now.AddMilliseconds(120)),
+            new GesturePoint(125, 96, now.AddMilliseconds(160)),
+            new GesturePoint(82, 97, now.AddMilliseconds(200)),
+            new GesturePoint(34, 96, now.AddMilliseconds(240)),
+        ]);
+
+        Assert.Equal("RDL", viewModel.NewGesturePattern);
+        Assert.Contains("识别为", viewModel.RecordGestureStatusText, StringComparison.Ordinal);
     }
 
     [Fact]
