@@ -36,6 +36,9 @@ public sealed class MouseGestureService : IMouseGestureService
     private GestureTriggerButton _pendingSyntheticClickButton = GestureTriggerButton.Right;
     private GesturePoint? _pendingSyntheticClickPoint;
     private GestureTriggerButton _activeTriggerButton = GestureTriggerButton.Right;
+    private bool _rightLeftRockerDown;
+    private bool _leftClickConfirmDown;
+    private GestureTriggerButton? _suppressNextButtonUp;
     private string _hookStatus = "未安装";
     private string? _lastPattern;
     private BuiltInGestureAction _lastAction = BuiltInGestureAction.None;
@@ -216,11 +219,22 @@ public sealed class MouseGestureService : IMouseGestureService
 
         switch (mouseEvent.Type)
         {
+            case MouseHookEventType.LeftButtonDown:
             case MouseHookEventType.RightButtonDown:
             case MouseHookEventType.MiddleButtonDown:
             case MouseHookEventType.XButton1Down:
             case MouseHookEventType.XButton2Down:
                 var triggerButton = GetTriggerButton(mouseEvent.Type);
+                if (TryHandleLeftClickConfirmDown(triggerButton, args))
+                {
+                    return null;
+                }
+
+                if (TryHandleRockerButtonDown(triggerButton, args))
+                {
+                    return null;
+                }
+
                 _synthesizeRightClickOnNextRightButtonUp = false;
                 _activeSettings = _settingsProvider.GetCurrent();
                 IsEnabled = _activeSettings.Enabled;
@@ -299,12 +313,31 @@ public sealed class MouseGestureService : IMouseGestureService
 
                 return null;
 
+            case MouseHookEventType.LeftButtonUp:
             case MouseHookEventType.RightButtonUp:
             case MouseHookEventType.MiddleButtonUp:
             case MouseHookEventType.XButton1Up:
             case MouseHookEventType.XButton2Up:
                 var upButton = GetTriggerButton(mouseEvent.Type);
                 LogDebug(_activeSettings, "{Button}Up: state={State}, pointCount={PointCount}", upButton, _state, _points.Count);
+                if (_suppressNextButtonUp == upButton)
+                {
+                    args.Suppress = true;
+                    _suppressNextButtonUp = null;
+                    LogDebug(_activeSettings, "Suppressed original {Button} button", upButton);
+                    return null;
+                }
+
+                if (TryHandleRockerButtonUp(upButton, args, out var rockerGesture))
+                {
+                    return rockerGesture;
+                }
+
+                if (TryHandleLeftClickConfirmUp(upButton, args, mouseEvent, out var confirmedGesture))
+                {
+                    return confirmedGesture;
+                }
+
                 if (_synthesizeRightClickOnNextRightButtonUp)
                 {
                     args.Suppress = true;
@@ -372,22 +405,30 @@ public sealed class MouseGestureService : IMouseGestureService
     {
         try
         {
-            var result = _recognizer.Recognize(pendingGesture.Points, pendingGesture.Options);
-            if (result.IsValid && result.Pattern is not null)
+            var pattern = pendingGesture.PatternOverride;
+            var isValid = !string.IsNullOrWhiteSpace(pattern);
+            if (!isValid)
+            {
+                var result = _recognizer.Recognize(pendingGesture.Points, pendingGesture.Options);
+                pattern = result.Pattern;
+                isValid = result.IsValid && result.Pattern is not null;
+            }
+
+            if (isValid && pattern is not null)
             {
                 lock (_syncRoot)
                 {
-                    _lastPattern = result.Pattern;
+                    _lastPattern = pattern;
                 }
 
-                _logger.LogDebug("Recognized Pattern: {Pattern}", result.Pattern);
+                _logger.LogDebug("Recognized Pattern: {Pattern}", pattern);
                 if (pendingGesture.ShowOverlay)
                 {
-                    var hudInfo = _hudInfoProvider.GetInfo(pendingGesture.Preset, result.Pattern);
+                    var hudInfo = _hudInfoProvider.GetInfo(pendingGesture.Preset, pattern);
                     await _gestureOverlayService.CompleteGestureAsync(hudInfo, CancellationToken.None);
                 }
 
-                await ExecuteGestureAsync(result.Pattern);
+                await ExecuteGestureAsync(pattern);
                 if (pendingGesture.ShowOverlay)
                 {
                     await _gestureOverlayService.HideAsync(CancellationToken.None);
@@ -503,6 +544,101 @@ public sealed class MouseGestureService : IMouseGestureService
         _pendingSyntheticClickButton = GestureTriggerButton.Right;
         _pendingSyntheticClickPoint = null;
         _activeTriggerButton = GestureTriggerButton.Right;
+        _rightLeftRockerDown = false;
+        _leftClickConfirmDown = false;
+    }
+
+    private bool TryHandleLeftClickConfirmDown(GestureTriggerButton triggerButton, MouseHookEventArgs args)
+    {
+        if (triggerButton != GestureTriggerButton.Left ||
+            _state != GestureRuntimeState.GestureActive ||
+            _activeTriggerButton != GestureTriggerButton.Right ||
+            _activeSettings is null)
+        {
+            return false;
+        }
+
+        _leftClickConfirmDown = true;
+        args.Suppress = true;
+        LogDebug(_activeSettings, "Suppressed original Left button for gesture click confirm");
+        return true;
+    }
+
+    private bool TryHandleLeftClickConfirmUp(
+        GestureTriggerButton upButton,
+        MouseHookEventArgs args,
+        MouseHookEvent mouseEvent,
+        out PendingGesture? pendingGesture)
+    {
+        pendingGesture = null;
+        if (upButton != GestureTriggerButton.Left ||
+            !_leftClickConfirmDown ||
+            _state != GestureRuntimeState.GestureActive ||
+            _activeTriggerButton != GestureTriggerButton.Right ||
+            _activeSettings is null)
+        {
+            return false;
+        }
+
+        args.Suppress = true;
+        LogDebug(_activeSettings, "Suppressed original Left button for gesture click confirm");
+        var upPoint = ToPoint(mouseEvent);
+        if (_points.Count > 0 && Distance(_points[^1], upPoint) >= 1)
+        {
+            _points.Add(upPoint);
+            TrimTrackedPoints();
+        }
+
+        pendingGesture = new PendingGesture([.. _points], _activeSettings.Options, _activeSettings.Preset, _activeSettings.ShowOverlay);
+        _suppressNextButtonUp = GestureTriggerButton.Right;
+        ResetState("StateReset");
+        return true;
+    }
+
+    private bool TryHandleRockerButtonDown(GestureTriggerButton triggerButton, MouseHookEventArgs args)
+    {
+        if (triggerButton != GestureTriggerButton.Left ||
+            _state != GestureRuntimeState.Tracking ||
+            _activeTriggerButton != GestureTriggerButton.Right ||
+            _activeSettings is null)
+        {
+            return false;
+        }
+
+        _rightLeftRockerDown = true;
+        args.Suppress = true;
+        LogDebug(_activeSettings, "Suppressed original Left button for R+L rocker gesture");
+        return true;
+    }
+
+    private bool TryHandleRockerButtonUp(
+        GestureTriggerButton upButton,
+        MouseHookEventArgs args,
+        out PendingGesture? pendingGesture)
+    {
+        pendingGesture = null;
+        if ((upButton != GestureTriggerButton.Left && upButton != GestureTriggerButton.Right) ||
+            !_rightLeftRockerDown ||
+            _activeTriggerButton != GestureTriggerButton.Right ||
+            _activeSettings is null ||
+            _startPoint is null)
+        {
+            return false;
+        }
+
+        args.Suppress = true;
+        LogDebug(_activeSettings, "Suppressed original {Button} button for R+L rocker gesture", upButton);
+        _suppressNextButtonUp = upButton == GestureTriggerButton.Left
+            ? GestureTriggerButton.Right
+            : GestureTriggerButton.Left;
+        pendingGesture = new PendingGesture(
+            [_startPoint],
+            _activeSettings.Options,
+            _activeSettings.Preset,
+            _activeSettings.ShowOverlay,
+            "R+L");
+        ResetState("StateReset");
+        return true;
     }
 
     private void TrimTrackedPoints()
@@ -610,6 +746,7 @@ public sealed class MouseGestureService : IMouseGestureService
     {
         return type switch
         {
+            MouseHookEventType.LeftButtonDown or MouseHookEventType.LeftButtonUp => GestureTriggerButton.Left,
             MouseHookEventType.MiddleButtonDown or MouseHookEventType.MiddleButtonUp => GestureTriggerButton.Middle,
             MouseHookEventType.XButton1Down or MouseHookEventType.XButton1Up => GestureTriggerButton.XButton1,
             MouseHookEventType.XButton2Down or MouseHookEventType.XButton2Up => GestureTriggerButton.XButton2,
@@ -621,10 +758,12 @@ public sealed class MouseGestureService : IMouseGestureService
     {
         return button switch
         {
+            GestureTriggerButton.Left => false,
+            GestureTriggerButton.Right => settings.RightButtonEnabled,
             GestureTriggerButton.Middle => settings.MiddleButtonEnabled,
             GestureTriggerButton.XButton1 => settings.XButton1Enabled,
             GestureTriggerButton.XButton2 => settings.XButton2Enabled,
-            _ => true
+            _ => false
         };
     }
 
@@ -652,7 +791,8 @@ public sealed class MouseGestureService : IMouseGestureService
         IReadOnlyList<GesturePoint> Points,
         GestureOptions Options,
         GesturePreset Preset,
-        bool ShowOverlay);
+        bool ShowOverlay,
+        string? PatternOverride = null);
 }
 
 

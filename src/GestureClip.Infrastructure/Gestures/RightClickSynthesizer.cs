@@ -16,6 +16,8 @@ public sealed class RightClickSynthesizer : IRightClickSynthesizer
     private const uint MouseEventRightUp = 0x0010;
     private const uint MouseEventXDown = 0x0080;
     private const uint MouseEventXUp = 0x0100;
+    private const uint MouseEventWheel = 0x0800;
+    private const int WheelDelta = 120;
 
     public void SynthesizeRightClick(int x, int y)
     {
@@ -38,6 +40,18 @@ public sealed class RightClickSynthesizer : IRightClickSynthesizer
         {
             MouseInput(down, mouseData),
             MouseInput(up, mouseData)
+        };
+
+        MouseHookNativeMethods.SendInput((uint)inputs.Length, inputs, Marshal.SizeOf<MouseHookNativeMethods.INPUT>());
+    }
+
+    public void SynthesizeWheel(int delta, int x, int y)
+    {
+        MouseHookNativeMethods.SetCursorPos(x, y);
+        var wheelDelta = delta >= 0 ? WheelDelta : -WheelDelta;
+        var inputs = new[]
+        {
+            MouseInput(MouseEventWheel, unchecked((uint)wheelDelta))
         };
 
         MouseHookNativeMethods.SendInput((uint)inputs.Length, inputs, Marshal.SizeOf<MouseHookNativeMethods.INPUT>());

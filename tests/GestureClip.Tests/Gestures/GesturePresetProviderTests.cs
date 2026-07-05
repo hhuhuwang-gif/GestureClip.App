@@ -15,19 +15,11 @@ public sealed class GesturePresetProviderTests
     [InlineData("R", BuiltInGestureAction.SendAltRight)]
     [InlineData("LR", BuiltInGestureAction.SelectAll)]
     [InlineData("RL", BuiltInGestureAction.Undo)]
-    [InlineData("DL", BuiltInGestureAction.LeftMouseClick)]
-    [InlineData("DR", BuiltInGestureAction.RightMouseClick)]
-    [InlineData("UR", BuiltInGestureAction.NewTab)]
-    [InlineData("UL", BuiltInGestureAction.ReopenClosedTab)]
-    [InlineData("RU", BuiltInGestureAction.Refresh)]
-    [InlineData("RD", BuiltInGestureAction.CloseTab)]
-    [InlineData("LD", BuiltInGestureAction.MinimizeForegroundWindow)]
-    [InlineData("RDL", BuiltInGestureAction.Screenshot)]
-    [InlineData("RUD", BuiltInGestureAction.ResetZoom)]
-    [InlineData("URD", BuiltInGestureAction.NextTab)]
-    [InlineData("ULD", BuiltInGestureAction.PreviousTab)]
-    [InlineData("RULD", BuiltInGestureAction.SystemSettings)]
-    public void EditEnhanced_maps_patterns_to_editing_actions(string pattern, BuiltInGestureAction expected)
+    [InlineData("DL", BuiltInGestureAction.PasteAndEnter)]
+    [InlineData("DR", BuiltInGestureAction.NewTab)]
+    [InlineData("UR", BuiltInGestureAction.SearchSelectedTextWithGoogle)]
+    [InlineData("UL", BuiltInGestureAction.SearchSelectedTextWithBaidu)]
+    public void EditEnhanced_maps_common_patterns_to_editing_actions(string pattern, BuiltInGestureAction expected)
     {
         var provider = new GesturePresetProvider();
 
@@ -43,31 +35,26 @@ public sealed class GesturePresetProviderTests
     [InlineData("R", BuiltInGestureAction.SendAltRight)]
     [InlineData("LR", BuiltInGestureAction.SelectAll)]
     [InlineData("RL", BuiltInGestureAction.Undo)]
-    [InlineData("DL", BuiltInGestureAction.LeftMouseClick)]
-    [InlineData("DR", BuiltInGestureAction.RightMouseClick)]
-    [InlineData("UR", BuiltInGestureAction.NewTab)]
-    [InlineData("UL", BuiltInGestureAction.ReopenClosedTab)]
-    [InlineData("RU", BuiltInGestureAction.Refresh)]
-    [InlineData("RD", BuiltInGestureAction.CloseTab)]
-    [InlineData("LD", BuiltInGestureAction.MinimizeForegroundWindow)]
-    [InlineData("RDL", BuiltInGestureAction.Screenshot)]
-    [InlineData("RUD", BuiltInGestureAction.ResetZoom)]
-    [InlineData("URD", BuiltInGestureAction.NextTab)]
-    [InlineData("ULD", BuiltInGestureAction.PreviousTab)]
-    [InlineData("RULD", BuiltInGestureAction.SystemSettings)]
-    public void ClipboardEnhanced_maps_patterns_to_clipboard_actions(string pattern, BuiltInGestureAction expected)
+    [InlineData("DL", BuiltInGestureAction.PasteAndEnter)]
+    [InlineData("DR", BuiltInGestureAction.NewTab)]
+    [InlineData("UR", BuiltInGestureAction.SearchSelectedTextWithGoogle)]
+    [InlineData("UL", BuiltInGestureAction.SearchSelectedTextWithBaidu)]
+    public void ClipboardEnhanced_maps_common_patterns_to_clipboard_actions(string pattern, BuiltInGestureAction expected)
     {
         var provider = new GesturePresetProvider();
 
         Assert.Equal(expected, provider.GetAction(GesturePreset.ClipboardEnhanced, pattern));
     }
 
-    [Fact]
-    public void Unknown_pattern_returns_none()
+    [Theory]
+    [InlineData("RDL")]
+    [InlineData("URD")]
+    [InlineData("RDR")]
+    public void Advanced_or_unknown_patterns_are_unbound_by_default(string pattern)
     {
         var provider = new GesturePresetProvider();
 
-        Assert.Equal(BuiltInGestureAction.None, provider.GetAction(GesturePreset.EditEnhanced, "RDR"));
+        Assert.Equal(BuiltInGestureAction.None, provider.GetAction(GesturePreset.EditEnhanced, pattern));
     }
 
     [Fact]
@@ -102,3 +89,4 @@ public sealed class GesturePresetProviderTests
         Assert.Equal(BuiltInGestureAction.SelectAll, bindings["LR"]);
     }
 }
+

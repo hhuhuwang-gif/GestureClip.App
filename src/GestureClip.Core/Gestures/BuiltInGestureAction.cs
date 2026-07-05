@@ -52,5 +52,14 @@ public enum BuiltInGestureAction
     LeftMouseClick = 47,
     RightMouseClick = 48,
     NextTab = 49,
-    PreviousTab = 50
+    PreviousTab = 50,
+    LeftMouseDoubleClick = 51,
+    MiddleMouseClick = 52,
+    MouseWheelUp = 53,
+    MouseWheelDown = 54,
+    SearchSelectedTextWithGoogle = 55,
+    SearchSelectedTextWithBaidu = 56,
+    SearchSelectedTextWithBing = 57,
+    OpenGoogle = 58,
+    OpenBaidu = 59
 }

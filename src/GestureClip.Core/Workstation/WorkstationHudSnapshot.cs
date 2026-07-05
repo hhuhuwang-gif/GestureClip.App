@@ -11,4 +11,10 @@ public sealed record WorkstationHudSnapshot(
     string WorkSummaryText,
     string StatsText,
     string WorkStatusText,
-    bool ShowLevel);
+    bool ShowLevel,
+    WorkTimeStage WorkTimeStage,
+    string HudThemeKey,
+    string HudStartColor,
+    string HudEndColor,
+    string HudAccentColor,
+    string HudFriendlyColorName);

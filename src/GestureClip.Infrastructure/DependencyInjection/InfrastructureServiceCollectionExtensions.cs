@@ -6,6 +6,7 @@ using GestureClip.Infrastructure.Hotkeys;
 using GestureClip.Infrastructure.Paths;
 using GestureClip.Infrastructure.Settings;
 using GestureClip.Infrastructure.Startup;
+using GestureClip.Infrastructure.SystemIntegration;
 using GestureClip.Infrastructure.SystemInfo;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -39,6 +40,7 @@ public static class InfrastructureServiceCollectionExtensions
         services.AddSingleton<IGlobalHotkeyService, GlobalHotkeyService>();
         services.AddSingleton<IStartupRegistry, WindowsStartupRegistry>();
         services.AddSingleton<IStartupService, WindowsStartupService>();
+        services.AddSingleton<IUrlLauncher, WindowsUrlLauncher>();
 
         return services;
     }

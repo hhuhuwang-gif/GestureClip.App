@@ -1,7 +1,5 @@
-using System.IO;
 using System.Runtime.InteropServices;
 using System.Windows;
-using System.Windows.Media.Imaging;
 using System.Windows.Threading;
 using GestureClip.Core.Abstractions;
 using GestureClip.Infrastructure.Win32;
@@ -26,28 +24,32 @@ public sealed class WpfClipboardWriter : IClipboardWriter
 
     public Task SetTextAsync(string text, CancellationToken cancellationToken)
     {
-        return _dispatcher.InvokeAsync(() =>
-        {
-            cancellationToken.ThrowIfCancellationRequested();
-            System.Windows.Clipboard.SetText(text);
-        }).Task;
+        return ClipboardRetryPolicy.RunAsync(
+            () => _dispatcher.InvokeAsync(() =>
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+                System.Windows.Clipboard.SetText(text);
+            }, DispatcherPriority.Send, cancellationToken).Task,
+            retryCount: 3,
+            delay: TimeSpan.FromMilliseconds(35),
+            cancellationToken);
     }
 
-    public Task SetImagePngBase64Async(string pngBase64, CancellationToken cancellationToken)
+    public async Task SetImagePngBase64Async(string pngBase64, CancellationToken cancellationToken)
     {
-        return _dispatcher.InvokeAsync(() =>
-        {
-            cancellationToken.ThrowIfCancellationRequested();
-            var bytes = Convert.FromBase64String(pngBase64);
-            using var stream = new MemoryStream(bytes);
-            var image = new BitmapImage();
-            image.BeginInit();
-            image.CacheOption = BitmapCacheOption.OnLoad;
-            image.StreamSource = stream;
-            image.EndInit();
-            image.Freeze();
-            System.Windows.Clipboard.SetImage(image);
-        }).Task;
+        var image = await Task.Run(
+            () => ClipboardImageFactory.CreateFrozenBitmapImage(pngBase64),
+            cancellationToken);
+
+        await ClipboardRetryPolicy.RunAsync(
+            () => _dispatcher.InvokeAsync(() =>
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+                System.Windows.Clipboard.SetImage(image);
+            }, DispatcherPriority.Send, cancellationToken).Task,
+            retryCount: 3,
+            delay: TimeSpan.FromMilliseconds(35),
+            cancellationToken);
     }
 
     public Task SendPasteHotkeyAsync(CancellationToken cancellationToken)

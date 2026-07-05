@@ -1,4 +1,5 @@
 using System.Windows;
+using System.Diagnostics;
 using System.Globalization;
 using System.Windows.Media;
 using GestureClip.App.ViewModels;
@@ -29,6 +30,10 @@ public sealed class GestureOverlayService : IGestureOverlayService
     private Rect _lastWindowBounds = Rect.Empty;
     private string? _lastStrokeColorText;
     private System.Windows.Media.Brush? _lastStrokeBrush;
+    private string? _lastHudThemeKey;
+    private System.Windows.Media.Brush? _lastHudBackgroundBrush;
+    private string? _lastHudAccentColorText;
+    private System.Windows.Media.Brush? _lastHudAccentBrush;
 
     public GestureOverlayService(
         IServiceProvider serviceProvider,
@@ -138,6 +143,7 @@ public sealed class GestureOverlayService : IGestureOverlayService
 
     private void FlushPendingUpdate(CancellationToken cancellationToken)
     {
+        var hudWatch = Stopwatch.StartNew();
         IReadOnlyList<GesturePoint>? points;
         GestureHudInfo? hudInfo;
         lock (_updateSyncRoot)
@@ -160,6 +166,8 @@ public sealed class GestureOverlayService : IGestureOverlayService
         ApplyHudInfo(hudInfo);
         _viewModel!.Points = ToPointCollection(points);
         _window!.Show();
+        hudWatch.Stop();
+        Trace.WriteLine($"GesturePerf HudUpdateDurationMs ElapsedMs={hudWatch.ElapsedMilliseconds} PointCount={points.Count}");
     }
 
     private void ClearPendingUpdate()
@@ -240,6 +248,11 @@ public sealed class GestureOverlayService : IGestureOverlayService
                     _viewModel.XpProgressPercent = snapshot.XpProgressPercent;
                     _viewModel.WorkSummaryText = snapshot.WorkSummaryText;
                     _viewModel.StatsText = snapshot.StatsText;
+                    _viewModel.HudBackgroundBrush = GetHudBackgroundBrush(
+                        snapshot.HudThemeKey,
+                        snapshot.HudStartColor,
+                        snapshot.HudEndColor);
+                    _viewModel.HudAccentBrush = GetHudAccentBrush(snapshot.HudAccentColor);
                 });
             }
             catch
@@ -333,6 +346,64 @@ public sealed class GestureOverlayService : IGestureOverlayService
         {
             var fallback = new SolidColorBrush(System.Windows.Media.Color.FromRgb(140, 200, 255));
             fallback.Freeze();
+            return fallback;
+        }
+    }
+
+    private System.Windows.Media.Brush GetHudBackgroundBrush(string themeKey, string startColor, string endColor)
+    {
+        if (_lastHudBackgroundBrush is not null &&
+            string.Equals(_lastHudThemeKey, themeKey, StringComparison.OrdinalIgnoreCase))
+        {
+            return _lastHudBackgroundBrush;
+        }
+
+        _lastHudThemeKey = themeKey;
+        _lastHudBackgroundBrush = CreateHudGradientBrush(startColor, endColor);
+        return _lastHudBackgroundBrush;
+    }
+
+    private System.Windows.Media.Brush GetHudAccentBrush(string colorText)
+    {
+        if (_lastHudAccentBrush is not null &&
+            string.Equals(_lastHudAccentColorText, colorText, StringComparison.OrdinalIgnoreCase))
+        {
+            return _lastHudAccentBrush;
+        }
+
+        _lastHudAccentColorText = colorText;
+        _lastHudAccentBrush = CreateSolidBrush(colorText, System.Windows.Media.Color.FromRgb(147, 197, 253));
+        return _lastHudAccentBrush;
+    }
+
+    private static System.Windows.Media.Brush CreateHudGradientBrush(string startColor, string endColor)
+    {
+        var start = ParseColor(startColor, System.Windows.Media.Color.FromArgb(220, 17, 23, 36));
+        var end = ParseColor(endColor, System.Windows.Media.Color.FromArgb(220, 30, 41, 59));
+        var brush = new LinearGradientBrush(start, end, 0)
+        {
+            StartPoint = new System.Windows.Point(0, 0),
+            EndPoint = new System.Windows.Point(1, 1)
+        };
+        brush.Freeze();
+        return brush;
+    }
+
+    private static System.Windows.Media.Brush CreateSolidBrush(string colorText, System.Windows.Media.Color fallbackColor)
+    {
+        var brush = new SolidColorBrush(ParseColor(colorText, fallbackColor));
+        brush.Freeze();
+        return brush;
+    }
+
+    private static System.Windows.Media.Color ParseColor(string colorText, System.Windows.Media.Color fallback)
+    {
+        try
+        {
+            return (System.Windows.Media.Color)System.Windows.Media.ColorConverter.ConvertFromString(colorText);
+        }
+        catch
+        {
             return fallback;
         }
     }

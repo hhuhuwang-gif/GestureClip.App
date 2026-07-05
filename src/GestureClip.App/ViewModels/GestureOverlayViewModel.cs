@@ -27,6 +27,11 @@ public sealed class GestureOverlayViewModel : INotifyPropertyChanged
     private string _statsText = "手势 0 · 复制 0 · 粘贴 0 · 少点 0 次";
     private PointCollection _points = [];
     private System.Windows.Media.Brush _strokeBrush = new SolidColorBrush(System.Windows.Media.Color.FromRgb(140, 200, 255));
+    private System.Windows.Media.Brush _hudBackgroundBrush = new LinearGradientBrush(
+        System.Windows.Media.Color.FromRgb(17, 23, 36),
+        System.Windows.Media.Color.FromRgb(30, 41, 59),
+        0);
+    private System.Windows.Media.Brush _hudAccentBrush = new SolidColorBrush(System.Windows.Media.Color.FromRgb(147, 197, 253));
 
     public event PropertyChangedEventHandler? PropertyChanged;
 
@@ -335,6 +340,36 @@ public sealed class GestureOverlayViewModel : INotifyPropertyChanged
             }
 
             _strokeBrush = value;
+            OnPropertyChanged();
+        }
+    }
+
+    public System.Windows.Media.Brush HudBackgroundBrush
+    {
+        get => _hudBackgroundBrush;
+        set
+        {
+            if (ReferenceEquals(_hudBackgroundBrush, value))
+            {
+                return;
+            }
+
+            _hudBackgroundBrush = value;
+            OnPropertyChanged();
+        }
+    }
+
+    public System.Windows.Media.Brush HudAccentBrush
+    {
+        get => _hudAccentBrush;
+        set
+        {
+            if (ReferenceEquals(_hudAccentBrush, value))
+            {
+                return;
+            }
+
+            _hudAccentBrush = value;
             OnPropertyChanged();
         }
     }

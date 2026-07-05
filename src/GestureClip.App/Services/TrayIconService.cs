@@ -54,7 +54,13 @@ public sealed class TrayIconService : IDisposable
             ContextMenuStrip = _menu,
             Visible = true
         };
-        _notifyIcon.DoubleClick += (_, _) => _appLifecycleService.ShowSettingsWindow();
+        _notifyIcon.MouseClick += (_, args) =>
+        {
+            if (args.Button == Forms.MouseButtons.Left)
+            {
+                _appLifecycleService.ToggleSettingsWindow();
+            }
+        };
 
         _logger.LogInformation("Tray icon initialized.");
     }

@@ -15,4 +15,5 @@ public sealed record ClipboardItem(
     int UseCount,
     DateTimeOffset CreatedAt,
     DateTimeOffset UpdatedAt,
-    DateTimeOffset? LastUsedAt);
+    DateTimeOffset? LastUsedAt,
+    string? ThumbnailContent = null);

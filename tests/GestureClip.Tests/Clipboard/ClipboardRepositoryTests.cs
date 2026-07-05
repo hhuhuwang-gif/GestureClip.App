@@ -74,6 +74,91 @@ public sealed class ClipboardRepositoryTests
         Assert.Equal("bulk keyword 49", results[^1].TextContent);
     }
 
+
+    [Fact]
+    public async Task SearchAsync_with_offset_returns_next_page()
+    {
+        using var database = await TestDatabase.CreateAsync();
+        var repository = new ClipboardRepository(database.ConnectionFactory);
+        var now = DateTimeOffset.UtcNow;
+        for (var index = 0; index < 75; index++)
+        {
+            await repository.InsertAsync(
+                CreateItem($"paged-{index}", $"paged keyword {index:000}", isPinned: false, createdAt: now.AddSeconds(-index)),
+                CancellationToken.None);
+        }
+
+        var first = await repository.SearchAsync("keyword", 50, 0, CancellationToken.None);
+        var second = await repository.SearchAsync("keyword", 50, 50, CancellationToken.None);
+
+        Assert.Equal(50, first.Count);
+        Assert.Equal(25, second.Count);
+        Assert.Equal("paged keyword 000", first[0].TextContent);
+        Assert.Equal("paged keyword 050", second[0].TextContent);
+        Assert.Equal("paged keyword 074", second[^1].TextContent);
+    }
+
+    [Fact]
+    public async Task SearchAsync_filters_images_before_limit_and_offset()
+    {
+        using var database = await TestDatabase.CreateAsync();
+        var repository = new ClipboardRepository(database.ConnectionFactory);
+        var now = DateTimeOffset.UtcNow;
+        for (var index = 0; index < 60; index++)
+        {
+            await repository.InsertAsync(
+                CreateItem($"text-{index}", $"text {index:000}", isPinned: false, createdAt: now.AddSeconds(-index)),
+                CancellationToken.None);
+        }
+
+        for (var index = 0; index < 12; index++)
+        {
+            await repository.InsertAsync(
+                CreateImageItem($"image-{index}", $"full-image-{index}", $"thumb-{index}", minutesAgo: 120 + index),
+                CancellationToken.None);
+        }
+
+        var first = await repository.SearchAsync("", 10, 0, ClipboardContentFilter.Images, CancellationToken.None);
+        var second = await repository.SearchAsync("", 10, 10, ClipboardContentFilter.Images, CancellationToken.None);
+
+        Assert.Equal(10, first.Count);
+        Assert.Equal(2, second.Count);
+        Assert.All(first.Concat(second), item => Assert.Equal("image/png", item.ContentType));
+        Assert.Equal("thumb-0", first[0].ThumbnailContent);
+        Assert.Equal("thumb-10", second[0].ThumbnailContent);
+    }
+
+    [Fact]
+    public async Task SearchAsync_returns_image_thumbnail_without_full_image_content()
+    {
+        using var database = await TestDatabase.CreateAsync();
+        var repository = new ClipboardRepository(database.ConnectionFactory);
+        var image = CreateImageItem("image", "full-image-base64", "thumb-base64", minutesAgo: 1);
+        await repository.InsertAsync(image, CancellationToken.None);
+
+        var results = await repository.SearchAsync("", 10, CancellationToken.None);
+        var full = await repository.GetByIdAsync(image.Id, CancellationToken.None);
+
+        var result = Assert.Single(results);
+        Assert.Null(result.TextContent);
+        Assert.Equal("thumb-base64", result.ThumbnailContent);
+        Assert.Equal("full-image-base64", full!.TextContent);
+    }
+
+    [Fact]
+    public async Task SearchAsync_does_not_return_full_image_for_legacy_rows_without_thumbnail()
+    {
+        using var database = await TestDatabase.CreateAsync();
+        var repository = new ClipboardRepository(database.ConnectionFactory);
+        var image = CreateImageItem("legacy-image", "legacy-full-image-base64", thumbnail: null, minutesAgo: 1);
+        await repository.InsertAsync(image, CancellationToken.None);
+
+        var result = Assert.Single(await repository.SearchAsync("", 10, CancellationToken.None));
+
+        Assert.Null(result.TextContent);
+        Assert.Null(result.ThumbnailContent);
+    }
+
     [Fact]
     public async Task IncrementUseCountAsync_updates_use_count_and_last_used_at()
     {
@@ -91,6 +176,32 @@ public sealed class ClipboardRepositoryTests
 
         Assert.Equal(1, stored.UseCount);
         Assert.False(string.IsNullOrWhiteSpace(stored.LastUsedAt));
+    }
+
+    [Fact]
+    public async Task IncrementUseCountsAsync_adds_counts_in_one_batch()
+    {
+        using var database = await TestDatabase.CreateAsync();
+        var repository = new ClipboardRepository(database.ConnectionFactory);
+        var first = CreateItem("one", "hello", isPinned: false, minutesAgo: 1);
+        var second = CreateItem("two", "world", isPinned: false, minutesAgo: 2);
+        await repository.InsertAsync(first, CancellationToken.None);
+        await repository.InsertAsync(second, CancellationToken.None);
+
+        await repository.IncrementUseCountsAsync(
+            new Dictionary<Guid, int>
+            {
+                [first.Id] = 5,
+                [second.Id] = 2
+            },
+            CancellationToken.None);
+
+        await using var connection = await database.ConnectionFactory.OpenConnectionAsync(CancellationToken.None);
+        var rows = (await connection.QueryAsync<(string Id, int UseCount)>(
+            "SELECT Id, UseCount FROM ClipboardItems;")).ToDictionary(row => Guid.Parse(row.Id), row => row.UseCount);
+
+        Assert.Equal(5, rows[first.Id]);
+        Assert.Equal(2, rows[second.Id]);
     }
 
     [Fact]
@@ -284,6 +395,28 @@ public sealed class ClipboardRepositoryTests
             null);
     }
 
+    private static ClipboardItem CreateImageItem(string hashSeed, string fullImage, string? thumbnail, int minutesAgo)
+    {
+        var createdAt = DateTimeOffset.UtcNow.AddMinutes(-minutesAgo);
+        return new ClipboardItem(
+            Guid.NewGuid(),
+            "image/png",
+            fullImage,
+            "图片",
+            $"hash-{hashSeed}",
+            null,
+            "Test",
+            "test.exe",
+            false,
+            false,
+            false,
+            0,
+            createdAt,
+            createdAt,
+            null,
+            thumbnail);
+    }
+
     private sealed class TestDatabase : IDisposable
     {
         private readonly string _path;
@@ -304,7 +437,12 @@ public sealed class ClipboardRepositoryTests
             var database = new TestDatabase(path);
             await using var connection = await database.ConnectionFactory.OpenConnectionAsync(CancellationToken.None);
             var runner = new SqlMigrationRunner(NullLogger<SqlMigrationRunner>.Instance);
-            await runner.RunAsync(connection, [new SqlMigration(1, "initial", InitialMigration.Sql)], CancellationToken.None);
+            await runner.RunAsync(connection,
+                [
+                    new SqlMigration(1, "initial", InitialMigration.Sql),
+                    new SqlMigration(5, "clipboard_image_thumbnails", ClipboardThumbnailMigration.Sql)
+                ],
+                CancellationToken.None);
             return database;
         }
 

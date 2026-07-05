@@ -20,6 +20,8 @@ public static class SettingKeys
     public const string GestureCloseWindowEnabled = "Gesture.CloseWindowEnabled";
     public const string GestureCustomBindingsJson = "Gesture.CustomBindingsJson";
     public const string GestureStrokeColor = "Gesture.StrokeColor";
+    public const string GestureTriggerRightButtonEnabled = "Gesture.Trigger.RightButton.Enabled";
+    public const string GestureTriggerLeftButtonEnabled = "Gesture.Trigger.LeftButton.Enabled";
     public const string GestureTriggerMiddleButtonEnabled = "Gesture.Trigger.MiddleButton.Enabled";
     public const string GestureTriggerXButton1Enabled = "Gesture.Trigger.XButton1.Enabled";
     public const string GestureTriggerXButton2Enabled = "Gesture.Trigger.XButton2.Enabled";
@@ -62,6 +64,14 @@ public static class SettingKeys
     public const string WorkstationShowFishingValue = "Workstation.ShowFishingValue";
     public const string WorkstationShowOffWorkCountdown = "Workstation.ShowOffWorkCountdown";
     public const string WorkstationDailyReportEnabled = "Workstation.DailyReportEnabled";
+    public const string WorkstationCopywritingStyle = "Workstation.CopywritingStyle";
+    public const string WorkstationEnableOverworkReminder = "Workstation.OverworkReminder.Enabled";
+    public const string WorkstationOverworkReminderIntervalMinutes = "Workstation.OverworkReminder.IntervalMinutes";
+    public const string WorkstationOverworkHighRiskAfterHours = "Workstation.OverworkReminder.HighRiskAfterHours";
+    public const string WorkstationEnableHudTimeColor = "Workstation.HudTimeColor.Enabled";
+    public const string WorkstationEnableStrongOverworkWarning = "Workstation.OverworkReminder.StrongWarning.Enabled";
+    public const string WorkstationOverworkReminderCanSnooze = "Workstation.OverworkReminder.CanSnooze";
+    public const string WorkstationOverworkSnoozeMinutes = "Workstation.OverworkReminder.SnoozeMinutes";
     public const string WorkerLevelTotalXp = "WorkerLevel.TotalXp";
     public const string WorkerLevelCurrentLevel = "WorkerLevel.CurrentLevel";
     public const string WorkerLevelTotalActionCount = "WorkerLevel.TotalActionCount";

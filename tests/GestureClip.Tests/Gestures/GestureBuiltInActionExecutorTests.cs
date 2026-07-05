@@ -70,9 +70,11 @@ public sealed class GestureBuiltInActionExecutorTests
     }
 
     [Theory]
-    [InlineData(BuiltInGestureAction.LeftMouseClick, GestureTriggerButton.Left)]
-    [InlineData(BuiltInGestureAction.RightMouseClick, GestureTriggerButton.Right)]
-    public async Task ExecuteAsync_synthesizes_mouse_click_actions(BuiltInGestureAction action, GestureTriggerButton expectedButton)
+    [InlineData(BuiltInGestureAction.LeftMouseClick, GestureTriggerButton.Left, 1)]
+    [InlineData(BuiltInGestureAction.LeftMouseDoubleClick, GestureTriggerButton.Left, 2)]
+    [InlineData(BuiltInGestureAction.RightMouseClick, GestureTriggerButton.Right, 1)]
+    [InlineData(BuiltInGestureAction.MiddleMouseClick, GestureTriggerButton.Middle, 1)]
+    public async Task ExecuteAsync_synthesizes_mouse_click_actions(BuiltInGestureAction action, GestureTriggerButton expectedButton, int expectedCount)
     {
         var mouse = new FakeRightClickSynthesizer();
         var cursor = new FakeCursorPositionProvider();
@@ -80,23 +82,78 @@ public sealed class GestureBuiltInActionExecutorTests
 
         await executor.ExecuteAsync(action, CancellationToken.None);
 
-        Assert.Equal(expectedButton, mouse.Clicks.Single().Button);
-        Assert.Equal(321, mouse.Clicks.Single().X);
-        Assert.Equal(654, mouse.Clicks.Single().Y);
+        Assert.Equal(expectedCount, mouse.Clicks.Count);
+        Assert.All(mouse.Clicks, click =>
+        {
+            Assert.Equal(expectedButton, click.Button);
+            Assert.Equal(321, click.X);
+            Assert.Equal(654, click.Y);
+        });
     }
 
+    [Theory]
+    [InlineData(BuiltInGestureAction.MouseWheelUp, 1)]
+    [InlineData(BuiltInGestureAction.MouseWheelDown, -1)]
+    public async Task ExecuteAsync_synthesizes_mouse_wheel_actions(BuiltInGestureAction action, int expectedDelta)
+    {
+        var mouse = new FakeRightClickSynthesizer();
+        var cursor = new FakeCursorPositionProvider();
+        var executor = CreateExecutor(new FakeKeyboardInputSender(), mouse, cursor);
+
+        await executor.ExecuteAsync(action, CancellationToken.None);
+
+        Assert.Equal((expectedDelta, 321, 654), mouse.Wheels.Single());
+    }
+
+
+    [Theory]
+    [InlineData(BuiltInGestureAction.SearchSelectedTextWithGoogle, "https://www.google.com/search?q=hello%20world")]
+    [InlineData(BuiltInGestureAction.SearchSelectedTextWithBaidu, "https://www.baidu.com/s?wd=hello%20world")]
+    [InlineData(BuiltInGestureAction.SearchSelectedTextWithBing, "https://www.bing.com/search?q=hello%20world")]
+    public async Task ExecuteAsync_searches_selected_text_in_browser(BuiltInGestureAction action, string expectedUrl)
+    {
+        var keyboard = new FakeKeyboardInputSender();
+        var clipboard = new FakeClipboardService();
+        var reader = new FakeClipboardTextReader { Text = "hello world" };
+        var launcher = new FakeUrlLauncher();
+        var executor = CreateExecutor(keyboard, clipboardService: clipboard, clipboardTextReader: reader, urlLauncher: launcher);
+
+        await executor.ExecuteAsync(action, CancellationToken.None);
+
+        Assert.Equal(["Ctrl+C"], keyboard.Sent);
+        Assert.True(clipboard.SuppressCalled);
+        Assert.Equal(expectedUrl, launcher.OpenedUrls.Single());
+    }
+
+    [Theory]
+    [InlineData(BuiltInGestureAction.OpenGoogle, "https://www.google.com/")]
+    [InlineData(BuiltInGestureAction.OpenBaidu, "https://www.baidu.com/")]
+    public async Task ExecuteAsync_opens_search_homepage(BuiltInGestureAction action, string expectedUrl)
+    {
+        var launcher = new FakeUrlLauncher();
+        var executor = CreateExecutor(new FakeKeyboardInputSender(), urlLauncher: launcher);
+
+        await executor.ExecuteAsync(action, CancellationToken.None);
+
+        Assert.Equal(expectedUrl, launcher.OpenedUrls.Single());
+    }
     private static GestureBuiltInActionExecutor CreateExecutor(
         FakeKeyboardInputSender keyboard,
         FakeRightClickSynthesizer? mouse = null,
-        FakeCursorPositionProvider? cursor = null)
+        FakeCursorPositionProvider? cursor = null,
+        FakeClipboardService? clipboardService = null,
+        FakeClipboardTextReader? clipboardTextReader = null,
+        FakeUrlLauncher? urlLauncher = null)
     {
         return new GestureBuiltInActionExecutor(
             new FakeClipboardOverlayService(),
-            new FakeClipboardService(),
+            clipboardService ?? new FakeClipboardService(),
             new FakeSettingsService(),
             keyboard,
             mouse ?? new FakeRightClickSynthesizer(),
             cursor ?? new FakeCursorPositionProvider(),
+            clipboardTextReader ?? new FakeClipboardTextReader(),
+            urlLauncher ?? new FakeUrlLauncher(),
             NullLogger<GestureBuiltInActionExecutor>.Instance);
     }
 
@@ -162,6 +219,7 @@ public sealed class GestureBuiltInActionExecutorTests
     private sealed class FakeRightClickSynthesizer : IRightClickSynthesizer
     {
         public List<(GestureTriggerButton Button, int X, int Y)> Clicks { get; } = [];
+        public List<(int Delta, int X, int Y)> Wheels { get; } = [];
 
         public void SynthesizeRightClick(int x, int y)
         {
@@ -171,6 +229,11 @@ public sealed class GestureBuiltInActionExecutorTests
         public void SynthesizeClick(GestureTriggerButton button, int x, int y)
         {
             Clicks.Add((button, x, y));
+        }
+
+        public void SynthesizeWheel(int delta, int x, int y)
+        {
+            Wheels.Add((delta, x, y));
         }
     }
 
@@ -185,7 +248,8 @@ public sealed class GestureBuiltInActionExecutorTests
     {
         public bool IsCaptureEnabled => true;
         public DateTimeOffset? SuppressCaptureUntil => null;
-        public void SuppressCaptureFor(TimeSpan duration) { }
+        public bool SuppressCalled { get; private set; }
+        public void SuppressCaptureFor(TimeSpan duration) => SuppressCalled = true;
         public Task CaptureTextAsync(ClipboardCapture capture, CancellationToken cancellationToken) => Task.CompletedTask;
         public Task<ClipboardItem?> GetLatestAsync(CancellationToken cancellationToken) => Task.FromResult<ClipboardItem?>(null);
         public Task PasteAsync(ClipboardItem item, PasteOptions options, CancellationToken cancellationToken) => Task.CompletedTask;
@@ -199,9 +263,25 @@ public sealed class GestureBuiltInActionExecutorTests
         public Task StopAsync(CancellationToken cancellationToken) => Task.CompletedTask;
     }
 
+
+    private sealed class FakeClipboardTextReader : IClipboardTextReader
+    {
+        public string? Text { get; init; }
+        public string? TryReadText() => Text;
+        public string? TryReadImagePngBase64() => null;
+    }
+
+    private sealed class FakeUrlLauncher : IUrlLauncher
+    {
+        public List<string> OpenedUrls { get; } = [];
+        public void OpenUrl(string url) => OpenedUrls.Add(url);
+    }
     private sealed class FakeSettingsService : ISettingsService
     {
         public T Get<T>(string key, T defaultValue) => defaultValue;
         public Task SetAsync<T>(string key, T value, CancellationToken cancellationToken) => Task.CompletedTask;
     }
 }
+
+
+

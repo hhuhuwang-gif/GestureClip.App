@@ -32,8 +32,10 @@ public static class FeaturesServiceCollectionExtensions
         services.AddSingleton<IDiagnosticsService, DiagnosticsService>();
         services.AddSingleton<IWorkstationStatsRepository, WorkstationStatsRepository>();
         services.AddSingleton<IWorkstationDashboardService, WorkstationDashboardService>();
+        services.AddSingleton<IWorkTimeStageService, WorkTimeStageService>();
         services.AddSingleton<IWorkerLevelService, WorkerLevelService>();
         services.AddSingleton<IWorkstationHudService, WorkstationHudService>();
+        services.AddSingleton<IOverworkReminderService, OverworkReminderService>();
         return services;
     }
 }

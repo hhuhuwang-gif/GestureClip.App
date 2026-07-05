@@ -17,6 +17,16 @@ public sealed class ThemeResourceTests
     }
 
     [Fact]
+    public void App_supports_smoke_exit_after_startup_for_release_verification()
+    {
+        var appPath = FindRepositoryFile("src", "GestureClip.App", "App.xaml.cs");
+        var source = File.ReadAllText(appPath);
+
+        Assert.Contains("--smoke-exit-after-startup", source);
+        Assert.Contains("ExitApplication()", source);
+    }
+
+    [Fact]
     public void Theme_resources_define_core_glass_styles()
     {
         var controlsPath = FindRepositoryFile("src", "GestureClip.App", "Themes", "Controls.xaml");
@@ -81,6 +91,28 @@ public sealed class ThemeResourceTests
         Assert.Contains("Background=\"{DynamicResource BrushGlassStrong}\"", xaml);
         Assert.Contains("IsSelected", xaml);
         Assert.Contains("ShortcutNumberConverter", xaml);
+        Assert.Contains("VirtualizingPanel.IsVirtualizing=\"True\"", xaml);
+        Assert.Contains("VirtualizingPanel.VirtualizationMode=\"Recycling\"", xaml);
+        Assert.Contains("ScrollViewer.CanContentScroll=\"True\"", xaml);
+        Assert.Contains("ScrollViewer.IsDeferredScrollingEnabled=\"True\"", xaml);
+        Assert.Contains("<VirtualizingStackPanel />", xaml);
+        Assert.Contains("Binding ThumbnailContent, IsAsync=True", xaml);
+        Assert.Contains("Binding SelectedItem.ThumbnailContent, IsAsync=True", xaml);
+    }
+
+
+    [Fact]
+    public void ClipboardOverlayWindow_exposes_load_more_entry_point()
+    {
+        var xamlPath = FindRepositoryFile("src", "GestureClip.App", "ClipboardOverlayWindow.xaml");
+        var sourcePath = FindRepositoryFile("src", "GestureClip.App", "ClipboardOverlayWindow.xaml.cs");
+        var xaml = File.ReadAllText(xamlPath);
+        var source = File.ReadAllText(sourcePath);
+
+        Assert.Contains("ScrollChanged=\"HistoryList_ScrollChanged\"", xaml);
+        Assert.Contains("加载更多", xaml);
+        Assert.Contains("CanLoadMore", xaml);
+        Assert.Contains("LoadMoreAsync", source);
     }
 
     [Fact]
@@ -257,6 +289,10 @@ public sealed class ThemeResourceTests
         Assert.Contains("ImageItemPreviewTextBlock", xaml);
         Assert.Contains("Height=\"260\"", xaml);
         Assert.Contains("IsSelectedImage", xaml);
+        Assert.Contains("Image Source=\"{Binding ThumbnailContent, IsAsync=True", xaml);
+        Assert.Contains("Image Source=\"{Binding SelectedItem.ThumbnailContent, IsAsync=True", xaml);
+        Assert.DoesNotContain("Image Source=\"{Binding TextContent", xaml);
+        Assert.DoesNotContain("Image Source=\"{Binding SelectedItem.TextContent", xaml);
     }
 
     [Fact]
@@ -274,7 +310,7 @@ public sealed class ThemeResourceTests
     }
 
     [Fact]
-    public void SettingsWindow_keeps_gesture_page_simple_with_advanced_settings_expanded_without_left_button_trigger()
+    public void SettingsWindow_keeps_gesture_page_simple_with_advanced_settings_expanded_and_left_button_off_by_default()
     {
         var path = FindRepositoryFile("src", "GestureClip.App", "SettingsWindow.xaml");
         var xaml = File.ReadAllText(path);
@@ -282,6 +318,8 @@ public sealed class ThemeResourceTests
         Assert.Contains("按住右键，往一个方向划一下，松开右键就会执行动作。", xaml);
         Assert.Contains("Header=\"高级设置\"", xaml);
         Assert.Contains("IsExpanded=\"True\"", xaml);
+        Assert.DoesNotContain("启用左键拖动画手势", xaml);
+        Assert.Contains("左键点击可以作为执行动作，但不是手势触发键", xaml);
         Assert.DoesNotContain("左边缘 + 鼠标左键", xaml);
         Assert.Contains("划多远才算手势", xaml);
         Assert.Contains("防误触间隔", xaml);
@@ -396,5 +434,186 @@ public sealed class ThemeResourceTests
         }
 
         throw new FileNotFoundException("Could not locate repository file.", Path.Combine(segments));
+    }
+    [Fact]
+    public void App_icon_click_and_second_launch_toggle_settings_window()
+    {
+        var trayPath = FindRepositoryFile("src", "GestureClip.App", "Services", "TrayIconService.cs");
+        var lifecyclePath = FindRepositoryFile("src", "GestureClip.App", "Services", "AppLifecycleService.cs");
+        var appPath = FindRepositoryFile("src", "GestureClip.App", "App.xaml.cs");
+        var singlePath = FindRepositoryFile("src", "GestureClip.App", "Services", "SingleInstanceService.cs");
+
+        var tray = File.ReadAllText(trayPath);
+        var lifecycle = File.ReadAllText(lifecyclePath);
+        var app = File.ReadAllText(appPath);
+        var single = File.ReadAllText(singlePath);
+
+        Assert.Contains("ToggleSettingsWindow", lifecycle);
+        Assert.Contains("_settingsWindow.Hide()", lifecycle);
+        Assert.Contains("ToggleSettingsWindow", tray);
+        Assert.Contains("MouseClick", tray);
+        Assert.Contains("ActivationRequested", app);
+        Assert.Contains("SignalExistingInstance", single);
+        var settingsWindowSource = File.ReadAllText(FindRepositoryFile("src", "GestureClip.App", "SettingsWindow.xaml.cs"));
+        Assert.Contains("EnableTaskbarMinimizeBehavior", settingsWindowSource);
+        Assert.Contains("WsMinimizebox", settingsWindowSource);
+    }
+
+    [Fact]
+    public void Custom_gesture_entry_is_prominent_and_not_hidden_in_collapsed_expander()
+    {
+        var path = FindRepositoryFile("src", "GestureClip.App", "SettingsWindow.xaml");
+        var xaml = File.ReadAllText(path);
+
+        Assert.Contains("+ 新建自定义手势", xaml);
+        Assert.Contains("创建你的专属手势", xaml);
+        Assert.Contains("先画手势，再绑定动作", xaml);
+        Assert.Contains("办公高频", xaml);
+        Assert.Contains("浏览高频", xaml);
+        Assert.Contains("实用动作", xaml);
+        Assert.DoesNotContain("<Expander Header=\"添加自定义手势\" IsExpanded=\"False\"", xaml);
+    }
+
+    [Fact]
+    public void Workstation_settings_show_templates_and_live_preview()
+    {
+        var path = FindRepositoryFile("src", "GestureClip.App", "SettingsWindow.xaml");
+        var xaml = File.ReadAllText(path);
+
+        Assert.Contains("工作制模板", xaml);
+        Assert.Contains("实时预览", xaml);
+        Assert.Contains("WorkstationTemplateOptions", xaml);
+        Assert.Contains("ApplyWorkstationTemplateCommand", xaml);
+        Assert.Contains("WorkstationPreviewTodayEarnedText", xaml);
+        Assert.Contains("WorkstationPreviewOffWorkText", xaml);
+        Assert.Contains("WorkstationPreviewPaydayText", xaml);
+    }
+
+    [Fact]
+    public void Gesture_editor_explains_left_click_as_confirm_not_action()
+    {
+        var path = FindRepositoryFile("src", "GestureClip.App", "SettingsWindow.xaml");
+        var xaml = File.ReadAllText(path);
+
+        Assert.Contains("左键点击是确认当前手势，不是可绑定的执行动作", xaml);
+        Assert.DoesNotContain("CommandParameter=\"LeftMouseClick\"", xaml);
+        Assert.DoesNotContain("CommandParameter=\"RightMouseClick\"", xaml);
+        Assert.DoesNotContain("GestureLeftButtonEnabled, Mode=TwoWay", xaml);
+    }
+
+    [Fact]
+    public void Gesture_trigger_section_exposes_direct_switch_bindings()
+    {
+        var path = FindRepositoryFile("src", "GestureClip.App", "SettingsWindow.xaml");
+        var xaml = File.ReadAllText(path);
+
+        Assert.Contains("GestureRightButtonEnabled", xaml);
+        Assert.Contains("GestureMiddleButtonEnabled", xaml);
+        Assert.Contains("GestureXButton1Enabled", xaml);
+        Assert.Contains("GestureXButton2Enabled", xaml);
+        Assert.Contains("EdgeTriggerEnabled", xaml);
+        Assert.Contains("当前启用", xaml);
+    }
+
+    [Fact]
+    public void Workstation_settings_group_display_options_and_copywriting_style()
+    {
+        var path = FindRepositoryFile("src", "GestureClip.App", "SettingsWindow.xaml");
+        var xaml = File.ReadAllText(path);
+
+        Assert.Contains("基础显示", xaml);
+        Assert.Contains("趣味显示", xaml);
+        Assert.Contains("统计显示", xaml);
+        Assert.Contains("文案风格", xaml);
+        Assert.Contains("WorkstationCopywritingStyle", xaml);
+        Assert.Contains("正常模式", xaml);
+        Assert.Contains("打工人模式", xaml);
+        Assert.Contains("抽象模式", xaml);
+    }
+
+    [Fact]
+    public void Workstation_settings_exposes_overwork_reminder_controls()
+    {
+        var path = FindRepositoryFile("src", "GestureClip.App", "SettingsWindow.xaml");
+        var xaml = File.ReadAllText(path);
+
+        Assert.Contains("猝死提醒", xaml);
+        Assert.Contains("开启过劳提醒", xaml);
+        Assert.Contains("WorkstationEnableOverworkReminder", xaml);
+        Assert.Contains("WorkstationOverworkReminderIntervalMinutes", xaml);
+        Assert.Contains("WorkstationOverworkHighRiskAfterHours", xaml);
+        Assert.Contains("WorkstationEnableHudTimeColor", xaml);
+        Assert.Contains("WorkstationEnableStrongOverworkWarning", xaml);
+        Assert.Contains("WorkstationOverworkReminderCanSnooze", xaml);
+        Assert.Contains("WorkstationOverworkSnoozeMinutes", xaml);
+        Assert.Contains("OverworkPreviewStageText", xaml);
+        Assert.Contains("OverworkPreviewHudColorText", xaml);
+        Assert.Contains("OverworkPreviewNextReminderText", xaml);
+        Assert.Contains("OverworkPreviewWorkedText", xaml);
+    }
+
+    [Fact]
+    public void GestureOverlayWindow_binds_hud_time_theme_brushes()
+    {
+        var path = FindRepositoryFile("src", "GestureClip.App", "GestureOverlayWindow.xaml");
+        var xaml = File.ReadAllText(path);
+
+        Assert.Contains("Background=\"{Binding HudBackgroundBrush}\"", xaml);
+        Assert.Contains("Foreground=\"{Binding HudAccentBrush}\"", xaml);
+        Assert.Contains("Foreground=\"{Binding HudAccentBrush}\"", xaml);
+        Assert.Contains("HudAccentBrush", xaml);
+    }
+
+    [Fact]
+    public void GestureOverlayWindow_uses_readable_hud_text_hierarchy()
+    {
+        var path = FindRepositoryFile("src", "GestureClip.App", "GestureOverlayWindow.xaml");
+        var xaml = File.ReadAllText(path);
+
+        Assert.Contains("Background=\"#E6111724\"", xaml);
+        Assert.Contains("手势码:", xaml);
+        Assert.Contains("FontSize=\"34\"", xaml);
+        Assert.Contains("FontSize=\"28\"", xaml);
+        Assert.Contains("FontSize=\"14\"", xaml);
+        Assert.DoesNotContain("Pattern: ", xaml);
+    }
+
+    [Fact]
+    public void App_starts_and_stops_overwork_reminder_service()
+    {
+        var appPath = FindRepositoryFile("src", "GestureClip.App", "App.xaml.cs");
+        var lifecyclePath = FindRepositoryFile("src", "GestureClip.App", "Services", "AppLifecycleService.cs");
+        var app = File.ReadAllText(appPath);
+        var lifecycle = File.ReadAllText(lifecyclePath);
+
+        Assert.Contains("IOverworkReminderService", app);
+        Assert.Contains("StartAsync(CancellationToken.None)", app);
+        Assert.Contains("overwork reminder service", lifecycle);
+        Assert.Contains("IOverworkReminderService", lifecycle);
+        Assert.Contains("StopAsync(CancellationToken.None)", lifecycle);
+    }
+
+    [Fact]
+    public void App_registers_overwork_reminder_toast_window()
+    {
+        var diPath = FindRepositoryFile("src", "GestureClip.App", "DependencyInjection", "AppServiceCollectionExtensions.cs");
+        var di = File.ReadAllText(diPath);
+
+        Assert.Contains("IOverworkReminderToastService", di);
+        Assert.Contains("OverworkReminderToastService", di);
+        Assert.Contains("OverworkReminderToastWindow", di);
+    }
+
+    [Fact]
+    public void SettingsWindow_hides_unused_edge_mouse_button_section()
+    {
+        var path = FindRepositoryFile("src", "GestureClip.App", "SettingsWindow.xaml");
+        var xaml = File.ReadAllText(path);
+
+        Assert.DoesNotContain("边缘 + 鼠标按钮", xaml);
+        Assert.DoesNotContain("左边缘 + 鼠标中键", xaml);
+        Assert.DoesNotContain("左边缘 + 鼠标侧键 1", xaml);
+        Assert.DoesNotContain("左边缘 + 鼠标侧键 2", xaml);
+        Assert.DoesNotContain("右上角 + 滚轮", xaml);
     }
 }

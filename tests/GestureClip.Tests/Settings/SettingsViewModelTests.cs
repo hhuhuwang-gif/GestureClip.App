@@ -112,6 +112,18 @@ public sealed class SettingsViewModelTests
     }
 
     [Fact]
+    public void Gesture_action_quick_commands_set_new_and_selected_actions()
+    {
+        var viewModel = CreateViewModel();
+
+        viewModel.SetNewGestureActionCommand.Execute("SearchSelectedTextWithBaidu");
+        viewModel.SetSelectedGestureActionCommand.Execute("SearchSelectedTextWithGoogle");
+
+        Assert.Equal(BuiltInGestureAction.SearchSelectedTextWithBaidu, viewModel.NewGestureAction);
+        Assert.Equal(BuiltInGestureAction.SearchSelectedTextWithGoogle, viewModel.SelectedGestureBindingCard!.SelectedAction);
+    }
+
+    [Fact]
     public void Gesture_binding_cards_are_created_for_supported_patterns()
     {
         var viewModel = CreateViewModel();
@@ -119,11 +131,13 @@ public sealed class SettingsViewModelTests
         Assert.True(viewModel.GestureBindingCards.Count >= 20);
         Assert.Contains(viewModel.GestureBindingCards, card => card.Pattern == "U" && card.SelectedAction == BuiltInGestureAction.Copy);
         Assert.Contains(viewModel.GestureBindingCards, card => card.Pattern == "D" && card.SelectedAction == BuiltInGestureAction.Paste);
-        Assert.Contains(viewModel.GestureBindingCards, card => card.Pattern == "DL" && card.SelectedAction == BuiltInGestureAction.LeftMouseClick);
-        Assert.Contains(viewModel.GestureBindingCards, card => card.Pattern == "DR" && card.SelectedAction == BuiltInGestureAction.RightMouseClick);
-        Assert.Contains(viewModel.GestureBindingCards, card => card.Pattern == "URD" && card.SelectedAction == BuiltInGestureAction.NextTab);
-        Assert.Contains(viewModel.GestureBindingCards, card => card.Pattern == "ULD" && card.SelectedAction == BuiltInGestureAction.PreviousTab);
-        Assert.Contains(viewModel.GestureBindingCards, card => card.Pattern == "RDL" && card.SelectedAction == BuiltInGestureAction.Screenshot);
+        Assert.Contains(viewModel.GestureBindingCards, card => card.Pattern == "DL" && card.SelectedAction == BuiltInGestureAction.PasteAndEnter);
+        Assert.Contains(viewModel.PrimaryGestureBindingCards, card => card.Pattern == "DL");
+        Assert.Contains(viewModel.PrimaryGestureBindingCards, card => card.Pattern == "DR" && card.SelectedAction == BuiltInGestureAction.NewTab);
+        Assert.Contains(viewModel.PrimaryGestureBindingCards, card => card.Pattern == "UR" && card.SelectedAction == BuiltInGestureAction.SearchSelectedTextWithGoogle);
+        Assert.Contains(viewModel.PrimaryGestureBindingCards, card => card.Pattern == "UL" && card.SelectedAction == BuiltInGestureAction.SearchSelectedTextWithBaidu);
+        Assert.Contains(viewModel.AdvancedGestureBindingCards, card => card.Pattern == "URD" && card.SelectedAction == BuiltInGestureAction.None);
+        Assert.Contains(viewModel.AdvancedGestureBindingCards, card => card.Pattern == "RDL" && card.SelectedAction == BuiltInGestureAction.None);
     }
 
     [Fact]
@@ -134,22 +148,45 @@ public sealed class SettingsViewModelTests
 
         Assert.Equal(option.DisplayName, option.ToString());
         Assert.DoesNotContain(nameof(GestureActionOptionViewModel), option.ToString(), StringComparison.Ordinal);
+        Assert.DoesNotContain(viewModel.GestureActionOptions, item => item.Action == BuiltInGestureAction.LeftMouseClick);
+        Assert.DoesNotContain(viewModel.GestureActionOptions, item => item.Action == BuiltInGestureAction.RightMouseClick);
     }
 
     [Fact]
-    public void Gesture_trigger_modes_include_side_and_edge_placeholders()
+    public void Gesture_trigger_modes_show_only_global_trigger_choices_without_left_button_trigger()
     {
         var viewModel = CreateViewModel();
 
-        Assert.Contains(viewModel.GestureTriggerModes, mode => mode.Name == "鼠标右键" && mode.IsEnabled);
-        Assert.Contains(viewModel.GestureTriggerModes, mode => mode.Name == "鼠标侧键 1" && mode.IsEnabled && mode.Status == "默认开启");
-        Assert.Contains(viewModel.GestureTriggerModes, mode => mode.Name == "屏幕左边缘 + 鼠标中键" && mode.IsEnabled && mode.Status == "默认开启");
-        Assert.Contains(viewModel.GestureTriggerModes, mode => mode.Name == "屏幕右上角 + 滚轮" && mode.IsEnabled && mode.Status == "默认开启");
-        Assert.DoesNotContain(viewModel.GestureTriggerModes, mode => mode.Name == "鼠标左键");
-        Assert.DoesNotContain(viewModel.GestureTriggerModes, mode => mode.Name == "屏幕左边缘 + 鼠标左键");
+        Assert.Contains(viewModel.GestureTriggerModes, mode => mode.Name == "鼠标右键" && mode.IsEnabled && mode.Status == "默认推荐");
+        Assert.Contains(viewModel.GestureTriggerModes, mode => mode.Name == "鼠标中键" && mode.Status == "可选");
+        Assert.Contains(viewModel.GestureTriggerModes, mode => mode.Name == "鼠标侧键 1" && mode.Status == "可选");
+        Assert.Contains(viewModel.GestureTriggerModes, mode => mode.Name == "鼠标侧键 2" && mode.Status == "可选");
+        Assert.Contains(viewModel.GestureTriggerModes, mode => mode.Name == "屏幕边缘 + 鼠标滑动" && mode.Status == "可选");
+        Assert.Equal(5, viewModel.GestureTriggerModes.Count);
+        Assert.DoesNotContain(viewModel.GestureTriggerModes, mode => mode.Name.Contains("左键", StringComparison.Ordinal));
         Assert.Equal(BuiltInGestureAction.PasteAndEnter, viewModel.EdgeTriggerSlideBottomAction);
     }
 
+
+    [Fact]
+    public async Task Gesture_trigger_summary_reflects_enabled_optional_triggers()
+    {
+        var settings = new FakeSettingsService();
+        var viewModel = CreateViewModel(settings: settings);
+
+        Assert.Equal("当前启用：鼠标右键", viewModel.EnabledGestureTriggerSummary);
+
+        viewModel.GestureMiddleButtonEnabled = true;
+        viewModel.GestureXButton1Enabled = true;
+        viewModel.EdgeTriggerEnabled = true;
+
+        await WaitForAsync(() =>
+            settings.Values.TryGetValue(SettingKeys.GestureTriggerMiddleButtonEnabled, out var middle) && Equals(middle, true) &&
+            settings.Values.TryGetValue(SettingKeys.GestureTriggerXButton1Enabled, out var x1) && Equals(x1, true) &&
+            settings.Values.TryGetValue(SettingKeys.EdgeTriggerEnabled, out var edge) && Equals(edge, true));
+
+        Assert.Equal("当前启用：鼠标右键 + 鼠标中键 + 鼠标侧键 1 + 屏幕边缘", viewModel.EnabledGestureTriggerSummary);
+    }
     [Fact]
     public void Custom_gesture_direction_buttons_build_pattern_preview()
     {
@@ -172,6 +209,17 @@ public sealed class SettingsViewModelTests
         Assert.Equal("点击方向按钮设计手势", viewModel.NewGestureDirectionPreview);
     }
 
+
+    [Fact]
+    public void Custom_gesture_template_sets_pattern_and_action_together()
+    {
+        var viewModel = CreateViewModel();
+
+        viewModel.SetNewGestureTemplateCommand.Execute("RDU|SearchSelectedTextWithGoogle");
+
+        Assert.Equal("RDU", viewModel.NewGesturePattern);
+        Assert.Equal(BuiltInGestureAction.SearchSelectedTextWithGoogle, viewModel.NewGestureAction);
+    }
     [Fact]
     public void Custom_gesture_template_buttons_set_complex_pattern()
     {
@@ -319,11 +367,13 @@ public sealed class SettingsViewModelTests
         viewModel.GestureMiddleButtonEnabled = false;
         viewModel.GestureXButton1Enabled = false;
         viewModel.GestureXButton2Enabled = false;
+        viewModel.GestureLeftButtonEnabled = true;
         viewModel.GestureMiddleButtonEnabled = true;
         viewModel.GestureXButton1Enabled = true;
         viewModel.GestureXButton2Enabled = true;
 
         await WaitForAsync(() =>
+            settings.Values.TryGetValue(SettingKeys.GestureTriggerLeftButtonEnabled, out var left) && Equals(left, true) &&
             settings.Values.TryGetValue(SettingKeys.GestureTriggerMiddleButtonEnabled, out var middle) && Equals(middle, true) &&
             settings.Values.TryGetValue(SettingKeys.GestureTriggerXButton1Enabled, out var x1) && Equals(x1, true) &&
             settings.Values.TryGetValue(SettingKeys.GestureTriggerXButton2Enabled, out var x2) && Equals(x2, true));
@@ -381,6 +431,41 @@ public sealed class SettingsViewModelTests
     }
 
     [Fact]
+    public async Task Changing_overwork_reminder_settings_saves_clamped_values()
+    {
+        var settings = new FakeSettingsService();
+        var viewModel = CreateViewModel(settings: settings);
+
+        viewModel.WorkstationEnableOverworkReminder = false;
+        viewModel.WorkstationOverworkReminderIntervalMinutes = 10;
+        viewModel.WorkstationOverworkHighRiskAfterHours = 20;
+        viewModel.WorkstationEnableHudTimeColor = false;
+        viewModel.WorkstationEnableStrongOverworkWarning = true;
+        viewModel.WorkstationOverworkReminderCanSnooze = false;
+        viewModel.WorkstationOverworkSnoozeMinutes = 1;
+
+        await WaitForAsync(() =>
+            settings.Values.TryGetValue(SettingKeys.WorkstationEnableOverworkReminder, out var enabled) && Equals(enabled, false) &&
+            settings.Values.TryGetValue(SettingKeys.WorkstationOverworkReminderIntervalMinutes, out var interval) && Equals(interval, 30) &&
+            settings.Values.TryGetValue(SettingKeys.WorkstationOverworkHighRiskAfterHours, out var highRisk) && Equals(highRisk, 12d) &&
+            settings.Values.TryGetValue(SettingKeys.WorkstationEnableHudTimeColor, out var hudColor) && Equals(hudColor, false) &&
+            settings.Values.TryGetValue(SettingKeys.WorkstationEnableStrongOverworkWarning, out var strong) && Equals(strong, true) &&
+            settings.Values.TryGetValue(SettingKeys.WorkstationOverworkReminderCanSnooze, out var canSnooze) && Equals(canSnooze, false) &&
+            settings.Values.TryGetValue(SettingKeys.WorkstationOverworkSnoozeMinutes, out var snooze) && Equals(snooze, 5));
+    }
+
+    [Fact]
+    public void Overwork_reminder_preview_uses_plain_local_text()
+    {
+        var viewModel = CreateViewModel();
+
+        Assert.Contains("当前阶段", viewModel.OverworkPreviewStageText);
+        Assert.Contains("HUD 颜色", viewModel.OverworkPreviewHudColorText);
+        Assert.Contains("下次提醒", viewModel.OverworkPreviewNextReminderText);
+        Assert.Contains("今日连续工作", viewModel.OverworkPreviewWorkedText);
+    }
+
+    [Fact]
     public void Edge_trigger_defaults_are_responsive()
     {
         var viewModel = CreateViewModel();
@@ -413,6 +498,36 @@ public sealed class SettingsViewModelTests
             settings.Values.TryGetValue(SettingKeys.HudFunTextEnabled, out var fun) && Equals(fun, false) &&
             settings.Values.TryGetValue(SettingKeys.HudStatusLevelEnabled, out var status) && Equals(status, false));
         Assert.Equal("XP 128 / 250", viewModel.WorkerXpText);
+    }
+
+    [Fact]
+    public void Workstation_preview_updates_from_salary_and_payday_settings()
+    {
+        var viewModel = CreateViewModel();
+
+        viewModel.WorkstationMonthlySalary = 21750m;
+        viewModel.WorkstationPayday = 20;
+
+        Assert.Contains("今天已赚", viewModel.WorkstationPreviewTodayEarnedText);
+        Assert.Contains("¥", viewModel.WorkstationPreviewTodayEarnedText);
+        Assert.Contains("距离下班", viewModel.WorkstationPreviewOffWorkText);
+        Assert.Contains("发薪", viewModel.WorkstationPreviewPaydayText);
+        Assert.False(string.IsNullOrWhiteSpace(viewModel.WorkstationPreviewStatusText));
+    }
+
+    [Fact]
+    public void Workstation_template_command_fills_plain_work_rules()
+    {
+        var viewModel = CreateViewModel();
+        var template = viewModel.WorkstationTemplateOptions.Single(item => item.Name == "标准双休 09:00-18:00");
+
+        viewModel.ApplyWorkstationTemplateCommand.Execute(template);
+
+        Assert.Equal("09:00", viewModel.WorkstationWorkStartTime);
+        Assert.Equal("18:00", viewModel.WorkstationWorkEndTime);
+        Assert.Equal("12:00", viewModel.WorkstationLunchStartTime);
+        Assert.Equal("13:00", viewModel.WorkstationLunchEndTime);
+        Assert.Equal("1,2,3,4,5", viewModel.WorkstationWorkdays);
     }
     private static SettingsViewModel CreateViewModel(
         FakeClipboardRepository? repository = null,
@@ -675,4 +790,9 @@ public sealed class SettingsViewModelTests
         public Task SendPasteHotkeyAsync(CancellationToken cancellationToken) => Task.CompletedTask;
     }
 }
+
+
+
+
+
 

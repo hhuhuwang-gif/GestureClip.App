@@ -71,6 +71,18 @@ public sealed class GestureHudInfoProvider : IGestureHudInfoProvider
             BuiltInGestureAction.SendAltRight => "前进",
             BuiltInGestureAction.MinimizeForegroundWindow => "最小化窗口",
             BuiltInGestureAction.CloseForegroundWindow => "关闭窗口",
+            BuiltInGestureAction.PasteAndEnter => "粘贴并回车",
+            BuiltInGestureAction.LeftMouseClick => "左键单击",
+            BuiltInGestureAction.LeftMouseDoubleClick => "左键双击",
+            BuiltInGestureAction.RightMouseClick => "右键单击",
+            BuiltInGestureAction.MiddleMouseClick => "中键单击",
+            BuiltInGestureAction.MouseWheelUp => "滚轮上",
+            BuiltInGestureAction.MouseWheelDown => "滚轮下",
+            BuiltInGestureAction.SearchSelectedTextWithGoogle => "Google 搜索",
+            BuiltInGestureAction.SearchSelectedTextWithBaidu => "百度搜索",
+            BuiltInGestureAction.SearchSelectedTextWithBing => "Bing 搜索",
+            BuiltInGestureAction.OpenGoogle => "打开 Google",
+            BuiltInGestureAction.OpenBaidu => "打开百度",
             _ => "未绑定"
         };
     }
@@ -95,6 +107,18 @@ public sealed class GestureHudInfoProvider : IGestureHudInfoProvider
             BuiltInGestureAction.SendAltRight => "Alt + →",
             BuiltInGestureAction.MinimizeForegroundWindow => "Win32 Minimize",
             BuiltInGestureAction.CloseForegroundWindow => "WM_CLOSE",
+            BuiltInGestureAction.PasteAndEnter => "Ctrl + V, Enter",
+            BuiltInGestureAction.LeftMouseClick => "Mouse Left",
+            BuiltInGestureAction.LeftMouseDoubleClick => "Mouse Left ×2",
+            BuiltInGestureAction.RightMouseClick => "Mouse Right",
+            BuiltInGestureAction.MiddleMouseClick => "Mouse Middle",
+            BuiltInGestureAction.MouseWheelUp => "Wheel ↑",
+            BuiltInGestureAction.MouseWheelDown => "Wheel ↓",
+            BuiltInGestureAction.SearchSelectedTextWithGoogle => "复制选中并搜索",
+            BuiltInGestureAction.SearchSelectedTextWithBaidu => "复制选中并搜索",
+            BuiltInGestureAction.SearchSelectedTextWithBing => "复制选中并搜索",
+            BuiltInGestureAction.OpenGoogle => "google.com",
+            BuiltInGestureAction.OpenBaidu => "baidu.com",
             _ => "暂无动作"
         };
     }

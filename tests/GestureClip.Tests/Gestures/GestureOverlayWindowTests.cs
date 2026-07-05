@@ -153,6 +153,21 @@ public sealed class GestureOverlayWindowTests
     }
 
     [Fact]
+    public void GestureOverlayService_throttles_trace_updates_and_backgrounds_workstation_snapshot()
+    {
+        var path = FindRepositoryFile("src", "GestureClip.App", "Services", "GestureOverlayService.cs");
+
+        var source = File.ReadAllText(path);
+
+        Assert.Contains("TotalMilliseconds < 33", source);
+        Assert.Contains("StorePendingUpdate(points, hudInfo)", source);
+        Assert.Contains("Task.Run(async () =>", source);
+        Assert.Contains("BuildSnapshotAsync", source);
+        Assert.Contains("TotalMilliseconds < 750", source);
+        Assert.Contains("gesture drawing must stay smooth", source);
+    }
+
+    [Fact]
     public void GestureOverlayWindow_shows_fun_report_level_and_xp()
     {
         var path = FindRepositoryFile("src", "GestureClip.App", "GestureOverlayWindow.xaml");

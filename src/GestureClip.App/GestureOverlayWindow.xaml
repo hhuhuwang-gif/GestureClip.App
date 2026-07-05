@@ -37,7 +37,7 @@
                 Height="210"
                 CornerRadius="24"
                 Padding="12"
-                Background="#D4111724"
+                Background="{Binding HudBackgroundBrush}"
                 BorderBrush="#38FFFFFF"
                 BorderThickness="1"
                 x:Name="CompactGameHud"
@@ -47,22 +47,22 @@
             </Border.Effect>
             <Grid x:Name="GestureActionStrip" SnapsToDevicePixels="True">
                 <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="78" />
-                    <ColumnDefinition Width="*" />
-                    <ColumnDefinition Width="170" />
+                <ColumnDefinition Width="86" />
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="188" />
                 </Grid.ColumnDefinitions>
 
-                <Border Width="64"
-                        Height="64"
-                        CornerRadius="19"
-                        Background="#264F8DF7"
+                <Border Width="72"
+                        Height="72"
+                        CornerRadius="20"
+                        Background="#E6111724"
                         BorderBrush="#6693C5FD"
                         BorderThickness="1"
                         HorizontalAlignment="Left"
                         VerticalAlignment="Center">
                     <TextBlock Text="{Binding DirectionText}"
                                Foreground="#FFFFFFFF"
-                               FontSize="31"
+                               FontSize="34"
                                FontWeight="Bold"
                                HorizontalAlignment="Center"
                                VerticalAlignment="Center"
@@ -74,7 +74,7 @@
                             Margin="2,0,12,0">
                     <StackPanel Orientation="Horizontal">
                         <TextBlock Text="工位小熊"
-                                   Foreground="#FFFDE68A"
+                                   Foreground="{Binding HudAccentBrush}"
                                    FontSize="13"
                                    FontWeight="SemiBold" />
                         <TextBlock Text="  ·  "
@@ -88,25 +88,25 @@
                     </StackPanel>
                     <TextBlock Text="{Binding ActionName}"
                                Foreground="#FFFFFFFF"
-                               FontSize="25"
+                               FontSize="28"
                                FontWeight="SemiBold"
                                Margin="0,3,0,0"
                                TextTrimming="CharacterEllipsis" />
                     <StackPanel Orientation="Horizontal" Margin="0,3,0,0">
                         <TextBlock Text="{Binding ShortcutText}"
                                    Foreground="#FFDCEBFF"
-                                   FontSize="12"
+                                   FontSize="14"
                                    FontFamily="Cascadia Mono, Consolas, Microsoft YaHei UI"
                                    FontWeight="SemiBold"
                                    TextTrimming="CharacterEllipsis" />
-                        <TextBlock Text="   Pattern: "
+                        <TextBlock Text="   手势码: "
                                    Foreground="#FF8A94A8"
-                                   FontSize="12"
+                                   FontSize="14"
                                    FontFamily="Cascadia Mono, Consolas, Microsoft YaHei UI"
                                    FontWeight="SemiBold" />
                         <TextBlock Text="{Binding Pattern}"
-                                   Foreground="#FF93C5FD"
-                                   FontSize="12"
+                                   Foreground="{Binding HudAccentBrush}"
+                                   FontSize="14"
                                    FontFamily="Cascadia Mono, Consolas, Microsoft YaHei UI"
                                    FontWeight="Bold" />
                     </StackPanel>
@@ -116,15 +116,15 @@
                             <ColumnDefinition Width="Auto" />
                         </Grid.ColumnDefinitions>
                         <TextBlock Text="{Binding FunText}"
-                                   Foreground="#FFFDE68A"
-                                   FontSize="13"
+                                   Foreground="{Binding HudAccentBrush}"
+                                   FontSize="14"
                                    FontWeight="SemiBold"
                                    TextWrapping="NoWrap"
                                    TextTrimming="CharacterEllipsis" />
                         <TextBlock Grid.Column="1"
                                    Text="{Binding GainedXpText}"
                                    Foreground="#FF86EFAC"
-                                   FontSize="12"
+                                   FontSize="13"
                                    FontWeight="Bold"
                                    Margin="12,0,0,0" />
                     </Grid>
@@ -135,13 +135,13 @@
                         </Grid.ColumnDefinitions>
                         <TextBlock Text="{Binding LevelText}"
                                    Foreground="#FFE0F2FE"
-                                   FontSize="12"
+                                   FontSize="13"
                                    FontWeight="SemiBold"
                                    TextTrimming="CharacterEllipsis" />
                         <TextBlock Grid.Column="1"
                                    Text="{Binding XpText}"
-                                   Foreground="#FF93C5FD"
-                                   FontSize="11"
+                                   Foreground="{Binding HudAccentBrush}"
+                                   FontSize="12"
                                    FontFamily="Cascadia Mono, Consolas, Microsoft YaHei UI"
                                    FontWeight="SemiBold"
                                    HorizontalAlignment="Right"
@@ -152,24 +152,24 @@
                                  Value="{Binding XpProgressPercent}"
                                  Height="5"
                                  Margin="0,7,0,0"
-                                 Foreground="#FF93C5FD"
+                                 Foreground="{Binding HudAccentBrush}"
                                  Background="#24FFFFFF"
                                  BorderThickness="0" />
                     <StackPanel x:Name="TodayStatsLine" Margin="0,8,0,0">
-                        <TextBlock Text="{Binding WorkSummaryText}" Foreground="#FFFFFFFF" FontSize="12" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" />
-                        <TextBlock Text="{Binding StatsText}" Foreground="#FFC9D4E5" FontSize="11" FontWeight="SemiBold" Margin="0,5,0,0" TextTrimming="CharacterEllipsis" />
+                        <TextBlock Text="{Binding WorkSummaryText}" Foreground="#FFFFFFFF" FontSize="13" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" />
+                        <TextBlock Text="{Binding StatsText}" Foreground="#FFC9D4E5" FontSize="12" FontWeight="SemiBold" Margin="0,5,0,0" TextTrimming="CharacterEllipsis" />
                     </StackPanel>
                 </StackPanel>
 
                 <StackPanel Grid.Column="2" VerticalAlignment="Center">
                     <TextBlock Text="松开右键执行"
-                               Foreground="#FFFDE68A"
-                               FontSize="15"
+                               Foreground="{Binding HudAccentBrush}"
+                               FontSize="16"
                                FontWeight="SemiBold"
                                HorizontalAlignment="Right" />
                     <TextBlock Text="{Binding WorkStatusText}"
-                               Foreground="#FF93C5FD"
-                               FontSize="12"
+                               Foreground="{Binding HudAccentBrush}"
+                               FontSize="14"
                                FontWeight="SemiBold"
                                HorizontalAlignment="Right"
                                Margin="0,7,0,0"

@@ -18,18 +18,10 @@ public sealed class GesturePresetProvider : IGesturePresetProvider
             ["R"] = BuiltInGestureAction.SendAltRight,
             ["LR"] = BuiltInGestureAction.SelectAll,
             ["RL"] = BuiltInGestureAction.Undo,
-            ["DL"] = BuiltInGestureAction.LeftMouseClick,
-            ["DR"] = BuiltInGestureAction.RightMouseClick,
-            ["UR"] = BuiltInGestureAction.NewTab,
-            ["UL"] = BuiltInGestureAction.ReopenClosedTab,
-            ["RU"] = BuiltInGestureAction.Refresh,
-            ["RD"] = BuiltInGestureAction.CloseTab,
-            ["LD"] = BuiltInGestureAction.MinimizeForegroundWindow,
-            ["RDL"] = BuiltInGestureAction.Screenshot,
-            ["RUD"] = BuiltInGestureAction.ResetZoom,
-            ["URD"] = BuiltInGestureAction.NextTab,
-            ["ULD"] = BuiltInGestureAction.PreviousTab,
-            ["RULD"] = BuiltInGestureAction.SystemSettings
+            ["DL"] = BuiltInGestureAction.PasteAndEnter,
+            ["DR"] = BuiltInGestureAction.NewTab,
+            ["UR"] = BuiltInGestureAction.SearchSelectedTextWithGoogle,
+            ["UL"] = BuiltInGestureAction.SearchSelectedTextWithBaidu
         };
 
     private static readonly IReadOnlyDictionary<string, BuiltInGestureAction> ClipboardEnhanced =
@@ -43,18 +35,10 @@ public sealed class GesturePresetProvider : IGesturePresetProvider
             ["R"] = BuiltInGestureAction.SendAltRight,
             ["LR"] = BuiltInGestureAction.SelectAll,
             ["RL"] = BuiltInGestureAction.Undo,
-            ["DL"] = BuiltInGestureAction.LeftMouseClick,
-            ["DR"] = BuiltInGestureAction.RightMouseClick,
-            ["UR"] = BuiltInGestureAction.NewTab,
-            ["UL"] = BuiltInGestureAction.ReopenClosedTab,
-            ["RU"] = BuiltInGestureAction.Refresh,
-            ["RD"] = BuiltInGestureAction.CloseTab,
-            ["LD"] = BuiltInGestureAction.MinimizeForegroundWindow,
-            ["RDL"] = BuiltInGestureAction.Screenshot,
-            ["RUD"] = BuiltInGestureAction.ResetZoom,
-            ["URD"] = BuiltInGestureAction.NextTab,
-            ["ULD"] = BuiltInGestureAction.PreviousTab,
-            ["RULD"] = BuiltInGestureAction.SystemSettings
+            ["DL"] = BuiltInGestureAction.PasteAndEnter,
+            ["DR"] = BuiltInGestureAction.NewTab,
+            ["UR"] = BuiltInGestureAction.SearchSelectedTextWithGoogle,
+            ["UL"] = BuiltInGestureAction.SearchSelectedTextWithBaidu
         };
 
     private readonly object _syncRoot = new();

@@ -38,6 +38,20 @@ public sealed class GesturePatternView : FrameworkElement
         var border = new WpfPen(new SolidColorBrush(WpfColor.FromArgb(34, 17, 24, 39)), 1);
         drawingContext.DrawRoundedRectangle(background, border, bounds, 12, 12);
 
+        if (string.Equals(Pattern, "R+L", StringComparison.OrdinalIgnoreCase))
+        {
+            var text = new FormattedText(
+                "右+左",
+                System.Globalization.CultureInfo.CurrentUICulture,
+                System.Windows.FlowDirection.LeftToRight,
+                new Typeface(new System.Windows.Media.FontFamily("Microsoft YaHei UI"), FontStyles.Normal, FontWeights.SemiBold, FontStretches.Normal),
+                14,
+                new SolidColorBrush(WpfColor.FromRgb(37, 99, 235)),
+                VisualTreeHelper.GetDpi(this).PixelsPerDip);
+            drawingContext.DrawText(text, new WpfPoint((ActualWidth - text.Width) / 2, (ActualHeight - text.Height) / 2));
+            return;
+        }
+
         var points = BuildPoints(Pattern);
         if (points.Count < 2)
         {
@@ -143,3 +157,4 @@ file static class RectExtensions
             Math.Max(1, rect.Height - amount * 2));
     }
 }
+

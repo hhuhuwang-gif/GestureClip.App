@@ -103,7 +103,7 @@ public sealed class WorkstationHudServiceTests
         settings.Values[SettingKeys.WorkerLevelShowLevelInHud] = true;
         var dashboard = new FakeDashboardService();
         var level = new FakeWorkerLevelService();
-        var service = new WorkstationHudService(settings, dashboard, level);
+        var service = new WorkstationHudService(settings, dashboard, level, new FakeWorkTimeStageService());
         var hudInfo = new GestureHudInfo("↓", "D", "粘贴", "Ctrl + V", "自定义模式")
         {
             Action = BuiltInGestureAction.Paste
@@ -131,7 +131,7 @@ public sealed class WorkstationHudServiceTests
         return new WorkstationHudService(
             settings,
             new FakeDashboardService(),
-            new FakeWorkerLevelService());
+            new FakeWorkerLevelService(), new FakeWorkTimeStageService());
     }
 
     private sealed class FakeDashboardService : IWorkstationDashboardService
@@ -192,10 +192,13 @@ public sealed class WorkstationHudServiceTests
             return GetSnapshotAsync(cancellationToken);
         }
     }
+
+    private sealed class FakeWorkTimeStageService : IWorkTimeStageService
+    {
+        public WorkTimeStageSnapshot GetSnapshot(DateTimeOffset now)
+        {
+            var theme = WorkTimeStageThemeProvider.GetTheme(WorkTimeStage.MidWork);
+            return new WorkTimeStageSnapshot(WorkTimeStage.MidWork, 0.5, TimeSpan.FromHours(4), theme);
+        }
+    }
 }
-
-
-
-
-
-

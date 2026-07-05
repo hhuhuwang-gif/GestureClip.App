@@ -80,5 +80,64 @@ WHERE type = 'index'
 
         Assert.Equal(1, indexCount);
     }
+
+    [Fact]
+    public async Task ClipboardPerformanceV2Migration_creates_filter_indexes()
+    {
+        await using var connection = new SqliteConnection("Data Source=:memory:");
+        await connection.OpenAsync();
+
+        var runner = new SqlMigrationRunner(NullLogger<SqlMigrationRunner>.Instance);
+
+        await runner.RunAsync(connection, new[]
+        {
+            new SqlMigration(1, "initial", InitialMigration.Sql),
+            new SqlMigration(4, "clipboard_performance_indexes_v2", ClipboardPerformanceV2Migration.Sql)
+        }, CancellationToken.None);
+
+        var indexNames = (await connection.QueryAsync<string>(
+            """
+SELECT name
+FROM sqlite_master
+WHERE type = 'index'
+  AND name IN (
+      'IX_ClipboardItems_ContentType_CreatedAt',
+      'IX_ClipboardItems_Favorite_CreatedAt'
+  );
+""")).ToArray();
+
+        Assert.Contains("IX_ClipboardItems_ContentType_CreatedAt", indexNames);
+        Assert.Contains("IX_ClipboardItems_Favorite_CreatedAt", indexNames);
+    }
+
+    [Fact]
+    public async Task ClipboardThumbnailMigration_adds_thumbnail_column()
+    {
+        await using var connection = new SqliteConnection("Data Source=:memory:");
+        await connection.OpenAsync();
+
+        var runner = new SqlMigrationRunner(NullLogger<SqlMigrationRunner>.Instance);
+
+        await runner.RunAsync(connection, new[]
+        {
+            new SqlMigration(1, "legacy_clipboard_without_thumbnail", """
+CREATE TABLE ClipboardItems (
+    Id TEXT PRIMARY KEY,
+    ContentType TEXT NOT NULL,
+    TextContent TEXT
+);
+"""),
+            new SqlMigration(5, "clipboard_image_thumbnails", ClipboardThumbnailMigration.Sql)
+        }, CancellationToken.None);
+
+        var hasThumbnailColumn = await connection.ExecuteScalarAsync<int>(
+            """
+SELECT COUNT(*)
+FROM pragma_table_info('ClipboardItems')
+WHERE name = 'ThumbnailContent';
+""");
+
+        Assert.Equal(1, hasThumbnailColumn);
+    }
 }
 

@@ -44,13 +44,8 @@ public sealed class WpfClipboardTextReader : IClipboardTextReader
     {
         try
         {
-            return _dispatcher.Invoke(() =>
-            {
-                return TryReadRawPngBase64()
-                    ?? TryReadDibPngBase64()
-                    ?? TryReadWpfImagePngBase64()
-                    ?? TryReadWinFormsImagePngBase64();
-            });
+            var snapshot = _dispatcher.Invoke(CaptureImageSnapshot);
+            return EncodeImageSnapshot(snapshot);
         }
         catch (Exception ex)
         {
@@ -59,7 +54,38 @@ public sealed class WpfClipboardTextReader : IClipboardTextReader
         }
     }
 
-    private string? TryReadRawPngBase64()
+    private ImageClipboardSnapshot CaptureImageSnapshot()
+    {
+        var rawPngBytes = TryReadRawPngBytes();
+        if (rawPngBytes is not null)
+        {
+            return new ImageClipboardSnapshot(rawPngBytes, null, null, null);
+        }
+
+        var dibBytes = TryReadDibBytes();
+        if (dibBytes is not null)
+        {
+            return new ImageClipboardSnapshot(null, dibBytes, null, null);
+        }
+
+        var wpfImage = TryReadWpfImage();
+        if (wpfImage is not null)
+        {
+            return new ImageClipboardSnapshot(null, null, wpfImage, null);
+        }
+
+        return new ImageClipboardSnapshot(null, null, null, TryReadWinFormsImageClone());
+    }
+
+    private string? EncodeImageSnapshot(ImageClipboardSnapshot snapshot)
+    {
+        return ClipboardImageDataReader.TryGetPngBase64(snapshot.RawPngBytes)
+            ?? ClipboardImageDataReader.TryEncodeDibAsPngBase64(snapshot.DibBytes)
+            ?? (snapshot.WpfImage is null ? null : EncodeBitmapSource(snapshot.WpfImage))
+            ?? (snapshot.WinFormsImage is null ? null : EncodeDrawingImage(snapshot.WinFormsImage));
+    }
+
+    private byte[]? TryReadRawPngBytes()
     {
         try
         {
@@ -69,7 +95,7 @@ public sealed class WpfClipboardTextReader : IClipboardTextReader
             }
 
             var data = System.Windows.Clipboard.GetData("PNG");
-            return ClipboardImageDataReader.TryGetPngBase64(data);
+            return TryCopyBytes(data);
         }
         catch (Exception ex)
         {
@@ -78,7 +104,7 @@ public sealed class WpfClipboardTextReader : IClipboardTextReader
         }
     }
 
-    private string? TryReadDibPngBase64()
+    private byte[]? TryReadDibBytes()
     {
         try
         {
@@ -88,7 +114,7 @@ public sealed class WpfClipboardTextReader : IClipboardTextReader
             }
 
             var data = System.Windows.Clipboard.GetData(System.Windows.DataFormats.Dib);
-            return ClipboardImageDataReader.TryEncodeDibAsPngBase64(data);
+            return TryCopyBytes(data);
         }
         catch (Exception ex)
         {
@@ -97,7 +123,7 @@ public sealed class WpfClipboardTextReader : IClipboardTextReader
         }
     }
 
-    private string? TryReadWpfImagePngBase64()
+    private BitmapSource? TryReadWpfImage()
     {
         try
         {
@@ -107,7 +133,8 @@ public sealed class WpfClipboardTextReader : IClipboardTextReader
             }
 
             var image = System.Windows.Clipboard.GetImage();
-            return image is null ? null : EncodeBitmapSource(image);
+            image?.Freeze();
+            return image;
         }
         catch (Exception ex)
         {
@@ -116,7 +143,7 @@ public sealed class WpfClipboardTextReader : IClipboardTextReader
         }
     }
 
-    private string? TryReadWinFormsImagePngBase64()
+    private System.Drawing.Image? TryReadWinFormsImageClone()
     {
         try
         {
@@ -126,13 +153,44 @@ public sealed class WpfClipboardTextReader : IClipboardTextReader
             }
 
             using var image = System.Windows.Forms.Clipboard.GetImage();
-            return image is null ? null : EncodeDrawingImage(image);
+            return image is null ? null : new System.Drawing.Bitmap(image);
         }
         catch (Exception ex)
         {
             _logger.LogWarning(ex, "Failed to read WinForms clipboard image.");
             return null;
         }
+    }
+
+    private static byte[]? TryCopyBytes(object? data)
+    {
+        try
+        {
+            return data switch
+            {
+                null => null,
+                byte[] bytes => bytes.ToArray(),
+                MemoryStream memoryStream => memoryStream.ToArray(),
+                Stream stream => CopyStream(stream),
+                _ => null
+            };
+        }
+        catch
+        {
+            return null;
+        }
+    }
+
+    private static byte[] CopyStream(Stream stream)
+    {
+        if (stream.CanSeek)
+        {
+            stream.Position = 0;
+        }
+
+        using var memory = new MemoryStream();
+        stream.CopyTo(memory);
+        return memory.ToArray();
     }
 
     private static string EncodeBitmapSource(BitmapSource image)
@@ -165,8 +223,17 @@ public sealed class WpfClipboardTextReader : IClipboardTextReader
 
     private static string EncodeDrawingImage(System.Drawing.Image image)
     {
-        using var stream = new MemoryStream();
-        image.Save(stream, System.Drawing.Imaging.ImageFormat.Png);
-        return Convert.ToBase64String(stream.ToArray());
+        using (image)
+        {
+            using var stream = new MemoryStream();
+            image.Save(stream, System.Drawing.Imaging.ImageFormat.Png);
+            return Convert.ToBase64String(stream.ToArray());
+        }
     }
+
+    private sealed record ImageClipboardSnapshot(
+        byte[]? RawPngBytes,
+        byte[]? DibBytes,
+        BitmapSource? WpfImage,
+        System.Drawing.Image? WinFormsImage);
 }

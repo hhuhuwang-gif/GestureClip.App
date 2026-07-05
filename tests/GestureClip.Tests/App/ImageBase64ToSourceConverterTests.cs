@@ -49,14 +49,25 @@ public sealed class ImageBase64ToSourceConverterTests
     }
 
     [Fact]
-    public void Convert_reuses_cached_bitmap_for_same_base64()
+    public void Convert_reuses_cached_bitmap_for_same_base64_and_decode_width()
     {
         var converter = new ImageBase64ToSourceConverter();
 
-        var first = converter.Convert(OnePixelPngBase64, typeof(BitmapImage), new object(), CultureInfo.InvariantCulture);
-        var second = converter.Convert(OnePixelPngBase64, typeof(BitmapImage), new object(), CultureInfo.InvariantCulture);
+        var first = converter.Convert(OnePixelPngBase64, typeof(BitmapImage), 96, CultureInfo.InvariantCulture);
+        var second = converter.Convert(OnePixelPngBase64, typeof(BitmapImage), 96, CultureInfo.InvariantCulture);
 
         Assert.Same(first, second);
+    }
+
+    [Fact]
+    public void Convert_uses_separate_cache_entries_for_different_decode_widths()
+    {
+        var converter = new ImageBase64ToSourceConverter();
+
+        var thumbnail = converter.Convert(OnePixelPngBase64, typeof(BitmapImage), 96, CultureInfo.InvariantCulture);
+        var preview = converter.Convert(OnePixelPngBase64, typeof(BitmapImage), 360, CultureInfo.InvariantCulture);
+
+        Assert.NotSame(thumbnail, preview);
     }
 
     [Fact]

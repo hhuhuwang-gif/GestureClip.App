@@ -1,5 +1,6 @@
 using System.Collections.ObjectModel;
 using System.ComponentModel;
+using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using GestureClip.Core.Abstractions;
 using GestureClip.Core.Clipboard;
@@ -8,6 +9,8 @@ namespace GestureClip.App.ViewModels;
 
 public sealed class ClipboardOverlayViewModel : INotifyPropertyChanged
 {
+    private const int PageSize = 50;
+
     private readonly IClipboardService _clipboardService;
     private readonly TimeSpan _searchDebounceDelay;
     private string _searchText = "";
@@ -16,10 +19,13 @@ public sealed class ClipboardOverlayViewModel : INotifyPropertyChanged
     private string _statusText = "";
     private CancellationTokenSource? _searchCancellation;
     private int _searchVersion;
+    private int _selectedImagePreviewVersion;
     private int _selectedCount;
     private IReadOnlyList<ClipboardItem> _lastSearchResults = [];
     private ClipboardOverlayFilter _selectedFilter = ClipboardOverlayFilter.All;
     private bool _isLoading;
+    private bool _isLoadingMore;
+    private bool _hasMoreItems;
     private string? _errorMessage;
 
     public ClipboardOverlayViewModel(IClipboardService clipboardService, TimeSpan? searchDebounceDelay = null)
@@ -53,7 +59,7 @@ public sealed class ClipboardOverlayViewModel : INotifyPropertyChanged
 
             _selectedFilter = value;
             OnPropertyChanged();
-            ApplyFilter();
+            _ = SearchAsync();
         }
     }
 
@@ -94,6 +100,10 @@ public sealed class ClipboardOverlayViewModel : INotifyPropertyChanged
             OnPropertyChanged(nameof(SelectedUseCountText));
             OnPropertyChanged(nameof(SelectedPinActionText));
             OnPropertyChanged(nameof(SelectedFavoriteActionText));
+            if (value is { } selected && NeedsImagePreview(selected))
+            {
+                _ = LoadSelectedImagePreviewAsync(selected);
+            }
         }
     }
 
@@ -167,6 +177,40 @@ public sealed class ClipboardOverlayViewModel : INotifyPropertyChanged
         }
     }
 
+    public bool IsLoadingMore
+    {
+        get => _isLoadingMore;
+        private set
+        {
+            if (_isLoadingMore == value)
+            {
+                return;
+            }
+
+            _isLoadingMore = value;
+            OnPropertyChanged();
+            OnPropertyChanged(nameof(CanLoadMore));
+        }
+    }
+
+    public bool HasMoreItems
+    {
+        get => _hasMoreItems;
+        private set
+        {
+            if (_hasMoreItems == value)
+            {
+                return;
+            }
+
+            _hasMoreItems = value;
+            OnPropertyChanged();
+            OnPropertyChanged(nameof(CanLoadMore));
+        }
+    }
+
+    public bool CanLoadMore => HasMoreItems && !IsLoading && !IsLoadingMore;
+
     public string? ErrorMessage
     {
         get => _errorMessage;
@@ -235,8 +279,9 @@ public sealed class ClipboardOverlayViewModel : INotifyPropertyChanged
             IsLoading = true;
             ErrorMessage = null;
             var keyword = SearchText;
+            var filter = ToContentFilter(SelectedFilter);
             results = await Task.Run(
-                () => _clipboardService.SearchAsync(keyword, 50, cancellationToken),
+                () => _clipboardService.SearchAsync(keyword, PageSize, 0, filter, cancellationToken),
                 cancellationToken);
         }
         catch (OperationCanceledException)
@@ -263,12 +308,64 @@ public sealed class ClipboardOverlayViewModel : INotifyPropertyChanged
         }
 
         _lastSearchResults = results;
+        HasMoreItems = results.Count == PageSize;
         ApplyFilter();
         StatusText = "";
     }
 
-    private void ApplyFilter()
+    public async Task<bool> LoadMoreAsync()
     {
+        if (!CanLoadMore)
+        {
+            return false;
+        }
+
+        var version = Volatile.Read(ref _searchVersion);
+        var cancellation = _searchCancellation?.Token ?? CancellationToken.None;
+        var offset = _lastSearchResults.Count;
+        try
+        {
+            IsLoadingMore = true;
+            ErrorMessage = null;
+            var keyword = SearchText;
+            var filter = ToContentFilter(SelectedFilter);
+            var nextPage = await Task.Run(
+                () => _clipboardService.SearchAsync(keyword, PageSize, offset, filter, cancellation),
+                cancellation);
+            if (cancellation.IsCancellationRequested || version != Volatile.Read(ref _searchVersion))
+            {
+                return false;
+            }
+
+            var existingIds = _lastSearchResults.Select(item => item.Id).ToHashSet();
+            _lastSearchResults = _lastSearchResults
+                .Concat(nextPage.Where(item => existingIds.Add(item.Id)))
+                .ToArray();
+            HasMoreItems = nextPage.Count == PageSize;
+            ApplyFilter(keepSelection: true);
+            StatusText = nextPage.Count == 0 ? "没有更多记录了" : $"已加载 {nextPage.Count} 条";
+            return nextPage.Count > 0;
+        }
+        catch (OperationCanceledException)
+        {
+            return false;
+        }
+        catch (Exception ex)
+        {
+            ErrorMessage = $"加载更多剪贴板历史失败：{ex.Message}";
+            StatusText = "加载更多失败";
+            return false;
+        }
+        finally
+        {
+            IsLoadingMore = false;
+        }
+    }
+
+    private void ApplyFilter(bool keepSelection = false)
+    {
+        var refreshWatch = Stopwatch.StartNew();
+        var previousSelectedId = keepSelection ? SelectedItem?.Id : null;
         var filtered = _lastSearchResults.Where(MatchesSelectedFilter).ToArray();
         Items.Clear();
         foreach (var item in filtered)
@@ -276,10 +373,14 @@ public sealed class ClipboardOverlayViewModel : INotifyPropertyChanged
             Items.Add(item);
         }
 
-        SelectedItem = Items.FirstOrDefault();
+        SelectedItem = previousSelectedId is { } id
+            ? Items.FirstOrDefault(item => item.Id == id) ?? Items.FirstOrDefault()
+            : Items.FirstOrDefault();
         UpdateSelectedCount(SelectedItem is null ? 0 : 1);
         EmptyStateText = Items.Count == 0 ? "没有匹配的剪贴板记录" : "";
         OnPropertyChanged(nameof(SummaryText));
+        refreshWatch.Stop();
+        Trace.WriteLine($"ClipboardPerf UiRefreshDurationMs ElapsedMs={refreshWatch.ElapsedMilliseconds} ItemCount={Items.Count} Filter={SelectedFilter}");
     }
 
     public void UpdateSelectedCount(int selectedCount)
@@ -302,6 +403,18 @@ public sealed class ClipboardOverlayViewModel : INotifyPropertyChanged
             ClipboardOverlayFilter.Text => string.Equals(item.ContentType, "text", StringComparison.OrdinalIgnoreCase),
             ClipboardOverlayFilter.Images => string.Equals(item.ContentType, "image/png", StringComparison.OrdinalIgnoreCase),
             _ => true
+        };
+    }
+
+    private static ClipboardContentFilter ToContentFilter(ClipboardOverlayFilter filter)
+    {
+        return filter switch
+        {
+            ClipboardOverlayFilter.Pinned => ClipboardContentFilter.Pinned,
+            ClipboardOverlayFilter.Favorites => ClipboardContentFilter.Favorites,
+            ClipboardOverlayFilter.Text => ClipboardContentFilter.Text,
+            ClipboardOverlayFilter.Images => ClipboardContentFilter.Images,
+            _ => ClipboardContentFilter.All
         };
     }
 
@@ -363,14 +476,21 @@ public sealed class ClipboardOverlayViewModel : INotifyPropertyChanged
 
         try
         {
+            ErrorMessage = null;
             await _clipboardService.CopyItemsAsync(selectedItems, CancellationToken.None);
+            MarkItemsUsed(selectedItems.Select(item => item.Id).ToArray());
             StatusText = selectedItems.Count == 1 ? "已复制到剪贴板" : $"已合并复制 {selectedItems.Count} 条";
-            await SearchAsync();
             return true;
         }
         catch (NotSupportedException ex)
         {
             StatusText = ex.Message;
+            return false;
+        }
+        catch (Exception ex)
+        {
+            ErrorMessage = $"复制剪贴板历史失败：{ex.Message}";
+            StatusText = "复制失败";
             return false;
         }
     }
@@ -382,8 +502,9 @@ public sealed class ClipboardOverlayViewModel : INotifyPropertyChanged
             return false;
         }
 
-        var deleted = await _clipboardService.DeleteItemsAsync(selectedItems.Select(item => item.Id).ToArray(), CancellationToken.None);
-        await SearchAsync();
+        var ids = selectedItems.Select(item => item.Id).ToArray();
+        var deleted = await _clipboardService.DeleteItemsAsync(ids, CancellationToken.None);
+        RemoveItems(ids);
         StatusText = $"已删除 {deleted} 条";
         return deleted > 0;
     }
@@ -396,8 +517,10 @@ public sealed class ClipboardOverlayViewModel : INotifyPropertyChanged
         }
 
         var nextPinned = !SelectedItem.IsPinned;
-        await _clipboardService.SetPinnedAsync(SelectedItem.Id, nextPinned, CancellationToken.None);
-        await SearchAsync();
+        var id = SelectedItem.Id;
+        await _clipboardService.SetPinnedAsync(id, nextPinned, CancellationToken.None);
+        UpdateItem(id, item => item with { IsPinned = nextPinned, UpdatedAt = DateTimeOffset.UtcNow });
+        ApplyFilter();
         StatusText = nextPinned ? "已置顶" : "已取消置顶";
         return true;
     }
@@ -410,10 +533,111 @@ public sealed class ClipboardOverlayViewModel : INotifyPropertyChanged
         }
 
         var nextFavorite = !SelectedItem.IsFavorite;
-        await _clipboardService.SetFavoriteAsync(SelectedItem.Id, nextFavorite, CancellationToken.None);
-        await SearchAsync();
+        var id = SelectedItem.Id;
+        await _clipboardService.SetFavoriteAsync(id, nextFavorite, CancellationToken.None);
+        UpdateItem(id, item => item with { IsFavorite = nextFavorite, UpdatedAt = DateTimeOffset.UtcNow });
+        ApplyFilter();
         StatusText = nextFavorite ? "已保存为片段" : "已取消片段";
         return true;
+    }
+
+    private void MarkItemsUsed(IReadOnlyList<Guid> ids)
+    {
+        var now = DateTimeOffset.UtcNow;
+        foreach (var id in ids)
+        {
+            UpdateItem(id, item => item with
+            {
+                UseCount = item.UseCount + 1,
+                LastUsedAt = now,
+                UpdatedAt = now
+            });
+        }
+    }
+
+    private void UpdateItem(Guid id, Func<ClipboardItem, ClipboardItem> update)
+    {
+        _lastSearchResults = _lastSearchResults
+            .Select(item => item.Id == id ? update(item) : item)
+            .ToArray();
+
+        for (var index = 0; index < Items.Count; index++)
+        {
+            if (Items[index].Id != id)
+            {
+                continue;
+            }
+
+            var updated = update(Items[index]);
+            Items[index] = updated;
+            if (SelectedItem?.Id == id)
+            {
+                SelectedItem = updated;
+            }
+
+            break;
+        }
+
+        OnPropertyChanged(nameof(SummaryText));
+    }
+
+    private async Task LoadSelectedImagePreviewAsync(ClipboardItem item)
+    {
+        var version = Interlocked.Increment(ref _selectedImagePreviewVersion);
+        try
+        {
+            var fullItem = await _clipboardService.GetByIdAsync(item.Id, CancellationToken.None);
+            if (fullItem is null || version != Volatile.Read(ref _selectedImagePreviewVersion))
+            {
+                return;
+            }
+
+            var previewContent = !string.IsNullOrWhiteSpace(fullItem.ThumbnailContent)
+                ? fullItem.ThumbnailContent
+                : fullItem.TextContent;
+            if (string.IsNullOrWhiteSpace(previewContent) || SelectedItem?.Id != item.Id)
+            {
+                return;
+            }
+
+            UpdateItem(item.Id, current => current with
+            {
+                TextContent = current.ContentType == "image/png" ? null : current.TextContent,
+                ThumbnailContent = previewContent
+            });
+        }
+        catch (Exception ex)
+        {
+            ErrorMessage = $"加载图片预览失败：{ex.Message}";
+        }
+    }
+
+    private static bool NeedsImagePreview(ClipboardItem? item)
+    {
+        return item is not null &&
+            string.Equals(item.ContentType, "image/png", StringComparison.OrdinalIgnoreCase) &&
+            string.IsNullOrWhiteSpace(item.ThumbnailContent);
+    }
+
+    private void RemoveItems(IReadOnlyList<Guid> ids)
+    {
+        var idSet = ids.ToHashSet();
+        _lastSearchResults = _lastSearchResults
+            .Where(item => !idSet.Contains(item.Id))
+            .ToArray();
+
+        for (var index = Items.Count - 1; index >= 0; index--)
+        {
+            if (idSet.Contains(Items[index].Id))
+            {
+                Items.RemoveAt(index);
+            }
+        }
+
+        SelectedItem = Items.FirstOrDefault();
+        UpdateSelectedCount(SelectedItem is null ? 0 : 1);
+        EmptyStateText = Items.Count == 0 ? "没有匹配的剪贴板记录" : "";
+        OnPropertyChanged(nameof(SummaryText));
     }
 
     private void OnPropertyChanged([CallerMemberName] string? propertyName = null)

@@ -1,8 +1,10 @@
 using System.ComponentModel;
+using System.Runtime.InteropServices;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Documents;
 using System.Windows.Input;
+using System.Windows.Interop;
 using System.Windows.Media;
 using GestureClip.Core.Gestures;
 using GestureClip.App.Services;
@@ -16,6 +18,10 @@ namespace GestureClip.App;
 
 public partial class SettingsWindow : Window
 {
+    private const int GwlStyle = -16;
+    private const int WsSysmenu = 0x00080000;
+    private const int WsMinimizebox = 0x00020000;
+
     private readonly AppLifecycleService _appLifecycleService;
     private readonly List<GesturePoint> _recordedGesturePoints = [];
     private bool _isRecordingGesture;
@@ -25,6 +31,12 @@ public partial class SettingsWindow : Window
         _appLifecycleService = appLifecycleService;
         InitializeComponent();
         DataContext = viewModel;
+    }
+
+    protected override void OnSourceInitialized(EventArgs e)
+    {
+        base.OnSourceInitialized(e);
+        EnableTaskbarMinimizeBehavior();
     }
 
     protected override void OnClosing(CancelEventArgs e)
@@ -163,4 +175,54 @@ public partial class SettingsWindow : Window
 
         return true;
     }
+
+    private void EnableTaskbarMinimizeBehavior()
+    {
+        var handle = new WindowInteropHelper(this).Handle;
+        if (handle == IntPtr.Zero)
+        {
+            return;
+        }
+
+        var style = GetWindowLong(handle, GwlStyle);
+        SetWindowLong(handle, GwlStyle, style | WsSysmenu | WsMinimizebox);
+    }
+
+    private void PassMouseWheelToParent(object sender, MouseWheelEventArgs e)
+    {
+        if (e.Handled)
+        {
+            return;
+        }
+
+        e.Handled = true;
+        var parent = FindAncestor<ScrollViewer>(sender as DependencyObject);
+        parent?.RaiseEvent(new MouseWheelEventArgs(e.MouseDevice, e.Timestamp, e.Delta)
+        {
+            RoutedEvent = UIElement.MouseWheelEvent,
+            Source = sender
+        });
+    }
+
+    private static T? FindAncestor<T>(DependencyObject? source)
+        where T : DependencyObject
+    {
+        while (source is not null)
+        {
+            if (source is T target)
+            {
+                return target;
+            }
+
+            source = VisualTreeHelper.GetParent(source);
+        }
+
+        return null;
+    }
+
+    [DllImport("user32.dll", SetLastError = true)]
+    private static extern int GetWindowLong(IntPtr hWnd, int nIndex);
+
+    [DllImport("user32.dll", SetLastError = true)]
+    private static extern int SetWindowLong(IntPtr hWnd, int nIndex, int dwNewLong);
 }

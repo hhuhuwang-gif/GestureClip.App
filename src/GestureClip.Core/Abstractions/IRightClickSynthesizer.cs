@@ -7,4 +7,6 @@ public interface IRightClickSynthesizer
     void SynthesizeRightClick(int x, int y);
 
     void SynthesizeClick(GestureTriggerButton button, int x, int y);
+
+    void SynthesizeWheel(int delta, int x, int y);
 }

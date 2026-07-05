@@ -63,6 +63,57 @@ public sealed class ClipboardImageDataReaderTests
         Assert.Contains("Clipboard.ContainsImage()", source);
     }
 
+
+    [Fact]
+    public void WpfClipboardTextReader_captures_snapshot_before_encoding_image_data()
+    {
+        var sourcePath = Path.GetFullPath(Path.Combine(
+            AppContext.BaseDirectory,
+            "..",
+            "..",
+            "..",
+            "..",
+            "..",
+            "src",
+            "GestureClip.Infrastructure",
+            "Clipboard",
+            "WpfClipboardTextReader.cs"));
+        var source = File.ReadAllText(sourcePath);
+
+        Assert.Contains("CaptureImageSnapshot", source);
+        Assert.Contains("EncodeImageSnapshot", source);
+        Assert.DoesNotContain("return TryReadRawPngBase64()", source);
+        Assert.DoesNotContain("?? TryReadDibPngBase64()", source);
+    }
+
+
+    [Fact]
+    public void WpfClipboardTextReader_short_circuits_image_snapshot_formats()
+    {
+        var sourcePath = Path.GetFullPath(Path.Combine(
+            AppContext.BaseDirectory,
+            "..",
+            "..",
+            "..",
+            "..",
+            "..",
+            "src",
+            "GestureClip.Infrastructure",
+            "Clipboard",
+            "WpfClipboardTextReader.cs"));
+        var source = File.ReadAllText(sourcePath);
+        var methodStart = source.IndexOf("private ImageClipboardSnapshot CaptureImageSnapshot()", StringComparison.Ordinal);
+        var methodEnd = source.IndexOf("private string? EncodeImageSnapshot", StringComparison.Ordinal);
+        var method = source[methodStart..methodEnd];
+
+        Assert.Contains("if (rawPngBytes is not null)", method);
+        Assert.Contains("if (dibBytes is not null)", method);
+        Assert.Contains("return new ImageClipboardSnapshot(rawPngBytes", method);
+        Assert.Contains("return new ImageClipboardSnapshot(null, dibBytes", method);
+        Assert.DoesNotContain("TryReadRawPngBytes(),", method);
+    }
+
     private const string OnePixelPngBase64 =
         "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+/p9sAAAAASUVORK5CYII=";
 }
+

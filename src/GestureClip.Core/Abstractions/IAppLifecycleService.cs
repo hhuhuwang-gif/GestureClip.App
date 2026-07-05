@@ -6,6 +6,8 @@ public interface IAppLifecycleService
 
     void ShowSettingsWindow();
 
+    void ToggleSettingsWindow();
+
     void ShowWorkstationDashboardWindow();
 
     void OpenLatestReleasePage();

@@ -167,6 +167,26 @@ public partial class ClipboardOverlayWindow : Window
         FocusSearchBox();
     }
 
+    private async void LoadMoreButton_Click(object sender, RoutedEventArgs e)
+    {
+        await _viewModel.LoadMoreAsync();
+    }
+
+    private async void HistoryList_ScrollChanged(object sender, ScrollChangedEventArgs e)
+    {
+        if (e.VerticalChange <= 0 || !_viewModel.CanLoadMore)
+        {
+            return;
+        }
+
+        if (e.VerticalOffset + e.ViewportHeight < e.ExtentHeight - 48)
+        {
+            return;
+        }
+
+        await _viewModel.LoadMoreAsync();
+    }
+
     private async void HistoryList_MouseDoubleClick(object sender, MouseButtonEventArgs e)
     {
         if (await _viewModel.PasteSelectedAsync())

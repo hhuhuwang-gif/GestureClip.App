@@ -26,7 +26,9 @@ public sealed class DatabaseInitializer
         {
             new SqlMigration(1, "initial", InitialMigration.Sql),
             new SqlMigration(2, "workstation_stats", WorkstationStatsMigration.Sql),
-            new SqlMigration(3, "clipboard_performance_indexes", ClipboardPerformanceMigration.Sql)
+            new SqlMigration(3, "clipboard_performance_indexes", ClipboardPerformanceMigration.Sql),
+            new SqlMigration(4, "clipboard_performance_indexes_v2", ClipboardPerformanceV2Migration.Sql),
+            new SqlMigration(5, "clipboard_image_thumbnails", ClipboardThumbnailMigration.Sql)
         }, cancellationToken);
 
         _logger.LogInformation("Database migrations initialized.");

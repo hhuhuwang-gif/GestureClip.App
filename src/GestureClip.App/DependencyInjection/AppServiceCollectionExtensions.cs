@@ -25,6 +25,7 @@ public static class AppServiceCollectionExtensions
         services.AddSingleton<IClipboardOverlayService>(provider => provider.GetRequiredService<ClipboardOverlayService>());
         services.AddSingleton<GestureOverlayService>();
         services.AddSingleton<IGestureOverlayService>(provider => provider.GetRequiredService<GestureOverlayService>());
+        services.AddSingleton<IOverworkReminderToastService, OverworkReminderToastService>();
         services.AddSingleton<IWorkerLevelUpService, WorkerLevelUpService>();
         services.AddTransient<SettingsViewModel>();
         services.AddTransient<ClipboardOverlayViewModel>();
@@ -32,6 +33,7 @@ public static class AppServiceCollectionExtensions
         services.AddTransient<WorkstationDashboardViewModel>();
         services.AddTransient<ClipboardOverlayWindow>();
         services.AddTransient<GestureOverlayWindow>();
+        services.AddTransient<OverworkReminderToastWindow>();
         services.AddTransient<WorkstationDashboardWindow>();
         services.AddTransient<WorkerLevelUpWindow>();
         services.AddTransient<SettingsWindow>();

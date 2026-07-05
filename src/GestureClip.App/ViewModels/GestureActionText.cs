@@ -55,8 +55,17 @@ public static class GestureActionText
         BuiltInGestureAction.PreviousVirtualDesktop => "上一个桌面",
         BuiltInGestureAction.FullScreen => "全屏",
         BuiltInGestureAction.PinWindow => "置顶窗口",
-        BuiltInGestureAction.LeftMouseClick => "鼠标左键点击",
-        BuiltInGestureAction.RightMouseClick => "鼠标右键点击",
+        BuiltInGestureAction.LeftMouseClick => "左键单击",
+        BuiltInGestureAction.LeftMouseDoubleClick => "左键双击",
+        BuiltInGestureAction.RightMouseClick => "右键单击",
+        BuiltInGestureAction.MiddleMouseClick => "中键单击",
+        BuiltInGestureAction.MouseWheelUp => "滚轮上",
+        BuiltInGestureAction.MouseWheelDown => "滚轮下",
+        BuiltInGestureAction.SearchSelectedTextWithGoogle => "Google 搜索选中文字",
+        BuiltInGestureAction.SearchSelectedTextWithBaidu => "百度搜索选中文字",
+        BuiltInGestureAction.SearchSelectedTextWithBing => "Bing 搜索选中文字",
+        BuiltInGestureAction.OpenGoogle => "打开 Google",
+        BuiltInGestureAction.OpenBaidu => "打开百度",
         _ => action.ToString()
     };
 
@@ -109,7 +118,16 @@ public static class GestureActionText
         BuiltInGestureAction.FullScreen => "F11",
         BuiltInGestureAction.PinWindow => "预留",
         BuiltInGestureAction.LeftMouseClick => "鼠标左键",
+        BuiltInGestureAction.LeftMouseDoubleClick => "鼠标左键 ×2",
         BuiltInGestureAction.RightMouseClick => "鼠标右键",
+        BuiltInGestureAction.MiddleMouseClick => "鼠标中键",
+        BuiltInGestureAction.MouseWheelUp => "Wheel ↑",
+        BuiltInGestureAction.MouseWheelDown => "Wheel ↓",
+        BuiltInGestureAction.SearchSelectedTextWithGoogle => "Google",
+        BuiltInGestureAction.SearchSelectedTextWithBaidu => "百度",
+        BuiltInGestureAction.SearchSelectedTextWithBing => "Bing",
+        BuiltInGestureAction.OpenGoogle => "google.com",
+        BuiltInGestureAction.OpenBaidu => "baidu.com",
         _ => ""
     };
 }

@@ -44,6 +44,20 @@ public sealed class AppLifecycleService : IAppLifecycleService
         _logger.LogInformation("Settings window shown.");
     }
 
+    public void ToggleSettingsWindow()
+    {
+        if (_settingsWindow is not null &&
+            _settingsWindow.IsVisible &&
+            _settingsWindow.WindowState != WindowState.Minimized)
+        {
+            _settingsWindow.Hide();
+            _logger.LogInformation("Settings window hidden to tray by app icon toggle.");
+            return;
+        }
+
+        ShowSettingsWindow();
+    }
+
     public void ShowWorkstationDashboardWindow()
     {
         if (_workstationDashboardWindow is null)
@@ -114,6 +128,8 @@ public sealed class AppLifecycleService : IAppLifecycleService
             _serviceProvider.GetService<IMouseGestureService>()?.StopAsync(CancellationToken.None) ?? Task.CompletedTask);
         await StopStepAsync("clipboard service", () =>
             _serviceProvider.GetService<IClipboardService>()?.StopAsync(CancellationToken.None) ?? Task.CompletedTask);
+        await StopStepAsync("overwork reminder service", () =>
+            _serviceProvider.GetService<IOverworkReminderService>()?.StopAsync(CancellationToken.None) ?? Task.CompletedTask);
         await StopStepAsync("tray icon", () =>
         {
             _serviceProvider.GetService<TrayIconService>()?.Dispose();

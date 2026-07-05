@@ -99,11 +99,133 @@ public sealed class ClipboardOverlayViewModelTests
     }
 
     [Fact]
+    public async Task LoadAsync_with_1000_text_items_keeps_first_page_to_50()
+    {
+        var items = Enumerable.Range(0, 1000)
+            .Select(index => TextItem($"item {index:0000}"))
+            .ToArray();
+        var service = new FakeClipboardService(items)
+        {
+            SearchHandler = (_, limit, offset, _) => Task.FromResult<IReadOnlyList<ClipboardItem>>(items.Take(limit).ToArray())
+        };
+        var viewModel = new ClipboardOverlayViewModel(service, TimeSpan.Zero);
+
+        await viewModel.LoadAsync();
+
+        Assert.Equal(50, viewModel.Items.Count);
+        Assert.Equal([50], service.SearchLimits);
+    }
+
+    [Fact]
+    public async Task LoadAsync_with_100_image_items_keeps_first_page_to_50()
+    {
+        var now = DateTimeOffset.UtcNow;
+        var items = Enumerable.Range(0, 100)
+            .Select(index => new ClipboardItem(
+                Guid.NewGuid(),
+                "image/png",
+                "png-base64",
+                $"图片 {index}",
+                $"hash-{index}",
+                null,
+                "Test",
+                "test.exe",
+                false,
+                false,
+                false,
+                0,
+                now.AddSeconds(-index),
+                now.AddSeconds(-index),
+                null))
+            .ToArray();
+        var service = new FakeClipboardService(items)
+        {
+            SearchHandler = (_, limit, offset, _) => Task.FromResult<IReadOnlyList<ClipboardItem>>(items.Take(limit).ToArray())
+        };
+        var viewModel = new ClipboardOverlayViewModel(service, TimeSpan.Zero);
+
+        await viewModel.LoadAsync();
+
+        Assert.Equal(50, viewModel.Items.Count);
+        Assert.Equal([50], service.SearchLimits);
+    }
+
+
+    [Fact]
+    public async Task LoadMoreAsync_appends_next_page_without_replacing_existing_items()
+    {
+        var items = Enumerable.Range(0, 120)
+            .Select(index => TextItem($"item {index:000}"))
+            .ToArray();
+        var service = new FakeClipboardService(items)
+        {
+            SearchHandler = (_, limit, offset, _) => Task.FromResult<IReadOnlyList<ClipboardItem>>(items.Skip(offset).Take(limit).ToArray())
+        };
+        var viewModel = new ClipboardOverlayViewModel(service, TimeSpan.Zero);
+
+        await viewModel.LoadAsync();
+        await viewModel.LoadMoreAsync();
+
+        Assert.Equal(100, viewModel.Items.Count);
+        Assert.Equal([0, 50], service.SearchOffsets);
+        Assert.True(viewModel.HasMoreItems);
+        Assert.Equal("item 000", viewModel.Items[0].TextContent);
+        Assert.Equal("item 099", viewModel.Items[^1].TextContent);
+    }
+
+    [Fact]
+    public async Task LoadMoreAsync_marks_no_more_items_when_short_page_returns()
+    {
+        var items = Enumerable.Range(0, 70)
+            .Select(index => TextItem($"item {index:000}"))
+            .ToArray();
+        var service = new FakeClipboardService(items)
+        {
+            SearchHandler = (_, limit, offset, _) => Task.FromResult<IReadOnlyList<ClipboardItem>>(items.Skip(offset).Take(limit).ToArray())
+        };
+        var viewModel = new ClipboardOverlayViewModel(service, TimeSpan.Zero);
+
+        await viewModel.LoadAsync();
+        await viewModel.LoadMoreAsync();
+
+        Assert.Equal(70, viewModel.Items.Count);
+        Assert.False(viewModel.HasMoreItems);
+        Assert.Equal([0, 50], service.SearchOffsets);
+    }
+
+    [Fact]
+    public async Task LoadMoreAsync_keeps_search_keyword_when_loading_next_page()
+    {
+        var items = Enumerable.Range(0, 75)
+            .Select(index => TextItem($"alpha item {index:000}"))
+            .ToArray();
+        var service = new FakeClipboardService(items)
+        {
+            SearchHandler = (keyword, limit, offset, _) =>
+                Task.FromResult<IReadOnlyList<ClipboardItem>>(
+                    items.Where(item => item.TextContent!.Contains(keyword, StringComparison.OrdinalIgnoreCase))
+                        .Skip(offset)
+                        .Take(limit)
+                        .ToArray())
+        };
+        var viewModel = new ClipboardOverlayViewModel(service, TimeSpan.Zero);
+
+        viewModel.SearchText = "alpha";
+        await WaitForAsync(() => viewModel.Items.Count == 50);
+        await viewModel.LoadMoreAsync();
+
+        Assert.Equal(["alpha", "alpha"], service.SearchKeywords);
+        Assert.Equal([0, 50], service.SearchOffsets);
+        Assert.Equal(75, viewModel.Items.Count);
+        Assert.False(viewModel.HasMoreItems);
+    }
+
+    [Fact]
     public async Task LoadAsync_sets_error_message_when_search_fails()
     {
         var service = new FakeClipboardService([])
         {
-            SearchHandler = (_, _, _) => throw new InvalidOperationException("database busy")
+            SearchHandler = (_, _, _, _) => throw new InvalidOperationException("database busy")
         };
         var viewModel = new ClipboardOverlayViewModel(service, TimeSpan.Zero);
 
@@ -121,7 +243,7 @@ public sealed class ClipboardOverlayViewModelTests
         var newItem = TextItem("new");
         var service = new FakeClipboardService([])
         {
-            SearchHandler = async (keyword, _, cancellationToken) =>
+            SearchHandler = async (keyword, _, _, cancellationToken) =>
             {
                 if (keyword == "old")
                 {
@@ -146,6 +268,42 @@ public sealed class ClipboardOverlayViewModelTests
         Assert.Equal("new", viewModel.Items[0].PreviewText);
     }
 
+
+    [Fact]
+    public async Task Selecting_legacy_image_loads_preview_content_on_demand()
+    {
+        var now = DateTimeOffset.UtcNow;
+        var listImage = new ClipboardItem(
+            Guid.NewGuid(),
+            "image/png",
+            null,
+            "图片",
+            "hash-image",
+            null,
+            "Test",
+            "test.exe",
+            false,
+            false,
+            false,
+            0,
+            now,
+            now,
+            null,
+            null);
+        var fullImage = listImage with { TextContent = "full-image-base64" };
+        var service = new FakeClipboardService([listImage]);
+        service.FullItems[listImage.Id] = fullImage;
+        var viewModel = new ClipboardOverlayViewModel(service, TimeSpan.Zero);
+
+        await viewModel.LoadAsync();
+        await WaitForAsync(() => viewModel.SelectedItem?.ThumbnailContent == "full-image-base64");
+
+        Assert.Equal([listImage.Id], service.GetByIdRequests);
+        var selected = Assert.IsType<ClipboardItem>(viewModel.SelectedItem);
+        Assert.Null(selected.TextContent);
+        Assert.Equal("full-image-base64", selected.ThumbnailContent);
+    }
+
     [Fact]
     public async Task DeleteItemsAsync_deletes_selected_items_and_refreshes()
     {
@@ -164,6 +322,44 @@ public sealed class ClipboardOverlayViewModelTests
     }
 
     [Fact]
+    public async Task CopySelectedAsync_does_not_reload_list_after_copy()
+    {
+        var first = TextItem("first");
+        var second = TextItem("second");
+        var service = new FakeClipboardService([first, second]);
+        var viewModel = new ClipboardOverlayViewModel(service, TimeSpan.Zero);
+        await viewModel.LoadAsync();
+        var before = viewModel.Items.Select(item => item.Id).ToArray();
+        service.SearchKeywords.Clear();
+
+        var copied = await viewModel.CopySelectedAsync([first]);
+
+        Assert.True(copied);
+        Assert.Empty(service.SearchKeywords);
+        Assert.Equal(before, viewModel.Items.Select(item => item.Id).ToArray());
+        Assert.Equal("已复制到剪贴板", viewModel.StatusText);
+    }
+
+    [Fact]
+    public async Task CopySelectedAsync_handles_20_fast_clicks_without_reloading()
+    {
+        var items = Enumerable.Range(0, 50).Select(index => TextItem($"item {index}")).ToArray();
+        var service = new FakeClipboardService(items);
+        var viewModel = new ClipboardOverlayViewModel(service, TimeSpan.Zero);
+        await viewModel.LoadAsync();
+        service.SearchKeywords.Clear();
+
+        foreach (var item in viewModel.Items.Take(20).ToArray())
+        {
+            Assert.True(await viewModel.CopySelectedAsync([item]));
+        }
+
+        Assert.Empty(service.SearchKeywords);
+        Assert.Equal(20, service.CopyCount);
+        Assert.Equal("已复制到剪贴板", viewModel.StatusText);
+    }
+
+    [Fact]
     public async Task TogglePinnedAsync_updates_selected_item_and_refreshes()
     {
         var item = TextItem("pin me");
@@ -177,6 +373,28 @@ public sealed class ClipboardOverlayViewModelTests
         Assert.Equal((item.Id, true), service.PinnedUpdates.Single());
         Assert.True(viewModel.Items.Single().IsPinned);
         Assert.Equal("已置顶", viewModel.StatusText);
+    }
+
+
+    [Fact]
+    public async Task CopySelectedAsync_handles_100_fast_clicks_without_reloading_or_growing_items()
+    {
+        var item = TextItem("repeat");
+        var service = new FakeClipboardService([item]);
+        var viewModel = new ClipboardOverlayViewModel(service, TimeSpan.Zero);
+        await viewModel.LoadAsync();
+        service.SearchKeywords.Clear();
+
+        for (var index = 0; index < 100; index++)
+        {
+            Assert.True(await viewModel.CopySelectedAsync([item]));
+        }
+
+        Assert.Equal(100, service.CopyCount);
+        Assert.Empty(service.SearchKeywords);
+        Assert.Single(viewModel.Items);
+        Assert.Equal(100, viewModel.Items[0].UseCount);
+        Assert.Equal("已复制到剪贴板", viewModel.StatusText);
     }
 
     [Fact]
@@ -221,19 +439,78 @@ public sealed class ClipboardOverlayViewModelTests
         await viewModel.LoadAsync();
 
         viewModel.SelectedFilter = ClipboardOverlayFilter.Pinned;
+        await WaitForAsync(() => viewModel.Items.Count == 1 && viewModel.Items.FirstOrDefault()?.PreviewText == "pinned");
         Assert.Equal(["pinned"], viewModel.Items.Select(item => item.PreviewText ?? "").ToArray());
 
         viewModel.SelectedFilter = ClipboardOverlayFilter.Favorites;
+        await WaitForAsync(() => viewModel.Items.Count == 1 && viewModel.Items.FirstOrDefault()?.PreviewText == "favorite");
         Assert.Equal(["favorite"], viewModel.Items.Select(item => item.PreviewText ?? "").ToArray());
 
         viewModel.SelectedFilter = ClipboardOverlayFilter.Images;
+        await WaitForAsync(() => viewModel.Items.Count == 1 && viewModel.Items.FirstOrDefault()?.PreviewText == "图片");
         Assert.Equal(["图片"], viewModel.Items.Select(item => item.PreviewText ?? "").ToArray());
 
         viewModel.SelectedFilter = ClipboardOverlayFilter.Text;
+        await WaitForAsync(() => viewModel.Items.Count == 3 && viewModel.Items.All(item => item.ContentType == "text"));
         Assert.Equal(["pinned", "normal", "favorite"], viewModel.Items.Select(item => item.PreviewText ?? "").ToArray());
 
         viewModel.SelectedFilter = ClipboardOverlayFilter.All;
+        await WaitForAsync(() => viewModel.Items.Count == 4);
         Assert.Equal(["pinned", "图片", "normal", "favorite"], viewModel.Items.Select(item => item.PreviewText ?? "").ToArray());
+    }
+
+    [Fact]
+    public async Task SelectedFilter_queries_database_filter_instead_of_current_page()
+    {
+        var textItems = Enumerable.Range(0, 50)
+            .Select(index => TextItem($"text {index:000}"))
+            .ToArray();
+        var image = ImageItem("图片 001");
+        var service = new FakeClipboardService(textItems)
+        {
+            SearchHandlerWithFilter = (_, _, _, filter, _) =>
+            {
+                return Task.FromResult<IReadOnlyList<ClipboardItem>>(
+                    filter == ClipboardContentFilter.Images ? [image] : textItems);
+            }
+        };
+        var viewModel = new ClipboardOverlayViewModel(service, TimeSpan.Zero);
+
+        await viewModel.LoadAsync();
+        viewModel.SelectedFilter = ClipboardOverlayFilter.Images;
+        await WaitForAsync(() => service.SearchFilters.Contains(ClipboardContentFilter.Images));
+
+        Assert.Equal([ClipboardContentFilter.All, ClipboardContentFilter.Images], service.SearchFilters);
+        Assert.Equal(["图片 001"], viewModel.Items.Select(item => item.PreviewText ?? "").ToArray());
+    }
+
+    [Fact]
+    public async Task LoadMoreAsync_uses_selected_database_filter()
+    {
+        var firstPage = Enumerable.Range(0, 50)
+            .Select(index => ImageItem($"图片 {index:000}"))
+            .ToArray();
+        var secondPage = Enumerable.Range(50, 10)
+            .Select(index => ImageItem($"图片 {index:000}"))
+            .ToArray();
+        var service = new FakeClipboardService(firstPage.Concat(secondPage).ToArray())
+        {
+            SearchHandlerWithFilter = (_, limit, offset, filter, _) =>
+            {
+                Assert.Equal(ClipboardContentFilter.Images, filter);
+                return Task.FromResult<IReadOnlyList<ClipboardItem>>(
+                    offset == 0 ? firstPage.Take(limit).ToArray() : secondPage.Take(limit).ToArray());
+            }
+        };
+        var viewModel = new ClipboardOverlayViewModel(service, TimeSpan.Zero);
+
+        viewModel.SelectedFilter = ClipboardOverlayFilter.Images;
+        await WaitForAsync(() => viewModel.Items.Count == 50);
+        await viewModel.LoadMoreAsync();
+
+        Assert.Equal([0, 50], service.SearchOffsets);
+        Assert.Equal([ClipboardContentFilter.Images, ClipboardContentFilter.Images], service.SearchFilters);
+        Assert.Equal(60, viewModel.Items.Count);
     }
 
     [Fact]
@@ -249,6 +526,25 @@ public sealed class ClipboardOverlayViewModelTests
         Assert.True(cleared);
         Assert.Equal("", viewModel.SearchText);
         Assert.Contains("", service.SearchKeywords);
+    }
+
+    [Fact]
+    public async Task ClearSearchAsync_restores_recent_history_first_page_without_full_reload()
+    {
+        var items = Enumerable.Range(0, 1000)
+            .Select(index => TextItem($"item {index:0000}"))
+            .ToArray();
+        var service = new FakeClipboardService(items);
+        var viewModel = new ClipboardOverlayViewModel(service, TimeSpan.Zero);
+        viewModel.SearchText = "item 0001";
+        await WaitForAsync(() => service.SearchKeywords.Contains("item 0001"));
+
+        await viewModel.ClearSearchAsync();
+
+        Assert.Equal("", viewModel.SearchText);
+        Assert.Equal(50, viewModel.Items.Count);
+        Assert.Equal(50, service.SearchLimits.Last());
+        Assert.Equal(0, service.SearchOffsets.Last());
     }
 
     [Fact]
@@ -286,6 +582,25 @@ public sealed class ClipboardOverlayViewModelTests
         Assert.Equal("粘贴失败", viewModel.StatusText);
     }
 
+    [Fact]
+    public async Task CopySelectedAsync_shows_error_without_throwing_when_clipboard_write_fails()
+    {
+        var item = TextItem("copy me");
+        var service = new FakeClipboardService([item])
+        {
+            CopyHandler = (_, _) => throw new InvalidOperationException("clipboard busy")
+        };
+        var viewModel = new ClipboardOverlayViewModel(service, TimeSpan.Zero);
+        await viewModel.LoadAsync();
+
+        var copied = await viewModel.CopySelectedAsync([item]);
+
+        Assert.False(copied);
+        Assert.True(viewModel.HasError);
+        Assert.Contains("clipboard busy", viewModel.ErrorMessage);
+        Assert.Equal("复制失败", viewModel.StatusText);
+    }
+
     private static ClipboardItem TextItem(string text)
     {
         var now = DateTimeOffset.UtcNow;
@@ -305,6 +620,28 @@ public sealed class ClipboardOverlayViewModelTests
             now,
             now,
             null);
+    }
+
+    private static ClipboardItem ImageItem(string previewText)
+    {
+        var now = DateTimeOffset.UtcNow;
+        return new ClipboardItem(
+            Guid.NewGuid(),
+            "image/png",
+            null,
+            previewText,
+            $"hash-{previewText}",
+            null,
+            "Test",
+            "test.exe",
+            false,
+            false,
+            false,
+            0,
+            now,
+            now,
+            null,
+            $"thumb-{previewText}");
     }
 
     private static async Task WaitForAsync(Func<bool> condition)
@@ -338,15 +675,29 @@ public sealed class ClipboardOverlayViewModelTests
 
         public List<int> SearchLimits { get; } = [];
 
+        public List<int> SearchOffsets { get; } = [];
+
+        public List<ClipboardContentFilter> SearchFilters { get; } = [];
+
         public List<Guid> DeletedIds { get; } = [];
+
+        public Dictionary<Guid, ClipboardItem> FullItems { get; } = [];
+
+        public List<Guid> GetByIdRequests { get; } = [];
 
         public List<(Guid Id, bool IsPinned)> PinnedUpdates { get; } = [];
 
         public List<(Guid Id, bool IsFavorite)> FavoriteUpdates { get; } = [];
 
-        public Func<string, int, CancellationToken, Task<IReadOnlyList<ClipboardItem>>>? SearchHandler { get; set; }
+        public int CopyCount { get; private set; }
+
+        public Func<string, int, int, CancellationToken, Task<IReadOnlyList<ClipboardItem>>>? SearchHandler { get; set; }
+
+        public Func<string, int, int, ClipboardContentFilter, CancellationToken, Task<IReadOnlyList<ClipboardItem>>>? SearchHandlerWithFilter { get; set; }
 
         public Func<ClipboardItem, PasteOptions, CancellationToken, Task>? PasteHandler { get; set; }
+
+        public Func<IReadOnlyList<ClipboardItem>, CancellationToken, Task>? CopyHandler { get; set; }
 
         public DateTimeOffset? SuppressCaptureUntil => null;
 
@@ -362,8 +713,20 @@ public sealed class ClipboardOverlayViewModelTests
 
         public Task<IReadOnlyList<ClipboardItem>> SearchAsync(string keyword, int limit, CancellationToken cancellationToken)
         {
+            return SearchAsync(keyword, limit, 0, cancellationToken);
+        }
+
+        public Task<IReadOnlyList<ClipboardItem>> SearchAsync(string keyword, int limit, int offset, CancellationToken cancellationToken)
+        {
+            return SearchAsync(keyword, limit, offset, ClipboardContentFilter.All, cancellationToken);
+        }
+
+        public Task<IReadOnlyList<ClipboardItem>> SearchAsync(string keyword, int limit, int offset, ClipboardContentFilter filter, CancellationToken cancellationToken)
+        {
             SearchKeywords.Add(keyword);
             SearchLimits.Add(limit);
+            SearchOffsets.Add(offset);
+            SearchFilters.Add(filter);
             var visibleItems = _items.Where(item => !DeletedIds.Contains(item.Id))
                 .Select(item =>
                 {
@@ -380,12 +743,35 @@ public sealed class ClipboardOverlayViewModelTests
                 .ThenByDescending(item => item.CreatedAt)
                 .ToArray();
 
+            if (SearchHandlerWithFilter is not null)
+            {
+                return SearchHandlerWithFilter(keyword, limit, offset, filter, cancellationToken);
+            }
+
             return SearchHandler is null
-                ? Task.FromResult<IReadOnlyList<ClipboardItem>>(visibleItems)
-                : SearchHandler(keyword, limit, cancellationToken);
+                ? Task.FromResult<IReadOnlyList<ClipboardItem>>(visibleItems.Where(item => MatchesFilter(item, filter)).Skip(offset).Take(limit).ToArray())
+                : SearchHandler(keyword, limit, offset, cancellationToken);
+        }
+
+        private static bool MatchesFilter(ClipboardItem item, ClipboardContentFilter filter)
+        {
+            return filter switch
+            {
+                ClipboardContentFilter.Pinned => item.IsPinned,
+                ClipboardContentFilter.Favorites => item.IsFavorite,
+                ClipboardContentFilter.Text => string.Equals(item.ContentType, "text", StringComparison.OrdinalIgnoreCase),
+                ClipboardContentFilter.Images => string.Equals(item.ContentType, "image/png", StringComparison.OrdinalIgnoreCase),
+                _ => true
+            };
         }
 
         public Task<ClipboardItem?> GetLatestAsync(CancellationToken cancellationToken) => Task.FromResult<ClipboardItem?>(null);
+
+        public Task<ClipboardItem?> GetByIdAsync(Guid id, CancellationToken cancellationToken)
+        {
+            GetByIdRequests.Add(id);
+            return Task.FromResult(FullItems.TryGetValue(id, out var item) ? item : null);
+        }
 
         public Task PasteAsync(ClipboardItem item, PasteOptions options, CancellationToken cancellationToken)
         {
@@ -394,7 +780,13 @@ public sealed class ClipboardOverlayViewModelTests
                 : PasteHandler(item, options, cancellationToken);
         }
 
-        public Task CopyItemsAsync(IReadOnlyList<ClipboardItem> items, CancellationToken cancellationToken) => Task.CompletedTask;
+        public Task CopyItemsAsync(IReadOnlyList<ClipboardItem> items, CancellationToken cancellationToken)
+        {
+            CopyCount++;
+            return CopyHandler is null
+                ? Task.CompletedTask
+                : CopyHandler(items, cancellationToken);
+        }
 
         public Task<int> DeleteItemsAsync(IReadOnlyList<Guid> ids, CancellationToken cancellationToken)
         {

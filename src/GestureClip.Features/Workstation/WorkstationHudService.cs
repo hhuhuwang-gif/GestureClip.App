@@ -15,6 +15,7 @@ public sealed class WorkstationHudService : IWorkstationHudService
     private readonly ISettingsService _settingsService;
     private readonly IWorkstationDashboardService _dashboardService;
     private readonly IWorkerLevelService _workerLevelService;
+    private readonly IWorkTimeStageService _workTimeStageService;
     private readonly SemaphoreSlim _snapshotCacheLock = new(1, 1);
 
     private DateTimeOffset? _snapshotCacheTimestamp;
@@ -24,11 +25,13 @@ public sealed class WorkstationHudService : IWorkstationHudService
     public WorkstationHudService(
         ISettingsService settingsService,
         IWorkstationDashboardService dashboardService,
-        IWorkerLevelService workerLevelService)
+        IWorkerLevelService workerLevelService,
+        IWorkTimeStageService workTimeStageService)
     {
         _settingsService = settingsService;
         _dashboardService = dashboardService;
         _workerLevelService = workerLevelService;
+        _workTimeStageService = workTimeStageService;
     }
 
     public async Task<WorkstationHudSnapshot> BuildSnapshotAsync(
@@ -41,19 +44,35 @@ public sealed class WorkstationHudService : IWorkstationHudService
         var showFun = _settingsService.Get(SettingKeys.HudFunTextEnabled, true);
         var showLevel = _settingsService.Get(SettingKeys.HudStatusLevelEnabled, true) &&
             _settingsService.Get(SettingKeys.WorkerLevelShowLevelInHud, true);
+        var stageSnapshot = _workTimeStageService.GetSnapshot(now);
+        var enableTimeColor = _settingsService.Get(SettingKeys.WorkstationEnableHudTimeColor, true);
+        var theme = enableTimeColor
+            ? stageSnapshot.Theme
+            : WorkTimeStageThemeProvider.GetTheme(WorkTimeStage.OffWork);
 
         var displayXp = gainedXp > 0 ? gainedXp : EstimateGestureXp(hudInfo.Action);
+        var funText = showFun ? GetFunText(hudInfo.Action) : string.Empty;
+        if (showFun && enableTimeColor && !string.IsNullOrWhiteSpace(funText))
+        {
+            funText = $"{funText} · {theme.ShortStatusText}";
+        }
 
         return new WorkstationHudSnapshot(
-            showFun ? GetFunText(hudInfo.Action) : string.Empty,
+            funText,
             displayXp > 0 ? $"经验 +{displayXp}" : string.Empty,
             showLevel ? level.LevelText : string.Empty,
             showLevel ? level.XpText : string.Empty,
             showLevel ? level.ProgressPercent : 0d,
             $"今日 {FormatMoney(dashboard.TodayEarned)} · 下班 {FormatDuration(dashboard.TimeUntilOffWork)} · 发薪 {FormatPayday(dashboard.DaysUntilPayday)}",
             $"手势 {dashboard.GestureCount} · 复制 {dashboard.CopyCount} · 粘贴 {dashboard.PasteCount} · 少点 {dashboard.EstimatedSavedClicks} 次",
-            dashboard.WorkStatusText,
-            showLevel);
+            theme.ShortStatusText,
+            showLevel,
+            stageSnapshot.Stage,
+            theme.Key,
+            theme.StartColor,
+            theme.EndColor,
+            theme.AccentColor,
+            theme.FriendlyColorName);
     }
 
     private async Task<(WorkstationDashboardSnapshot Dashboard, WorkerLevelSnapshot Level)> GetCachedSnapshotsAsync(

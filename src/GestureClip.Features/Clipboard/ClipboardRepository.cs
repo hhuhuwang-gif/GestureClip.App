@@ -21,7 +21,7 @@ public sealed class ClipboardRepository : IClipboardRepository
         var row = await connection.QuerySingleOrDefaultAsync<ClipboardItemRow>(
             """
 SELECT
-    Id, ContentType, TextContent, PreviewText, Hash, PlainTextHash, SourceApp, SourceProcess,
+    Id, ContentType, TextContent, ThumbnailContent, PreviewText, Hash, PlainTextHash, SourceApp, SourceProcess,
     IsPinned, IsFavorite, IsSensitive, UseCount, CreatedAt, UpdatedAt, LastUsedAt
 FROM ClipboardItems
 WHERE Hash = @Hash
@@ -40,11 +40,11 @@ LIMIT 1;
             """
 INSERT INTO ClipboardItems (
     Id, ContentType, TextContent, PreviewText, Hash, PlainTextHash, SourceApp, SourceProcess,
-    IsPinned, IsFavorite, IsSensitive, UseCount, CreatedAt, UpdatedAt, LastUsedAt
+    ThumbnailContent, IsPinned, IsFavorite, IsSensitive, UseCount, CreatedAt, UpdatedAt, LastUsedAt
 )
 SELECT
     @Id, @ContentType, @TextContent, @PreviewText, @Hash, @PlainTextHash, @SourceApp, @SourceProcess,
-    @IsPinned, @IsFavorite, @IsSensitive, @UseCount, @CreatedAt, @UpdatedAt, @LastUsedAt
+    @ThumbnailContent, @IsPinned, @IsFavorite, @IsSensitive, @UseCount, @CreatedAt, @UpdatedAt, @LastUsedAt
 WHERE NOT EXISTS (
     SELECT 1
     FROM ClipboardItems
@@ -57,42 +57,68 @@ WHERE NOT EXISTS (
 
     public async Task<IReadOnlyList<ClipboardItem>> SearchAsync(string keyword, int limit, CancellationToken cancellationToken)
     {
+        return await SearchAsync(keyword, limit, 0, cancellationToken);
+    }
+
+    public async Task<IReadOnlyList<ClipboardItem>> SearchAsync(string keyword, int limit, int offset, CancellationToken cancellationToken)
+    {
+        return await SearchAsync(keyword, limit, offset, ClipboardContentFilter.All, cancellationToken);
+    }
+
+    public async Task<IReadOnlyList<ClipboardItem>> SearchAsync(
+        string keyword,
+        int limit,
+        int offset,
+        ClipboardContentFilter filter,
+        CancellationToken cancellationToken)
+    {
         await using var connection = await _connectionFactory.OpenConnectionAsync(cancellationToken);
 
         var safeLimit = Math.Clamp(limit, 1, 200);
+        var safeOffset = Math.Max(0, offset);
         var normalizedKeyword = keyword.Trim();
-
-        if (normalizedKeyword.Length == 0)
+        var whereParts = new List<string>();
+        var filterSql = ToFilterSql(filter);
+        if (filterSql.Length > 0)
         {
-            var recent = await connection.QueryAsync<ClipboardItemRow>(
-                """
-SELECT
-    Id, ContentType, TextContent, PreviewText, Hash, PlainTextHash, SourceApp, SourceProcess,
-    IsPinned, IsFavorite, IsSensitive, UseCount, CreatedAt, UpdatedAt, LastUsedAt
-FROM ClipboardItems
-ORDER BY IsPinned DESC, CreatedAt DESC
-LIMIT @Limit;
-""",
-                new { Limit = safeLimit });
-
-            return recent.Select(row => row.ToModel()).ToArray();
+            whereParts.Add(filterSql);
         }
 
-        var results = await connection.QueryAsync<ClipboardItemRow>(
-            """
+        if (normalizedKeyword.Length > 0)
+        {
+            whereParts.Add("""
+((ContentType = 'text' AND (TextContent LIKE @LikeKeyword OR PreviewText LIKE @LikeKeyword))
+   OR (ContentType <> 'text' AND PreviewText LIKE @LikeKeyword))
+""");
+        }
+
+        var whereSql = whereParts.Count == 0
+            ? ""
+            : $"WHERE {string.Join(" AND ", whereParts)}";
+
+        var sql = $"""
 SELECT
-    Id, ContentType, TextContent, PreviewText, Hash, PlainTextHash, SourceApp, SourceProcess,
+    Id, ContentType,
+    CASE WHEN ContentType = 'image/png' THEN NULL ELSE TextContent END AS TextContent,
+    CASE
+        WHEN ContentType = 'image/png' THEN ThumbnailContent
+        ELSE ThumbnailContent
+    END AS ThumbnailContent,
+    PreviewText, Hash, PlainTextHash, SourceApp, SourceProcess,
     IsPinned, IsFavorite, IsSensitive, UseCount, CreatedAt, UpdatedAt, LastUsedAt
 FROM ClipboardItems
-WHERE (ContentType = 'text' AND (TextContent LIKE @LikeKeyword OR PreviewText LIKE @LikeKeyword))
-   OR (ContentType <> 'text' AND PreviewText LIKE @LikeKeyword)
+{whereSql}
 ORDER BY IsPinned DESC, CreatedAt DESC
-LIMIT @Limit;
-""",
+LIMIT @Limit OFFSET @Offset;
+""";
+
+        var results = await connection.QueryAsync<ClipboardItemRow>(
+            sql,
             new
             {
                 LikeKeyword = $"%{EscapeLikeValue(normalizedKeyword)}%",
-                Limit = safeLimit
+                Limit = safeLimit,
+                Offset = safeOffset
             });
 
         return results.Select(row => row.ToModel()).ToArray();
@@ -105,13 +131,31 @@ LIMIT @Limit;
         var row = await connection.QuerySingleOrDefaultAsync<ClipboardItemRow>(
             """
 SELECT
-    Id, ContentType, TextContent, PreviewText, Hash, PlainTextHash, SourceApp, SourceProcess,
+    Id, ContentType, TextContent, ThumbnailContent, PreviewText, Hash, PlainTextHash, SourceApp, SourceProcess,
     IsPinned, IsFavorite, IsSensitive, UseCount, CreatedAt, UpdatedAt, LastUsedAt
 FROM ClipboardItems
 WHERE ContentType = 'text'
 ORDER BY CreatedAt DESC
 LIMIT 1;
 """);
+
+        return row?.ToModel();
+    }
+
+    public async Task<ClipboardItem?> GetByIdAsync(Guid id, CancellationToken cancellationToken)
+    {
+        await using var connection = await _connectionFactory.OpenConnectionAsync(cancellationToken);
+
+        var row = await connection.QuerySingleOrDefaultAsync<ClipboardItemRow>(
+            """
+SELECT
+    Id, ContentType, TextContent, ThumbnailContent, PreviewText, Hash, PlainTextHash, SourceApp, SourceProcess,
+    IsPinned, IsFavorite, IsSensitive, UseCount, CreatedAt, UpdatedAt, LastUsedAt
+FROM ClipboardItems
+WHERE Id = @Id
+LIMIT 1;
+""",
+            new { Id = id.ToString() });
 
         return row?.ToModel();
     }
@@ -133,6 +177,49 @@ WHERE Id = @Id;
                 Id = id.ToString(),
                 LastUsedAt = DateTimeOffset.UtcNow.ToString("O")
             });
+    }
+
+    public async Task IncrementUseCountsAsync(IReadOnlyDictionary<Guid, int> increments, CancellationToken cancellationToken)
+    {
+        var safeIncrements = increments
+            .Where(item => item.Value > 0)
+            .ToArray();
+        if (safeIncrements.Length == 0)
+        {
+            return;
+        }
+
+        await using var connection = await _connectionFactory.OpenConnectionAsync(cancellationToken);
+        await using var transaction = await connection.BeginTransactionAsync(cancellationToken);
+        try
+        {
+            var now = DateTimeOffset.UtcNow.ToString("O");
+            foreach (var (id, count) in safeIncrements)
+            {
+                await connection.ExecuteAsync(
+                    """
+UPDATE ClipboardItems
+SET UseCount = UseCount + @Count,
+    LastUsedAt = @LastUsedAt,
+    UpdatedAt = @LastUsedAt
+WHERE Id = @Id;
+""",
+                    new
+                    {
+                        Id = id.ToString(),
+                        Count = count,
+                        LastUsedAt = now
+                    },
+                    transaction);
+            }
+
+            await transaction.CommitAsync(cancellationToken);
+        }
+        catch
+        {
+            await transaction.RollbackAsync(cancellationToken);
+            throw;
+        }
     }
 
     public async Task<int> DeleteAsync(IReadOnlyList<Guid> ids, CancellationToken cancellationToken)
@@ -324,6 +411,7 @@ WHERE IsPinned = 0
             Id = item.Id.ToString(),
             item.ContentType,
             item.TextContent,
+            item.ThumbnailContent,
             item.PreviewText,
             item.Hash,
             item.PlainTextHash,
@@ -346,11 +434,24 @@ WHERE IsPinned = 0
             .Replace("_", "[_]", StringComparison.Ordinal);
     }
 
+    private static string ToFilterSql(ClipboardContentFilter filter)
+    {
+        return filter switch
+        {
+            ClipboardContentFilter.Pinned => "IsPinned = 1",
+            ClipboardContentFilter.Favorites => "IsFavorite = 1",
+            ClipboardContentFilter.Text => "ContentType = 'text'",
+            ClipboardContentFilter.Images => "ContentType = 'image/png'",
+            _ => ""
+        };
+    }
+
     private sealed class ClipboardItemRow
     {
         public string Id { get; set; } = "";
         public string ContentType { get; set; } = "";
         public string? TextContent { get; set; }
+        public string? ThumbnailContent { get; set; }
         public string? PreviewText { get; set; }
         public string Hash { get; set; } = "";
         public string? PlainTextHash { get; set; }
@@ -381,7 +482,8 @@ WHERE IsPinned = 0
                 UseCount,
                 DateTimeOffset.Parse(CreatedAt),
                 DateTimeOffset.Parse(UpdatedAt),
-                string.IsNullOrWhiteSpace(LastUsedAt) ? null : DateTimeOffset.Parse(LastUsedAt));
+                string.IsNullOrWhiteSpace(LastUsedAt) ? null : DateTimeOffset.Parse(LastUsedAt),
+                ThumbnailContent);
         }
     }
 }

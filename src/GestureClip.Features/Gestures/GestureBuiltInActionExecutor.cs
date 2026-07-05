@@ -16,6 +16,8 @@ public sealed class GestureBuiltInActionExecutor : IMouseGestureActionExecutor
     private readonly IKeyboardInputSender _keyboardInputSender;
     private readonly IRightClickSynthesizer _mouseClickSynthesizer;
     private readonly ICursorPositionProvider _cursorPositionProvider;
+    private readonly IClipboardTextReader _clipboardTextReader;
+    private readonly IUrlLauncher _urlLauncher;
     private readonly ILogger<GestureBuiltInActionExecutor> _logger;
 
     public GestureBuiltInActionExecutor(
@@ -25,6 +27,8 @@ public sealed class GestureBuiltInActionExecutor : IMouseGestureActionExecutor
         IKeyboardInputSender keyboardInputSender,
         IRightClickSynthesizer mouseClickSynthesizer,
         ICursorPositionProvider cursorPositionProvider,
+        IClipboardTextReader clipboardTextReader,
+        IUrlLauncher urlLauncher,
         ILogger<GestureBuiltInActionExecutor> logger)
     {
         _clipboardOverlayService = clipboardOverlayService;
@@ -33,6 +37,8 @@ public sealed class GestureBuiltInActionExecutor : IMouseGestureActionExecutor
         _keyboardInputSender = keyboardInputSender;
         _mouseClickSynthesizer = mouseClickSynthesizer;
         _cursorPositionProvider = cursorPositionProvider;
+        _clipboardTextReader = clipboardTextReader;
+        _urlLauncher = urlLauncher;
         _logger = logger;
     }
 
@@ -236,8 +242,45 @@ public sealed class GestureBuiltInActionExecutor : IMouseGestureActionExecutor
                 SynthesizeMouseClick(GestureTriggerButton.Left);
                 break;
 
+            case BuiltInGestureAction.LeftMouseDoubleClick:
+                SynthesizeMouseClick(GestureTriggerButton.Left);
+                SynthesizeMouseClick(GestureTriggerButton.Left);
+                break;
+
             case BuiltInGestureAction.RightMouseClick:
                 SynthesizeMouseClick(GestureTriggerButton.Right);
+                break;
+
+            case BuiltInGestureAction.MiddleMouseClick:
+                SynthesizeMouseClick(GestureTriggerButton.Middle);
+                break;
+
+            case BuiltInGestureAction.MouseWheelUp:
+                SynthesizeMouseWheel(1);
+                break;
+
+            case BuiltInGestureAction.MouseWheelDown:
+                SynthesizeMouseWheel(-1);
+                break;
+
+            case BuiltInGestureAction.SearchSelectedTextWithGoogle:
+                await SearchSelectedTextAsync("https://www.google.com/search?q={0}", cancellationToken);
+                break;
+
+            case BuiltInGestureAction.SearchSelectedTextWithBaidu:
+                await SearchSelectedTextAsync("https://www.baidu.com/s?wd={0}", cancellationToken);
+                break;
+
+            case BuiltInGestureAction.SearchSelectedTextWithBing:
+                await SearchSelectedTextAsync("https://www.bing.com/search?q={0}", cancellationToken);
+                break;
+
+            case BuiltInGestureAction.OpenGoogle:
+                _urlLauncher.OpenUrl("https://www.google.com/");
+                break;
+
+            case BuiltInGestureAction.OpenBaidu:
+                _urlLauncher.OpenUrl("https://www.baidu.com/");
                 break;
 
             case BuiltInGestureAction.MinimizeForegroundWindow:
@@ -280,6 +323,29 @@ public sealed class GestureBuiltInActionExecutor : IMouseGestureActionExecutor
     {
         var position = _cursorPositionProvider.GetCurrentPosition();
         _mouseClickSynthesizer.SynthesizeClick(button, position.X, position.Y);
+    }
+
+    private void SynthesizeMouseWheel(int delta)
+    {
+        var position = _cursorPositionProvider.GetCurrentPosition();
+        _mouseClickSynthesizer.SynthesizeWheel(delta, position.X, position.Y);
+    }
+
+    private async Task SearchSelectedTextAsync(string urlFormat, CancellationToken cancellationToken)
+    {
+        _clipboardService.SuppressCaptureFor(TimeSpan.FromMilliseconds(1200));
+        _keyboardInputSender.SendShortcut(KeyboardInputNativeMethods.VkControl, KeyboardInputNativeMethods.VkC);
+        await Task.Delay(80, cancellationToken);
+
+        var text = _clipboardTextReader.TryReadText();
+        if (string.IsNullOrWhiteSpace(text))
+        {
+            _logger.LogInformation("Search selected text gesture skipped: clipboard text is empty.");
+            return;
+        }
+
+        var encoded = Uri.EscapeDataString(text.Trim());
+        _urlLauncher.OpenUrl(string.Format(System.Globalization.CultureInfo.InvariantCulture, urlFormat, encoded));
     }
 
     private void StartProcess(string fileName, string? arguments = null)

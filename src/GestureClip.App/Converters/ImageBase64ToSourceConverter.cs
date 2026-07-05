@@ -1,7 +1,5 @@
 using System.Globalization;
 using System.IO;
-using System.Security.Cryptography;
-using System.Text;
 using System.Windows.Data;
 using System.Windows.Media.Imaging;
 
@@ -10,6 +8,9 @@ namespace GestureClip.App.Converters;
 public sealed class ImageBase64ToSourceConverter : IValueConverter
 {
     private const int MaxCachedImages = 96;
+    private const int DefaultDecodePixelWidth = 320;
+    private const int MinDecodePixelWidth = 32;
+    private const int MaxDecodePixelWidth = 720;
     private static readonly object CacheLock = new();
     private static readonly Dictionary<string, BitmapImage> Cache = [];
     private static readonly Queue<string> CacheOrder = [];
@@ -24,7 +25,8 @@ public sealed class ImageBase64ToSourceConverter : IValueConverter
         try
         {
             var base64 = NormalizeBase64(rawBase64);
-            var cacheKey = CreateCacheKey(base64);
+            var decodePixelWidth = GetDecodePixelWidth(parameter);
+            var cacheKey = CreateCacheKey(base64, decodePixelWidth);
             if (TryGetCached(cacheKey, out var cached))
             {
                 return cached;
@@ -35,9 +37,9 @@ public sealed class ImageBase64ToSourceConverter : IValueConverter
             var image = new BitmapImage();
             image.BeginInit();
             image.CacheOption = BitmapCacheOption.OnLoad;
-            image.CreateOptions = BitmapCreateOptions.PreservePixelFormat;
+            image.CreateOptions = BitmapCreateOptions.IgnoreColorProfile;
             image.StreamSource = stream;
-            image.DecodePixelWidth = 360;
+            image.DecodePixelWidth = decodePixelWidth;
             image.EndInit();
             image.Freeze();
             AddToCache(cacheKey, image);
@@ -61,10 +63,24 @@ public sealed class ImageBase64ToSourceConverter : IValueConverter
 
         if (trimmed.StartsWith("data:", StringComparison.OrdinalIgnoreCase) && commaIndex >= 0)
         {
-            return trimmed[(commaIndex + 1)..].Trim();
+            trimmed = trimmed[(commaIndex + 1)..].Trim();
         }
 
-        return trimmed;
+        return trimmed.Any(char.IsWhiteSpace)
+            ? new string(trimmed.Where(character => !char.IsWhiteSpace(character)).ToArray())
+            : trimmed;
+    }
+
+    private static int GetDecodePixelWidth(object parameter)
+    {
+        var configured = parameter switch
+        {
+            int intValue => intValue,
+            string stringValue when int.TryParse(stringValue, NumberStyles.Integer, CultureInfo.InvariantCulture, out var parsed) => parsed,
+            _ => DefaultDecodePixelWidth
+        };
+
+        return Math.Clamp(configured, MinDecodePixelWidth, MaxDecodePixelWidth);
     }
 
     private static bool TryGetCached(string key, out BitmapImage image)
@@ -93,9 +109,10 @@ public sealed class ImageBase64ToSourceConverter : IValueConverter
         }
     }
 
-    private static string CreateCacheKey(string base64)
+    private static string CreateCacheKey(string base64, int decodePixelWidth)
     {
-        var bytes = SHA256.HashData(Encoding.UTF8.GetBytes(base64));
-        return $"{base64.Length}:{System.Convert.ToHexString(bytes)}";
+        return string.Create(
+            CultureInfo.InvariantCulture,
+            $"{decodePixelWidth}:{base64.Length}:{base64.GetHashCode(StringComparison.Ordinal):X8}");
     }
 }

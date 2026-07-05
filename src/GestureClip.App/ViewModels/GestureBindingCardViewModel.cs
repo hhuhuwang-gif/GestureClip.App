@@ -14,6 +14,7 @@ public sealed class GestureBindingCardViewModel : INotifyPropertyChanged
         string pattern,
         string directionText,
         string gestureName,
+        bool isCommon,
         BuiltInGestureAction selectedAction,
         IReadOnlyList<GestureActionOptionViewModel> actionOptions,
         Func<GestureBindingCardViewModel, Task> saveAsync,
@@ -22,6 +23,7 @@ public sealed class GestureBindingCardViewModel : INotifyPropertyChanged
         Pattern = pattern;
         DirectionText = directionText;
         GestureName = gestureName;
+        IsCommon = isCommon;
         _selectedAction = selectedAction;
         ActionOptions = actionOptions;
         _saveAsync = saveAsync;
@@ -35,6 +37,14 @@ public sealed class GestureBindingCardViewModel : INotifyPropertyChanged
     public string DirectionText { get; }
 
     public string GestureName { get; }
+
+    public bool IsCommon { get; }
+
+    public bool IsBound => SelectedAction != BuiltInGestureAction.None;
+
+    public string PatternText => $"手势码：{Pattern}";
+
+    public string BindingStatusText => IsBound ? "已绑定" : "未绑定";
 
     public IReadOnlyList<GestureActionOptionViewModel> ActionOptions { get; }
 
@@ -54,6 +64,8 @@ public sealed class GestureBindingCardViewModel : INotifyPropertyChanged
             OnPropertyChanged();
             OnPropertyChanged(nameof(ActionName));
             OnPropertyChanged(nameof(ShortcutText));
+            OnPropertyChanged(nameof(IsBound));
+            OnPropertyChanged(nameof(BindingStatusText));
             _ = _saveAsync(this);
         }
     }

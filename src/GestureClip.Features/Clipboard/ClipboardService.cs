@@ -29,6 +29,9 @@ public sealed class ClipboardService : IClipboardService
     private CancellationTokenSource? _queueCancellation;
     private Task? _queueTask;
     private readonly bool _perfLogEnabled;
+    private readonly object _usageSync = new();
+    private readonly Dictionary<Guid, int> _pendingUseCounts = [];
+    private Task? _usageFlushTask;
 
     public ClipboardService(
         IClipboardListener clipboardListener,
@@ -126,6 +129,7 @@ public sealed class ClipboardService : IClipboardService
         _queueCancellation = null;
         _captureQueue = null;
         _queueTask = null;
+        await FlushPendingUseCountsAsync(cancellationToken);
         _logger.LogInformation("Clipboard text history service stopped.");
     }
 
@@ -218,10 +222,31 @@ public sealed class ClipboardService : IClipboardService
 
     public async Task<IReadOnlyList<ClipboardItem>> SearchAsync(string keyword, int limit, CancellationToken cancellationToken)
     {
+        return await SearchAsync(keyword, limit, 0, cancellationToken);
+    }
+
+    public async Task<IReadOnlyList<ClipboardItem>> SearchAsync(string keyword, int limit, int offset, CancellationToken cancellationToken)
+    {
         var watch = Stopwatch.StartNew();
-        var results = await _clipboardRepository.SearchAsync(keyword, limit, cancellationToken);
+        var results = await _clipboardRepository.SearchAsync(keyword, limit, offset, cancellationToken);
         watch.Stop();
         LogPerf("SearchMs", watch.ElapsedMilliseconds, ("ResultCount", results.Count));
+        LogPerf("SearchDurationMs", watch.ElapsedMilliseconds, ("ResultCount", results.Count));
+        return results;
+    }
+
+    public async Task<IReadOnlyList<ClipboardItem>> SearchAsync(
+        string keyword,
+        int limit,
+        int offset,
+        ClipboardContentFilter filter,
+        CancellationToken cancellationToken)
+    {
+        var watch = Stopwatch.StartNew();
+        var results = await _clipboardRepository.SearchAsync(keyword, limit, offset, filter, cancellationToken);
+        watch.Stop();
+        LogPerf("SearchMs", watch.ElapsedMilliseconds, ("ResultCount", results.Count), ("Filter", filter.ToString()));
+        LogPerf("SearchDurationMs", watch.ElapsedMilliseconds, ("ResultCount", results.Count), ("Filter", filter.ToString()));
         return results;
     }
 
@@ -230,20 +255,26 @@ public sealed class ClipboardService : IClipboardService
         return _clipboardRepository.GetLatestAsync(cancellationToken);
     }
 
+    public Task<ClipboardItem?> GetByIdAsync(Guid id, CancellationToken cancellationToken)
+    {
+        return _clipboardRepository.GetByIdAsync(id, cancellationToken);
+    }
+
     public async Task PasteAsync(ClipboardItem item, PasteOptions options, CancellationToken cancellationToken)
     {
         var pasteWatch = Stopwatch.StartNew();
         if (item.ContentType == "image/png")
         {
-            if (string.IsNullOrWhiteSpace(item.TextContent))
+            var image = await EnsureFullContentAsync(item, cancellationToken);
+            if (string.IsNullOrWhiteSpace(image.TextContent))
             {
                 return;
             }
 
             SuppressCaptureFor(TimeSpan.FromMilliseconds(1000));
-            await _clipboardWriter.SetImagePngBase64Async(item.TextContent, cancellationToken);
+            await _clipboardWriter.SetImagePngBase64Async(image.TextContent, cancellationToken);
             await _clipboardWriter.SendPasteHotkeyAsync(cancellationToken);
-            RecordPasteUsageInBackground(item.Id, DateTimeOffset.UtcNow);
+            RecordPasteUsageInBackground(image.Id, DateTimeOffset.UtcNow);
             pasteWatch.Stop();
             LogPerf("PasteMs", pasteWatch.ElapsedMilliseconds, ("ContentType", "image/png"));
             return;
@@ -265,6 +296,7 @@ public sealed class ClipboardService : IClipboardService
 
     public async Task CopyItemsAsync(IReadOnlyList<ClipboardItem> items, CancellationToken cancellationToken)
     {
+        var copyWatch = Stopwatch.StartNew();
         if (items.Count == 0)
         {
             return;
@@ -285,7 +317,7 @@ public sealed class ClipboardService : IClipboardService
                 throw new NotSupportedException("暂不支持批量复制多张图片。");
             }
 
-            var image = items[0];
+            var image = await EnsureFullContentAsync(items[0], cancellationToken);
             if (string.IsNullOrWhiteSpace(image.TextContent))
             {
                 return;
@@ -293,6 +325,8 @@ public sealed class ClipboardService : IClipboardService
 
             await _clipboardWriter.SetImagePngBase64Async(image.TextContent, cancellationToken);
             RecordUseCountInBackground([image.Id]);
+            copyWatch.Stop();
+            LogPerf("ClipboardCopyDurationMs", copyWatch.ElapsedMilliseconds, ("ContentType", "image/png"), ("ItemCount", items.Count));
             _logger.LogInformation("Clipboard image item copied.");
             return;
         }
@@ -305,6 +339,8 @@ public sealed class ClipboardService : IClipboardService
 
         await _clipboardWriter.SetTextAsync(text, cancellationToken);
         RecordUseCountInBackground(items.Select(item => item.Id).ToArray());
+        copyWatch.Stop();
+        LogPerf("ClipboardCopyDurationMs", copyWatch.ElapsedMilliseconds, ("ContentType", "text"), ("ItemCount", items.Count));
 
         _logger.LogInformation("Clipboard text items copied. Count={ClipboardItemCount}", items.Count);
     }
@@ -454,6 +490,13 @@ public sealed class ClipboardService : IClipboardService
 
         var now = DateTimeOffset.UtcNow;
         var insertWatch = Stopwatch.StartNew();
+        var thumbnailWatch = Stopwatch.StartNew();
+        var thumbnailContent = await Task.Run(
+            () => GestureClip.Infrastructure.Clipboard.ClipboardImageFactory.TryCreateThumbnailPngBase64(pngBase64, 128),
+            cancellationToken);
+        thumbnailWatch.Stop();
+        LogPerf("ThumbnailDecodeDurationMs", thumbnailWatch.ElapsedMilliseconds, ("ContentType", "image/png"));
+
         await _clipboardRepository.InsertAsync(
             new ClipboardItem(
                 Guid.NewGuid(),
@@ -470,7 +513,8 @@ public sealed class ClipboardService : IClipboardService
                 0,
                 now,
                 now,
-                null),
+                null,
+                thumbnailContent),
             cancellationToken);
         insertWatch.Stop();
         LogPerf("InsertMs", insertWatch.ElapsedMilliseconds, ("ContentType", "image/png"));
@@ -493,38 +537,86 @@ public sealed class ClipboardService : IClipboardService
         });
     }
 
+    private async Task<ClipboardItem> EnsureFullContentAsync(ClipboardItem item, CancellationToken cancellationToken)
+    {
+        if (!string.IsNullOrWhiteSpace(item.TextContent))
+        {
+            return item;
+        }
+
+        var fullItem = await _clipboardRepository.GetByIdAsync(item.Id, cancellationToken);
+        return fullItem ?? item;
+    }
+
     private void RecordPasteUsageInBackground(Guid itemId, DateTimeOffset now)
     {
-        _ = Task.Run(async () =>
-        {
-            try
-            {
-                await _clipboardRepository.IncrementUseCountAsync(itemId, CancellationToken.None);
-                await _workstationDashboardService.RecordPasteAsync(now, CancellationToken.None);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogDebug(ex, "Clipboard paste usage recording failed.");
-            }
-        });
+        RecordUseCountInBackground([itemId]);
+        RecordPasteStatsInBackground(now);
     }
 
     private void RecordUseCountInBackground(IReadOnlyList<Guid> itemIds)
     {
-        _ = Task.Run(async () =>
+        if (itemIds.Count == 0)
         {
-            try
+            return;
+        }
+
+        lock (_usageSync)
+        {
+            foreach (var itemId in itemIds)
             {
-                foreach (var itemId in itemIds)
-                {
-                    await _clipboardRepository.IncrementUseCountAsync(itemId, CancellationToken.None);
-                }
+                _pendingUseCounts[itemId] = _pendingUseCounts.TryGetValue(itemId, out var count)
+                    ? count + 1
+                    : 1;
             }
-            catch (Exception ex)
+
+            if (_usageFlushTask is not null && !_usageFlushTask.IsCompleted)
             {
-                _logger.LogDebug(ex, "Clipboard use count recording failed.");
+                return;
             }
-        });
+
+            _usageFlushTask = Task.Run(DelayedFlushUseCountsAsync);
+        }
+    }
+
+    private async Task DelayedFlushUseCountsAsync()
+    {
+        try
+        {
+            await Task.Delay(250);
+            await FlushPendingUseCountsAsync(CancellationToken.None);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogDebug(ex, "Clipboard use count batch recording failed.");
+        }
+    }
+
+    private async Task FlushPendingUseCountsAsync(CancellationToken cancellationToken)
+    {
+        Dictionary<Guid, int> snapshot;
+        lock (_usageSync)
+        {
+            if (_pendingUseCounts.Count == 0)
+            {
+                return;
+            }
+
+            snapshot = new Dictionary<Guid, int>(_pendingUseCounts);
+            _pendingUseCounts.Clear();
+        }
+
+        try
+        {
+            var watch = Stopwatch.StartNew();
+            await _clipboardRepository.IncrementUseCountsAsync(snapshot, cancellationToken);
+            watch.Stop();
+            LogPerf("DbUpdateDurationMs", watch.ElapsedMilliseconds, ("Operation", "IncrementUseCounts"), ("ItemCount", snapshot.Count));
+        }
+        catch (Exception ex)
+        {
+            _logger.LogDebug(ex, "Clipboard use count batch recording failed.");
+        }
     }
 
     private void RecordPasteStatsInBackground(DateTimeOffset now)

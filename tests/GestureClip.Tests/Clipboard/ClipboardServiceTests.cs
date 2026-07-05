@@ -135,6 +135,34 @@ public sealed class ClipboardServiceTests
     }
 
     [Fact]
+    public async Task CopyItemsAsync_suppresses_capture_to_prevent_internal_copy_feedback_loop()
+    {
+        var repository = new FakeClipboardRepository();
+        var writer = new FakeClipboardWriter();
+        var service = CreateService(repository, writer: writer);
+
+        await service.CopyItemsAsync([Item("internal copy")], CancellationToken.None);
+        await service.CaptureTextAsync(Capture("internal copy"), CancellationToken.None);
+
+        Assert.True(service.SuppressCaptureUntil > DateTimeOffset.UtcNow);
+        Assert.Empty(repository.Items);
+    }
+
+    [Fact]
+    public async Task CaptureTextAsync_resumes_after_suppress_window_expires()
+    {
+        var repository = new FakeClipboardRepository();
+        var service = CreateService(repository);
+        service.SuppressCaptureFor(TimeSpan.FromMilliseconds(1));
+        await Task.Delay(20);
+
+        await service.CaptureTextAsync(Capture("external copy"), CancellationToken.None);
+
+        Assert.Single(repository.Items);
+        Assert.Equal("external copy", repository.Items[0].TextContent);
+    }
+
+    [Fact]
     public async Task CopyItemsAsync_returns_after_clipboard_write_without_waiting_for_usage_updates()
     {
         var repository = new FakeClipboardRepository();
@@ -159,6 +187,41 @@ public sealed class ClipboardServiceTests
     }
 
     [Fact]
+    public async Task CopyItemsAsync_coalesces_repeated_use_count_updates()
+    {
+        var repository = new FakeClipboardRepository();
+        var writer = new FakeClipboardWriter();
+        var service = CreateService(repository, writer: writer);
+        var item = Item("hello");
+
+        for (var index = 0; index < 20; index++)
+        {
+            await service.CopyItemsAsync([item], CancellationToken.None);
+        }
+
+        await WaitForAsync(() => repository.BatchedUseCounts.TryGetValue(item.Id, out var count) && count == 20);
+
+        Assert.Equal(1, repository.BatchIncrementCallCount);
+        Assert.Equal(20, repository.BatchedUseCounts[item.Id]);
+    }
+
+    [Fact]
+    public async Task StopAsync_flushes_pending_use_count_updates()
+    {
+        var repository = new FakeClipboardRepository();
+        var listener = new FakeClipboardListener();
+        var writer = new FakeClipboardWriter();
+        var service = CreateService(repository, listener: listener, writer: writer);
+        var item = Item("hello");
+        await service.StartAsync(CancellationToken.None);
+
+        await service.CopyItemsAsync([item], CancellationToken.None);
+        await service.StopAsync(CancellationToken.None);
+
+        Assert.Equal(1, repository.BatchedUseCounts[item.Id]);
+    }
+
+    [Fact]
     public async Task CopyItemsAsync_restores_single_image_to_clipboard()
     {
         var repository = new FakeClipboardRepository();
@@ -172,6 +235,22 @@ public sealed class ClipboardServiceTests
         Assert.Equal("png-base64", writer.ImagePngBase64);
         await WaitForAsync(() => repository.IncrementedIds.Count == 1);
         Assert.Equal([image.Id], repository.IncrementedIds);
+    }
+
+    [Fact]
+    public async Task CopyItemsAsync_loads_full_image_content_when_list_item_only_has_thumbnail()
+    {
+        var repository = new FakeClipboardRepository();
+        var writer = new FakeClipboardWriter();
+        var service = CreateService(repository, writer: writer);
+        var now = DateTimeOffset.UtcNow;
+        var full = new ClipboardItem(Guid.NewGuid(), "image/png", "full-image-base64", "图片", "hash", null, "Test", "test.exe", false, false, false, 0, now, now, null, "thumb-base64");
+        var listItem = full with { TextContent = null };
+        repository.Items.Add(full);
+
+        await service.CopyItemsAsync([listItem], CancellationToken.None);
+
+        Assert.Equal("full-image-base64", writer.ImagePngBase64);
     }
 
     [Fact]
@@ -308,6 +387,23 @@ public sealed class ClipboardServiceTests
         Assert.Equal(1, listener.StopCount);
     }
 
+    [Fact]
+    public void ClipboardService_exposes_stage10_performance_metric_names()
+    {
+        var source = string.Join(
+            Environment.NewLine,
+            File.ReadAllText(FindRepositoryFile("src", "GestureClip.Features", "Clipboard", "ClipboardService.cs")),
+            File.ReadAllText(FindRepositoryFile("src", "GestureClip.App", "ViewModels", "ClipboardOverlayViewModel.cs")),
+            File.ReadAllText(FindRepositoryFile("src", "GestureClip.App", "Services", "GestureOverlayService.cs")));
+
+        Assert.Contains("ClipboardCopyDurationMs", source);
+        Assert.Contains("DbUpdateDurationMs", source);
+        Assert.Contains("UiRefreshDurationMs", source);
+        Assert.Contains("SearchDurationMs", source);
+        Assert.Contains("ThumbnailDecodeDurationMs", source);
+        Assert.Contains("HudUpdateDurationMs", source);
+    }
+
     private static ClipboardService CreateService(
         FakeClipboardRepository repository,
         FakeClipboardWriter? writer = null,
@@ -341,12 +437,31 @@ public sealed class ClipboardServiceTests
         return new ClipboardItem(Guid.NewGuid(), "text", text, text, "hash", "plain", "Test", "test.exe", false, false, false, 0, now, now, null);
     }
 
+    private static string FindRepositoryFile(params string[] segments)
+    {
+        var directory = new DirectoryInfo(AppContext.BaseDirectory);
+        while (directory is not null)
+        {
+            var candidate = Path.Combine(new[] { directory.FullName }.Concat(segments).ToArray());
+            if (File.Exists(candidate))
+            {
+                return candidate;
+            }
+
+            directory = directory.Parent;
+        }
+
+        throw new FileNotFoundException("Could not locate repository file.", Path.Combine(segments));
+    }
+
     private sealed class FakeClipboardRepository : IClipboardRepository
     {
         public List<ClipboardItem> Items { get; } = [];
         public string? BlockedProcessName { get; set; }
         public Guid? IncrementedId { get; private set; }
         public List<Guid> IncrementedIds { get; } = [];
+        public Dictionary<Guid, int> BatchedUseCounts { get; } = [];
+        public int BatchIncrementCallCount { get; private set; }
         public Func<ClipboardItem, CancellationToken, Task>? InsertHandler { get; set; }
         public Func<Guid, CancellationToken, Task>? IncrementUseCountHandler { get; set; }
 
@@ -360,6 +475,11 @@ public sealed class ClipboardServiceTests
             return Task.FromResult(Items.OrderByDescending(item => item.CreatedAt).FirstOrDefault());
         }
 
+        public Task<ClipboardItem?> GetByIdAsync(Guid id, CancellationToken cancellationToken)
+        {
+            return Task.FromResult(Items.FirstOrDefault(item => item.Id == id));
+        }
+
         public async Task IncrementUseCountAsync(Guid id, CancellationToken cancellationToken)
         {
             if (IncrementUseCountHandler is not null)
@@ -369,6 +489,22 @@ public sealed class ClipboardServiceTests
 
             IncrementedId = id;
             IncrementedIds.Add(id);
+        }
+
+        public async Task IncrementUseCountsAsync(IReadOnlyDictionary<Guid, int> increments, CancellationToken cancellationToken)
+        {
+            BatchIncrementCallCount++;
+            foreach (var (id, count) in increments)
+            {
+                for (var index = 0; index < count; index++)
+                {
+                    await IncrementUseCountAsync(id, cancellationToken);
+                }
+
+                BatchedUseCounts[id] = BatchedUseCounts.TryGetValue(id, out var existing)
+                    ? existing + count
+                    : count;
+            }
         }
 
         public Task<int> DeleteAsync(IReadOnlyList<Guid> ids, CancellationToken cancellationToken)

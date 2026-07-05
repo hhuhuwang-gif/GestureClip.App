@@ -118,15 +118,18 @@
 
             <ListBox x:Name="HistoryList"
                      Grid.Column="0"
-                     Margin="0,0,12,0"
+                     Margin="0,0,12,48"
                      AlternationCount="9"
                      SelectionMode="Extended"
                      ScrollViewer.CanContentScroll="True"
+                     ScrollViewer.IsDeferredScrollingEnabled="True"
                      VirtualizingPanel.IsVirtualizing="True"
                      VirtualizingPanel.VirtualizationMode="Recycling"
+                     VirtualizingPanel.ScrollUnit="Pixel"
                      ItemsSource="{Binding Items}"
                      SelectedItem="{Binding SelectedItem}"
                      SelectionChanged="HistoryList_SelectionChanged"
+                     ScrollViewer.ScrollChanged="HistoryList_ScrollChanged"
                      PreviewMouseRightButtonDown="HistoryList_PreviewMouseRightButtonDown"
                      MouseDoubleClick="HistoryList_MouseDoubleClick">
                 <ListBox.ContextMenu>
@@ -139,6 +142,11 @@
                         <MenuItem Header="删除选中" Click="DeleteSelectedMenuItem_Click" />
                     </ContextMenu>
                 </ListBox.ContextMenu>
+                <ListBox.ItemsPanel>
+                    <ItemsPanelTemplate>
+                        <VirtualizingStackPanel />
+                    </ItemsPanelTemplate>
+                </ListBox.ItemsPanel>
                 <ListBox.ItemTemplate>
                     <DataTemplate>
                         <Border x:Name="ItemCard"
@@ -207,9 +215,9 @@
                                                        FontSize="12"
                                                        HorizontalAlignment="Center"
                                                        VerticalAlignment="Center" />
-                                            <Image Source="{Binding TextContent, Converter={StaticResource ImageBase64ToSourceConverter}}"
+                                            <Image Source="{Binding ThumbnailContent, IsAsync=True, Converter={StaticResource ImageBase64ToSourceConverter}, ConverterParameter=72}"
                                                    Stretch="Uniform"
-                                                   RenderOptions.BitmapScalingMode="HighQuality" />
+                                                   RenderOptions.BitmapScalingMode="LowQuality" />
                                         </Grid>
                                         <Border.Style>
                                             <Style TargetType="Border">
@@ -381,6 +389,17 @@
                 </ListBox.ItemTemplate>
             </ListBox>
 
+                <Button Grid.Column="0"
+                        Content="加载更多"
+                        MinWidth="0"
+                        Width="116"
+                        Height="34"
+                        VerticalAlignment="Bottom"
+                        HorizontalAlignment="Center"
+                        Margin="0,0,12,4"
+                        IsEnabled="{Binding CanLoadMore}"
+                        Click="LoadMoreButton_Click" />
+
                 <Border Grid.Column="1"
                         Background="#F7F8FB"
                         BorderBrush="#17111827"
@@ -476,10 +495,10 @@
                                     </DrawingBrush>
                                 </Border.Background>
                                 <Grid>
-                                    <Image Source="{Binding SelectedItem.TextContent, Converter={StaticResource ImageBase64ToSourceConverter}}"
+                                    <Image Source="{Binding SelectedItem.ThumbnailContent, IsAsync=True, Converter={StaticResource ImageBase64ToSourceConverter}, ConverterParameter=220}"
                                            Stretch="Uniform"
                                            Margin="10"
-                                           RenderOptions.BitmapScalingMode="HighQuality" />
+                                           RenderOptions.BitmapScalingMode="Fant" />
                                 </Grid>
                             </Border>
 
@@ -623,3 +642,4 @@
         </Grid>
     </Border>
 </Window>
+

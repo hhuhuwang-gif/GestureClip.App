@@ -10,9 +10,43 @@ public interface IClipboardRepository
 
     Task<IReadOnlyList<ClipboardItem>> SearchAsync(string keyword, int limit, CancellationToken cancellationToken);
 
+    Task<IReadOnlyList<ClipboardItem>> SearchAsync(string keyword, int limit, int offset, CancellationToken cancellationToken)
+    {
+        return offset <= 0
+            ? SearchAsync(keyword, limit, cancellationToken)
+            : Task.FromResult<IReadOnlyList<ClipboardItem>>([]);
+    }
+
+    async Task<IReadOnlyList<ClipboardItem>> SearchAsync(
+        string keyword,
+        int limit,
+        int offset,
+        ClipboardContentFilter filter,
+        CancellationToken cancellationToken)
+    {
+        var results = await SearchAsync(keyword, limit, offset, cancellationToken);
+        return results.Where(item => MatchesFilter(item, filter)).ToArray();
+    }
+
     Task<ClipboardItem?> GetLatestAsync(CancellationToken cancellationToken);
 
+    Task<ClipboardItem?> GetByIdAsync(Guid id, CancellationToken cancellationToken)
+    {
+        return Task.FromResult<ClipboardItem?>(null);
+    }
+
     Task IncrementUseCountAsync(Guid id, CancellationToken cancellationToken);
+
+    async Task IncrementUseCountsAsync(IReadOnlyDictionary<Guid, int> increments, CancellationToken cancellationToken)
+    {
+        foreach (var (id, count) in increments)
+        {
+            for (var index = 0; index < count; index++)
+            {
+                await IncrementUseCountAsync(id, cancellationToken);
+            }
+        }
+    }
 
     Task<int> DeleteAsync(IReadOnlyList<Guid> ids, CancellationToken cancellationToken);
 
@@ -29,4 +63,16 @@ public interface IClipboardRepository
     Task<int> ClearUnpinnedAsync(CancellationToken cancellationToken);
 
     Task<int> CleanupAsync(int maxItems, int retentionDays, CancellationToken cancellationToken);
+
+    private static bool MatchesFilter(ClipboardItem item, ClipboardContentFilter filter)
+    {
+        return filter switch
+        {
+            ClipboardContentFilter.Pinned => item.IsPinned,
+            ClipboardContentFilter.Favorites => item.IsFavorite,
+            ClipboardContentFilter.Text => string.Equals(item.ContentType, "text", StringComparison.OrdinalIgnoreCase),
+            ClipboardContentFilter.Images => string.Equals(item.ContentType, "image/png", StringComparison.OrdinalIgnoreCase),
+            _ => true
+        };
+    }
 }
