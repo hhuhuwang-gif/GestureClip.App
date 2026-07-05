@@ -4,6 +4,7 @@ using GestureClip.Core.Hotkeys;
 using GestureClip.Core.SystemInfo;
 using GestureClip.Features.Diagnostics;
 using GestureClip.Infrastructure.Paths;
+using System.IO.Compression;
 using Xunit;
 
 namespace GestureClip.Tests.Diagnostics;
@@ -32,6 +33,36 @@ public sealed class DiagnosticsServiceTests
         Assert.Contains(@"C:\Program Files\GestureClip\GestureClip.exe", report);
         Assert.Contains("Ctrl + `", report);
         Assert.Contains("U", report);
+        Assert.DoesNotContain("secret clipboard text", report, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public async Task ExportPackageAsync_creates_zip_without_database_or_clipboard_content()
+    {
+        var root = Path.Combine(Path.GetTempPath(), "gestureclip-diagnostics-export", Guid.NewGuid().ToString("N"));
+        var paths = new AppPathProvider(root);
+        Directory.CreateDirectory(paths.LogDirectory);
+        await File.WriteAllTextAsync(Path.Combine(paths.LogDirectory, "gestureclip-test.log"), "startup ok\nsecret clipboard text should not be written by app logs");
+        await File.WriteAllTextAsync(paths.DatabasePath, "fake database");
+        var service = new DiagnosticsService(
+            paths,
+            new FakePermissionService(),
+            new FakeClipboardService(),
+            new FakeMouseGestureService(),
+            new FakeGlobalHotkeyService(),
+            new FakeKeyboardInputSender(),
+            new FakeAppEnvironment());
+
+        var packagePath = await service.ExportPackageAsync(CancellationToken.None);
+
+        Assert.True(File.Exists(packagePath));
+        using var archive = ZipFile.OpenRead(packagePath);
+        Assert.Contains(archive.Entries, entry => entry.FullName == "diagnostics.txt");
+        Assert.Contains(archive.Entries, entry => entry.FullName.StartsWith("logs/", StringComparison.Ordinal));
+        Assert.DoesNotContain(archive.Entries, entry => entry.FullName.Contains("gestureclip.db", StringComparison.OrdinalIgnoreCase));
+        var reportEntry = archive.GetEntry("diagnostics.txt")!;
+        using var reportReader = new StreamReader(reportEntry.Open());
+        var report = await reportReader.ReadToEndAsync();
         Assert.DoesNotContain("secret clipboard text", report, StringComparison.OrdinalIgnoreCase);
     }
 

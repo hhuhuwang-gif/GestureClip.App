@@ -231,7 +231,7 @@ public sealed class SettingsViewModelTests
 
         Assert.Equal("URD", viewModel.NewGesturePattern);
         Assert.Equal("↑→↓", viewModel.NewGestureDirectionPreview);
-        Assert.Equal("添加到列表", viewModel.NewGestureAddButtonText);
+        Assert.Equal("添加到手势列表", viewModel.NewGestureAddButtonText);
     }
 
     [Fact]
@@ -821,6 +821,11 @@ public sealed class SettingsViewModelTests
         }
 
         public Task<string> BuildReportAsync(CancellationToken cancellationToken) => Task.FromResult("diagnostics");
+
+        public Task<string> ExportPackageAsync(CancellationToken cancellationToken)
+        {
+            return Task.FromResult(Path.Combine(Path.GetTempPath(), "GestureClip-Diagnostics-test.zip"));
+        }
     }
 
     private sealed class FakeClipboardService : IClipboardService

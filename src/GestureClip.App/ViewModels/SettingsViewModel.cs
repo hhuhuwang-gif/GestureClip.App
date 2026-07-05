@@ -114,6 +114,7 @@ public sealed class SettingsViewModel : INotifyPropertyChanged
     private bool _workerLevelShowLevelInHud;
     private bool _hudFunTextEnabled;
     private bool _hudStatusLevelEnabled;
+    private string _lastDiagnosticsExportText = "尚未导出诊断包";
     private GestureBindingCardViewModel? _selectedGestureBindingCard;
     private readonly DispatcherTimer _diagnosticsTimer;
 
@@ -236,6 +237,7 @@ public sealed class SettingsViewModel : INotifyPropertyChanged
         AddBlacklistItemCommand = new AsyncRelayCommand(_ => AddBlacklistItemAsync());
         RefreshDiagnosticsCommand = new AsyncRelayCommand(_ => RefreshDiagnosticsAsync());
         CopyDiagnosticsCommand = new AsyncRelayCommand(_ => CopyDiagnosticsAsync());
+        ExportDiagnosticsCommand = new AsyncRelayCommand(_ => ExportDiagnosticsAsync());
         RefreshClipboardStatsCommand = new AsyncRelayCommand(_ => RefreshClipboardStatsAsync());
         ClearAllClipboardItemsCommand = new AsyncRelayCommand(_ => ClearAllClipboardItemsAsync());
         ClearUnpinnedClipboardItemsCommand = new AsyncRelayCommand(_ => ClearUnpinnedClipboardItemsAsync());
@@ -455,6 +457,8 @@ public sealed class SettingsViewModel : INotifyPropertyChanged
     public ICommand RefreshDiagnosticsCommand { get; }
 
     public ICommand CopyDiagnosticsCommand { get; }
+
+    public ICommand ExportDiagnosticsCommand { get; }
 
     public ICommand OpenLogDirectoryCommand { get; }
 
@@ -1144,6 +1148,21 @@ public sealed class SettingsViewModel : INotifyPropertyChanged
         }
     }
 
+    public string LastDiagnosticsExportText
+    {
+        get => _lastDiagnosticsExportText;
+        private set
+        {
+            if (_lastDiagnosticsExportText == value)
+            {
+                return;
+            }
+
+            _lastDiagnosticsExportText = value;
+            OnPropertyChanged();
+        }
+    }
+
     public bool GestureShowOverlay
     {
         get => _gestureShowOverlay;
@@ -1540,8 +1559,8 @@ public sealed class SettingsViewModel : INotifyPropertyChanged
         : DirectionText(NewGesturePattern);
 
     public string NewGestureAddButtonText => string.IsNullOrEmpty(NewGesturePattern)
-        ? "先选方向"
-        : "添加到列表";
+        ? "先画一个手势"
+        : "添加到手势列表";
 
     public string RecordGestureStatusText
     {
@@ -1870,6 +1889,17 @@ public sealed class SettingsViewModel : INotifyPropertyChanged
         var report = await _diagnosticsService.BuildReportAsync(CancellationToken.None);
         _clipboardService.SuppressCaptureFor(TimeSpan.FromMilliseconds(1000));
         await _clipboardWriter.SetTextAsync(report, CancellationToken.None);
+    }
+
+    private async Task ExportDiagnosticsAsync()
+    {
+        var packagePath = await _diagnosticsService.ExportPackageAsync(CancellationToken.None);
+        LastDiagnosticsExportText = $"已导出：{packagePath}";
+        var directory = Path.GetDirectoryName(packagePath);
+        if (!string.IsNullOrWhiteSpace(directory))
+        {
+            OpenDirectory(directory);
+        }
     }
 
     private static void OpenDirectory(string path)

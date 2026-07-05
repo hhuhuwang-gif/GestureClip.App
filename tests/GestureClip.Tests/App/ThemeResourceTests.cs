@@ -230,6 +230,8 @@ public sealed class ThemeResourceTests
         Assert.Contains("Text=\"{Binding DatabasePath, Mode=OneWay}\"", xaml);
         Assert.Contains("Text=\"{Binding LogDirectory, Mode=OneWay}\"", xaml);
         Assert.Contains("Text=\"{Binding DiagnosticsText, Mode=OneWay}\"", xaml);
+        Assert.Contains("导出诊断包", xaml);
+        Assert.Contains("ExportDiagnosticsCommand", xaml);
         Assert.DoesNotContain("Text=\"{Binding DatabasePath}\"", xaml);
         Assert.DoesNotContain("Text=\"{Binding LogDirectory}\"", xaml);
         Assert.DoesNotContain("Text=\"{Binding DiagnosticsText}\"", xaml);
@@ -501,6 +503,22 @@ public sealed class ThemeResourceTests
         Assert.DoesNotContain("CommandParameter=\"LeftMouseClick\"", xaml);
         Assert.DoesNotContain("CommandParameter=\"RightMouseClick\"", xaml);
         Assert.DoesNotContain("GestureLeftButtonEnabled, Mode=TwoWay", xaml);
+    }
+
+    [Fact]
+    public void Custom_gesture_action_form_uses_roomy_vertical_layout()
+    {
+        var path = FindRepositoryFile("src", "GestureClip.App", "SettingsWindow.xaml");
+        var xaml = File.ReadAllText(path);
+
+        Assert.Contains("x:Name=\"NewGestureFormPanel\"", xaml);
+        Assert.Contains("Text=\"手势码\"", xaml);
+        Assert.Contains("Text=\"执行动作\"", xaml);
+        Assert.Contains("Header=\"快捷动作\"", xaml);
+        Assert.Contains("Style=\"{StaticResource PrimaryButtonStyle}\"", xaml);
+        Assert.Contains("Height=\"40\"", xaml);
+        Assert.DoesNotContain("<TextBox Width=\"120\" Text=\"{Binding NewGesturePattern", xaml);
+        Assert.DoesNotContain("<ComboBox Width=\"220\" Margin=\"10,0,0,0\"", xaml);
     }
 
     [Fact]

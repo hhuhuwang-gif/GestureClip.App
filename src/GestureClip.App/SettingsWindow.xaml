@@ -817,27 +817,68 @@
                                                     </WrapPanel>
                                                 </StackPanel>
                                             </Border>
-                                            <TextBlock Text="选择要执行的动作" FontWeight="SemiBold" Margin="0,0,0,8" />
-                                            <WrapPanel Margin="0,0,0,10">
-                                                <TextBlock Text="说明：右键按住 + 左键点击是手势触发方式；这里选择的是触发后要执行的动作。"
-                                                           Style="{StaticResource MutedTextStyle}"
-                                                           TextWrapping="Wrap"
-                                                           Margin="0,0,8,8" />
-                                                <Button Content="Google 搜索" MinWidth="0" Width="106" Height="32" Margin="0,0,8,8" Command="{Binding SetNewGestureActionCommand}" CommandParameter="SearchSelectedTextWithGoogle" />
-                                                <Button Content="百度搜索" MinWidth="0" Width="96" Height="32" Margin="0,0,8,8" Command="{Binding SetNewGestureActionCommand}" CommandParameter="SearchSelectedTextWithBaidu" />
-                                            </WrapPanel>
-                                            <WrapPanel>
-                                                <TextBox Width="120" Text="{Binding NewGesturePattern, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
-                                                <ComboBox Width="220" Margin="10,0,0,0" ItemsSource="{Binding GestureActionOptionsView}" DisplayMemberPath="DisplayName" SelectedValuePath="Action" SelectedValue="{Binding NewGestureAction, Mode=TwoWay}" />
-                                                <Button Content="{Binding NewGestureAddButtonText}"
-                                                        MinWidth="0"
-                                                        Width="108"
-                                                        Height="34"
-                                                        Margin="10,0,0,0"
-                                                        Style="{StaticResource SecondaryButtonStyle}"
-                                                        Focusable="False"
-                                                        Command="{Binding AddCustomGestureBindingCommand}" />
-                                            </WrapPanel>
+                                            <Border x:Name="NewGestureFormPanel"
+                                                    Background="#F8FAFD"
+                                                    BorderBrush="{DynamicResource BrushBorder}"
+                                                    BorderThickness="1"
+                                                    CornerRadius="18"
+                                                    Padding="16"
+                                                    Margin="0,2,0,0">
+                                                <StackPanel>
+                                                    <TextBlock Text="选择要执行的动作"
+                                                               FontWeight="SemiBold" />
+                                                    <TextBlock Text="右键按住 + 左键点击是手势触发方式；这里选择的是触发后要执行的动作。"
+                                                               Style="{StaticResource MutedTextStyle}"
+                                                               TextWrapping="Wrap"
+                                                               Margin="0,6,0,14" />
+
+                                                    <Expander Header="快捷动作"
+                                                              IsExpanded="False"
+                                                              Margin="0,0,0,14">
+                                                        <WrapPanel Margin="0,10,0,0">
+                                                            <Button Content="Google 搜索"
+                                                                    MinWidth="0"
+                                                                    Width="116"
+                                                                    Height="34"
+                                                                    Margin="0,0,8,8"
+                                                                    Command="{Binding SetNewGestureActionCommand}"
+                                                                    CommandParameter="SearchSelectedTextWithGoogle" />
+                                                            <Button Content="百度搜索"
+                                                                    MinWidth="0"
+                                                                    Width="106"
+                                                                    Height="34"
+                                                                    Margin="0,0,8,8"
+                                                                    Command="{Binding SetNewGestureActionCommand}"
+                                                                    CommandParameter="SearchSelectedTextWithBaidu" />
+                                                        </WrapPanel>
+                                                    </Expander>
+
+                                                    <TextBlock Text="手势码"
+                                                               FontWeight="SemiBold"
+                                                               Margin="0,0,0,6" />
+                                                    <TextBox Height="40"
+                                                             HorizontalAlignment="Stretch"
+                                                             Text="{Binding NewGesturePattern, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+
+                                                    <TextBlock Text="执行动作"
+                                                               FontWeight="SemiBold"
+                                                               Margin="0,14,0,6" />
+                                                    <ComboBox Height="40"
+                                                              HorizontalAlignment="Stretch"
+                                                              ItemsSource="{Binding GestureActionOptionsView}"
+                                                              DisplayMemberPath="DisplayName"
+                                                              SelectedValuePath="Action"
+                                                              SelectedValue="{Binding NewGestureAction, Mode=TwoWay}" />
+
+                                                    <Button Content="{Binding NewGestureAddButtonText}"
+                                                            MinWidth="0"
+                                                            Height="40"
+                                                            Margin="0,16,0,0"
+                                                            Style="{StaticResource PrimaryButtonStyle}"
+                                                            Focusable="False"
+                                                            Command="{Binding AddCustomGestureBindingCommand}" />
+                                                </StackPanel>
+                                            </Border>
                                         </StackPanel>
                                     </Border>
                                 </Expander>
@@ -1225,8 +1266,13 @@
                                 <Button Content="打开日志目录" Command="{Binding OpenLogDirectoryCommand}" />
                                 <Button Content="打开数据目录" Margin="8,0,0,0" Command="{Binding OpenDataDirectoryCommand}" />
                                 <Button Content="复制诊断信息" Margin="8,0,0,0" Command="{Binding CopyDiagnosticsCommand}" />
+                                <Button Content="导出诊断包" Margin="8,0,0,0" Command="{Binding ExportDiagnosticsCommand}" />
                                 <Button Content="刷新" Margin="8,0,0,0" Command="{Binding RefreshDiagnosticsCommand}" />
                             </StackPanel>
+                            <TextBlock Text="{Binding LastDiagnosticsExportText}"
+                                       Style="{StaticResource MutedTextStyle}"
+                                       TextWrapping="Wrap"
+                                       Margin="0,8,0,0" />
                             <TextBox Text="{Binding DiagnosticsText, Mode=OneWay}" IsReadOnly="True" TextWrapping="Wrap" AcceptsReturn="True" MinHeight="220" Margin="0,10,0,0" />
                         </StackPanel>
                     </GroupBox>

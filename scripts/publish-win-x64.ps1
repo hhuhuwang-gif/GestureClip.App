@@ -64,6 +64,9 @@ Remove-Item $staging -Recurse -Force -ErrorAction SilentlyContinue
 
 Copy-ReleaseDocument "README.md"
 Copy-ReleaseDocument "UPDATE.md"
+Copy-ReleaseDocument "HELP.md"
+Copy-ReleaseDocument "BETA_TEST.md"
+Copy-ReleaseDocument "KNOWN_ISSUES.md"
 Copy-ReleaseDocument "CHANGELOG.md"
 Copy-ReleaseDocument "LICENSE"
 

@@ -1,5 +1,6 @@
 using System.Reflection;
 using System.Text;
+using System.IO.Compression;
 using GestureClip.Core.Abstractions;
 using GestureClip.Core.Diagnostics;
 using GestureClip.Core.SystemInfo;
@@ -75,6 +76,43 @@ public sealed class DiagnosticsService : IDiagnosticsService
         builder.AppendLine($"LastKeyboardInputStatus: {snapshot.LastKeyboardInputStatus ?? "-"}");
         builder.AppendLine($"LastErrorSummary: {snapshot.LastErrorSummary ?? "-"}");
         return builder.ToString();
+    }
+
+    public async Task<string> ExportPackageAsync(CancellationToken cancellationToken)
+    {
+        Directory.CreateDirectory(_paths.RootDirectory);
+        var fileName = $"GestureClip-Diagnostics-{DateTime.Now:yyyyMMdd-HHmmss}.zip";
+        var packagePath = Path.Combine(_paths.RootDirectory, fileName);
+
+        if (File.Exists(packagePath))
+        {
+            File.Delete(packagePath);
+        }
+
+        await using var stream = new FileStream(packagePath, FileMode.CreateNew, FileAccess.ReadWrite, FileShare.None);
+        using var archive = new ZipArchive(stream, ZipArchiveMode.Create);
+
+        var reportEntry = archive.CreateEntry("diagnostics.txt");
+        await using (var reportStream = reportEntry.Open())
+        await using (var writer = new StreamWriter(reportStream, Encoding.UTF8))
+        {
+            await writer.WriteAsync(await BuildReportAsync(cancellationToken));
+        }
+
+        if (Directory.Exists(_paths.LogDirectory))
+        {
+            foreach (var logFile in Directory.EnumerateFiles(_paths.LogDirectory, "*.log").OrderByDescending(File.GetLastWriteTimeUtc).Take(5))
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+                var entryName = $"logs/{Path.GetFileName(logFile)}";
+                var entry = archive.CreateEntry(entryName, CompressionLevel.Optimal);
+                await using var source = new FileStream(logFile, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
+                await using var destination = entry.Open();
+                await source.CopyToAsync(destination, cancellationToken);
+            }
+        }
+
+        return packagePath;
     }
 
     private static string GetVersion()
