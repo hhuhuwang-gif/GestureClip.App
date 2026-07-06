@@ -8,6 +8,20 @@ namespace GestureClip.Features.Privacy;
 
 public sealed class AppBlacklistService : IAppBlacklistService
 {
+    private static readonly DefaultBlacklistItem[] DefaultBlacklistItems =
+    [
+        new("1password.exe", "默认隐私保护：密码管理器", true, false),
+        new("bitwarden.exe", "默认隐私保护：密码管理器", true, false),
+        new("keepass.exe", "默认隐私保护：密码管理器", true, false),
+        new("keepassxc.exe", "默认隐私保护：密码管理器", true, false),
+        new("lastpass.exe", "默认隐私保护：密码管理器", true, false),
+        new("authy.exe", "默认隐私保护：双因素验证工具", true, false),
+        new("msrdc.exe", "默认隐私保护：远程桌面", true, true),
+        new("mstsc.exe", "默认隐私保护：远程桌面", true, true),
+        new("anydesk.exe", "默认隐私保护：远程控制", true, true),
+        new("teamviewer.exe", "默认隐私保护：远程控制", true, true)
+    ];
+
     private readonly ISqliteConnectionFactory _connectionFactory;
     private readonly ILogger<AppBlacklistService> _logger;
     private readonly SemaphoreSlim _refreshLock = new(1, 1);
@@ -119,6 +133,7 @@ WHERE Id = @Id;
         try
         {
             await using var connection = await _connectionFactory.OpenConnectionAsync(cancellationToken);
+            await SeedDefaultBlacklistAsync(connection);
             var rows = await connection.QueryAsync<AppBlacklistRow>(
                 """
 SELECT Id, ProcessName, Reason, BlockClipboard, BlockGesture
@@ -165,6 +180,29 @@ ORDER BY ProcessName COLLATE NOCASE;
         await RefreshAsync(cancellationToken);
     }
 
+    private async Task SeedDefaultBlacklistAsync(System.Data.IDbConnection connection)
+    {
+        var now = DateTimeOffset.UtcNow.ToString("O");
+        foreach (var item in DefaultBlacklistItems)
+        {
+            await connection.ExecuteAsync(
+                """
+INSERT OR IGNORE INTO AppBlacklist (Id, ProcessName, Reason, BlockClipboard, BlockGesture, CreatedAt, UpdatedAt)
+VALUES (@Id, @ProcessName, @Reason, @BlockClipboard, @BlockGesture, @CreatedAt, @UpdatedAt);
+""",
+                new
+                {
+                    Id = Guid.NewGuid().ToString(),
+                    item.ProcessName,
+                    item.Reason,
+                    BlockClipboard = item.BlockClipboard ? 1 : 0,
+                    BlockGesture = item.BlockGesture ? 1 : 0,
+                    CreatedAt = now,
+                    UpdatedAt = now
+                });
+        }
+    }
+
     private static string? NormalizeProcessName(string? processName)
     {
         var normalized = processName?.Trim();
@@ -180,6 +218,12 @@ ORDER BY ProcessName COLLATE NOCASE;
 
         return normalized;
     }
+
+    private sealed record DefaultBlacklistItem(
+        string ProcessName,
+        string Reason,
+        bool BlockClipboard,
+        bool BlockGesture);
 
     private sealed class AppBlacklistRow
     {

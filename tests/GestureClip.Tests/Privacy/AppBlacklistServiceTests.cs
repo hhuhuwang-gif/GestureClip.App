@@ -18,9 +18,9 @@ public sealed class AppBlacklistServiceTests
         await service.AddAsync("NOTEPAD.EXE", blockClipboard: false, blockGesture: false, CancellationToken.None);
 
         var items = await service.GetAllAsync(CancellationToken.None);
+        var notepad = Assert.Single(items, item => item.ProcessName == "notepad.exe");
 
-        Assert.Single(items);
-        Assert.Equal("notepad.exe", items[0].ProcessName);
+        Assert.Equal("notepad.exe", notepad.ProcessName);
         Assert.True(await service.IsClipboardBlockedAsync("Notepad.exe", CancellationToken.None));
         Assert.True(service.IsGestureBlockedCached("NOTEPAD.EXE"));
     }
@@ -36,13 +36,32 @@ public sealed class AppBlacklistServiceTests
     }
 
     [Fact]
+    public async Task GetAllAsync_seeds_default_privacy_blacklist_without_overwriting_existing_rows()
+    {
+        using var database = await TestDatabase.CreateAsync();
+        var service = new AppBlacklistService(database.ConnectionFactory, NullLogger<AppBlacklistService>.Instance);
+
+        await service.AddAsync("bitwarden.exe", blockClipboard: false, blockGesture: true, CancellationToken.None);
+
+        var items = await service.GetAllAsync(CancellationToken.None);
+        var bitwarden = Assert.Single(items, item => item.ProcessName == "bitwarden.exe");
+        var mstsc = Assert.Single(items, item => item.ProcessName == "mstsc.exe");
+
+        Assert.False(bitwarden.BlockClipboard);
+        Assert.True(bitwarden.BlockGesture);
+        Assert.True(mstsc.BlockClipboard);
+        Assert.True(mstsc.BlockGesture);
+        Assert.True(await service.IsClipboardBlockedAsync("1password.exe", CancellationToken.None));
+    }
+
+    [Fact]
     public async Task UpdateAsync_and_DeleteAsync_change_matching_results()
     {
         using var database = await TestDatabase.CreateAsync();
         var service = new AppBlacklistService(database.ConnectionFactory, NullLogger<AppBlacklistService>.Instance);
 
         await service.AddAsync("code.exe", blockClipboard: true, blockGesture: false, CancellationToken.None);
-        var item = (await service.GetAllAsync(CancellationToken.None)).Single();
+        var item = (await service.GetAllAsync(CancellationToken.None)).Single(item => item.ProcessName == "code.exe");
 
         await service.UpdateAsync(item.Id, blockClipboard: false, blockGesture: true, CancellationToken.None);
 

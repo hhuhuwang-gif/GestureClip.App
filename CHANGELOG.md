@@ -25,6 +25,7 @@
 - dotnet restore 通过。
 - dotnet build 通过，0 警告 0 错误。
 - dotnet test 通过，459 passed。
+
 ## GestureClip v0.5.1 Beta
 
 ### 重点更新
@@ -52,7 +53,6 @@
 - 管理员权限窗口中，普通权限运行的 GestureClip 可能无法稳定执行输入模拟。
 - 图片历史数量很大时，首次缩略图加载仍可能需要一点时间。
 - 覆盖更新前必须先退出程序，否则 `GestureClip.exe` 可能被占用。
-# CHANGELOG
 
 ## GestureClip v0.5.0 Beta
 
