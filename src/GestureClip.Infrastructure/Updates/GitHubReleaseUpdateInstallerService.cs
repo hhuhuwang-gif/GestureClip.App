@@ -62,7 +62,20 @@ public sealed class GitHubReleaseUpdateInstallerService : IUpdateInstallerServic
 
     private async Task DownloadFileAsync(string url, string destinationPath, CancellationToken cancellationToken)
     {
-        using var response = await _httpClient.GetAsync(url, HttpCompletionOption.ResponseHeadersRead, cancellationToken);
+        try
+        {
+            await DownloadFileWithClientAsync(_httpClient, url, destinationPath, cancellationToken);
+        }
+        catch (HttpRequestException)
+        {
+            using var directClient = UpdateHttpClientFactory.CreateDirectClient();
+            await DownloadFileWithClientAsync(directClient, url, destinationPath, cancellationToken);
+        }
+    }
+
+    private static async Task DownloadFileWithClientAsync(HttpClient httpClient, string url, string destinationPath, CancellationToken cancellationToken)
+    {
+        using var response = await httpClient.GetAsync(url, HttpCompletionOption.ResponseHeadersRead, cancellationToken);
         response.EnsureSuccessStatusCode();
         await using var source = await response.Content.ReadAsStreamAsync(cancellationToken);
         await using var destination = File.Create(destinationPath);

@@ -36,7 +36,20 @@ public sealed class GitHubReleaseUpdateCheckService : IUpdateCheckService
 
     public async Task<GitHubRelease> GetLatestReleaseAsync(CancellationToken cancellationToken = default)
     {
-        return await _httpClient.GetFromJsonAsync<GitHubRelease>(LatestReleaseApiUrl, cancellationToken)
+        try
+        {
+            return await GetLatestReleaseWithClientAsync(_httpClient, cancellationToken);
+        }
+        catch (HttpRequestException)
+        {
+            using var directClient = UpdateHttpClientFactory.CreateDirectClient();
+            return await GetLatestReleaseWithClientAsync(directClient, cancellationToken);
+        }
+    }
+
+    private static async Task<GitHubRelease> GetLatestReleaseWithClientAsync(HttpClient httpClient, CancellationToken cancellationToken)
+    {
+        return await httpClient.GetFromJsonAsync<GitHubRelease>(LatestReleaseApiUrl, cancellationToken)
             ?? throw new InvalidOperationException("无法读取 GitHub 最新版本信息。");
     }
 

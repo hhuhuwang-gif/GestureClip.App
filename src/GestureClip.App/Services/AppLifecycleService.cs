@@ -1,6 +1,7 @@
 using System.Diagnostics;
 using System.Windows;
 using GestureClip.Core.Abstractions;
+using GestureClip.Infrastructure.Updates;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
@@ -127,7 +128,7 @@ public sealed class AppLifecycleService : IAppLifecycleService
         {
             _logger.LogError(ex, "Failed to check for updates.");
             var openRelease = System.Windows.MessageBox.Show(
-                "检查更新失败，可能是网络暂时不可用。\n\n是否打开 GitHub Release 页面手动查看？\n\n" + ex.Message,
+                UpdateErrorMessageFormatter.ToUserMessage(ex) + "\n\n是否打开 GitHub Release 页面手动查看？",
                 "检查更新失败",
                 MessageBoxButton.YesNo,
                 MessageBoxImage.Warning);
@@ -160,7 +161,7 @@ public sealed class AppLifecycleService : IAppLifecycleService
         {
             _logger.LogError(ex, "Failed to start cover update.");
             System.Windows.MessageBox.Show(
-                "自动更新启动失败。将打开 GitHub 最新 Release 页面，你可以手动下载 zip 覆盖安装。\n\n" + ex.Message,
+                "自动更新启动失败。" + UpdateErrorMessageFormatter.ToUserMessage(ex),
                 "一键更新失败",
                 MessageBoxButton.OK,
                 MessageBoxImage.Warning);
