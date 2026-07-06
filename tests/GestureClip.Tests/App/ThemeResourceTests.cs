@@ -429,12 +429,13 @@ public sealed class ThemeResourceTests
         var settingsXaml = File.ReadAllText(settingsXamlPath);
         var settingsSource = File.ReadAllText(settingsSourcePath);
 
-        Assert.Contains("OpenLatestReleasePage", lifecycle);
-        Assert.Contains("https://github.com/hhuhuwang-gif/GestureClip.App/releases/latest", lifecycle);
-        Assert.Contains("一键更新", tray);
-        Assert.Contains("一键更新", settingsXaml);
+        Assert.Contains("StartCoverUpdateAsync", lifecycle);
+        Assert.Contains("IUpdateInstallerService", lifecycle);
+        Assert.Contains("一键覆盖更新", tray);
+        Assert.Contains("一键覆盖更新", settingsXaml);
+        Assert.Contains("自动下载 GitHub 最新 zip", settingsXaml);
         Assert.Contains("UpdateButton_Click", settingsXaml);
-        Assert.Contains("OpenLatestReleasePage", settingsSource);
+        Assert.Contains("StartCoverUpdateAsync", settingsSource);
     }
 
     private static string FindRepositoryFile(params string[] segments)

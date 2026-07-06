@@ -148,7 +148,7 @@ public sealed class TrayIconService : IDisposable
             var path = await _diagnosticsService.ExportPackageAsync(CancellationToken.None);
             ShowWorkBearBalloon("GestureClip", $"诊断包已导出：{path}");
         });
-        _menu.Items.Add("一键更新", null, (_, _) => _appLifecycleService.OpenLatestReleasePage());
+        _menu.Items.Add("一键覆盖更新", null, async (_, _) => await _appLifecycleService.StartCoverUpdateAsync());
         _menu.Items.Add(new Forms.ToolStripSeparator());
         _menu.Items.Add("退出", null, (_, _) => _appLifecycleService.ExitApplication());
     }

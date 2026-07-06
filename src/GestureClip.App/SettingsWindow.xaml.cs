@@ -87,9 +87,9 @@ public partial class SettingsWindow : Window
         Close();
     }
 
-    private void UpdateButton_Click(object sender, RoutedEventArgs e)
+    private async void UpdateButton_Click(object sender, RoutedEventArgs e)
     {
-        _appLifecycleService.OpenLatestReleasePage();
+        await _appLifecycleService.StartCoverUpdateAsync();
     }
 
     private void ScrollToCustomGestureDesigner_Click(object sender, RoutedEventArgs e)

@@ -93,6 +93,36 @@ public sealed class AppLifecycleService : IAppLifecycleService
         }
     }
 
+    public async Task StartCoverUpdateAsync()
+    {
+        try
+        {
+            var result = System.Windows.MessageBox.Show(
+                "将下载 GitHub 最新版本，关闭当前 GestureClip 后自动覆盖旧程序并重启。\n\n本地剪贴板历史和设置会保留。是否继续？",
+                "一键覆盖更新",
+                MessageBoxButton.YesNo,
+                MessageBoxImage.Question);
+            if (result != MessageBoxResult.Yes)
+            {
+                return;
+            }
+
+            await _serviceProvider.GetRequiredService<IUpdateInstallerService>().StartCoverUpdateAsync();
+            _logger.LogInformation("Cover update requested; shutting down current app instance.");
+            ExitApplication();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to start cover update.");
+            System.Windows.MessageBox.Show(
+                "自动更新启动失败。将打开 GitHub 最新 Release 页面，你可以手动下载 zip 覆盖安装。\n\n" + ex.Message,
+                "一键更新失败",
+                MessageBoxButton.OK,
+                MessageBoxImage.Warning);
+            OpenLatestReleasePage();
+        }
+    }
+
     public async void ExitApplication()
     {
         if (Interlocked.Exchange(ref _exitStarted, 1) == 1)

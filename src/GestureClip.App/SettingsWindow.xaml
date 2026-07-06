@@ -1290,13 +1290,13 @@
                             <TextBlock TextWrapping="Wrap"
                                        Style="{StaticResource MutedTextStyle}"
                                        Text="GestureClip 是本地优先的 Windows 剪贴板历史与右键手势工具。剪贴板文本存储在本机 SQLite，日志不记录剪贴板正文。MVP 不保证控制管理员权限窗口，如需控制管理员窗口，请以管理员身份运行 GestureClip。" />
-                            <Button Content="一键更新"
-                                    Width="120"
+                            <Button Content="一键覆盖更新"
+                                    Width="140"
                                     HorizontalAlignment="Left"
                                     Margin="0,14,0,0"
                                     Style="{StaticResource PrimaryButtonStyle}"
                                     Click="UpdateButton_Click" />
-                            <TextBlock Text="会打开 GitHub 最新 Release 页面，下载新版后覆盖旧版即可。"
+                            <TextBlock Text="会自动下载 GitHub 最新 zip，退出当前程序后覆盖旧版并重启；本地历史记录和设置会保留。失败时会打开 Release 页面供手动下载。"
                                        Style="{StaticResource MutedTextStyle}"
                                        TextWrapping="Wrap"
                                        Margin="0,8,0,0" />
