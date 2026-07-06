@@ -35,6 +35,11 @@ public interface IClipboardRepository
         return Task.FromResult<ClipboardItem?>(null);
     }
 
+    Task TouchAsync(Guid id, CancellationToken cancellationToken)
+    {
+        return IncrementUseCountAsync(id, cancellationToken);
+    }
+
     Task IncrementUseCountAsync(Guid id, CancellationToken cancellationToken);
 
     async Task IncrementUseCountsAsync(IReadOnlyDictionary<Guid, int> increments, CancellationToken cancellationToken)
