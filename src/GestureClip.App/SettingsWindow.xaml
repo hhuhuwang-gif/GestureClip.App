@@ -626,7 +626,7 @@
                                                  ScrollViewer.CanContentScroll="False"
                                                  PreviewMouseWheel="PassMouseWheelToParent">
                                             <ListBox.ItemContainerStyle>
-                                                <Style TargetType="ListBoxItem">
+                                                <Style TargetType="ListBoxItem" BasedOn="{StaticResource {x:Type ListBoxItem}}">
                                                     <Setter Property="HorizontalContentAlignment" Value="Stretch" />
                                                     <Setter Property="Padding" Value="0" />
                                                     <Setter Property="Margin" Value="0" />
@@ -647,6 +647,7 @@
                                                                 <ColumnDefinition Width="96" />
                                                                 <ColumnDefinition Width="*" />
                                                                 <ColumnDefinition Width="170" />
+                                                                <ColumnDefinition Width="Auto" />
                                                             </Grid.ColumnDefinitions>
                                                             <Border Width="82" Height="60" CornerRadius="14" Background="#18FFFFFF" BorderBrush="#26768AA8" BorderThickness="1">
                                                                 <controls:GesturePatternView Pattern="{Binding Pattern}" Width="82" Height="60" />
@@ -656,9 +657,28 @@
                                                                 <TextBlock Text="{Binding PatternText}" Style="{StaticResource MutedTextStyle}" TextTrimming="CharacterEllipsis" Margin="0,4,0,0" />
                                                             </StackPanel>
                                                             <StackPanel Grid.Column="2" VerticalAlignment="Center" HorizontalAlignment="Right">
+                                                                <Border Background="{DynamicResource BrushPrimarySoft}"
+                                                                        BorderBrush="{DynamicResource BrushPrimaryBright}"
+                                                                        BorderThickness="1"
+                                                                        CornerRadius="10"
+                                                                        Padding="8,3"
+                                                                        Margin="0,0,0,6"
+                                                                        Visibility="{Binding RelativeSource={RelativeSource AncestorType=ListBoxItem}, Path=IsSelected, Converter={StaticResource BooleanToVisibilityConverter}}">
+                                                                    <TextBlock Text="当前选中" FontSize="12" FontWeight="SemiBold" Foreground="{DynamicResource BrushPrimaryBright}" />
+                                                                </Border>
                                                                 <TextBlock Text="{Binding ActionName}" FontWeight="SemiBold" MaxWidth="160" TextTrimming="CharacterEllipsis" TextAlignment="Right" />
                                                                 <TextBlock Text="{Binding ShortcutText}" Style="{StaticResource MutedTextStyle}" MaxWidth="160" TextTrimming="CharacterEllipsis" TextAlignment="Right" Margin="0,4,0,0" />
                                                             </StackPanel>
+                                                            <Button Grid.Column="3"
+                                                                    Content="删"
+                                                                    Width="34"
+                                                                    Height="34"
+                                                                    MinWidth="0"
+                                                                    Margin="12,0,0,0"
+                                                                    VerticalAlignment="Center"
+                                                                    Style="{StaticResource SecondaryButtonStyle}"
+                                                                    ToolTip="删除这个手势"
+                                                                    Command="{Binding DeleteCommand}" />
                                                         </Grid>
                                                     </Border>
                                                 </DataTemplate>
@@ -675,7 +695,7 @@
                                                      ScrollViewer.CanContentScroll="False"
                                                      PreviewMouseWheel="PassMouseWheelToParent">
                                                 <ListBox.ItemContainerStyle>
-                                                    <Style TargetType="ListBoxItem">
+                                                    <Style TargetType="ListBoxItem" BasedOn="{StaticResource {x:Type ListBoxItem}}">
                                                         <Setter Property="HorizontalContentAlignment" Value="Stretch" />
                                                         <Setter Property="Padding" Value="0" />
                                                         <Setter Property="Margin" Value="0" />
@@ -692,6 +712,7 @@
                                                                     <ColumnDefinition Width="82" />
                                                                     <ColumnDefinition Width="*" />
                                                                     <ColumnDefinition Width="150" />
+                                                                    <ColumnDefinition Width="Auto" />
                                                                 </Grid.ColumnDefinitions>
                                                                 <Border Width="68" Height="50" CornerRadius="12" Background="#12FFFFFF" BorderBrush="#20768AA8" BorderThickness="1">
                                                                     <controls:GesturePatternView Pattern="{Binding Pattern}" Width="68" Height="50" />
@@ -701,9 +722,28 @@
                                                                     <TextBlock Text="{Binding PatternText}" Style="{StaticResource MutedTextStyle}" TextTrimming="CharacterEllipsis" Margin="0,4,0,0" />
                                                                 </StackPanel>
                                                                 <StackPanel Grid.Column="2" VerticalAlignment="Center" HorizontalAlignment="Right">
+                                                                    <Border Background="{DynamicResource BrushPrimarySoft}"
+                                                                            BorderBrush="{DynamicResource BrushPrimaryBright}"
+                                                                            BorderThickness="1"
+                                                                            CornerRadius="10"
+                                                                            Padding="8,3"
+                                                                            Margin="0,0,0,6"
+                                                                            Visibility="{Binding RelativeSource={RelativeSource AncestorType=ListBoxItem}, Path=IsSelected, Converter={StaticResource BooleanToVisibilityConverter}}">
+                                                                        <TextBlock Text="当前选中" FontSize="12" FontWeight="SemiBold" Foreground="{DynamicResource BrushPrimaryBright}" />
+                                                                    </Border>
                                                                     <TextBlock Text="{Binding ActionName}" FontWeight="SemiBold" MaxWidth="140" TextTrimming="CharacterEllipsis" TextAlignment="Right" />
                                                                     <TextBlock Text="{Binding ShortcutText}" Style="{StaticResource MutedTextStyle}" MaxWidth="140" TextTrimming="CharacterEllipsis" TextAlignment="Right" Margin="0,4,0,0" />
                                                                 </StackPanel>
+                                                                <Button Grid.Column="3"
+                                                                        Content="删"
+                                                                        Width="32"
+                                                                        Height="32"
+                                                                        MinWidth="0"
+                                                                        Margin="10,0,0,0"
+                                                                        VerticalAlignment="Center"
+                                                                        Style="{StaticResource SecondaryButtonStyle}"
+                                                                        ToolTip="删除这个手势"
+                                                                        Command="{Binding DeleteCommand}" />
                                                             </Grid>
                                                         </Border>
                                                     </DataTemplate>

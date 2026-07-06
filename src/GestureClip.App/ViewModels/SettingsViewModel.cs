@@ -2234,6 +2234,13 @@ public sealed class SettingsViewModel : INotifyPropertyChanged
 
     private async Task DeleteGestureBindingAsync(GestureBindingCardViewModel card)
     {
+        if (!_confirmationService.Confirm(
+            "删除这个手势",
+            $"将删除手势 {DirectionText(card.Pattern)}（{card.Pattern}）当前绑定的“{card.ActionName}”。是否继续？"))
+        {
+            return;
+        }
+
         var index = GestureBindingCards.IndexOf(card);
         GestureBindingCards.Remove(card);
         PrimaryGestureBindingCards.Remove(card);

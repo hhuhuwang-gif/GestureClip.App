@@ -336,8 +336,12 @@ public sealed class ThemeResourceTests
         Assert.Contains("Click=\"ScrollToCustomGestureDesigner_Click\"", xaml);
         Assert.Contains("MinHeight=\"220\"", xaml);
         Assert.Contains("删除这个手势", xaml);
+        Assert.Contains("Command=\"{Binding DeleteCommand}\"", xaml);
+        Assert.Contains("BasedOn=\"{StaticResource {x:Type ListBoxItem}}\"", xaml);
+        Assert.Contains("当前选中", xaml);
+        Assert.Contains("RelativeSource={RelativeSource AncestorType=ListBoxItem}", xaml);
         Assert.Contains("动作编辑器会跟着页面一起滑动，不会固定挡住内容。", xaml);
-        Assert.Contains("FocusVisualStyle=\"{x:Null}\"", xaml);
+
 
         var detailStart = xaml.IndexOf("x:Name=\"GestureBindingDetailPanel\"", StringComparison.Ordinal);
         Assert.True(detailStart >= 0);

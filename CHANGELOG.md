@@ -1,5 +1,20 @@
 # CHANGELOG
 
+## GestureClip v0.6.8 Beta
+
+### 重点更新
+
+- 优化手势设置页：常用手势和高级手势列表支持就近删除，不再只能到动作编辑器里删除。
+- 删除手势前新增确认弹窗，避免误触导致自定义手势丢失。
+- 手势列表选中项新增“当前选中”提示，并继续沿用浅色自定义选中态，减少系统默认黑块高亮问题。
+- 新增 `.editorconfig` 和 `.gitattributes`，降低后续编辑时出现行尾空格、换行污染和二进制文件误识别的风险。
+
+### 验证
+
+- `git diff --check`
+- `dotnet test ./GestureClip.sln`
+- `scripts/publish-win-x64.ps1`
+
 ## GestureClip v0.6.7 Beta
 
 ### 修复

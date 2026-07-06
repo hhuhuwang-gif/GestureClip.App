@@ -1,0 +1,13 @@
+# Keep Git from corrupting text/binary files without rewriting existing mixed-EOL history.
+* text=auto
+
+# Binary assets.
+*.png binary
+*.ico binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.zip binary
+*.exe binary
+*.dll binary
+*.pdb binary

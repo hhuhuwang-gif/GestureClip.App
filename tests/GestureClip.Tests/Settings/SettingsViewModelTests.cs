@@ -326,7 +326,8 @@ public sealed class SettingsViewModelTests
     public async Task Deleting_selected_gesture_binding_selects_next_card()
     {
         var settings = new FakeSettingsService();
-        var viewModel = CreateViewModel(settings: settings);
+        var confirmation = new FakeConfirmationService { Result = true };
+        var viewModel = CreateViewModel(settings: settings, confirmation: confirmation);
         var card = viewModel.GestureBindingCards.Single(item => item.Pattern == "DL");
 
         viewModel.SelectedGestureBindingCard = card;
@@ -335,13 +336,31 @@ public sealed class SettingsViewModelTests
         Assert.DoesNotContain(viewModel.GestureBindingCards, item => item.Pattern == "DL");
         Assert.NotNull(viewModel.SelectedGestureBindingCard);
         Assert.NotSame(card, viewModel.SelectedGestureBindingCard);
+        Assert.Contains(confirmation.Prompts, prompt => prompt.Title.Contains("删除", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public async Task Deleting_selected_gesture_binding_does_not_delete_when_user_cancels()
+    {
+        var settings = new FakeSettingsService();
+        var confirmation = new FakeConfirmationService { Result = false };
+        var viewModel = CreateViewModel(settings: settings, confirmation: confirmation);
+        var card = viewModel.GestureBindingCards.Single(item => item.Pattern == "DL");
+
+        viewModel.SelectedGestureBindingCard = card;
+        await viewModel.DeleteSelectedGestureBindingAsync();
+
+        Assert.Contains(viewModel.GestureBindingCards, item => item.Pattern == "DL");
+        Assert.Same(card, viewModel.SelectedGestureBindingCard);
+        Assert.Contains(confirmation.Prompts, prompt => prompt.Title.Contains("删除", StringComparison.Ordinal));
     }
 
     [Fact]
     public async Task Deleting_gesture_binding_saves_custom_preset()
     {
         var settings = new FakeSettingsService();
-        var viewModel = CreateViewModel(settings: settings);
+        var confirmation = new FakeConfirmationService { Result = true };
+        var viewModel = CreateViewModel(settings: settings, confirmation: confirmation);
         var card = viewModel.GestureBindingCards.Single(item => item.Pattern == "DL");
 
         card.DeleteCommand.Execute(null);
@@ -351,6 +370,7 @@ public sealed class SettingsViewModelTests
             settings.Values.TryGetValue(SettingKeys.GestureCustomBindingsJson, out var json) &&
             json is string text && !text.Contains("\"DL\"", StringComparison.Ordinal));
         Assert.Equal(GesturePreset.Custom, viewModel.SelectedGesturePresetOption?.Value);
+        Assert.Contains(confirmation.Prompts, prompt => prompt.Title.Contains("删除", StringComparison.Ordinal));
     }
 
     [Fact]
