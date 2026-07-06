@@ -340,6 +340,7 @@ public sealed class ClipboardService : IClipboardService
         }
 
         await _clipboardWriter.SetTextAsync(text, cancellationToken);
+        await WaitForClipboardSettleAsync(cancellationToken);
         RecordUseCountInBackground(items.Select(item => item.Id).ToArray());
         copyWatch.Stop();
         LogPerf("ClipboardCopyDurationMs", copyWatch.ElapsedMilliseconds, ("ContentType", "text"), ("ItemCount", items.Count));
@@ -554,6 +555,11 @@ public sealed class ClipboardService : IClipboardService
     {
         RecordUseCountInBackground([itemId]);
         await RecordPasteStatsAsync(now, cancellationToken);
+    }
+
+    private static Task WaitForClipboardSettleAsync(CancellationToken cancellationToken)
+    {
+        return Task.Delay(TimeSpan.FromMilliseconds(60), cancellationToken);
     }
 
     private void RecordUseCountInBackground(IReadOnlyList<Guid> itemIds)

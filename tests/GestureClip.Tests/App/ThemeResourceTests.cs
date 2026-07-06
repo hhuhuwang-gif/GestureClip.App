@@ -147,6 +147,8 @@ public sealed class ThemeResourceTests
         Assert.Contains("删除剪贴板记录", source);
         Assert.Contains("这会从本机剪贴板历史里删除", source);
         Assert.Contains("SelectSingleItem", source);
+        Assert.Contains("CopyItemAndHideAsync", source);
+        Assert.Contains("OriginalSource", source);
     }
 
     [Fact]

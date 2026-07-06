@@ -1,5 +1,18 @@
 # CHANGELOG
 
+## GestureClip v0.6.6 Beta
+
+### 修复
+
+- 修复剪贴板历史双击复制后窗口偶尔不消失的问题。
+- 修复双击复制后马上粘贴时可能卡顿、需要多次粘贴才生效的问题。
+- 双击复制现在按鼠标所在记录执行并关闭面板；复制完成后会短暂等待系统剪贴板稳定，并释放覆盖窗口焦点。
+
+### 验证
+
+- `dotnet test ./GestureClip.sln`
+- `scripts/publish-win-x64.ps1`
+
 ## GestureClip v0.6.5 Beta
 
 ### 重点更新

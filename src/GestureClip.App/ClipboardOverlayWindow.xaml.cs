@@ -111,7 +111,7 @@ public partial class ClipboardOverlayWindow : Window
         {
             if (await _viewModel.PasteSelectedAsync())
             {
-                Hide();
+                HideOverlayAndReleaseFocus();
             }
 
             e.Handled = true;
@@ -123,7 +123,7 @@ public partial class ClipboardOverlayWindow : Window
         {
             if (await _viewModel.PasteByIndexAsync(index.Value))
             {
-                Hide();
+                HideOverlayAndReleaseFocus();
             }
 
             e.Handled = true;
@@ -137,7 +137,7 @@ public partial class ClipboardOverlayWindow : Window
             return;
         }
 
-        Hide();
+        HideOverlayAndReleaseFocus();
     }
 
     private async void AlwaysVisibleButton_Click(object sender, RoutedEventArgs e)
@@ -239,16 +239,12 @@ public partial class ClipboardOverlayWindow : Window
 
     private async void HistoryList_MouseDoubleClick(object sender, MouseButtonEventArgs e)
     {
-        if (FindAncestor<ListBoxItem>((DependencyObject)e.OriginalSource) is null)
+        if (GetItemFromOriginalSource(e.OriginalSource) is not { } item)
         {
             return;
         }
 
-        if (await _viewModel.CopySelectedAsync(GetSelectedItems()))
-        {
-            Hide();
-        }
-
+        await CopyItemAndHideAsync(item);
         e.Handled = true;
     }
 
@@ -325,10 +321,19 @@ public partial class ClipboardOverlayWindow : Window
         SelectSingleItem(item);
         if (await _viewModel.PasteSelectedAsync())
         {
-            Hide();
+            HideOverlayAndReleaseFocus();
         }
 
         e.Handled = true;
+    }
+
+    private async Task CopyItemAndHideAsync(ClipboardItem item)
+    {
+        SelectSingleItem(item);
+        if (await _viewModel.CopySelectedAsync([item]))
+        {
+            HideOverlayAndReleaseFocus();
+        }
     }
 
     private async void QuickPinItemButton_Click(object sender, RoutedEventArgs e)
@@ -389,6 +394,24 @@ public partial class ClipboardOverlayWindow : Window
         return sender is FrameworkElement { DataContext: ClipboardItem item }
             ? item
             : null;
+    }
+
+    private static ClipboardItem? GetItemFromOriginalSource(object source)
+    {
+        if (source is not DependencyObject dependencyObject)
+        {
+            return null;
+        }
+
+        return FindAncestor<ListBoxItem>(dependencyObject) is { DataContext: ClipboardItem item }
+            ? item
+            : null;
+    }
+
+    private void HideOverlayAndReleaseFocus()
+    {
+        MoveFocus(new TraversalRequest(FocusNavigationDirection.Next));
+        Hide();
     }
 
     private static int? GetDigitIndex(Key key)

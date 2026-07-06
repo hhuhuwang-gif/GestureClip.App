@@ -151,6 +151,22 @@ public sealed class ClipboardServiceTests
     }
 
     [Fact]
+    public async Task CopyItemsAsync_waits_briefly_after_text_write_so_next_paste_sees_new_clipboard()
+    {
+        var repository = new FakeClipboardRepository();
+        var writer = new FakeClipboardWriter();
+        var service = CreateService(repository, writer: writer);
+        var item = Item("ready");
+
+        var watch = System.Diagnostics.Stopwatch.StartNew();
+        await service.CopyItemsAsync([item], CancellationToken.None);
+        watch.Stop();
+
+        Assert.Equal("ready", writer.Text);
+        Assert.True(watch.ElapsedMilliseconds >= 45);
+    }
+
+    [Fact]
     public async Task CopyItemsAsync_suppresses_capture_to_prevent_internal_copy_feedback_loop()
     {
         var repository = new FakeClipboardRepository();
@@ -210,11 +226,11 @@ public sealed class ClipboardServiceTests
         var service = CreateService(repository, writer: writer);
         var item = Item("hello");
 
-        for (var index = 0; index < 20; index++)
-        {
-            await service.CopyItemsAsync([item], CancellationToken.None);
-        }
+        var copyTasks = Enumerable.Range(0, 20)
+            .Select(_ => service.CopyItemsAsync([item], CancellationToken.None))
+            .ToArray();
 
+        await Task.WhenAll(copyTasks);
         await WaitForAsync(() => repository.BatchedUseCounts.TryGetValue(item.Id, out var count) && count == 20);
 
         Assert.Equal(1, repository.BatchIncrementCallCount);
