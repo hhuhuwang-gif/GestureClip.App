@@ -3,6 +3,7 @@ namespace GestureClip.Core.Settings;
 public static class SettingKeys
 {
     public const string AppStartWithWindows = "App.StartWithWindows";
+    public const string AppOnboardingCompleted = "App.Onboarding.Completed";
     public const string ClipboardCaptureEnabled = "Clipboard.CaptureEnabled";
     public const string ClipboardMaxItems = "Clipboard.MaxItems";
     public const string ClipboardRetentionDays = "Clipboard.RetentionDays";
