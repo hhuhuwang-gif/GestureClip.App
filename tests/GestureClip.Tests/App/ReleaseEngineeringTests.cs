@@ -5,14 +5,14 @@ namespace GestureClip.Tests.App;
 public sealed class ReleaseEngineeringTests
 {
     [Fact]
-    public void App_project_uses_v069_beta_version_metadata()
+    public void App_project_uses_v0610_beta_version_metadata()
     {
         var project = File.ReadAllText(FindRepositoryFile("src", "GestureClip.App", "GestureClip.App.csproj"));
 
-        Assert.Contains("<Version>0.6.9-beta</Version>", project);
-        Assert.Contains("<FileVersion>0.6.9.0</FileVersion>", project);
-        Assert.Contains("<AssemblyVersion>0.6.9.0</AssemblyVersion>", project);
-        Assert.Contains("<InformationalVersion>0.6.9 Beta</InformationalVersion>", project);
+        Assert.Contains("<Version>0.6.10-beta</Version>", project);
+        Assert.Contains("<FileVersion>0.6.10.0</FileVersion>", project);
+        Assert.Contains("<AssemblyVersion>0.6.10.0</AssemblyVersion>", project);
+        Assert.Contains("<InformationalVersion>0.6.10 Beta</InformationalVersion>", project);
     }
 
     [Fact]
@@ -55,17 +55,22 @@ public sealed class ReleaseEngineeringTests
         var betaTest = File.ReadAllText(FindRepositoryFile("BETA_TEST.md"));
         var knownIssues = File.ReadAllText(FindRepositoryFile("KNOWN_ISSUES.md"));
         var changelog = File.ReadAllText(FindRepositoryFile("CHANGELOG.md"));
-        var releaseDraft = File.ReadAllText(FindRepositoryFile("docs", "github-release-v0.6.9-beta.md"));
+        var releaseDraft = File.ReadAllText(FindRepositoryFile("docs", "github-release-v0.6.10-beta.md"));
 
-        Assert.Contains("v0.6.9 Beta", readme);
-        Assert.Contains("GestureClip-v0.6.9-beta-win-x64.zip", readme);
+        Assert.Contains("v0.6.10 Beta", readme);
+        Assert.Contains("GestureClip-v0.6.10-beta-win-x64.zip", readme);
+        Assert.Contains("## 30 秒上手", readme);
+        Assert.Contains("第一步：打开剪贴板历史", readme);
+        Assert.Contains("第二步：找回刚才复制过的内容", readme);
+        Assert.Contains("第三步：试一次鼠标右键手势", readme);
+        Assert.DoesNotContain("TODO", readme);
         Assert.Contains("%LOCALAPPDATA%\\GestureClip", update);
         Assert.Contains("覆盖更新", update);
         Assert.Contains("导出诊断包", help);
         Assert.Contains("公测检查清单", betaTest);
         Assert.Contains("SmartScreen", knownIssues);
-        Assert.Contains("GestureClip v0.6.9 Beta", changelog);
-        Assert.Contains("GestureClip-v0.6.9-beta-win-x64.zip", releaseDraft);
+        Assert.Contains("GestureClip v0.6.10 Beta", changelog);
+        Assert.Contains("GestureClip-v0.6.10-beta-win-x64.zip", releaseDraft);
         Assert.Contains("SHA256SUMS.txt", releaseDraft);
         Assert.Contains("双击记录后自动复制", releaseDraft);
         var clipboardOverlayXaml = File.ReadAllText(FindRepositoryFile("src", "GestureClip.App", "ClipboardOverlayWindow.xaml"));

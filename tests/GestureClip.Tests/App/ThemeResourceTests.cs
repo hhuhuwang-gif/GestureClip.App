@@ -241,6 +241,21 @@ public sealed class ThemeResourceTests
     }
 
     [Fact]
+    public void SettingsWindow_home_page_explains_thirty_second_quick_start()
+    {
+        var path = FindRepositoryFile("src", "GestureClip.App", "SettingsWindow.xaml");
+        var xaml = File.ReadAllText(path);
+
+        Assert.Contains("30 秒上手", xaml);
+        Assert.Contains("第一步：打开剪贴板历史", xaml);
+        Assert.Contains("Ctrl + `", xaml);
+        Assert.Contains("第二步：双击找回内容", xaml);
+        Assert.Contains("第三步：试一次右键手势", xaml);
+        Assert.Contains("本地保存，不登录，不上传", xaml);
+        Assert.Contains("设置 → 动作绑定", xaml);
+    }
+
+    [Fact]
     public void SettingsWindow_keeps_readonly_textbox_bindings_one_way()
     {
         var path = FindRepositoryFile("src", "GestureClip.App", "SettingsWindow.xaml");

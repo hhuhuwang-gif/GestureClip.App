@@ -1,5 +1,20 @@
 # CHANGELOG
 
+## GestureClip v0.6.10 Beta
+
+### 重点更新
+
+- 明确项目长期目标：GestureClip 要做成“小白也敢用、办公党每天离不开的 Windows 本地办公加速器”。
+- 新增 `docs/PRODUCT_GOAL.md`、`docs/SELF_OPTIMIZATION_PROMPT.md` 和 v1.0 路线图，后续优化有统一方向和验收标准。
+- README 首屏改成“30 秒上手”，去掉 TODO 占位，让新用户能直接照做。
+- 设置首页新增“30 秒上手”卡片，打开软件即可看到剪贴板、双击找回、右键手势和本地优先说明。
+
+### 验证
+
+- `git diff --check`
+- `dotnet test ./GestureClip.sln`
+- `scripts/publish-win-x64.ps1`
+
 ## GestureClip v0.6.9 Beta
 
 ### 修复

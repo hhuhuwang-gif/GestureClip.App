@@ -105,6 +105,42 @@
                     <ScrollViewer VerticalScrollBarVisibility="Auto">
                         <GroupBox Header="首页" Margin="20" Padding="12">
                             <StackPanel>
+                                <Border Style="{StaticResource GlassCardStyle}" Padding="18" Margin="0,0,0,14">
+                                    <StackPanel>
+                                        <TextBlock Text="30 秒上手"
+                                                   FontSize="18"
+                                                   FontWeight="SemiBold"
+                                                   Foreground="{DynamicResource BrushTextPrimary}" />
+                                        <TextBlock Text="本地保存，不登录，不上传。先记住下面 3 个动作，就能开始用。"
+                                                   Style="{StaticResource MutedTextStyle}"
+                                                   Margin="0,6,0,14"
+                                                   TextWrapping="Wrap" />
+                                        <UniformGrid Columns="3">
+                                            <Border Background="#F8FAFD" BorderBrush="{DynamicResource BrushBorder}" BorderThickness="1" CornerRadius="16" Padding="14" Margin="0,0,10,0">
+                                                <StackPanel>
+                                                    <TextBlock Text="第一步：打开剪贴板历史" FontWeight="SemiBold" TextWrapping="Wrap" />
+                                                    <TextBlock Text="Ctrl + `" FontSize="18" FontWeight="SemiBold" Foreground="{DynamicResource BrushPrimaryBright}" Margin="0,8,0,4" />
+                                                    <TextBlock Text="找回刚复制过的文字、图片和截图。" Style="{StaticResource MutedTextStyle}" TextWrapping="Wrap" />
+                                                </StackPanel>
+                                            </Border>
+                                            <Border Background="#F8FAFD" BorderBrush="{DynamicResource BrushBorder}" BorderThickness="1" CornerRadius="16" Padding="14" Margin="0,0,10,0">
+                                                <StackPanel>
+                                                    <TextBlock Text="第二步：双击找回内容" FontWeight="SemiBold" TextWrapping="Wrap" />
+                                                    <TextBlock Text="双击历史记录" FontSize="16" FontWeight="SemiBold" Foreground="{DynamicResource BrushPrimaryBright}" Margin="0,8,0,4" />
+                                                    <TextBlock Text="复制到系统剪贴板并关闭面板；粘贴按钮会直接粘贴。" Style="{StaticResource MutedTextStyle}" TextWrapping="Wrap" />
+                                                </StackPanel>
+                                            </Border>
+                                            <Border Background="#F8FAFD" BorderBrush="{DynamicResource BrushBorder}" BorderThickness="1" CornerRadius="16" Padding="14">
+                                                <StackPanel>
+                                                    <TextBlock Text="第三步：试一次右键手势" FontWeight="SemiBold" TextWrapping="Wrap" />
+                                                    <TextBlock Text="右键按住划一下" FontSize="16" FontWeight="SemiBold" Foreground="{DynamicResource BrushPrimaryBright}" Margin="0,8,0,4" />
+                                                    <TextBlock Text="上划复制、下划粘贴；想改动作去 设置 → 动作绑定。" Style="{StaticResource MutedTextStyle}" TextWrapping="Wrap" />
+                                                </StackPanel>
+                                            </Border>
+                                        </UniformGrid>
+                                    </StackPanel>
+                                </Border>
+
                                 <Border Style="{StaticResource SettingRowStyle}">
                                     <Grid>
                                         <Grid.ColumnDefinitions>
