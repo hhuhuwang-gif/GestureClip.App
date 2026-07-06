@@ -56,7 +56,7 @@
                     <TextBlock Text="剪贴板历史"
                                FontSize="22"
                                FontWeight="SemiBold" />
-                    <TextBlock Text="双击复制并关闭，Enter 粘贴，数字键 1-0 快速粘贴前 10 条"
+                    <TextBlock Text="双击复制并关闭；Enter/粘贴按钮会粘贴并关闭；复制按钮只复制不关闭"
                                Style="{StaticResource MutedTextStyle}"
                                Margin="0,4,0,0" />
                 </StackPanel>

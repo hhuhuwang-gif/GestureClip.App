@@ -143,6 +143,9 @@ public sealed class ThemeResourceTests
         Assert.Contains("QuickPasteItemButton_Click", source);
         Assert.Contains("QuickPinItemButton_Click", source);
         Assert.Contains("QuickDeleteItemButton_Click", source);
+        Assert.Contains("ConfirmDeleteSelectedItems", source);
+        Assert.Contains("删除剪贴板记录", source);
+        Assert.Contains("这会从本机剪贴板历史里删除", source);
         Assert.Contains("SelectSingleItem", source);
     }
 

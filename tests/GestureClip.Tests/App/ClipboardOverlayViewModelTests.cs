@@ -372,7 +372,7 @@ public sealed class ClipboardOverlayViewModelTests
         Assert.True(copied);
         Assert.Empty(service.SearchKeywords);
         Assert.Equal(before, viewModel.Items.Select(item => item.Id).ToArray());
-        Assert.Equal("已复制到剪贴板", viewModel.StatusText);
+        Assert.Equal("文字已复制到系统剪贴板", viewModel.StatusText);
     }
 
     [Fact]
@@ -391,7 +391,7 @@ public sealed class ClipboardOverlayViewModelTests
 
         Assert.Empty(service.SearchKeywords);
         Assert.Equal(20, service.CopyCount);
-        Assert.Equal("已复制到剪贴板", viewModel.StatusText);
+        Assert.Equal("文字已复制到系统剪贴板", viewModel.StatusText);
     }
 
     [Fact]
@@ -429,7 +429,7 @@ public sealed class ClipboardOverlayViewModelTests
         Assert.Empty(service.SearchKeywords);
         Assert.Single(viewModel.Items);
         Assert.Equal(100, viewModel.Items[0].UseCount);
-        Assert.Equal("已复制到剪贴板", viewModel.StatusText);
+        Assert.Equal("文字已复制到系统剪贴板", viewModel.StatusText);
     }
 
     [Fact]

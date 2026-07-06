@@ -478,8 +478,8 @@ public sealed class ClipboardOverlayViewModel : INotifyPropertyChanged
             StatusText = selectedItems.Count == 1 && selectedItems[0].IsImage
                 ? "图片已复制到系统剪贴板"
                 : selectedItems.Count == 1
-                    ? "已复制到剪贴板"
-                    : $"已合并复制 {selectedItems.Count} 条";
+                    ? "文字已复制到系统剪贴板"
+                    : $"已合并复制 {selectedItems.Count} 条到系统剪贴板";
             return true;
         }
         catch (NotSupportedException ex)

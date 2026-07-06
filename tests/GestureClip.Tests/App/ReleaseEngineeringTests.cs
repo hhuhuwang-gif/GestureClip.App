@@ -68,8 +68,12 @@ public sealed class ReleaseEngineeringTests
         Assert.Contains("GestureClip-v0.6.5-beta-win-x64.zip", releaseDraft);
         Assert.Contains("SHA256SUMS.txt", releaseDraft);
         Assert.Contains("双击记录后自动复制", releaseDraft);
-        Assert.Contains("双击复制并关闭", File.ReadAllText(FindRepositoryFile("src", "GestureClip.App", "ClipboardOverlayWindow.xaml")));
-        Assert.Contains("CopySelectedAsync(GetSelectedItems())", File.ReadAllText(FindRepositoryFile("src", "GestureClip.App", "ClipboardOverlayWindow.xaml.cs")));
+        var clipboardOverlayXaml = File.ReadAllText(FindRepositoryFile("src", "GestureClip.App", "ClipboardOverlayWindow.xaml"));
+        var clipboardOverlayCode = File.ReadAllText(FindRepositoryFile("src", "GestureClip.App", "ClipboardOverlayWindow.xaml.cs"));
+        Assert.Contains("双击复制并关闭", clipboardOverlayXaml);
+        Assert.Contains("复制按钮只复制不关闭", clipboardOverlayXaml);
+        Assert.Contains("CopySelectedAsync(GetSelectedItems())", clipboardOverlayCode);
+        Assert.Contains("ConfirmDeleteSelectedItems", clipboardOverlayCode);
     }
 
     private static string FindRepositoryFile(params string[] segments)

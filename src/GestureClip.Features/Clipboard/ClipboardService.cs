@@ -276,7 +276,7 @@ public sealed class ClipboardService : IClipboardService
             SuppressCaptureFor(TimeSpan.FromMilliseconds(1000));
             await _clipboardWriter.SetImagePngBase64Async(image.TextContent, cancellationToken);
             await _clipboardWriter.SendPasteHotkeyAsync(cancellationToken);
-            RecordPasteUsageInBackground(image.Id, DateTimeOffset.UtcNow);
+            await RecordPasteUsageAsync(image.Id, DateTimeOffset.UtcNow, cancellationToken);
             pasteWatch.Stop();
             LogPerf("PasteMs", pasteWatch.ElapsedMilliseconds, ("ContentType", "image/png"));
             return;
@@ -290,7 +290,7 @@ public sealed class ClipboardService : IClipboardService
         SuppressCaptureFor(TimeSpan.FromMilliseconds(1000));
         await _clipboardWriter.SetTextAsync(item.TextContent, cancellationToken);
         await _clipboardWriter.SendPasteHotkeyAsync(cancellationToken);
-        RecordPasteUsageInBackground(item.Id, DateTimeOffset.UtcNow);
+        await RecordPasteUsageAsync(item.Id, DateTimeOffset.UtcNow, cancellationToken);
         pasteWatch.Stop();
         LogPerf("PasteMs", pasteWatch.ElapsedMilliseconds, ("ContentType", "text"));
         _logger.LogInformation("Clipboard text item pasted.");
@@ -550,10 +550,10 @@ public sealed class ClipboardService : IClipboardService
         return fullItem ?? item;
     }
 
-    private void RecordPasteUsageInBackground(Guid itemId, DateTimeOffset now)
+    private async Task RecordPasteUsageAsync(Guid itemId, DateTimeOffset now, CancellationToken cancellationToken)
     {
         RecordUseCountInBackground([itemId]);
-        RecordPasteStatsInBackground(now);
+        await RecordPasteStatsAsync(now, cancellationToken);
     }
 
     private void RecordUseCountInBackground(IReadOnlyList<Guid> itemIds)
@@ -621,19 +621,16 @@ public sealed class ClipboardService : IClipboardService
         }
     }
 
-    private void RecordPasteStatsInBackground(DateTimeOffset now)
+    private async Task RecordPasteStatsAsync(DateTimeOffset now, CancellationToken cancellationToken)
     {
-        _ = Task.Run(async () =>
+        try
         {
-            try
-            {
-                await _workstationDashboardService.RecordPasteAsync(now, CancellationToken.None);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogDebug(ex, "Clipboard paste stats recording failed.");
-            }
-        });
+            await _workstationDashboardService.RecordPasteAsync(now, cancellationToken);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogDebug(ex, "Clipboard paste stats recording failed.");
+        }
     }
 
     private bool IsPerfLogEnabled()

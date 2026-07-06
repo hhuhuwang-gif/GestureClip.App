@@ -13,13 +13,18 @@ public partial class ClipboardOverlayWindow : Window
 {
     private readonly ClipboardOverlayViewModel _viewModel;
     private readonly ISettingsService _settingsService;
+    private readonly IConfirmationService _confirmationService;
     private bool _alwaysVisible;
     private bool _isContextMenuOpen;
 
-    public ClipboardOverlayWindow(ClipboardOverlayViewModel viewModel, ISettingsService settingsService)
+    public ClipboardOverlayWindow(
+        ClipboardOverlayViewModel viewModel,
+        ISettingsService settingsService,
+        IConfirmationService confirmationService)
     {
         _viewModel = viewModel;
         _settingsService = settingsService;
+        _confirmationService = confirmationService;
         InitializeComponent();
         DataContext = _viewModel;
         HistoryList.AlternationCount = 10;
@@ -289,7 +294,13 @@ public partial class ClipboardOverlayWindow : Window
 
     private async void DeleteSelectedMenuItem_Click(object sender, RoutedEventArgs e)
     {
-        await _viewModel.DeleteItemsAsync(GetSelectedItems());
+        var selectedItems = GetSelectedItems();
+        if (!ConfirmDeleteSelectedItems(selectedItems))
+        {
+            return;
+        }
+
+        await _viewModel.DeleteItemsAsync(selectedItems);
     }
 
     private async void QuickCopyItemButton_Click(object sender, RoutedEventArgs e)
@@ -340,8 +351,25 @@ public partial class ClipboardOverlayWindow : Window
         }
 
         SelectSingleItem(item);
-        await _viewModel.DeleteItemsAsync([item]);
+        if (ConfirmDeleteSelectedItems([item]))
+        {
+            await _viewModel.DeleteItemsAsync([item]);
+        }
+
         e.Handled = true;
+    }
+
+    private bool ConfirmDeleteSelectedItems(IReadOnlyList<ClipboardItem> selectedItems)
+    {
+        if (selectedItems.Count == 0)
+        {
+            return false;
+        }
+
+        var message = selectedItems.Count == 1
+            ? "这会从本机剪贴板历史里删除这条记录。删除后不会影响当前系统剪贴板内容。是否继续？"
+            : $"这会从本机剪贴板历史里删除选中的 {selectedItems.Count} 条记录。删除后不会影响当前系统剪贴板内容。是否继续？";
+        return _confirmationService.Confirm("删除剪贴板记录", message);
     }
 
     private IReadOnlyList<ClipboardItem> GetSelectedItems()

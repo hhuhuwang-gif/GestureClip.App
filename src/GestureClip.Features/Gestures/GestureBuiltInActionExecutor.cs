@@ -18,6 +18,7 @@ public sealed class GestureBuiltInActionExecutor : IMouseGestureActionExecutor
     private readonly ICursorPositionProvider _cursorPositionProvider;
     private readonly IClipboardTextReader _clipboardTextReader;
     private readonly IUrlLauncher _urlLauncher;
+    private readonly IWorkstationDashboardService _workstationDashboardService;
     private readonly ILogger<GestureBuiltInActionExecutor> _logger;
 
     public GestureBuiltInActionExecutor(
@@ -29,6 +30,7 @@ public sealed class GestureBuiltInActionExecutor : IMouseGestureActionExecutor
         ICursorPositionProvider cursorPositionProvider,
         IClipboardTextReader clipboardTextReader,
         IUrlLauncher urlLauncher,
+        IWorkstationDashboardService workstationDashboardService,
         ILogger<GestureBuiltInActionExecutor> logger)
     {
         _clipboardOverlayService = clipboardOverlayService;
@@ -39,6 +41,7 @@ public sealed class GestureBuiltInActionExecutor : IMouseGestureActionExecutor
         _cursorPositionProvider = cursorPositionProvider;
         _clipboardTextReader = clipboardTextReader;
         _urlLauncher = urlLauncher;
+        _workstationDashboardService = workstationDashboardService;
         _logger = logger;
     }
 
@@ -55,6 +58,7 @@ public sealed class GestureBuiltInActionExecutor : IMouseGestureActionExecutor
 
             case BuiltInGestureAction.Paste:
                 _keyboardInputSender.SendShortcut(KeyboardInputNativeMethods.VkControl, KeyboardInputNativeMethods.VkV);
+                await RecordPasteAsync(cancellationToken);
                 break;
 
             case BuiltInGestureAction.Cut:
@@ -91,6 +95,7 @@ public sealed class GestureBuiltInActionExecutor : IMouseGestureActionExecutor
 
             case BuiltInGestureAction.PasteAndEnter:
                 _keyboardInputSender.SendShortcut(KeyboardInputNativeMethods.VkControl, KeyboardInputNativeMethods.VkV);
+                await RecordPasteAsync(cancellationToken);
                 _keyboardInputSender.SendKey(KeyboardInputNativeMethods.VkReturn);
                 break;
 
@@ -329,6 +334,18 @@ public sealed class GestureBuiltInActionExecutor : IMouseGestureActionExecutor
     {
         var position = _cursorPositionProvider.GetCurrentPosition();
         _mouseClickSynthesizer.SynthesizeWheel(delta, position.X, position.Y);
+    }
+
+    private async Task RecordPasteAsync(CancellationToken cancellationToken)
+    {
+        try
+        {
+            await _workstationDashboardService.RecordPasteAsync(DateTimeOffset.UtcNow, cancellationToken);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogDebug(ex, "Gesture paste stats recording failed.");
+        }
     }
 
     private async Task SearchSelectedTextAsync(string urlFormat, CancellationToken cancellationToken)

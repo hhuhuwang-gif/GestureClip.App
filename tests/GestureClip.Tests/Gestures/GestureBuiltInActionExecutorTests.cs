@@ -69,6 +69,21 @@ public sealed class GestureBuiltInActionExecutorTests
         Assert.Equal(["Ctrl+V", "Enter"], keyboard.Sent);
     }
 
+
+    [Theory]
+    [InlineData(BuiltInGestureAction.Paste)]
+    [InlineData(BuiltInGestureAction.PasteAndEnter)]
+    public async Task ExecuteAsync_records_paste_count_for_keyboard_paste_actions(BuiltInGestureAction action)
+    {
+        var keyboard = new FakeKeyboardInputSender();
+        var dashboard = new FakeWorkstationDashboardService();
+        var executor = CreateExecutor(keyboard, dashboard: dashboard);
+
+        await executor.ExecuteAsync(action, CancellationToken.None);
+
+        Assert.Equal(1, dashboard.PasteCount);
+    }
+
     [Theory]
     [InlineData(BuiltInGestureAction.LeftMouseClick, GestureTriggerButton.Left, 1)]
     [InlineData(BuiltInGestureAction.LeftMouseDoubleClick, GestureTriggerButton.Left, 2)]
@@ -143,7 +158,8 @@ public sealed class GestureBuiltInActionExecutorTests
         FakeCursorPositionProvider? cursor = null,
         FakeClipboardService? clipboardService = null,
         FakeClipboardTextReader? clipboardTextReader = null,
-        FakeUrlLauncher? urlLauncher = null)
+        FakeUrlLauncher? urlLauncher = null,
+        FakeWorkstationDashboardService? dashboard = null)
     {
         return new GestureBuiltInActionExecutor(
             new FakeClipboardOverlayService(),
@@ -154,6 +170,7 @@ public sealed class GestureBuiltInActionExecutorTests
             cursor ?? new FakeCursorPositionProvider(),
             clipboardTextReader ?? new FakeClipboardTextReader(),
             urlLauncher ?? new FakeUrlLauncher(),
+            dashboard ?? new FakeWorkstationDashboardService(),
             NullLogger<GestureBuiltInActionExecutor>.Instance);
     }
 
@@ -276,6 +293,30 @@ public sealed class GestureBuiltInActionExecutorTests
         public List<string> OpenedUrls { get; } = [];
         public void OpenUrl(string url) => OpenedUrls.Add(url);
     }
+
+    private sealed class FakeWorkstationDashboardService : IWorkstationDashboardService
+    {
+        public int PasteCount { get; private set; }
+
+        public Task<Core.Workstation.WorkstationDashboardSnapshot> GetSnapshotAsync(DateTimeOffset now, CancellationToken cancellationToken)
+        {
+            throw new NotImplementedException();
+        }
+
+        public Task StartFishingAsync(DateTimeOffset now, CancellationToken cancellationToken) => Task.CompletedTask;
+        public Task EndFishingAsync(DateTimeOffset now, CancellationToken cancellationToken) => Task.CompletedTask;
+        public Task ResetTodayAsync(DateOnly date, CancellationToken cancellationToken) => Task.CompletedTask;
+        public Task RecordCopyAsync(DateTimeOffset now, CancellationToken cancellationToken) => Task.CompletedTask;
+
+        public Task RecordPasteAsync(DateTimeOffset now, CancellationToken cancellationToken)
+        {
+            PasteCount++;
+            return Task.CompletedTask;
+        }
+
+        public Task RecordGestureAsync(DateTimeOffset now, CancellationToken cancellationToken) => Task.CompletedTask;
+    }
+
     private sealed class FakeSettingsService : ISettingsService
     {
         public T Get<T>(string key, T defaultValue) => defaultValue;

@@ -79,13 +79,13 @@ public sealed class ClipboardServiceTests
         Assert.Equal("hello", writer.Text);
         Assert.True(writer.PasteHotkeySent);
         Assert.True(service.SuppressCaptureUntil > DateTimeOffset.UtcNow);
-        await WaitForAsync(() => repository.IncrementedId == item.Id && dashboard.PasteCount == 1);
-        Assert.Equal(item.Id, repository.IncrementedId);
         Assert.Equal(1, dashboard.PasteCount);
+        await WaitForAsync(() => repository.IncrementedId == item.Id);
+        Assert.Equal(item.Id, repository.IncrementedId);
     }
 
     [Fact]
-    public async Task PasteAsync_returns_after_clipboard_write_without_waiting_for_usage_stats()
+    public async Task PasteAsync_returns_after_clipboard_write_records_paste_count_without_waiting_for_usage_stats()
     {
         var repository = new FakeClipboardRepository();
         var releaseIncrement = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
@@ -94,7 +94,8 @@ public sealed class ClipboardServiceTests
             await releaseIncrement.Task.WaitAsync(cancellationToken);
         };
         var writer = new FakeClipboardWriter();
-        var service = CreateService(repository, writer: writer);
+        var dashboard = new FakeWorkstationDashboardService();
+        var service = CreateService(repository, writer: writer, dashboard: dashboard);
         var item = Item("hello");
 
         var pasteTask = service.PasteAsync(item, new PasteOptions(false), CancellationToken.None);
@@ -105,6 +106,7 @@ public sealed class ClipboardServiceTests
         await pasteTask;
 
         Assert.True(completedWithoutRepository);
+        Assert.Equal(1, dashboard.PasteCount);
     }
 
     [Fact]
