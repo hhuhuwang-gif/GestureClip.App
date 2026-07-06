@@ -5,14 +5,14 @@ namespace GestureClip.Tests.App;
 public sealed class ReleaseEngineeringTests
 {
     [Fact]
-    public void App_project_uses_v060_beta_version_metadata()
+    public void App_project_uses_v061_beta_version_metadata()
     {
         var project = File.ReadAllText(FindRepositoryFile("src", "GestureClip.App", "GestureClip.App.csproj"));
 
-        Assert.Contains("<Version>0.6.0-beta</Version>", project);
-        Assert.Contains("<FileVersion>0.6.0.0</FileVersion>", project);
-        Assert.Contains("<AssemblyVersion>0.6.0.0</AssemblyVersion>", project);
-        Assert.Contains("<InformationalVersion>0.6.0 Beta</InformationalVersion>", project);
+        Assert.Contains("<Version>0.6.1-beta</Version>", project);
+        Assert.Contains("<FileVersion>0.6.1.0</FileVersion>", project);
+        Assert.Contains("<AssemblyVersion>0.6.1.0</AssemblyVersion>", project);
+        Assert.Contains("<InformationalVersion>0.6.1 Beta</InformationalVersion>", project);
     }
 
     [Fact]
@@ -25,12 +25,12 @@ public sealed class ReleaseEngineeringTests
     }
 
     [Fact]
-    public void Publish_script_creates_full_and_update_beta_packages()
+    public void Publish_script_creates_single_beta_package_and_checksum()
     {
         var script = File.ReadAllText(FindRepositoryFile("scripts", "publish-win-x64.ps1"));
 
         Assert.Contains("GestureClip-v$packageVersion-win-x64.zip", script);
-        Assert.Contains("GestureClip-v$packageVersion-update-win-x64.zip", script);
+        Assert.DoesNotContain("GestureClip-v$packageVersion-update-win-x64.zip", script);
         Assert.Contains("UPDATE.md", script);
         Assert.Contains("HELP.md", script);
         Assert.Contains("BETA_TEST.md", script);
@@ -51,17 +51,18 @@ public sealed class ReleaseEngineeringTests
         var betaTest = File.ReadAllText(FindRepositoryFile("BETA_TEST.md"));
         var knownIssues = File.ReadAllText(FindRepositoryFile("KNOWN_ISSUES.md"));
         var changelog = File.ReadAllText(FindRepositoryFile("CHANGELOG.md"));
-        var releaseDraft = File.ReadAllText(FindRepositoryFile("docs", "github-release-v0.6.0-beta.md"));
+        var releaseDraft = File.ReadAllText(FindRepositoryFile("docs", "github-release-v0.6.1-beta.md"));
 
-        Assert.Contains("v0.6.0 Beta", readme);
-        Assert.Contains("GestureClip-v0.6.0-beta-win-x64.zip", readme);
+        Assert.Contains("v0.6.1 Beta", readme);
+        Assert.Contains("GestureClip-v0.6.1-beta-win-x64.zip", readme);
         Assert.Contains("%LOCALAPPDATA%\\GestureClip", update);
         Assert.Contains("覆盖更新", update);
         Assert.Contains("导出诊断包", help);
         Assert.Contains("公测检查清单", betaTest);
         Assert.Contains("SmartScreen", knownIssues);
-        Assert.Contains("GestureClip v0.6.0 Beta", changelog);
-        Assert.Contains("GestureClip-v0.6.0-beta-update-win-x64.zip", releaseDraft);
+        Assert.Contains("GestureClip v0.6.1 Beta", changelog);
+        Assert.Contains("GestureClip-v0.6.1-beta-win-x64.zip", releaseDraft);
+        Assert.Contains("SHA256SUMS.txt", releaseDraft);
     }
 
     private static string FindRepositoryFile(params string[] segments)
@@ -81,4 +82,3 @@ public sealed class ReleaseEngineeringTests
         throw new FileNotFoundException("Could not locate repository file.", Path.Combine(segments));
     }
 }
-

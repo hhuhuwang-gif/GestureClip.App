@@ -10,7 +10,6 @@ $projectXml = [xml](Get-Content -LiteralPath $project -Raw)
 $version = [string]$projectXml.Project.PropertyGroup.Version
 $packageVersion = $version.ToLowerInvariant()
 $fullZipPath = Join-Path $releaseRoot "GestureClip-v$packageVersion-win-x64.zip"
-$updateZipPath = Join-Path $releaseRoot "GestureClip-v$packageVersion-update-win-x64.zip"
 $hashPath = Join-Path $releaseRoot "SHA256SUMS.txt"
 $rootExe = Join-Path $repoRoot "GestureClip.exe"
 $latestExe = Join-Path $repoRoot "GestureClip-latest.exe"
@@ -76,10 +75,9 @@ Remove-Item (Join-Path $output "gestureclip.db-shm") -Force -ErrorAction Silentl
 Remove-Item (Join-Path $output "gestureclip.db-wal") -Force -ErrorAction SilentlyContinue
 Remove-Item (Join-Path $output "logs") -Recurse -Force -ErrorAction SilentlyContinue
 
-Remove-Item $fullZipPath -Force -ErrorAction SilentlyContinue
-Remove-Item $updateZipPath -Force -ErrorAction SilentlyContinue
+Remove-Item (Join-Path $releaseRoot "GestureClip-v*-win-x64.zip") -Force -ErrorAction SilentlyContinue
+Remove-Item (Join-Path $releaseRoot "GestureClip-v*-update-win-x64.zip") -Force -ErrorAction SilentlyContinue
 Compress-Archive -Path (Join-Path $output "*") -DestinationPath $fullZipPath -Force
-Compress-Archive -Path (Join-Path $output "*") -DestinationPath $updateZipPath -Force
 
 $publishedExe = Join-Path $output "GestureClip.exe"
 if (Test-Path -LiteralPath $publishedExe) {
@@ -87,15 +85,27 @@ if (Test-Path -LiteralPath $publishedExe) {
     Copy-Item -LiteralPath $publishedExe -Destination $latestExe -Force
 }
 
-$hashes = foreach ($path in @($fullZipPath, $updateZipPath)) {
-    $hash = Get-FileHash -LiteralPath $path -Algorithm SHA256
-    "$($hash.Hash)  $([System.IO.Path]::GetFileName($path))"
+if (Get-Command Get-FileHash -ErrorAction SilentlyContinue) {
+    $hashValue = (Get-FileHash -LiteralPath $fullZipPath -Algorithm SHA256).Hash
 }
-$hashes | Set-Content -LiteralPath $hashPath -Encoding UTF8
+else {
+    $stream = [System.IO.File]::OpenRead($fullZipPath)
+    try {
+        $sha256 = [System.Security.Cryptography.SHA256]::Create()
+        $hashBytes = $sha256.ComputeHash($stream)
+        $hashValue = -join ($hashBytes | ForEach-Object { $_.ToString("x2") })
+    }
+    finally {
+        $stream.Dispose()
+        if ($sha256) {
+            $sha256.Dispose()
+        }
+    }
+}
+"$hashValue  $([System.IO.Path]::GetFileName($fullZipPath))" | Set-Content -LiteralPath $hashPath -Encoding UTF8
 Copy-Item -LiteralPath $hashPath -Destination (Join-Path $output "SHA256SUMS.txt") -Force
 
 Write-Host "Release package created:" $output
-Write-Host "Full release zip created:" $fullZipPath
-Write-Host "Update release zip created:" $updateZipPath
+Write-Host "Release zip created:" $fullZipPath
 Write-Host "SHA256 file created:" $hashPath
 Write-Host "Root executable updated:" $rootExe
