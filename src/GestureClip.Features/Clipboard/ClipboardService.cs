@@ -183,7 +183,9 @@ public sealed class ClipboardService : IClipboardService
         LogPerf("DedupQueryMs", dedupWatch.ElapsedMilliseconds, ("ContentType", "text"));
         if (existing is not null)
         {
-            _logger.LogInformation("Clipboard capture skipped: duplicate hash.");
+            await _clipboardRepository.TouchAsync(existing.Id, cancellationToken);
+            RecordCopyInBackground(DateTimeOffset.UtcNow);
+            _logger.LogInformation("Clipboard duplicate item refreshed.");
             return;
         }
 
