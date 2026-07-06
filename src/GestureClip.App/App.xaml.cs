@@ -89,7 +89,17 @@ public partial class App : System.Windows.Application
             await _serviceProvider.GetRequiredService<IOverworkReminderService>().StartAsync(CancellationToken.None);
             await _serviceProvider.GetRequiredService<WorkBearDailyReportAutoService>().StartAsync(CancellationToken.None);
 
-            _serviceProvider.GetRequiredService<AppLifecycleService>().ShowSettingsWindow();
+            var onboarding = _serviceProvider.GetRequiredService<IFirstRunOnboardingService>();
+            if (onboarding.ShouldShowOnboarding())
+            {
+                _serviceProvider.GetRequiredService<OnboardingWindow>().Show();
+                logger.LogInformation("First-run onboarding window shown.");
+            }
+            else
+            {
+                _serviceProvider.GetRequiredService<AppLifecycleService>().ShowSettingsWindow();
+            }
+
             logger.LogInformation("GestureClip v{AppVersion} started.", appVersion);
             if (exitAfterStartup)
             {
