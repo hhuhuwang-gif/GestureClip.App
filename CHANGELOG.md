@@ -1,5 +1,19 @@
 # CHANGELOG
 
+## GestureClip v0.6.2 Beta
+
+### 重点更新
+
+- 新增真正的一键覆盖更新：设置页和托盘菜单可自动下载 GitHub Latest Release 的 Windows x64 zip。
+- 更新器会解压到临时目录，退出当前程序后复制新版文件覆盖旧版并自动重启 GestureClip。
+- 覆盖安装时保留本地数据库、剪贴板历史、设置和日志目录，降低小白手动更新成本。
+- 自动更新失败时会打开 GitHub 最新 Release 页面，仍可手动下载 zip 覆盖安装。
+
+### 验证
+
+- dotnet build 通过。
+- dotnet test 通过，467 passed。
+
 ## GestureClip v0.6.1 Beta
 
 ### 重点更新
