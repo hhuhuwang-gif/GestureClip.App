@@ -27,6 +27,21 @@ public sealed class ThemeResourceTests
     }
 
     [Fact]
+    public void Clipboard_writer_uses_native_unicode_text_path_for_large_text_copy()
+    {
+        var writerPath = FindRepositoryFile("src", "GestureClip.Infrastructure", "Clipboard", "WpfClipboardWriter.cs");
+        var nativePath = FindRepositoryFile("src", "GestureClip.Infrastructure", "Win32", "ClipboardNativeMethods.cs");
+        var writer = File.ReadAllText(writerPath);
+        var native = File.ReadAllText(nativePath);
+
+        Assert.Contains("SetUnicodeTextNative", writer);
+        Assert.DoesNotContain("Clipboard.SetText(text)", writer);
+        Assert.Contains("CF_UNICODETEXT", native);
+        Assert.Contains("SetClipboardData", native);
+        Assert.Contains("GlobalAlloc", native);
+    }
+
+    [Fact]
     public void Theme_resources_define_core_glass_styles()
     {
         var controlsPath = FindRepositoryFile("src", "GestureClip.App", "Themes", "Controls.xaml");

@@ -32,10 +32,10 @@ public sealed class WpfClipboardWriter : IClipboardWriter, IDisposable
             () => _clipboardStaThread.InvokeAsync(() =>
             {
                 cancellationToken.ThrowIfCancellationRequested();
-                System.Windows.Clipboard.SetText(text);
+                SetUnicodeTextNative(text);
             }, cancellationToken),
             retryCount: 3,
-            delay: TimeSpan.FromMilliseconds(35),
+            delay: TimeSpan.FromMilliseconds(20),
             cancellationToken);
     }
 
@@ -66,6 +66,67 @@ public sealed class WpfClipboardWriter : IClipboardWriter, IDisposable
             retryCount: 3,
             delay: TimeSpan.FromMilliseconds(35),
             cancellationToken);
+    }
+
+    private static void SetUnicodeTextNative(string text)
+    {
+        var byteCount = checked((text.Length + 1) * 2);
+        var handle = ClipboardNativeMethods.GlobalAlloc(ClipboardNativeMethods.GMEM_MOVEABLE, (UIntPtr)byteCount);
+        if (handle == IntPtr.Zero)
+        {
+            throw new InvalidOperationException($"申请剪贴板内存失败。Win32={Marshal.GetLastWin32Error()}");
+        }
+
+        var ownershipTransferred = false;
+        try
+        {
+            var target = ClipboardNativeMethods.GlobalLock(handle);
+            if (target == IntPtr.Zero)
+            {
+                throw new InvalidOperationException($"锁定剪贴板内存失败。Win32={Marshal.GetLastWin32Error()}");
+            }
+
+            try
+            {
+                var bytes = System.Text.Encoding.Unicode.GetBytes(text + "\0");
+                Marshal.Copy(bytes, 0, target, bytes.Length);
+            }
+            finally
+            {
+                ClipboardNativeMethods.GlobalUnlock(handle);
+            }
+
+            if (!ClipboardNativeMethods.OpenClipboard(IntPtr.Zero))
+            {
+                throw new InvalidOperationException($"打开系统剪贴板失败。Win32={Marshal.GetLastWin32Error()}");
+            }
+
+            try
+            {
+                if (!ClipboardNativeMethods.EmptyClipboard())
+                {
+                    throw new InvalidOperationException($"清空系统剪贴板失败。Win32={Marshal.GetLastWin32Error()}");
+                }
+
+                if (ClipboardNativeMethods.SetClipboardData(ClipboardNativeMethods.CF_UNICODETEXT, handle) == IntPtr.Zero)
+                {
+                    throw new InvalidOperationException($"写入系统剪贴板失败。Win32={Marshal.GetLastWin32Error()}");
+                }
+
+                ownershipTransferred = true;
+            }
+            finally
+            {
+                ClipboardNativeMethods.CloseClipboard();
+            }
+        }
+        finally
+        {
+            if (!ownershipTransferred)
+            {
+                ClipboardNativeMethods.GlobalFree(handle);
+            }
+        }
     }
 
     public Task SendPasteHotkeyAsync(CancellationToken cancellationToken)

@@ -151,6 +151,31 @@ public sealed class ClipboardServiceTests
     }
 
     [Fact]
+    public async Task CopyItemsAsync_copies_large_text_without_truncating_or_waiting_for_usage_updates()
+    {
+        var repository = new FakeClipboardRepository();
+        var releaseIncrement = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        repository.IncrementUseCountHandler = async (_, cancellationToken) =>
+        {
+            await releaseIncrement.Task.WaitAsync(cancellationToken);
+        };
+        var writer = new FakeClipboardWriter();
+        var service = CreateService(repository, writer: writer);
+        var largeText = string.Concat(Enumerable.Repeat("长文本复制不卡顿。", 12_000));
+        var item = Item(largeText);
+
+        var copyTask = service.CopyItemsAsync([item], CancellationToken.None);
+        await WaitForAsync(() => writer.Text == largeText);
+
+        var completedWithoutUsage = await Task.WhenAny(copyTask, Task.Delay(200)) == copyTask;
+        releaseIncrement.SetResult();
+        await copyTask;
+
+        Assert.True(completedWithoutUsage);
+        Assert.Equal(largeText.Length, writer.Text!.Length);
+    }
+
+    [Fact]
     public async Task CopyItemsAsync_waits_briefly_after_text_write_so_next_paste_sees_new_clipboard()
     {
         var repository = new FakeClipboardRepository();

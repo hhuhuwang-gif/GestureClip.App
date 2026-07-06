@@ -1,5 +1,18 @@
 # CHANGELOG
 
+## GestureClip v0.6.7 Beta
+
+### 修复
+
+- 修复剪贴板历史双击复制长文本时可能明显卡顿、无法复制的问题。
+- 文本写入系统剪贴板改为原生 Unicode 写入路径，长文复制更快、更稳定。
+- 增加长文本复制回归测试，确保长文不会被截断，也不会等待后台使用次数写库。
+
+### 验证
+
+- `dotnet test ./GestureClip.sln`
+- `scripts/publish-win-x64.ps1`
+
 ## GestureClip v0.6.6 Beta
 
 ### 修复
