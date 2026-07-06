@@ -27,12 +27,12 @@
 
 ## 现在是什么版本？
 
-当前版本：**v0.6.2 Beta**
+当前版本：**v0.6.3 Beta**
 
 下载地址：
 
-- [GestureClip-v0.6.2-beta-win-x64.zip](https://github.com/hhuhuwang-gif/GestureClip.App/releases/download/v0.6.2-beta/GestureClip-v0.6.2-beta-win-x64.zip)
-- [Release 页面](https://github.com/hhuhuwang-gif/GestureClip.App/releases/tag/v0.6.2-beta)
+- [GestureClip-v0.6.3-beta-win-x64.zip](https://github.com/hhuhuwang-gif/GestureClip.App/releases/download/v0.6.3-beta/GestureClip-v0.6.3-beta-win-x64.zip)
+- [Release 页面](https://github.com/hhuhuwang-gif/GestureClip.App/releases/tag/v0.6.3-beta)
 
 解压后双击：
 
@@ -193,7 +193,7 @@ GestureClip 默认本地运行：
 老用户下载新版 zip 后直接覆盖旧程序目录即可：
 
 ```text
-GestureClip-v0.6.2-beta-win-x64.zip
+GestureClip-v0.6.3-beta-win-x64.zip
 ```
 
 步骤：
@@ -220,7 +220,7 @@ GestureClip-v0.6.2-beta-win-x64.zip
 
 ### 剪贴板图片复制到别的软件无效？
 
-v0.6.2 Beta 保留了图片兼容性增强：复制图片时会同时写入 Bitmap、PNG、DIB 三种剪贴板格式。
+v0.6.3 Beta 保留了图片兼容性增强：复制图片时会同时写入 Bitmap、PNG、DIB 三种剪贴板格式。
 
 ### 页面看起来还不够完美？
 
@@ -275,7 +275,7 @@ artifacts\release\GestureClip\
 
 我还加了一个比较抽象的“工位小熊”HUD：右键划手势的时候，会顺手显示今日工资、距离下班多久、发薪日倒计时、复制/粘贴/手势次数，有点像打工人状态栏。
 
-目前是 v0.6.2 Beta，Windows x64，解压双击 GestureClip.exe 就能跑。还在持续优化 UI、图片剪贴板兼容性和手势体验。
+目前是 v0.6.3 Beta，Windows x64，解压双击 GestureClip.exe 就能跑。还在持续优化 UI、图片剪贴板兼容性和手势体验。
 
 项目地址：
 https://github.com/hhuhuwang-gif/GestureClip.App

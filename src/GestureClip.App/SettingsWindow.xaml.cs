@@ -92,6 +92,11 @@ public partial class SettingsWindow : Window
         await _appLifecycleService.StartCoverUpdateAsync();
     }
 
+    private async void CheckUpdateButton_Click(object sender, RoutedEventArgs e)
+    {
+        await _appLifecycleService.CheckForUpdatesAsync();
+    }
+
     private void ScrollToCustomGestureDesigner_Click(object sender, RoutedEventArgs e)
     {
         try

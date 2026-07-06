@@ -44,6 +44,7 @@ public static class InfrastructureServiceCollectionExtensions
         services.AddSingleton<IStartupService, WindowsStartupService>();
         services.AddSingleton<IUrlLauncher, WindowsUrlLauncher>();
         services.AddSingleton<HttpClient>();
+        services.AddSingleton<IUpdateCheckService, GitHubReleaseUpdateCheckService>();
         services.AddSingleton<IUpdateInstallerService, GitHubReleaseUpdateInstallerService>();
 
         return services;

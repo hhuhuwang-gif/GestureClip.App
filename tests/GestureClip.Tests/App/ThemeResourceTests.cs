@@ -429,12 +429,18 @@ public sealed class ThemeResourceTests
         var settingsXaml = File.ReadAllText(settingsXamlPath);
         var settingsSource = File.ReadAllText(settingsSourcePath);
 
+        Assert.Contains("CheckForUpdatesAsync", lifecycle);
         Assert.Contains("StartCoverUpdateAsync", lifecycle);
+        Assert.Contains("IUpdateCheckService", lifecycle);
         Assert.Contains("IUpdateInstallerService", lifecycle);
+        Assert.Contains("检查更新", tray);
         Assert.Contains("一键覆盖更新", tray);
+        Assert.Contains("检查更新", settingsXaml);
         Assert.Contains("一键覆盖更新", settingsXaml);
-        Assert.Contains("自动下载 GitHub 最新 zip", settingsXaml);
+        Assert.Contains("GitHub Latest Release", settingsXaml);
+        Assert.Contains("CheckUpdateButton_Click", settingsXaml);
         Assert.Contains("UpdateButton_Click", settingsXaml);
+        Assert.Contains("CheckForUpdatesAsync", settingsSource);
         Assert.Contains("StartCoverUpdateAsync", settingsSource);
     }
 

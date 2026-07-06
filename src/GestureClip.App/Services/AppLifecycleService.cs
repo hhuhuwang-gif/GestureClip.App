@@ -93,6 +93,51 @@ public sealed class AppLifecycleService : IAppLifecycleService
         }
     }
 
+    public async Task CheckForUpdatesAsync()
+    {
+        try
+        {
+            var result = await _serviceProvider.GetRequiredService<IUpdateCheckService>().CheckLatestAsync();
+            if (!result.IsUpdateAvailable)
+            {
+                var openRelease = System.Windows.MessageBox.Show(
+                    $"当前已是最新版本。\n\n当前版本：{result.CurrentVersion}\n最新版本：{result.LatestVersion}\n\n是否打开 Release 页面查看详情？",
+                    "检查更新",
+                    MessageBoxButton.YesNo,
+                    MessageBoxImage.Information);
+                if (openRelease == MessageBoxResult.Yes)
+                {
+                    OpenLatestReleasePage();
+                }
+
+                return;
+            }
+
+            var updateNow = System.Windows.MessageBox.Show(
+                $"发现新版本：{result.LatestVersion}\n\n当前版本：{result.CurrentVersion}\n最新版本：{result.LatestVersion}\n\n是否现在下载并覆盖安装？",
+                "发现新版本",
+                MessageBoxButton.YesNo,
+                MessageBoxImage.Information);
+            if (updateNow == MessageBoxResult.Yes)
+            {
+                await StartCoverUpdateAsync();
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to check for updates.");
+            var openRelease = System.Windows.MessageBox.Show(
+                "检查更新失败，可能是网络暂时不可用。\n\n是否打开 GitHub Release 页面手动查看？\n\n" + ex.Message,
+                "检查更新失败",
+                MessageBoxButton.YesNo,
+                MessageBoxImage.Warning);
+            if (openRelease == MessageBoxResult.Yes)
+            {
+                OpenLatestReleasePage();
+            }
+        }
+    }
+
     public async Task StartCoverUpdateAsync()
     {
         try

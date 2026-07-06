@@ -1,5 +1,18 @@
 # CHANGELOG
 
+## GestureClip v0.6.3 Beta
+
+### 重点更新
+
+- 新增“检查更新”：设置页和托盘菜单可比较当前版本与 GitHub Latest Release。
+- 检查更新会提示“当前已是最新版本”或“发现新版本”，发现新版本后可直接进入一键覆盖安装。
+- 自动更新服务拆分为检查与安装两层，后续更容易扩展自动检查、忽略版本和更新说明展示。
+
+### 验证
+
+- dotnet build 通过。
+- dotnet test 通过，471 passed。
+
 ## GestureClip v0.6.2 Beta
 
 ### 重点更新

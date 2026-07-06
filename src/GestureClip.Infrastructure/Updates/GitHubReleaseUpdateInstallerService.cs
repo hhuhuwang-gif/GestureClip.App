@@ -2,7 +2,6 @@ using System.Diagnostics;
 using System.IO;
 using System.IO.Compression;
 using System.Net.Http;
-using System.Net.Http.Json;
 using System.Text.Json.Serialization;
 using GestureClip.Core.Abstractions;
 using Microsoft.Extensions.Logging;
@@ -11,9 +10,6 @@ namespace GestureClip.Infrastructure.Updates;
 
 public sealed class GitHubReleaseUpdateInstallerService : IUpdateInstallerService
 {
-    private const string LatestReleaseApiUrl = "https://api.github.com/repos/hhuhuwang-gif/GestureClip.App/releases/latest";
-    private const string PackageAssetSuffix = "-win-x64.zip";
-
     private readonly HttpClient _httpClient;
     private readonly ILogger<GitHubReleaseUpdateInstallerService> _logger;
 
@@ -21,18 +17,14 @@ public sealed class GitHubReleaseUpdateInstallerService : IUpdateInstallerServic
     {
         _httpClient = httpClient;
         _logger = logger;
-        if (!_httpClient.DefaultRequestHeaders.UserAgent.Any())
-        {
-            _httpClient.DefaultRequestHeaders.UserAgent.ParseAdd("GestureClip-Updater");
-        }
+        GitHubReleaseUpdateCheckService.EnsureUserAgent(_httpClient);
     }
 
     public async Task StartCoverUpdateAsync(CancellationToken cancellationToken = default)
     {
-        var release = await _httpClient.GetFromJsonAsync<GitHubRelease>(LatestReleaseApiUrl, cancellationToken)
-            ?? throw new InvalidOperationException("无法读取 GitHub 最新版本信息。");
+        var release = await new GitHubReleaseUpdateCheckService(_httpClient).GetLatestReleaseAsync(cancellationToken);
         var asset = release.Assets.FirstOrDefault(item =>
-            item.Name.EndsWith(PackageAssetSuffix, StringComparison.OrdinalIgnoreCase));
+            item.Name.EndsWith(GitHubReleaseUpdateCheckService.PackageAssetSuffix, StringComparison.OrdinalIgnoreCase));
         if (asset is null)
         {
             throw new InvalidOperationException("最新版本没有 Windows x64 安装包。");
@@ -77,11 +69,4 @@ public sealed class GitHubReleaseUpdateInstallerService : IUpdateInstallerServic
         await source.CopyToAsync(destination, cancellationToken);
     }
 
-    private sealed record GitHubRelease(
-        [property: JsonPropertyName("tag_name")] string TagName,
-        [property: JsonPropertyName("assets")] IReadOnlyList<GitHubReleaseAsset> Assets);
-
-    private sealed record GitHubReleaseAsset(
-        [property: JsonPropertyName("name")] string Name,
-        [property: JsonPropertyName("browser_download_url")] string BrowserDownloadUrl);
 }

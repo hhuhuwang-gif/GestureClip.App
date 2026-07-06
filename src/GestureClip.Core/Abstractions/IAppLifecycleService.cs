@@ -12,6 +12,8 @@ public interface IAppLifecycleService
 
     void OpenLatestReleasePage();
 
+    Task CheckForUpdatesAsync();
+
     Task StartCoverUpdateAsync();
 
     void ExitApplication();
