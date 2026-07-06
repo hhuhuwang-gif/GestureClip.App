@@ -108,7 +108,7 @@ SELECT
     IsPinned, IsFavorite, IsSensitive, UseCount, CreatedAt, UpdatedAt, LastUsedAt
 FROM ClipboardItems
 {whereSql}
-ORDER BY IsPinned DESC, CreatedAt DESC
+ORDER BY IsPinned DESC, COALESCE(LastUsedAt, CreatedAt) DESC, CreatedAt DESC
 LIMIT @Limit OFFSET @Offset;
 """;
 
@@ -160,9 +160,16 @@ LIMIT 1;
         return row?.ToModel();
     }
 
+    public async Task TouchAsync(Guid id, CancellationToken cancellationToken)
+    {
+        await using var connection = await _connectionFactory.OpenConnectionAsync(cancellationToken);
+        await TouchAsync(connection, id, DateTimeOffset.UtcNow, cancellationToken);
+    }
+
     public async Task IncrementUseCountAsync(Guid id, CancellationToken cancellationToken)
     {
         await using var connection = await _connectionFactory.OpenConnectionAsync(cancellationToken);
+        var now = DateTimeOffset.UtcNow;
 
         await connection.ExecuteAsync(
             """
@@ -175,7 +182,7 @@ WHERE Id = @Id;
             new
             {
                 Id = id.ToString(),
-                LastUsedAt = DateTimeOffset.UtcNow.ToString("O")
+                LastUsedAt = now.ToString("O")
             });
     }
 
@@ -425,6 +432,23 @@ WHERE IsPinned = 0
             UpdatedAt = item.UpdatedAt.ToString("O"),
             LastUsedAt = item.LastUsedAt?.ToString("O")
         };
+    }
+
+    private static async Task TouchAsync(System.Data.IDbConnection connection, Guid id, DateTimeOffset touchedAt, CancellationToken cancellationToken)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+        await connection.ExecuteAsync(
+            """
+UPDATE ClipboardItems
+SET LastUsedAt = @LastUsedAt,
+    UpdatedAt = @LastUsedAt
+WHERE Id = @Id;
+""",
+            new
+            {
+                Id = id.ToString(),
+                LastUsedAt = touchedAt.ToString("O")
+            });
     }
 
     private static string EscapeLikeValue(string value)
