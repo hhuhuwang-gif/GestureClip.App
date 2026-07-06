@@ -1,5 +1,19 @@
 # CHANGELOG
 
+## GestureClip v0.6.9 Beta
+
+### 修复
+
+- 修复点击“动作绑定”页或手势列表时程序可能卡死的问题。
+- 常用手势和高级手势改为分别维护选中项，避免两个列表共用同一个 SelectedItem 时互相把选择清空、反复触发 UI 更新。
+- 动作绑定列表开启虚拟化回收，减少进入页面和切换手势时的 UI 重绘压力。
+
+### 验证
+
+- `git diff --check`
+- `dotnet test ./GestureClip.sln`
+- `scripts/publish-win-x64.ps1`
+
 ## GestureClip v0.6.8 Beta
 
 ### 重点更新

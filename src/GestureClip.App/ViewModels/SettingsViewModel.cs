@@ -123,6 +123,8 @@ public sealed class SettingsViewModel : INotifyPropertyChanged
     private bool _hudStatusLevelEnabled;
     private string _lastDiagnosticsExportText = "尚未导出诊断包";
     private GestureBindingCardViewModel? _selectedGestureBindingCard;
+    private GestureBindingCardViewModel? _selectedPrimaryGestureBindingCard;
+    private GestureBindingCardViewModel? _selectedAdvancedGestureBindingCard;
     private readonly DispatcherTimer _diagnosticsTimer;
 
     public SettingsViewModel(
@@ -430,13 +432,72 @@ public sealed class SettingsViewModel : INotifyPropertyChanged
             }
 
             _selectedGestureBindingCard = value;
+            _selectedPrimaryGestureBindingCard = value is not null && PrimaryGestureBindingCards.Contains(value) ? value : null;
+            _selectedAdvancedGestureBindingCard = value is not null && AdvancedGestureBindingCards.Contains(value) ? value : null;
             OnPropertyChanged();
+            OnPropertyChanged(nameof(SelectedPrimaryGestureBindingCard));
+            OnPropertyChanged(nameof(SelectedAdvancedGestureBindingCard));
             OnPropertyChanged(nameof(HasSelectedGestureBinding));
             OnPropertyChanged(nameof(SelectedGestureBindingPattern));
             OnPropertyChanged(nameof(SelectedGestureBindingDirectionText));
             OnPropertyChanged(nameof(SelectedGestureBindingActionName));
             OnPropertyChanged(nameof(SelectedGestureBindingShortcutText));
             OnPropertyChanged(nameof(SelectedGestureBindingEmptyText));
+        }
+    }
+
+
+    public GestureBindingCardViewModel? SelectedPrimaryGestureBindingCard
+    {
+        get => _selectedPrimaryGestureBindingCard;
+        set
+        {
+            if (ReferenceEquals(_selectedPrimaryGestureBindingCard, value))
+            {
+                return;
+            }
+
+            _selectedPrimaryGestureBindingCard = value;
+            OnPropertyChanged();
+            if (value is null)
+            {
+                return;
+            }
+
+            if (_selectedAdvancedGestureBindingCard is not null)
+            {
+                _selectedAdvancedGestureBindingCard = null;
+                OnPropertyChanged(nameof(SelectedAdvancedGestureBindingCard));
+            }
+
+            SelectedGestureBindingCard = value;
+        }
+    }
+
+    public GestureBindingCardViewModel? SelectedAdvancedGestureBindingCard
+    {
+        get => _selectedAdvancedGestureBindingCard;
+        set
+        {
+            if (ReferenceEquals(_selectedAdvancedGestureBindingCard, value))
+            {
+                return;
+            }
+
+            _selectedAdvancedGestureBindingCard = value;
+            OnPropertyChanged();
+            if (value is null)
+            {
+                return;
+            }
+
+            if (_selectedPrimaryGestureBindingCard is not null)
+            {
+                _selectedPrimaryGestureBindingCard = null;
+                OnPropertyChanged(nameof(SelectedPrimaryGestureBindingCard));
+            }
+
+            SelectedGestureBindingCard = value;
         }
     }
 

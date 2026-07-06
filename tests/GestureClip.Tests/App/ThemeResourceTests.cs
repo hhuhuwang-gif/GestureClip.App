@@ -340,6 +340,10 @@ public sealed class ThemeResourceTests
         Assert.Contains("BasedOn=\"{StaticResource {x:Type ListBoxItem}}\"", xaml);
         Assert.Contains("当前选中", xaml);
         Assert.Contains("RelativeSource={RelativeSource AncestorType=ListBoxItem}", xaml);
+        Assert.Contains("VirtualizingStackPanel.IsVirtualizing=\"True\"", xaml);
+        Assert.Contains("VirtualizingStackPanel.VirtualizationMode=\"Recycling\"", xaml);
+        Assert.Contains("SelectedItem=\"{Binding SelectedPrimaryGestureBindingCard, Mode=TwoWay}\"", xaml);
+        Assert.Contains("SelectedItem=\"{Binding SelectedAdvancedGestureBindingCard, Mode=TwoWay}\"", xaml);
         Assert.Contains("动作编辑器会跟着页面一起滑动，不会固定挡住内容。", xaml);
 
 

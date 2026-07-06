@@ -618,7 +618,9 @@
                                         </Grid>
 
                                         <ListBox ItemsSource="{Binding PrimaryGestureBindingCards}"
-                                                 SelectedItem="{Binding SelectedGestureBindingCard, Mode=TwoWay}"
+                                                 SelectedItem="{Binding SelectedPrimaryGestureBindingCard, Mode=TwoWay}"
+                                                 VirtualizingStackPanel.IsVirtualizing="True"
+                                                 VirtualizingStackPanel.VirtualizationMode="Recycling"
                                                  BorderThickness="0"
                                                  Background="Transparent"
                                                  FocusVisualStyle="{x:Null}"
@@ -687,7 +689,9 @@
 
                                         <Expander Header="更多手势 / 高级手势" Margin="12,10,12,14" IsExpanded="False">
                                             <ListBox ItemsSource="{Binding AdvancedGestureBindingCards}"
-                                                     SelectedItem="{Binding SelectedGestureBindingCard, Mode=TwoWay}"
+                                                     SelectedItem="{Binding SelectedAdvancedGestureBindingCard, Mode=TwoWay}"
+                                                     VirtualizingStackPanel.IsVirtualizing="True"
+                                                     VirtualizingStackPanel.VirtualizationMode="Recycling"
                                                      BorderThickness="0"
                                                      Background="Transparent"
                                                      FocusVisualStyle="{x:Null}"

@@ -323,6 +323,28 @@ public sealed class SettingsViewModelTests
     }
 
     [Fact]
+    public void Clearing_other_gesture_list_selection_does_not_clear_current_editor_card()
+    {
+        var viewModel = CreateViewModel();
+        var primaryCard = viewModel.PrimaryGestureBindingCards.Single(item => item.Pattern == "DR");
+        var advancedCard = viewModel.AdvancedGestureBindingCards.Single(item => item.Pattern == "URD");
+
+        viewModel.SelectedPrimaryGestureBindingCard = primaryCard;
+        viewModel.SelectedAdvancedGestureBindingCard = null;
+
+        Assert.Same(primaryCard, viewModel.SelectedGestureBindingCard);
+        Assert.Same(primaryCard, viewModel.SelectedPrimaryGestureBindingCard);
+        Assert.Null(viewModel.SelectedAdvancedGestureBindingCard);
+
+        viewModel.SelectedAdvancedGestureBindingCard = advancedCard;
+        viewModel.SelectedPrimaryGestureBindingCard = null;
+
+        Assert.Same(advancedCard, viewModel.SelectedGestureBindingCard);
+        Assert.Same(advancedCard, viewModel.SelectedAdvancedGestureBindingCard);
+        Assert.Null(viewModel.SelectedPrimaryGestureBindingCard);
+    }
+
+    [Fact]
     public async Task Deleting_selected_gesture_binding_selects_next_card()
     {
         var settings = new FakeSettingsService();

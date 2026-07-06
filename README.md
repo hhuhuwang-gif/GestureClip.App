@@ -27,12 +27,12 @@
 
 ## 现在是什么版本？
 
-当前版本：**v0.6.8 Beta**
+当前版本：**v0.6.9 Beta**
 
 下载地址：
 
-- [GestureClip-v0.6.8-beta-win-x64.zip](https://github.com/hhuhuwang-gif/GestureClip.App/releases/download/v0.6.8-beta/GestureClip-v0.6.8-beta-win-x64.zip)
-- [Release 页面](https://github.com/hhuhuwang-gif/GestureClip.App/releases/tag/v0.6.8-beta)
+- [GestureClip-v0.6.9-beta-win-x64.zip](https://github.com/hhuhuwang-gif/GestureClip.App/releases/download/v0.6.9-beta/GestureClip-v0.6.9-beta-win-x64.zip)
+- [Release 页面](https://github.com/hhuhuwang-gif/GestureClip.App/releases/tag/v0.6.9-beta)
 
 解压后双击：
 
