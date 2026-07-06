@@ -38,10 +38,10 @@ public static class AppServiceCollectionExtensions
         services.AddTransient<OverworkReminderToastWindow>();
         services.AddTransient<WorkstationDashboardWindow>();
         services.AddTransient<WorkerLevelUpWindow>();
+        services.AddTransient<OnboardingWindow>();
         services.AddTransient<SettingsWindow>();
         services.AddSingleton<MainWindow>();
 
         return services;
     }
 }
-
