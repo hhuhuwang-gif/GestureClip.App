@@ -234,17 +234,17 @@ public partial class ClipboardOverlayWindow : Window
 
     private async void HistoryList_MouseDoubleClick(object sender, MouseButtonEventArgs e)
     {
-        if (_viewModel.SelectedItem?.IsImage == true)
+        if (FindAncestor<ListBoxItem>((DependencyObject)e.OriginalSource) is null)
         {
-            await _viewModel.CopySelectedAsync(GetSelectedItems());
-            e.Handled = true;
             return;
         }
 
-        if (await _viewModel.PasteSelectedAsync())
+        if (await _viewModel.CopySelectedAsync(GetSelectedItems()))
         {
             Hide();
         }
+
+        e.Handled = true;
     }
 
     private void FilterRadioButton_Checked(object sender, RoutedEventArgs e)

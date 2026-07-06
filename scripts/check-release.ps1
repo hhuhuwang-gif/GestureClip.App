@@ -7,7 +7,6 @@ $projectXml = [xml](Get-Content -LiteralPath $project -Raw)
 $version = [string]$projectXml.Project.PropertyGroup.Version
 $packageVersion = $version.ToLowerInvariant()
 $fullZipPath = Join-Path $repoRoot "artifacts\release\GestureClip-v$packageVersion-win-x64.zip"
-$updateZipPath = Join-Path $repoRoot "artifacts\release\GestureClip-v$packageVersion-update-win-x64.zip"
 $hashPath = Join-Path $repoRoot "artifacts\release\SHA256SUMS.txt"
 
 if (-not (Test-Path $releaseDir)) {
@@ -19,7 +18,7 @@ if (-not (Test-Path $exe)) {
     throw "GestureClip executable not found in: $releaseDir"
 }
 
-foreach ($path in @($fullZipPath, $updateZipPath, $hashPath)) {
+foreach ($path in @($fullZipPath, $hashPath)) {
     if (-not (Test-Path -LiteralPath $path)) {
         throw "Release artifact not found: $path"
     }
@@ -45,8 +44,7 @@ foreach ($item in $files) {
 
 Write-Host "Release directory:" $releaseDir
 Write-Host "Executable:" $exe
-Write-Host "Full release zip:" $fullZipPath
-Write-Host "Update release zip:" $updateZipPath
+Write-Host "Release zip:" $fullZipPath
 Write-Host "SHA256:" $hashPath
 Write-Host ""
 Write-Host "Files:"

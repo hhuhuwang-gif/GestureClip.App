@@ -220,8 +220,8 @@
                             <Setter Property="Foreground" Value="{DynamicResource BrushTextPrimary}" />
                         </Trigger>
                         <Trigger Property="IsSelected" Value="True">
-                            <Setter TargetName="Root" Property="Background" Value="{DynamicResource BrushControlSelected}" />
-                            <Setter Property="Foreground" Value="White" />
+                            <Setter TargetName="Root" Property="Background" Value="#EAF3FF" />
+                            <Setter Property="Foreground" Value="{DynamicResource BrushTextPrimary}" />
                         </Trigger>
                         <Trigger Property="IsEnabled" Value="False">
                             <Setter Property="Foreground" Value="{DynamicResource BrushTextMuted}" />
@@ -382,9 +382,9 @@
                             <Setter TargetName="Root" Property="BorderBrush" Value="{DynamicResource BrushBorder}" />
                         </Trigger>
                         <Trigger Property="IsSelected" Value="True">
-                            <Setter TargetName="Root" Property="Background" Value="{DynamicResource BrushControlSelected}" />
+                            <Setter TargetName="Root" Property="Background" Value="#EAF3FF" />
                             <Setter TargetName="Root" Property="BorderBrush" Value="{DynamicResource BrushPrimaryBright}" />
-                            <Setter Property="Foreground" Value="White" />
+                            <Setter Property="Foreground" Value="{DynamicResource BrushTextPrimary}" />
                         </Trigger>
                     </ControlTemplate.Triggers>
                 </ControlTemplate>

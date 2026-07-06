@@ -113,6 +113,7 @@ public sealed class SettingsViewModel : INotifyPropertyChanged
     private int _workstationOverworkSnoozeMinutes;
     private string _newGesturePattern = "";
     private BuiltInGestureAction _newGestureAction = BuiltInGestureAction.Copy;
+    private bool _newGestureAddConfirmationPending;
     private string _recordGestureStatusText = "按住左键在方框里画一次。";
     private string _workerLevelText = "Lv.1 初入工位";
     private string _workerXpText = "XP 0 / 50";
@@ -262,7 +263,7 @@ public sealed class SettingsViewModel : INotifyPropertyChanged
         SetSelectedGestureActionCommand = new RelayCommand(SetSelectedGestureAction);
         AppendGestureDirectionCommand = new RelayCommand(AppendGestureDirection);
         RemoveLastGestureDirectionCommand = new RelayCommand(_ => RemoveLastGestureDirection());
-        ClearNewGesturePatternCommand = new RelayCommand(_ => NewGesturePattern = "");
+        ClearNewGesturePatternCommand = new RelayCommand(_ => ClearNewGesturePattern());
         ApplyBrowserEdgePresetCommand = new AsyncRelayCommand(_ => ApplyBrowserEdgePresetAsync());
         ApplySystemEdgePresetCommand = new AsyncRelayCommand(_ => ApplySystemEdgePresetAsync());
         ApplyClipboardEdgePresetCommand = new AsyncRelayCommand(_ => ApplyClipboardEdgePresetAsync());
@@ -1641,6 +1642,7 @@ public sealed class SettingsViewModel : INotifyPropertyChanged
             }
 
             _newGesturePattern = normalized;
+            ResetNewGestureAddConfirmation();
             OnPropertyChanged();
             OnPropertyChanged(nameof(NewGestureDirectionPreview));
             OnPropertyChanged(nameof(NewGestureAddButtonText));
@@ -1653,7 +1655,9 @@ public sealed class SettingsViewModel : INotifyPropertyChanged
 
     public string NewGestureAddButtonText => string.IsNullOrEmpty(NewGesturePattern)
         ? "先画一个手势"
-        : "添加到手势列表";
+        : _newGestureAddConfirmationPending
+            ? "确认添加到手势列表"
+            : "添加到手势列表";
 
     public string RecordGestureStatusText
     {
@@ -1681,7 +1685,9 @@ public sealed class SettingsViewModel : INotifyPropertyChanged
             }
 
             _newGestureAction = value;
+            ResetNewGestureAddConfirmation();
             OnPropertyChanged();
+            OnPropertyChanged(nameof(NewGestureAddButtonText));
         }
     }
 
@@ -2272,6 +2278,14 @@ public sealed class SettingsViewModel : INotifyPropertyChanged
             return;
         }
 
+        if (!_newGestureAddConfirmationPending)
+        {
+            _newGestureAddConfirmationPending = true;
+            RecordGestureStatusText = $"将添加 {DirectionText(pattern)} → {GestureActionText.Name(NewGestureAction)}，再点一次确认。";
+            OnPropertyChanged(nameof(NewGestureAddButtonText));
+            return;
+        }
+
         var existing = GestureBindingCards.FirstOrDefault(card => string.Equals(card.Pattern, pattern, StringComparison.Ordinal));
         if (existing is not null)
         {
@@ -2403,6 +2417,22 @@ public sealed class SettingsViewModel : INotifyPropertyChanged
         }
 
         NewGesturePattern = NewGesturePattern[..^1];
+    }
+
+    private void ClearNewGesturePattern()
+    {
+        NewGesturePattern = "";
+        RecordGestureStatusText = "按住左键在方框里画一次。";
+    }
+
+    private void ResetNewGestureAddConfirmation()
+    {
+        if (!_newGestureAddConfirmationPending)
+        {
+            return;
+        }
+
+        _newGestureAddConfirmationPending = false;
     }
 
     public void SetNewGesturePatternFromRecordedPoints(IReadOnlyList<GesturePoint> points)

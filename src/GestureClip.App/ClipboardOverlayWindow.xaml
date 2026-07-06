@@ -56,7 +56,7 @@
                     <TextBlock Text="剪贴板历史"
                                FontSize="22"
                                FontWeight="SemiBold" />
-                    <TextBlock Text="搜索、回车粘贴，数字键 1-0 快速选择前 10 条"
+                    <TextBlock Text="双击复制并关闭，Enter 粘贴，数字键 1-0 快速粘贴前 10 条"
                                Style="{StaticResource MutedTextStyle}"
                                Margin="0,4,0,0" />
                 </StackPanel>
@@ -269,7 +269,7 @@
                                             </TextBlock.Style>
                                         </TextBlock>
                                         <TextBlock x:Name="ImageItemPreviewTextBlock"
-                                                   Text="图片记录 · 双击或点复制，可放回系统剪贴板"
+                                                   Text="图片记录 · 双击复制并关闭，可放回系统剪贴板"
                                                    Foreground="{DynamicResource BrushTextPrimary}"
                                                    FontSize="13"
                                                    FontWeight="SemiBold"
@@ -393,12 +393,12 @@
                                 <Setter TargetName="ItemCard" Property="BorderBrush" Value="#17111827" />
                             </DataTrigger>
                             <DataTrigger Binding="{Binding IsSelected, RelativeSource={RelativeSource AncestorType=ListBoxItem}}" Value="True">
-                                <Setter TargetName="ItemCard" Property="Background" Value="#111111" />
-                                <Setter TargetName="ItemCard" Property="BorderBrush" Value="#111111" />
-                                <Setter TargetName="PreviewTextBlock" Property="Foreground" Value="White" />
-                                <Setter TargetName="SourceProcessBlock" Property="Foreground" Value="#9CA3AF" />
-                                <Setter TargetName="DotBlock" Property="Foreground" Value="#6B7280" />
-                                <Setter TargetName="CreatedAtBlock" Property="Foreground" Value="#9CA3AF" />
+                                <Setter TargetName="ItemCard" Property="Background" Value="#EAF3FF" />
+                                <Setter TargetName="ItemCard" Property="BorderBrush" Value="{DynamicResource BrushPrimaryBright}" />
+                                <Setter TargetName="PreviewTextBlock" Property="Foreground" Value="{DynamicResource BrushTextPrimary}" />
+                                <Setter TargetName="SourceProcessBlock" Property="Foreground" Value="{DynamicResource BrushTextSecondary}" />
+                                <Setter TargetName="DotBlock" Property="Foreground" Value="{DynamicResource BrushTextMuted}" />
+                                <Setter TargetName="CreatedAtBlock" Property="Foreground" Value="{DynamicResource BrushTextSecondary}" />
                             </DataTrigger>
                         </DataTemplate.Triggers>
                     </DataTemplate>

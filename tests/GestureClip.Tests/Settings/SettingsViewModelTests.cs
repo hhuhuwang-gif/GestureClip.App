@@ -286,13 +286,19 @@ public sealed class SettingsViewModelTests
     }
 
     [Fact]
-    public async Task Adding_custom_gesture_pattern_saves_binding()
+    public async Task Adding_custom_gesture_pattern_requires_second_confirm_click_before_saving()
     {
         var settings = new FakeSettingsService();
         var viewModel = CreateViewModel(settings: settings);
 
         viewModel.NewGesturePattern = "urdl";
         viewModel.NewGestureAction = BuiltInGestureAction.Enter;
+
+        viewModel.AddCustomGestureBindingCommand.Execute(null);
+
+        Assert.DoesNotContain(viewModel.GestureBindingCards, card => card.Pattern == "URDL");
+        Assert.False(settings.Values.ContainsKey(SettingKeys.GestureCustomBindingsJson));
+        Assert.Contains("确认添加", viewModel.NewGestureAddButtonText, StringComparison.Ordinal);
 
         viewModel.AddCustomGestureBindingCommand.Execute(null);
 
@@ -440,6 +446,8 @@ public sealed class SettingsViewModelTests
 
         viewModel.NewGesturePattern = "RDLU";
         viewModel.NewGestureAction = BuiltInGestureAction.SearchSelectedTextWithGoogle;
+
+        viewModel.AddCustomGestureBindingCommand.Execute(null);
 
         viewModel.AddCustomGestureBindingCommand.Execute(null);
 

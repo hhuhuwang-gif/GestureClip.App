@@ -289,7 +289,8 @@ public sealed class ThemeResourceTests
         var codeBehind = File.ReadAllText(codeBehindPath);
 
         Assert.Contains("图片缩略图", xaml);
-        Assert.Contains("双击或点复制，可放回系统剪贴板", xaml);
+        Assert.Contains("双击复制并关闭，可放回系统剪贴板", xaml);
+        Assert.Contains("CopySelectedAsync(GetSelectedItems())", codeBehind);
         Assert.Contains("SelectedImagePreviewPanel", xaml);
         Assert.Contains("ImageItemPreviewTextBlock", xaml);
         Assert.Contains("Height=\"260\"", xaml);
@@ -298,7 +299,7 @@ public sealed class ThemeResourceTests
         Assert.Contains("Image Source=\"{Binding SelectedItem.ThumbnailContent, IsAsync=True", xaml);
         Assert.DoesNotContain("Image Source=\"{Binding TextContent", xaml);
         Assert.DoesNotContain("Image Source=\"{Binding SelectedItem.TextContent", xaml);
-        Assert.Contains("_viewModel.SelectedItem?.IsImage == true", codeBehind);
+        Assert.DoesNotContain("_viewModel.SelectedItem?.IsImage == true", codeBehind);
         Assert.Contains("CopySelectedAsync(GetSelectedItems())", codeBehind);
     }
 
