@@ -52,6 +52,20 @@ public sealed class ClipboardServiceTests
     }
 
     [Fact]
+    public async Task CaptureTextAsync_refreshes_existing_duplicate_item()
+    {
+        var repository = new FakeClipboardRepository();
+        var service = CreateService(repository);
+
+        await service.CaptureTextAsync(Capture("normal"), CancellationToken.None);
+        var existing = Assert.Single(repository.Items);
+        await service.CaptureTextAsync(Capture("normal"), CancellationToken.None);
+
+        Assert.Single(repository.Items);
+        Assert.Equal(existing.Id, repository.TouchedId);
+    }
+
+    [Fact]
     public async Task PasteAsync_suppresses_capture_writes_text_sends_paste_and_updates_usage()
     {
         var repository = new FakeClipboardRepository();
@@ -459,6 +473,7 @@ public sealed class ClipboardServiceTests
         public List<ClipboardItem> Items { get; } = [];
         public string? BlockedProcessName { get; set; }
         public Guid? IncrementedId { get; private set; }
+        public Guid? TouchedId { get; private set; }
         public List<Guid> IncrementedIds { get; } = [];
         public Dictionary<Guid, int> BatchedUseCounts { get; } = [];
         public int BatchIncrementCallCount { get; private set; }
@@ -478,6 +493,19 @@ public sealed class ClipboardServiceTests
         public Task<ClipboardItem?> GetByIdAsync(Guid id, CancellationToken cancellationToken)
         {
             return Task.FromResult(Items.FirstOrDefault(item => item.Id == id));
+        }
+
+        public Task TouchAsync(Guid id, CancellationToken cancellationToken)
+        {
+            TouchedId = id;
+            var index = Items.FindIndex(item => item.Id == id);
+            if (index >= 0)
+            {
+                var now = DateTimeOffset.UtcNow;
+                Items[index] = Items[index] with { LastUsedAt = now, UpdatedAt = now };
+            }
+
+            return Task.CompletedTask;
         }
 
         public async Task IncrementUseCountAsync(Guid id, CancellationToken cancellationToken)

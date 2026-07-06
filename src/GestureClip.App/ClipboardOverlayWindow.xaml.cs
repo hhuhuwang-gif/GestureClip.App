@@ -367,6 +367,11 @@ public partial class ClipboardOverlayWindow : Window
     {
         var keyValue = (int)key;
 
+        if (key is Key.D0 or Key.NumPad0)
+        {
+            return 9;
+        }
+
         if (keyValue >= (int)Key.D1 && keyValue <= (int)Key.D9)
         {
             return keyValue - (int)Key.D1;

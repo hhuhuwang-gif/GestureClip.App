@@ -84,8 +84,8 @@ public sealed class ThemeResourceTests
         var path = FindRepositoryFile("src", "GestureClip.App", "ClipboardOverlayWindow.xaml");
         var xaml = File.ReadAllText(path);
 
-        Assert.Contains("Width=\"760\"", xaml);
-        Assert.Contains("Height=\"520\"", xaml);
+        Assert.Contains("Width=\"860\"", xaml);
+        Assert.Contains("Height=\"760\"", xaml);
         Assert.Contains("AllowsTransparency=\"True\"", xaml);
         Assert.Contains("CornerRadius=\"28\"", xaml);
         Assert.Contains("Background=\"{DynamicResource BrushGlassStrong}\"", xaml);

@@ -7,7 +7,14 @@ public sealed class ShortcutNumberConverter : IValueConverter
 {
     public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
     {
-        return value is int index ? (index + 1).ToString(CultureInfo.InvariantCulture) : "";
+        if (value is not int index)
+        {
+            return "";
+        }
+
+        return index == 9
+            ? "0"
+            : (index + 1).ToString(CultureInfo.InvariantCulture);
     }
 
     public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)

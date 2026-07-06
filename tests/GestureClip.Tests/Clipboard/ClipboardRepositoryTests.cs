@@ -55,6 +55,40 @@ public sealed class ClipboardRepositoryTests
     }
 
     [Fact]
+    public async Task TouchAsync_moves_existing_unpinned_item_to_top_without_creating_duplicate()
+    {
+        using var database = await TestDatabase.CreateAsync();
+        var repository = new ClipboardRepository(database.ConnectionFactory);
+        var old = CreateItem("old", "old copied text", isPinned: false, minutesAgo: 30);
+        var newer = CreateItem("newer", "newer copied text", isPinned: false, minutesAgo: 1);
+        await repository.InsertAsync(old, CancellationToken.None);
+        await repository.InsertAsync(newer, CancellationToken.None);
+
+        await repository.TouchAsync(old.Id, CancellationToken.None);
+
+        var results = await repository.SearchAsync("", 10, CancellationToken.None);
+        Assert.Equal(["old copied text", "newer copied text"], results.Select(item => item.TextContent ?? "").ToArray());
+        Assert.Equal(2, await repository.GetCountAsync(CancellationToken.None));
+        Assert.NotNull(results[0].LastUsedAt);
+    }
+
+    [Fact]
+    public async Task SearchAsync_keeps_pinned_items_before_recently_touched_unpinned_items()
+    {
+        using var database = await TestDatabase.CreateAsync();
+        var repository = new ClipboardRepository(database.ConnectionFactory);
+        var pinned = CreateItem("pinned", "pinned text", isPinned: true, minutesAgo: 60);
+        var normal = CreateItem("normal", "normal text", isPinned: false, minutesAgo: 30);
+        await repository.InsertAsync(pinned, CancellationToken.None);
+        await repository.InsertAsync(normal, CancellationToken.None);
+
+        await repository.TouchAsync(normal.Id, CancellationToken.None);
+
+        var results = await repository.SearchAsync("", 10, CancellationToken.None);
+        Assert.Equal(["pinned text", "normal text"], results.Select(item => item.TextContent ?? "").ToArray());
+    }
+
+    [Fact]
     public async Task SearchAsync_with_5000_items_returns_only_requested_limit()
     {
         using var database = await TestDatabase.CreateAsync();
