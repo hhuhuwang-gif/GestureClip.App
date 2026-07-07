@@ -335,18 +335,17 @@ public sealed class ThemeResourceTests
         Assert.Contains("GestureBindingPageScrollViewer", xaml);
         Assert.Contains("WindowBackground_MouseLeftButtonDown", xaml);
         Assert.Contains("Click=\"ScrollToCustomGestureDesigner_Click\"", xaml);
-        Assert.Contains("MinHeight=\"220\"", xaml);
-        Assert.Contains("删除这个手势", xaml);
-        Assert.Contains("轻量模式，避免打开页面卡死", xaml);
+        Assert.Contains("MinHeight=\"168\"", xaml);
+        Assert.Contains("删除这个手势绑定", xaml);
+        Assert.Contains("先看卡片", xaml);
         Assert.Contains("常用手势一览", xaml);
         Assert.Contains("SelectGestureBindingCommand", xaml);
         Assert.Contains("CommandParameter=\"{Binding Pattern}\"", xaml);
-        Assert.Contains("<UniformGrid Columns=\"3\" />", xaml);
-        Assert.Contains("Height=\"74\"", xaml);
+        Assert.Contains("<UniformGrid Columns=\"2\" />", xaml);
+        Assert.Contains("MinHeight=\"138\"", xaml);
         Assert.Contains("Focusable=\"False\"", xaml);
-        Assert.Contains("FocusVisualStyle=\"{x:Null}\"", xaml);
         Assert.Contains("ShortDirectionText", xaml);
-        Assert.Contains("ActionSummaryText", xaml);
+        Assert.Contains("InstructionText", xaml);
         Assert.DoesNotContain("<ListBox ItemsSource=\"{Binding PrimaryGestureBindingCards}\"", xaml);
         Assert.DoesNotContain("<ListBox ItemsSource=\"{Binding AdvancedGestureBindingCards}\"", xaml);
         Assert.DoesNotContain("SelectedItem=\"{Binding SelectedGestureBindingCard, Mode=TwoWay}\"", xaml);
@@ -359,6 +358,107 @@ public sealed class ThemeResourceTests
         Assert.DoesNotContain("Grid.Column=\"1\"", detailHeader);
         Assert.DoesNotContain("Margin=\"14,0,0,0\"", detailHeader);
         Assert.Contains("Margin=\"0,16,0,0\"", detailHeader);
+    }
+
+    [Fact]
+    public void Gesture_binding_cards_have_clear_selection_delete_and_empty_state_contract()
+    {
+        var path = FindRepositoryFile("src", "GestureClip.App", "SettingsWindow.xaml");
+        var xaml = File.ReadAllText(path);
+
+        Assert.Contains("SelectedBadgeText", xaml);
+        Assert.Contains("当前选中", File.ReadAllText(FindRepositoryFile("src", "GestureClip.App", "ViewModels", "GestureBindingCardViewModel.cs")));
+        Assert.Contains("SelectedAccent", xaml);
+        Assert.Contains("Binding=\"{Binding IsSelected}\"", xaml);
+        Assert.Contains("Content=\"更换动作\"", xaml);
+        Assert.Contains("Content=\"删除\"", xaml);
+        Assert.Contains("ToolTip=\"删除这个手势绑定\"", xaml);
+        Assert.Contains("Command=\"{Binding DeleteCommand}\"", xaml);
+        Assert.Contains("当前绑定动作", xaml);
+        Assert.Contains("按住右键画这个手势后", File.ReadAllText(FindRepositoryFile("src", "GestureClip.App", "ViewModels", "GestureBindingCardViewModel.cs")));
+        Assert.Contains("CustomGestureEmptyStateText", xaml);
+        Assert.Contains("GestureBindingEmptyStateText", xaml);
+        Assert.Contains("还没有自定义手势", File.ReadAllText(FindRepositoryFile("src", "GestureClip.App", "ViewModels", "SettingsViewModel.cs")));
+        if (xaml.Contains("TargetType=\"{x:Type ListBoxItem}\"", StringComparison.Ordinal))
+        {
+            Assert.Contains("BasedOn=\"{StaticResource {x:Type ListBoxItem}}\"", xaml);
+        }
+    }
+
+    [Fact]
+    public void Gesture_binding_page_exposes_new_user_recommendation_contract()
+    {
+        var path = FindRepositoryFile("src", "GestureClip.App", "SettingsWindow.xaml");
+        var xaml = File.ReadAllText(path);
+        var viewModelSource = File.ReadAllText(FindRepositoryFile("src", "GestureClip.App", "ViewModels", "SettingsViewModel.cs"));
+
+        Assert.Contains("RecommendedGesturePanel", xaml);
+        Assert.Contains("推荐给新手的 3 个手势", xaml);
+        Assert.Contains("先用这 3 个就够了", xaml);
+        Assert.Contains("一键添加推荐手势", xaml);
+        Assert.Contains("已有的自定义手势不会被删除", xaml);
+        Assert.Contains("ItemsSource=\"{Binding RecommendedGestureBindings}\"", xaml);
+        Assert.Contains("Command=\"{Binding ApplyRecommendedGestureBindingsCommand}\"", xaml);
+        Assert.Contains("RecommendedGestureStatusText", xaml);
+        Assert.Contains("OpenClipboardOverlay", viewModelSource);
+        Assert.Contains("BuiltInGestureAction.Paste", viewModelSource);
+        Assert.Contains("BuiltInGestureAction.Copy", viewModelSource);
+        Assert.Contains("推荐手势已经都在列表里", viewModelSource);
+    }
+
+    [Fact]
+    public void SettingsWindow_uses_consistent_plain_language_intro_cards()
+    {
+        var path = FindRepositoryFile("src", "GestureClip.App", "SettingsWindow.xaml");
+        var xaml = File.ReadAllText(path);
+
+        Assert.Contains("SettingsIntroCardStyle", xaml);
+        Assert.Contains("SettingsIntroTitleStyle", xaml);
+        Assert.Contains("HomePageIntro", xaml);
+        Assert.Contains("ClipboardPageIntro", xaml);
+        Assert.Contains("GesturePageIntro", xaml);
+        Assert.Contains("PrivacyPageIntro", xaml);
+        Assert.Contains("StartupPageIntro", xaml);
+        Assert.Contains("WorkstationPageIntro", xaml);
+        Assert.Contains("DiagnosticsPageIntro", xaml);
+        Assert.Contains("AboutPageIntro", xaml);
+        Assert.Contains("先确认权限、数据位置和运行状态", xaml);
+        Assert.Contains("控制是否记录剪贴板历史", xaml);
+        Assert.Contains("新手建议保留鼠标右键", xaml);
+        Assert.Contains("规则只在本机生效", xaml);
+        Assert.Contains("关闭窗口仍会隐藏到托盘", xaml);
+        Assert.Contains("所有统计仍然只在本地计算", xaml);
+        Assert.Contains("遇到问题时先复制诊断信息", xaml);
+        Assert.Contains("检查更新或执行一键覆盖更新", xaml);
+    }
+
+    [Fact]
+    public void SettingsWindow_unifies_button_widths_spacing_and_danger_zone_contract()
+    {
+        var path = FindRepositoryFile("src", "GestureClip.App", "SettingsWindow.xaml");
+        var xaml = File.ReadAllText(path);
+
+        Assert.Contains("SettingsFormRowStyle", xaml);
+        Assert.Contains("BasedOn=\"{StaticResource SettingRowStyle}\"", xaml);
+        Assert.Contains("<Setter Property=\"Margin\" Value=\"0,0,0,12\" />", xaml);
+        Assert.Contains("SettingsSecondaryActionButtonStyle", xaml);
+        Assert.Contains("SettingsPrimaryActionButtonStyle", xaml);
+        Assert.Contains("SettingsDangerActionButtonStyle", xaml);
+        Assert.Contains("SettingsCompactActionButtonStyle", xaml);
+        Assert.Contains("SettingsGestureTemplateButtonStyle", xaml);
+        Assert.Contains("SettingsDangerZoneStyle", xaml);
+        Assert.Contains("Background\" Value=\"#FFF5F5\"", xaml);
+        Assert.Contains("BorderBrush\" Value=\"#FECACA\"", xaml);
+        Assert.Contains("Text=\"危险操作\"", xaml);
+        Assert.Contains("会影响剪贴板历史，执行前请确认。", xaml);
+        Assert.Contains("Command=\"{Binding ClearAllClipboardItemsCommand}\"", xaml);
+        Assert.Contains("Style=\"{StaticResource SettingsDangerActionButtonStyle}\"", xaml);
+        Assert.Contains("Style=\"{StaticResource SettingsSecondaryActionButtonStyle}\"", xaml);
+        Assert.Contains("Style=\"{StaticResource SettingsCompactActionButtonStyle}\"", xaml);
+        Assert.Contains("Style=\"{StaticResource SettingsGestureTemplateButtonStyle}\"", xaml);
+        Assert.DoesNotContain("Content=\"复制\" MinWidth=\"0\" Width=\"76\"", xaml);
+        Assert.DoesNotContain("Content=\"右键+左键  粘贴并回车\" MinWidth=\"0\" Width=\"190\"", xaml);
+        Assert.DoesNotContain("Content=\"打开日志目录\" Command=\"{Binding OpenLogDirectoryCommand}\"", xaml);
     }
 
     [Fact]
@@ -524,9 +624,10 @@ public sealed class ThemeResourceTests
         var path = FindRepositoryFile("src", "GestureClip.App", "SettingsWindow.xaml");
         var xaml = File.ReadAllText(path);
 
-        Assert.Contains("+ 新建自定义手势", xaml);
-        Assert.Contains("创建你的专属手势", xaml);
-        Assert.Contains("先画手势，再绑定动作", xaml);
+        Assert.Contains("+ 添加自己的手势", xaml);
+        Assert.Contains("添加自己的手势", xaml);
+        Assert.Contains("先选择这个手势要执行的动作", xaml);
+        Assert.Contains("确认添加到手势列表", xaml);
         Assert.Contains("办公高频", xaml);
         Assert.Contains("浏览高频", xaml);
         Assert.Contains("实用动作", xaml);
@@ -571,6 +672,7 @@ public sealed class ThemeResourceTests
         Assert.Contains("Text=\"手势码\"", xaml);
         Assert.Contains("Text=\"执行动作\"", xaml);
         Assert.Contains("Header=\"快捷动作\"", xaml);
+        Assert.Contains("确认添加到手势列表", xaml);
         Assert.Contains("Style=\"{StaticResource PrimaryButtonStyle}\"", xaml);
         Assert.Contains("Height=\"40\"", xaml);
         Assert.DoesNotContain("<TextBox Width=\"120\" Text=\"{Binding NewGesturePattern", xaml);

@@ -233,7 +233,7 @@ public sealed class SettingsViewModelTests
 
         Assert.Equal("URD", viewModel.NewGesturePattern);
         Assert.Equal("↑→↓", viewModel.NewGestureDirectionPreview);
-        Assert.Equal("添加到手势列表", viewModel.NewGestureAddButtonText);
+        Assert.Equal("确认添加到手势列表", viewModel.NewGestureAddButtonText);
     }
 
     [Fact]
@@ -347,6 +347,8 @@ public sealed class SettingsViewModelTests
         Assert.Equal("DL", viewModel.SelectedGestureBindingCard?.Pattern);
         Assert.Equal("DL", viewModel.SelectedGestureBindingSelectionKey);
         Assert.Contains("粘贴并回车", viewModel.SelectedGestureBindingActionName, StringComparison.Ordinal);
+        Assert.True(viewModel.SelectedGestureBindingCard!.IsSelected);
+        Assert.DoesNotContain(viewModel.GestureBindingCards.Where(card => card.Pattern != "DL"), card => card.IsSelected);
     }
 
     [Fact]
@@ -356,14 +358,36 @@ public sealed class SettingsViewModelTests
         var confirmation = new FakeConfirmationService { Result = true };
         var viewModel = CreateViewModel(settings: settings, confirmation: confirmation);
         var card = viewModel.GestureBindingCards.Single(item => item.Pattern == "DL");
+        var index = viewModel.GestureBindingCards.IndexOf(card);
+        var expectedNext = viewModel.GestureBindingCards[index + 1];
 
         viewModel.SelectedGestureBindingCard = card;
         await viewModel.DeleteSelectedGestureBindingAsync();
 
         Assert.DoesNotContain(viewModel.GestureBindingCards, item => item.Pattern == "DL");
-        Assert.NotNull(viewModel.SelectedGestureBindingCard);
-        Assert.NotSame(card, viewModel.SelectedGestureBindingCard);
+        Assert.Same(expectedNext, viewModel.SelectedGestureBindingCard);
+        Assert.True(viewModel.SelectedGestureBindingCard!.IsSelected);
         Assert.Contains(confirmation.Prompts, prompt => prompt.Title.Contains("删除", StringComparison.Ordinal));
+        var prompt = Assert.Single(confirmation.Prompts);
+        Assert.Contains("手势：下左划（DL）", prompt.Message, StringComparison.Ordinal);
+        Assert.Contains("方向：↓←", prompt.Message, StringComparison.Ordinal);
+        Assert.Contains("当前动作：粘贴并回车", prompt.Message, StringComparison.Ordinal);
+        Assert.Contains("删除后，这个手势不会再触发任何动作。", prompt.Message, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task Deleting_last_selected_gesture_binding_selects_previous_card()
+    {
+        var confirmation = new FakeConfirmationService { Result = true };
+        var viewModel = CreateViewModel(confirmation: confirmation);
+        var card = viewModel.GestureBindingCards.Last();
+        var expectedPrevious = viewModel.GestureBindingCards[^2];
+
+        viewModel.SelectedGestureBindingCard = card;
+        await viewModel.DeleteSelectedGestureBindingAsync();
+
+        Assert.DoesNotContain(viewModel.GestureBindingCards, item => item.Pattern == card.Pattern);
+        Assert.Same(expectedPrevious, viewModel.SelectedGestureBindingCard);
     }
 
     [Fact]
@@ -379,7 +403,28 @@ public sealed class SettingsViewModelTests
 
         Assert.Contains(viewModel.GestureBindingCards, item => item.Pattern == "DL");
         Assert.Same(card, viewModel.SelectedGestureBindingCard);
+        Assert.True(card.IsSelected);
+        Assert.False(settings.Values.ContainsKey(SettingKeys.GestureCustomBindingsJson));
         Assert.Contains(confirmation.Prompts, prompt => prompt.Title.Contains("删除", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public async Task Deleting_all_gesture_bindings_clears_selection_and_shows_empty_state()
+    {
+        var confirmation = new FakeConfirmationService { Result = true };
+        var viewModel = CreateViewModel(confirmation: confirmation);
+
+        foreach (var card in viewModel.GestureBindingCards.ToArray())
+        {
+            viewModel.SelectedGestureBindingCard = card;
+            await viewModel.DeleteSelectedGestureBindingAsync();
+        }
+
+        Assert.Empty(viewModel.GestureBindingCards);
+        Assert.Null(viewModel.SelectedGestureBindingCard);
+        Assert.False(viewModel.HasSelectedGestureBinding);
+        Assert.Equal("还没有自定义手势。你可以先使用推荐配置，也可以添加一个自己的手势。", viewModel.GestureBindingEmptyStateText);
+        Assert.Equal("还没有选中手势。请先从上方卡片选择一个手势，再更换动作或删除。", viewModel.SelectedGestureBindingEmptyText);
     }
 
     [Fact]
@@ -398,6 +443,74 @@ public sealed class SettingsViewModelTests
             json is string text && !text.Contains("\"DL\"", StringComparison.Ordinal));
         Assert.Equal(GesturePreset.Custom, viewModel.SelectedGesturePresetOption?.Value);
         Assert.Contains(confirmation.Prompts, prompt => prompt.Title.Contains("删除", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public async Task Applying_recommended_gestures_adds_only_missing_bindings_and_keeps_existing_custom()
+    {
+        var settings = new FakeSettingsService();
+        settings.Values[SettingKeys.GesturePreset] = GesturePreset.Custom;
+        var provider = new GestureClip.Features.Gestures.GesturePresetProvider();
+        provider.UpdateCustomBindings(new Dictionary<string, BuiltInGestureAction>(StringComparer.Ordinal)
+        {
+            ["URDL"] = BuiltInGestureAction.Enter,
+            ["U"] = BuiltInGestureAction.Copy
+        });
+        var confirmation = new FakeConfirmationService { Result = true };
+        var viewModel = CreateViewModel(settings: settings, confirmation: confirmation, gesturePresetProvider: provider);
+
+        viewModel.ApplyRecommendedGestureBindingsCommand.Execute(null);
+
+        await WaitForAsync(() => viewModel.RecommendedGestureStatusText.Contains("已添加 2 个", StringComparison.Ordinal));
+        Assert.Contains(viewModel.GestureBindingCards, card => card.Pattern == "URDL" && card.SelectedAction == BuiltInGestureAction.Enter);
+        Assert.Contains(viewModel.GestureBindingCards, card => card.Pattern == "U" && card.SelectedAction == BuiltInGestureAction.Copy);
+        Assert.Contains(viewModel.GestureBindingCards, card => card.Pattern == "D" && card.SelectedAction == BuiltInGestureAction.Paste);
+        Assert.Contains(viewModel.GestureBindingCards, card => card.Pattern == "LR" && card.SelectedAction == BuiltInGestureAction.Copy);
+        Assert.Contains("已跳过 1 个已存在手势", viewModel.RecommendedGestureStatusText, StringComparison.Ordinal);
+        Assert.Contains(confirmation.Prompts, prompt => prompt.Message.Contains("已有的自定义手势不会被删除", StringComparison.Ordinal));
+        Assert.True(settings.Values.TryGetValue(SettingKeys.GestureCustomBindingsJson, out var json));
+        var text = Assert.IsType<string>(json);
+        Assert.Contains("\"URDL\"", text, StringComparison.Ordinal);
+        Assert.Contains("\"D\"", text, StringComparison.Ordinal);
+        Assert.Contains("\"LR\"", text, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task Applying_recommended_gestures_does_not_overwrite_when_all_recommendations_exist()
+    {
+        var settings = new FakeSettingsService();
+        var confirmation = new FakeConfirmationService { Result = true };
+        var viewModel = CreateViewModel(settings: settings, confirmation: confirmation);
+        var upCard = viewModel.GestureBindingCards.Single(card => card.Pattern == "U");
+
+        viewModel.ApplyRecommendedGestureBindingsCommand.Execute(null);
+
+        await WaitForAsync(() => viewModel.RecommendedGestureStatusText.Contains("已经都在列表里", StringComparison.Ordinal));
+        Assert.Equal(BuiltInGestureAction.Copy, upCard.SelectedAction);
+        Assert.False(settings.Values.ContainsKey(SettingKeys.GestureCustomBindingsJson));
+    }
+
+    [Fact]
+    public async Task Applying_recommended_gestures_does_not_change_bindings_when_user_cancels()
+    {
+        var settings = new FakeSettingsService();
+        settings.Values[SettingKeys.GesturePreset] = GesturePreset.Custom;
+        var provider = new GestureClip.Features.Gestures.GesturePresetProvider();
+        provider.UpdateCustomBindings(new Dictionary<string, BuiltInGestureAction>(StringComparer.Ordinal)
+        {
+            ["URDL"] = BuiltInGestureAction.Enter
+        });
+        var confirmation = new FakeConfirmationService { Result = false };
+        var viewModel = CreateViewModel(settings: settings, confirmation: confirmation, gesturePresetProvider: provider);
+
+        viewModel.ApplyRecommendedGestureBindingsCommand.Execute(null);
+
+        await WaitForAsync(() => viewModel.RecommendedGestureStatusText.Contains("已取消", StringComparison.Ordinal));
+        Assert.Contains(viewModel.GestureBindingCards, card => card.Pattern == "URDL" && card.SelectedAction == BuiltInGestureAction.Enter);
+        Assert.Contains(viewModel.GestureBindingCards, card => card.Pattern == "U" && card.SelectedAction == BuiltInGestureAction.None);
+        Assert.Contains(viewModel.GestureBindingCards, card => card.Pattern == "D" && card.SelectedAction == BuiltInGestureAction.None);
+        Assert.Contains(viewModel.GestureBindingCards, card => card.Pattern == "LR" && card.SelectedAction == BuiltInGestureAction.None);
+        Assert.False(settings.Values.ContainsKey(SettingKeys.GestureCustomBindingsJson));
     }
 
     [Fact]
@@ -649,7 +762,8 @@ public sealed class SettingsViewModelTests
         FakeSettingsService? settings = null,
         FakeEdgeTriggerService? edgeTriggerService = null,
         FakeGlobalHotkeyService? hotkey = null,
-        FakeWorkerLevelService? workerLevel = null)
+        FakeWorkerLevelService? workerLevel = null,
+        GestureClip.Features.Gestures.GesturePresetProvider? gesturePresetProvider = null)
     {
         settings ??= new FakeSettingsService();
         return new SettingsViewModel(
@@ -668,7 +782,7 @@ public sealed class SettingsViewModelTests
             repository ?? new FakeClipboardRepository(),
             overlay ?? new FakeClipboardOverlayService(),
             confirmation ?? new FakeConfirmationService { Result = true },
-            new GestureClip.Features.Gestures.GesturePresetProvider(),
+            gesturePresetProvider ?? new GestureClip.Features.Gestures.GesturePresetProvider(),
             edgeTriggerService ?? new FakeEdgeTriggerService(),
             workerLevel ?? new FakeWorkerLevelService());
     }

@@ -338,7 +338,65 @@ public sealed class ClipboardServiceTests
     }
 
     [Fact]
-    public async Task Clipboard_changed_prefers_image_when_clipboard_contains_text_and_image()
+    public async Task Clipboard_changed_captures_and_copies_chatgpt_rich_text_body_not_image_or_preview()
+    {
+        var chatGptReply = string.Join("\r\n", [
+            "这是 ChatGPT 回复：",
+            "",
+            "## 处理方案",
+            "",
+            "1. 保存完整正文，不保存 preview。",
+            "2. 支持 Markdown、列表、多段文本、特殊 Unicode：✅ 中文 emoji Ω。",
+            "",
+            "```csharp",
+            "public static string Normalize(string input)",
+            "{",
+            "    return input.Replace(\"\\r\\n\", \"\\n\");",
+            "}",
+            "```",
+            "",
+            "末尾还有一段比较长的文字，用来模拟浏览器复制回复时带来的长文本内容，避免再次复制时只写入空文本、HTML 片段或被截断的预览。"
+        ]);
+        var repository = new FakeClipboardRepository();
+        var listener = new FakeClipboardListener();
+        var writer = new FakeClipboardWriter();
+        var reader = new FakeClipboardTextReader
+        {
+            Text = chatGptReply,
+            ImagePngBase64 = "rich-html-image-snapshot"
+        };
+        var service = CreateService(repository, writer: writer, listener: listener, reader: reader);
+
+        await service.StartAsync(CancellationToken.None);
+        listener.Raise();
+        await WaitForAsync(() => repository.Items.Count == 1);
+
+        var saved = Assert.Single(repository.Items);
+        Assert.Equal("text", saved.ContentType);
+        Assert.Equal(chatGptReply, saved.TextContent);
+        Assert.NotEqual(saved.PreviewText, saved.TextContent);
+
+        repository.ReturnPreviewOnlySearchResults = true;
+        var searchResults = await service.SearchAsync("Markdown", 10, CancellationToken.None);
+        var selected = Assert.Single(searchResults);
+        Assert.Null(selected.TextContent);
+        Assert.Equal(saved.PreviewText, selected.PreviewText);
+
+        await service.CopyItemsAsync([selected], CancellationToken.None);
+
+        Assert.Equal(chatGptReply, writer.Text);
+        Assert.Equal(1, writer.SetTextCallCount);
+
+        await service.PasteAsync(selected, new PasteOptions(false), CancellationToken.None);
+
+        Assert.Equal(chatGptReply, writer.Text);
+        Assert.Equal(2, writer.SetTextCallCount);
+        Assert.True(writer.PasteHotkeySent);
+        Assert.Null(writer.ImagePngBase64);
+    }
+
+    [Fact]
+    public async Task Clipboard_changed_prefers_text_when_clipboard_contains_text_and_image()
     {
         var repository = new FakeClipboardRepository();
         var listener = new FakeClipboardListener();
@@ -353,8 +411,8 @@ public sealed class ClipboardServiceTests
         listener.Raise();
         await WaitForAsync(() => repository.Items.Count == 1);
 
-        Assert.Equal("image/png", repository.Items[0].ContentType);
-        Assert.Equal("png-base64", repository.Items[0].TextContent);
+        Assert.Equal("text", repository.Items[0].ContentType);
+        Assert.Equal("image alt text", repository.Items[0].TextContent);
     }
 
     [Fact]
@@ -522,6 +580,7 @@ public sealed class ClipboardServiceTests
         public int BatchIncrementCallCount { get; private set; }
         public Func<ClipboardItem, CancellationToken, Task>? InsertHandler { get; set; }
         public Func<Guid, CancellationToken, Task>? IncrementUseCountHandler { get; set; }
+        public bool ReturnPreviewOnlySearchResults { get; set; }
 
         public Task<ClipboardItem?> FindByHashAsync(string hash, CancellationToken cancellationToken)
         {
@@ -647,7 +706,15 @@ public sealed class ClipboardServiceTests
 
         public Task<IReadOnlyList<ClipboardItem>> SearchAsync(string keyword, int limit, CancellationToken cancellationToken)
         {
-            return Task.FromResult<IReadOnlyList<ClipboardItem>>(Items);
+            var results = Items
+                .Where(item => string.IsNullOrWhiteSpace(keyword) ||
+                    (item.TextContent?.Contains(keyword, StringComparison.OrdinalIgnoreCase) ?? false) ||
+                    (item.PreviewText?.Contains(keyword, StringComparison.OrdinalIgnoreCase) ?? false))
+                .Take(limit)
+                .Select(item => ReturnPreviewOnlySearchResults ? item with { TextContent = null } : item)
+                .ToArray();
+
+            return Task.FromResult<IReadOnlyList<ClipboardItem>>(results);
         }
     }
 
@@ -656,6 +723,7 @@ public sealed class ClipboardServiceTests
         public string? Text { get; private set; }
         public string? ImagePngBase64 { get; private set; }
         public bool PasteHotkeySent { get; private set; }
+        public int SetTextCallCount { get; private set; }
 
         public Task SendPasteHotkeyAsync(CancellationToken cancellationToken)
         {
@@ -665,6 +733,7 @@ public sealed class ClipboardServiceTests
 
         public Task SetTextAsync(string text, CancellationToken cancellationToken)
         {
+            SetTextCallCount++;
             Text = text;
             return Task.CompletedTask;
         }

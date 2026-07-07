@@ -282,15 +282,16 @@ public sealed class ClipboardService : IClipboardService
             return;
         }
 
-        if (string.IsNullOrEmpty(item.TextContent))
+        var textItem = await EnsureFullContentAsync(item, cancellationToken);
+        if (string.IsNullOrEmpty(textItem.TextContent))
         {
             return;
         }
 
         SuppressCaptureFor(TimeSpan.FromMilliseconds(1000));
-        await _clipboardWriter.SetTextAsync(item.TextContent, cancellationToken);
+        await _clipboardWriter.SetTextAsync(textItem.TextContent, cancellationToken);
         await _clipboardWriter.SendPasteHotkeyAsync(cancellationToken);
-        await RecordPasteUsageAsync(item.Id, DateTimeOffset.UtcNow, cancellationToken);
+        await RecordPasteUsageAsync(textItem.Id, DateTimeOffset.UtcNow, cancellationToken);
         pasteWatch.Stop();
         LogPerf("PasteMs", pasteWatch.ElapsedMilliseconds, ("ContentType", "text"));
         _logger.LogInformation("Clipboard text item pasted.");
@@ -333,7 +334,13 @@ public sealed class ClipboardService : IClipboardService
             return;
         }
 
-        var text = string.Join("\r\n", items.Select(item => item.TextContent).Where(text => !string.IsNullOrEmpty(text)));
+        var textItems = new List<ClipboardItem>(items.Count);
+        foreach (var item in items)
+        {
+            textItems.Add(await EnsureFullContentAsync(item, cancellationToken));
+        }
+
+        var text = string.Join("\r\n", textItems.Select(item => item.TextContent).Where(text => !string.IsNullOrEmpty(text)));
         if (string.IsNullOrEmpty(text))
         {
             return;
@@ -341,7 +348,7 @@ public sealed class ClipboardService : IClipboardService
 
         await _clipboardWriter.SetTextAsync(text, cancellationToken);
         await WaitForClipboardSettleAsync(cancellationToken);
-        RecordUseCountInBackground(items.Select(item => item.Id).ToArray());
+        RecordUseCountInBackground(textItems.Select(item => item.Id).ToArray());
         copyWatch.Stop();
         LogPerf("ClipboardCopyDurationMs", copyWatch.ElapsedMilliseconds, ("ContentType", "text"), ("ItemCount", items.Count));
 
@@ -411,6 +418,19 @@ public sealed class ClipboardService : IClipboardService
     {
         try
         {
+            var textWatch = Stopwatch.StartNew();
+            var text = _clipboardTextReader.TryReadText();
+            textWatch.Stop();
+            LogPerf("TextReadMs", textWatch.ElapsedMilliseconds, ("HasText", text is not null));
+            if (!string.IsNullOrWhiteSpace(text))
+            {
+                var foreground = _foregroundAppService.GetCurrent();
+                await CaptureTextAsync(
+                    new ClipboardCapture(text, foreground.WindowTitle, foreground.ProcessName, e.ChangedAt),
+                    cancellationToken);
+                return;
+            }
+
             var imageWatch = Stopwatch.StartNew();
             var imagePngBase64 = _clipboardTextReader.TryReadImagePngBase64();
             imageWatch.Stop();
@@ -418,22 +438,7 @@ public sealed class ClipboardService : IClipboardService
             if (imagePngBase64 is not null)
             {
                 await CaptureImageAsync(imagePngBase64, e.ChangedAt, cancellationToken);
-                return;
             }
-
-            var textWatch = Stopwatch.StartNew();
-            var text = _clipboardTextReader.TryReadText();
-            textWatch.Stop();
-            LogPerf("TextReadMs", textWatch.ElapsedMilliseconds, ("HasText", text is not null));
-            if (text is null)
-            {
-                return;
-            }
-
-            var foreground = _foregroundAppService.GetCurrent();
-            await CaptureTextAsync(
-                new ClipboardCapture(text, foreground.WindowTitle, foreground.ProcessName, e.ChangedAt),
-                cancellationToken);
         }
         catch (OperationCanceledException)
         {

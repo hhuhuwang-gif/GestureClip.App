@@ -115,6 +115,7 @@ public sealed class SettingsViewModel : INotifyPropertyChanged
     private BuiltInGestureAction _newGestureAction = BuiltInGestureAction.Copy;
     private bool _newGestureAddConfirmationPending;
     private string _recordGestureStatusText = "按住左键在方框里画一次。";
+    private string _recommendedGestureStatusText = "已有的自定义手势不会被删除；已存在的手势会自动跳过。";
     private string _workerLevelText = "Lv.1 初入工位";
     private string _workerXpText = "XP 0 / 50";
     private bool _workerLevelShowLevelUpPopup;
@@ -255,6 +256,7 @@ public sealed class SettingsViewModel : INotifyPropertyChanged
         ClearAllClipboardItemsCommand = new AsyncRelayCommand(_ => ClearAllClipboardItemsAsync());
         ClearUnpinnedClipboardItemsCommand = new AsyncRelayCommand(_ => ClearUnpinnedClipboardItemsAsync());
         ApplyClipboardCleanupCommand = new AsyncRelayCommand(_ => ApplyClipboardCleanupAsync());
+        ApplyRecommendedGestureBindingsCommand = new AsyncRelayCommand(_ => ApplyRecommendedGestureBindingsAsync());
         AddCustomGestureBindingCommand = new AsyncRelayCommand(_ => AddCustomGestureBindingAsync());
         DeleteSelectedGestureBindingCommand = new AsyncRelayCommand(_ => DeleteSelectedGestureBindingAsync());
         SetNewGesturePatternCommand = new RelayCommand(SetNewGesturePattern);
@@ -420,6 +422,23 @@ public sealed class SettingsViewModel : INotifyPropertyChanged
 
     public ObservableCollection<GestureBindingCardViewModel> AdvancedGestureBindingCards { get; } = [];
 
+    public IReadOnlyList<RecommendedGestureBindingViewModel> RecommendedGestureBindings { get; } = BuildRecommendedGestureBindings();
+
+    public string RecommendedGestureStatusText
+    {
+        get => _recommendedGestureStatusText;
+        private set
+        {
+            if (_recommendedGestureStatusText == value)
+            {
+                return;
+            }
+
+            _recommendedGestureStatusText = value;
+            OnPropertyChanged();
+        }
+    }
+
     public GestureBindingCardViewModel? SelectedGestureBindingCard
     {
         get => _selectedGestureBindingCard;
@@ -430,7 +449,17 @@ public sealed class SettingsViewModel : INotifyPropertyChanged
                 return;
             }
 
+            if (_selectedGestureBindingCard is not null)
+            {
+                _selectedGestureBindingCard.IsSelected = false;
+            }
+
             _selectedGestureBindingCard = value;
+            if (_selectedGestureBindingCard is not null)
+            {
+                _selectedGestureBindingCard.IsSelected = true;
+            }
+
             OnPropertyChanged();
             OnPropertyChanged(nameof(HasSelectedGestureBinding));
             OnPropertyChanged(nameof(SelectedGestureBindingPattern));
@@ -472,10 +501,20 @@ public sealed class SettingsViewModel : INotifyPropertyChanged
     public string SelectedGestureBindingShortcutText => SelectedGestureBindingCard?.ShortcutText ?? "";
 
     public string SelectedGestureBindingEmptyText => SelectedGestureBindingCard is null
-        ? "请选择左侧手势进行编辑"
+        ? "还没有选中手势。请先从上方卡片选择一个手势，再更换动作或删除。"
         : SelectedGestureBindingCard.SelectedAction == BuiltInGestureAction.None
             ? "该手势尚未绑定动作，选择一个动作进行绑定。"
             : "修改后会自动保存。";
+
+    public string GestureBindingEmptyStateText => GestureBindingCards.Count == 0
+        ? "还没有自定义手势。你可以先使用推荐配置，也可以添加一个自己的手势。"
+        : string.Empty;
+
+    public string CustomGestureEmptyStateText => HasCustomGestureCards
+        ? string.Empty
+        : "还没有自定义手势。你可以先使用推荐配置，也可以添加一个自己的手势。";
+
+    private bool HasCustomGestureCards => GestureBindingCards.Any(card => !GesturePatterns.Contains(card.Pattern));
 
     public IReadOnlyList<GestureTriggerModeViewModel> GestureTriggerModes { get; } =
     [
@@ -505,6 +544,8 @@ public sealed class SettingsViewModel : INotifyPropertyChanged
     public ICommand ClearUnpinnedClipboardItemsCommand { get; }
 
     public ICommand ApplyClipboardCleanupCommand { get; }
+
+    public ICommand ApplyRecommendedGestureBindingsCommand { get; }
 
     public ICommand AddCustomGestureBindingCommand { get; }
 
@@ -1680,7 +1721,7 @@ public sealed class SettingsViewModel : INotifyPropertyChanged
         ? "先画一个手势"
         : _newGestureAddConfirmationPending
             ? "确认添加到手势列表"
-            : "添加到手势列表";
+            : "确认添加到手势列表";
 
     public string RecordGestureStatusText
     {
@@ -2200,15 +2241,7 @@ public sealed class SettingsViewModel : INotifyPropertyChanged
         foreach (var pattern in patterns)
         {
             var action = bindings.TryGetValue(pattern, out var mappedAction) ? mappedAction : BuiltInGestureAction.None;
-            var card = new GestureBindingCardViewModel(
-                pattern,
-                DirectionText(pattern),
-                GestureName(pattern),
-                PrimaryGesturePatterns.Contains(pattern),
-                action,
-                GestureActionOptions,
-                ApplyGestureBindingAsync,
-                DeleteGestureBindingAsync);
+            var card = CreateGestureBindingCard(pattern, action);
             GestureBindingCards.Add(card);
             if (card.IsCommon || card.IsBound)
             {
@@ -2224,6 +2257,20 @@ public sealed class SettingsViewModel : INotifyPropertyChanged
             ?? GestureBindingCards.FirstOrDefault(card => card.Pattern == previousPattern)
             ?? PrimaryGestureBindingCards.FirstOrDefault()
             ?? GestureBindingCards.FirstOrDefault();
+        NotifyGestureBindingEmptyStatesChanged();
+    }
+
+    private GestureBindingCardViewModel CreateGestureBindingCard(string pattern, BuiltInGestureAction action)
+    {
+        return new GestureBindingCardViewModel(
+            pattern,
+            DirectionText(pattern),
+            GestureName(pattern),
+            PrimaryGesturePatterns.Contains(pattern),
+            action,
+            GestureActionOptions,
+            ApplyGestureBindingAsync,
+            DeleteGestureBindingAsync);
     }
 
     private async Task ApplyGestureBindingAsync(GestureBindingCardViewModel card)
@@ -2259,7 +2306,11 @@ public sealed class SettingsViewModel : INotifyPropertyChanged
     {
         if (!_confirmationService.Confirm(
             "删除这个手势",
-            $"将删除手势 {DirectionText(card.Pattern)}（{card.Pattern}）当前绑定的“{card.ActionName}”。是否继续？"))
+            $"要删除这个手势吗？{Environment.NewLine}{Environment.NewLine}" +
+            $"手势：{card.GestureName}（{card.Pattern}）{Environment.NewLine}" +
+            $"方向：{DirectionText(card.Pattern)}{Environment.NewLine}" +
+            $"当前动作：{card.ActionName}{Environment.NewLine}{Environment.NewLine}" +
+            "删除后，这个手势不会再触发任何动作。"))
         {
             return;
         }
@@ -2275,6 +2326,7 @@ public sealed class SettingsViewModel : INotifyPropertyChanged
                 : GestureBindingCards[Math.Min(index, GestureBindingCards.Count - 1)];
         }
 
+        NotifyGestureBindingEmptyStatesChanged();
         await SaveGestureBindingsAsync();
     }
 
@@ -2283,6 +2335,74 @@ public sealed class SettingsViewModel : INotifyPropertyChanged
         return SelectedGestureBindingCard is null
             ? Task.CompletedTask
             : DeleteGestureBindingAsync(SelectedGestureBindingCard);
+    }
+
+    private async Task ApplyRecommendedGestureBindingsAsync()
+    {
+        if (!_confirmationService.Confirm(
+            "添加推荐手势",
+            $"要添加推荐手势吗？{Environment.NewLine}{Environment.NewLine}" +
+            $"已有的自定义手势不会被删除。{Environment.NewLine}" +
+            "如果某个推荐手势已经存在，会自动跳过。"))
+        {
+            RecommendedGestureStatusText = "已取消，现有手势没有变化。";
+            return;
+        }
+
+        var added = 0;
+        var skipped = 0;
+        GestureBindingCardViewModel? firstAdded = null;
+
+        foreach (var recommended in RecommendedGestureBindings)
+        {
+            var existing = GestureBindingCards.FirstOrDefault(card =>
+                string.Equals(card.Pattern, recommended.Pattern, StringComparison.Ordinal));
+            if (existing is not null && existing.IsBound)
+            {
+                skipped++;
+                continue;
+            }
+
+            if (existing is not null)
+            {
+                existing.SetSelectedActionWithoutSaving(recommended.Action);
+                RefreshGestureCardBuckets(existing);
+                firstAdded ??= existing;
+                added++;
+                continue;
+            }
+
+            var card = CreateGestureBindingCard(recommended.Pattern, recommended.Action);
+            GestureBindingCards.Add(card);
+            if (card.IsCommon || card.IsBound)
+            {
+                PrimaryGestureBindingCards.Add(card);
+            }
+            else
+            {
+                AdvancedGestureBindingCards.Add(card);
+            }
+
+            firstAdded ??= card;
+            added++;
+        }
+
+        if (added == 0)
+        {
+            RecommendedGestureStatusText = "推荐手势已经都在列表里。";
+            return;
+        }
+
+        NotifyGestureBindingEmptyStatesChanged();
+        if (firstAdded is not null)
+        {
+            SelectedGestureBindingCard = firstAdded;
+        }
+
+        RecommendedGestureStatusText = skipped > 0
+            ? $"已添加 {added} 个推荐手势，已跳过 {skipped} 个已存在手势。"
+            : $"已添加 {added} 个推荐手势。";
+        await SaveGestureBindingsAsync();
     }
 
     private async Task SaveGestureBindingsAsync()
@@ -2326,15 +2446,7 @@ public sealed class SettingsViewModel : INotifyPropertyChanged
             return;
         }
 
-        var card = new GestureBindingCardViewModel(
-            pattern,
-            DirectionText(pattern),
-            GestureName(pattern),
-            PrimaryGesturePatterns.Contains(pattern),
-            NewGestureAction,
-            GestureActionOptions,
-            ApplyGestureBindingAsync,
-            DeleteGestureBindingAsync);
+        var card = CreateGestureBindingCard(pattern, NewGestureAction);
         GestureBindingCards.Add(card);
         if (card.IsCommon || card.IsBound)
         {
@@ -2346,7 +2458,14 @@ public sealed class SettingsViewModel : INotifyPropertyChanged
         }
         NewGesturePattern = "";
         await ApplyGestureBindingAsync(card);
+        NotifyGestureBindingEmptyStatesChanged();
         SelectGestureBindingAfterRefresh(pattern);
+    }
+
+    private void NotifyGestureBindingEmptyStatesChanged()
+    {
+        OnPropertyChanged(nameof(GestureBindingEmptyStateText));
+        OnPropertyChanged(nameof(CustomGestureEmptyStateText));
     }
 
     private void SelectGestureBindingAfterRefresh(string pattern)
@@ -2618,6 +2737,16 @@ public sealed class SettingsViewModel : INotifyPropertyChanged
     {
         "U", "D", "UD", "DU", "L", "R", "LR", "RL", "DL", "DR", "R+L"
     };
+
+    private static IReadOnlyList<RecommendedGestureBindingViewModel> BuildRecommendedGestureBindings()
+    {
+        return
+        [
+            new("U", DirectionText("U"), GestureName("U"), BuiltInGestureAction.OpenClipboardOverlay, "向上划，快速打开剪贴板历史。"),
+            new("D", DirectionText("D"), GestureName("D"), BuiltInGestureAction.Paste, "向下划，执行当前版本已有的粘贴动作。"),
+            new("LR", DirectionText("LR"), GestureName("LR"), BuiltInGestureAction.Copy, "先左后右，复制当前选中的文字。")
+        ];
+    }
 
     private static string NormalizeGesturePattern(string? pattern)
     {
