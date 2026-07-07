@@ -102,8 +102,11 @@ public sealed class GlobalHotkeyServiceTests
 
         registrar.RaiseHotkeyPressed();
         await WaitForAsync(() => overlay.ToggleCount == 1);
+        registrar.RaiseHotkeyPressed();
+        await WaitForAsync(() => overlay.ToggleCount == 2);
 
-        Assert.Equal(1, overlay.ToggleCount);
+        Assert.Equal(2, overlay.ToggleCount);
+        Assert.Equal(0, overlay.ShowCount);
     }
 
     private static GlobalHotkeyService CreateService(
