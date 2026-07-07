@@ -20,9 +20,14 @@ public sealed class DirectionGestureRecognizer : IMouseGestureRecognizer
             return GestureResult.Invalid();
         }
 
-        if (TotalDistance(points) < options.TriggerThreshold)
+        if (MaxDistanceFromStart(points) < options.TriggerThreshold)
         {
             return GestureResult.Invalid();
+        }
+
+        if (TryRecognizeStableStraightStroke(points, options, out var straightDirection))
+        {
+            return new GestureResult(straightDirection.ToString(), true);
         }
 
         var directions = new List<char>();
@@ -57,6 +62,53 @@ public sealed class DirectionGestureRecognizer : IMouseGestureRecognizer
         return new GestureResult(pattern, pattern.Length <= MaxPatternSegments);
     }
 
+    private static bool TryRecognizeStableStraightStroke(
+        IReadOnlyList<GesturePoint> points,
+        GestureOptions options,
+        out char direction)
+    {
+        var first = points[0];
+        var last = points[^1];
+        var dx = last.X - first.X;
+        var dy = last.Y - first.Y;
+        var minX = first.X;
+        var maxX = first.X;
+        var minY = first.Y;
+        var maxY = first.Y;
+
+        for (var i = 1; i < points.Count; i++)
+        {
+            var point = points[i];
+            minX = Math.Min(minX, point.X);
+            maxX = Math.Max(maxX, point.X);
+            minY = Math.Min(minY, point.Y);
+            maxY = Math.Max(maxY, point.Y);
+        }
+
+        var horizontalSpan = maxX - minX;
+        var verticalSpan = maxY - minY;
+        var allowedOrthogonalNoise = options.SegmentThreshold * 1.25;
+
+        if (Math.Abs(dx) >= options.TriggerThreshold &&
+            verticalSpan <= allowedOrthogonalNoise &&
+            horizontalSpan >= verticalSpan * 2)
+        {
+            direction = dx < 0 ? 'L' : 'R';
+            return true;
+        }
+
+        if (Math.Abs(dy) >= options.TriggerThreshold &&
+            horizontalSpan <= allowedOrthogonalNoise &&
+            verticalSpan >= horizontalSpan * 2)
+        {
+            direction = dy < 0 ? 'U' : 'D';
+            return true;
+        }
+
+        direction = default;
+        return false;
+    }
+
     private static double Distance(GesturePoint first, GesturePoint second)
     {
         var dx = second.X - first.X;
@@ -64,14 +116,15 @@ public sealed class DirectionGestureRecognizer : IMouseGestureRecognizer
         return Math.Sqrt(dx * dx + dy * dy);
     }
 
-    private static double TotalDistance(IReadOnlyList<GesturePoint> points)
+    private static double MaxDistanceFromStart(IReadOnlyList<GesturePoint> points)
     {
-        var total = 0d;
+        var maxDistance = 0d;
+        var start = points[0];
         for (var i = 1; i < points.Count; i++)
         {
-            total += Distance(points[i - 1], points[i]);
+            maxDistance = Math.Max(maxDistance, Distance(start, points[i]));
         }
 
-        return total;
+        return maxDistance;
     }
 }
