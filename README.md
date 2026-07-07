@@ -7,40 +7,15 @@
 
 ![GestureClip 首页](docs/images/settings-home.png)
 
-## 30 秒上手
+## 30 秒看懂
 
-### 第一步：打开剪贴板历史
+- `Ctrl + \`` 打开 / 关闭剪贴板历史。
+- 复制过的文字、图片和截图可以找回来。
+- 按住鼠标右键上划复制、下划粘贴、左划后退、右划前进。
+- 自定义手势可以绑定搜索、截图、标签页、粘贴并回车等动作。
+- 工位小熊是可选趣味模块，可显示今日收益、下班倒计时、休息提醒和今日报告。
 
-按：
-
-```text
-Ctrl + `
-```
-
-会打开你最近复制过的文字、图片和截图。本地保存，不登录，不上传。
-
-### 第二步：找回刚才复制过的内容
-
-- 双击一条历史：复制到系统剪贴板并关闭面板。
-- 选中后按 Enter 或点“粘贴”：直接粘贴并关闭面板。
-- 点“复制”：只复制，不关闭面板。
-
-### 第三步：试一次鼠标右键手势
-
-按住鼠标右键划一下再松开：
-
-| 手势 | 默认动作 |
-| --- | --- |
-| 上划 | 复制 |
-| 下划 | 粘贴 |
-| 左划 | 后退 |
-| 右划 | 前进 |
-
-想改动作：打开「设置」→「动作绑定」，选中手势后换动作即可自动保存。
-
-### 第四步：遇到问题一键反馈
-
-打开「设置」里的诊断功能，可以导出诊断包。诊断包用于排查本机问题，不会上传你的剪贴板内容。
+> TODO：这里建议放一张 30 秒演示 GIF 或短视频，展示剪贴板面板、右键手势和工位小熊 HUD。
 
 ## 适合谁用？
 
@@ -52,12 +27,12 @@ Ctrl + `
 
 ## 现在是什么版本？
 
-当前版本：**v0.6.11 Beta**
+当前版本：**v0.6.12 Beta**
 
 下载地址：
 
-- [GestureClip-v0.6.11-beta-win-x64.zip](https://github.com/hhuhuwang-gif/GestureClip.App/releases/download/v0.6.11-beta/GestureClip-v0.6.11-beta-win-x64.zip)
-- [Release 页面](https://github.com/hhuhuwang-gif/GestureClip.App/releases/tag/v0.6.11-beta)
+- [GestureClip-v0.6.12-beta-win-x64.zip](https://github.com/hhuhuwang-gif/GestureClip.App/releases/download/v0.6.8-beta/GestureClip-v0.6.12-beta-win-x64.zip)
+- [Release 页面](https://github.com/hhuhuwang-gif/GestureClip.App/releases/tag/v0.6.8-beta)
 
 解压后双击：
 
@@ -215,10 +190,10 @@ GestureClip 默认本地运行：
 
 ## 如何覆盖更新？
 
-老用户从 [Latest Release](https://github.com/hhuhuwang-gif/GestureClip.App/releases/latest) 下载最新的 Windows x64 zip 后，直接覆盖旧程序目录即可。当前版本文件名示例：
+老用户下载新版 zip 后直接覆盖旧程序目录即可：
 
 ```text
-GestureClip-v0.6.11-beta-win-x64.zip
+GestureClip-v0.6.4-beta-win-x64.zip
 ```
 
 步骤：
@@ -228,8 +203,6 @@ GestureClip-v0.6.11-beta-win-x64.zip
 3. 解压新版 zip。
 4. 覆盖旧程序目录。
 5. 双击 `GestureClip.exe`。
-
-覆盖更新只替换程序文件，不会删除你的剪贴板历史、设置和本地数据库。
 
 ## 常见问题
 
@@ -321,3 +294,4 @@ https://github.com/hhuhuwang-gif/GestureClip.App
 ![HUD](docs/images/gesture-hud-workbear.png)
 
 ![小熊](docs/images/workbear-panel.png)
+

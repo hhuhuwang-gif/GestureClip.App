@@ -36,6 +36,10 @@ public sealed class GestureBindingCardViewModel : INotifyPropertyChanged
 
     public string DirectionText { get; }
 
+    public string ShortDirectionText => string.Equals(Pattern, "R+L", StringComparison.Ordinal)
+        ? "R+L"
+        : DirectionText;
+
     public string GestureName { get; }
 
     public bool IsCommon { get; }
@@ -45,6 +49,10 @@ public sealed class GestureBindingCardViewModel : INotifyPropertyChanged
     public string PatternText => $"手势码：{Pattern}";
 
     public string BindingStatusText => IsBound ? "已绑定" : "未绑定";
+
+    public string DisplayText => $"{GestureName}  {PatternText}  →  {ActionName}";
+
+    public string ActionSummaryText => $"{PatternText}  →  {ActionName}";
 
     public IReadOnlyList<GestureActionOptionViewModel> ActionOptions { get; }
 
@@ -66,6 +74,8 @@ public sealed class GestureBindingCardViewModel : INotifyPropertyChanged
             OnPropertyChanged(nameof(ShortcutText));
             OnPropertyChanged(nameof(IsBound));
             OnPropertyChanged(nameof(BindingStatusText));
+            OnPropertyChanged(nameof(DisplayText));
+            OnPropertyChanged(nameof(ActionSummaryText));
             _ = _saveAsync(this);
         }
     }

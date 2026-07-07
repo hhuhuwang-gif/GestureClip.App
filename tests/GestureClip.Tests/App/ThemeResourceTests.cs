@@ -241,27 +241,6 @@ public sealed class ThemeResourceTests
     }
 
     [Fact]
-    public void SettingsWindow_home_page_explains_thirty_second_quick_start()
-    {
-        var path = FindRepositoryFile("src", "GestureClip.App", "SettingsWindow.xaml");
-        var xaml = File.ReadAllText(path);
-
-        Assert.Contains("30 秒上手", xaml);
-        Assert.Contains("第一步：打开剪贴板历史", xaml);
-        Assert.Contains("Ctrl + `", xaml);
-        Assert.Contains("第二步：双击找回内容", xaml);
-        Assert.Contains("第三步：试一次右键手势", xaml);
-        Assert.Contains("不登录", xaml);
-        Assert.Contains("设置 → 动作绑定", xaml);
-        Assert.Contains("下载 zip", xaml);
-        Assert.Contains("解压", xaml);
-        Assert.Contains("双击 GestureClip.exe", xaml);
-        Assert.Contains("数据只保存在本机", xaml);
-        Assert.Contains("不上传剪贴板内容", xaml);
-        Assert.Contains("导出诊断包", xaml);
-    }
-
-    [Fact]
     public void SettingsWindow_keeps_readonly_textbox_bindings_one_way()
     {
         var path = FindRepositoryFile("src", "GestureClip.App", "SettingsWindow.xaml");
@@ -270,12 +249,8 @@ public sealed class ThemeResourceTests
         Assert.Contains("Text=\"{Binding DatabasePath, Mode=OneWay}\"", xaml);
         Assert.Contains("Text=\"{Binding LogDirectory, Mode=OneWay}\"", xaml);
         Assert.Contains("Text=\"{Binding DiagnosticsText, Mode=OneWay}\"", xaml);
-        Assert.Contains("打开日志目录", xaml);
-        Assert.Contains("打开数据目录", xaml);
         Assert.Contains("导出诊断包", xaml);
         Assert.Contains("ExportDiagnosticsCommand", xaml);
-        Assert.Contains("不会自动上传", xaml);
-        Assert.Contains("不包含剪贴板正文", xaml);
         Assert.DoesNotContain("Text=\"{Binding DatabasePath}\"", xaml);
         Assert.DoesNotContain("Text=\"{Binding LogDirectory}\"", xaml);
         Assert.DoesNotContain("Text=\"{Binding DiagnosticsText}\"", xaml);
@@ -358,19 +333,23 @@ public sealed class ThemeResourceTests
         Assert.Contains("GestureBindingListPanel", xaml);
         Assert.Contains("GestureBindingDetailPanel", xaml);
         Assert.Contains("GestureBindingPageScrollViewer", xaml);
+        Assert.Contains("WindowBackground_MouseLeftButtonDown", xaml);
         Assert.Contains("Click=\"ScrollToCustomGestureDesigner_Click\"", xaml);
         Assert.Contains("MinHeight=\"220\"", xaml);
         Assert.Contains("删除这个手势", xaml);
-        Assert.Contains("Command=\"{Binding DeleteCommand}\"", xaml);
-        Assert.DoesNotContain("BasedOn=\"{StaticResource {x:Type ListBoxItem}}\"", xaml);
-        Assert.Contains("<BooleanToVisibilityConverter x:Key=\"BooleanToVisibilityConverter\" />", xaml);
-        Assert.Contains("当前选中", xaml);
-        Assert.Contains("RelativeSource={RelativeSource AncestorType=ListBoxItem}", xaml);
-        Assert.Contains("VirtualizingStackPanel.IsVirtualizing=\"True\"", xaml);
-        Assert.Contains("VirtualizingStackPanel.VirtualizationMode=\"Recycling\"", xaml);
-        Assert.Contains("SelectedItem=\"{Binding SelectedPrimaryGestureBindingCard, Mode=TwoWay}\"", xaml);
-        Assert.Contains("SelectedItem=\"{Binding SelectedAdvancedGestureBindingCard, Mode=TwoWay}\"", xaml);
-        Assert.Contains("动作编辑器会跟着页面一起滑动，不会固定挡住内容。", xaml);
+        Assert.Contains("轻量模式，避免打开页面卡死", xaml);
+        Assert.Contains("常用手势一览", xaml);
+        Assert.Contains("SelectGestureBindingCommand", xaml);
+        Assert.Contains("CommandParameter=\"{Binding Pattern}\"", xaml);
+        Assert.Contains("<UniformGrid Columns=\"3\" />", xaml);
+        Assert.Contains("Height=\"74\"", xaml);
+        Assert.Contains("Focusable=\"False\"", xaml);
+        Assert.Contains("FocusVisualStyle=\"{x:Null}\"", xaml);
+        Assert.Contains("ShortDirectionText", xaml);
+        Assert.Contains("ActionSummaryText", xaml);
+        Assert.DoesNotContain("<ListBox ItemsSource=\"{Binding PrimaryGestureBindingCards}\"", xaml);
+        Assert.DoesNotContain("<ListBox ItemsSource=\"{Binding AdvancedGestureBindingCards}\"", xaml);
+        Assert.DoesNotContain("SelectedItem=\"{Binding SelectedGestureBindingCard, Mode=TwoWay}\"", xaml);
 
 
         var detailStart = xaml.IndexOf("x:Name=\"GestureBindingDetailPanel\"", StringComparison.Ordinal);
@@ -379,7 +358,7 @@ public sealed class ThemeResourceTests
         var detailHeader = xaml[detailStart..detailEnd];
         Assert.DoesNotContain("Grid.Column=\"1\"", detailHeader);
         Assert.DoesNotContain("Margin=\"14,0,0,0\"", detailHeader);
-        Assert.Contains("Margin=\"0,14,0,0\"", detailHeader);
+        Assert.Contains("Margin=\"0,16,0,0\"", detailHeader);
     }
 
     [Fact]

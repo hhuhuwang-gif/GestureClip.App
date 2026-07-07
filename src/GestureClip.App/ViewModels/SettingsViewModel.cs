@@ -123,8 +123,6 @@ public sealed class SettingsViewModel : INotifyPropertyChanged
     private bool _hudStatusLevelEnabled;
     private string _lastDiagnosticsExportText = "尚未导出诊断包";
     private GestureBindingCardViewModel? _selectedGestureBindingCard;
-    private GestureBindingCardViewModel? _selectedPrimaryGestureBindingCard;
-    private GestureBindingCardViewModel? _selectedAdvancedGestureBindingCard;
     private readonly DispatcherTimer _diagnosticsTimer;
 
     public SettingsViewModel(
@@ -195,10 +193,10 @@ public sealed class SettingsViewModel : INotifyPropertyChanged
         _edgeTriggerLeftEdgeXButton1Action = _settingsService.Get(SettingKeys.EdgeTriggerLeftEdgeXButton1Action, BuiltInGestureAction.SwitchApp);
         _edgeTriggerLeftEdgeXButton2Action = _settingsService.Get(SettingKeys.EdgeTriggerLeftEdgeXButton2Action, BuiltInGestureAction.TaskSwitcher);
         _edgeTriggerTopRightWheelAction = _settingsService.Get(SettingKeys.EdgeTriggerTopRightWheelAction, BuiltInGestureAction.TaskSwitcher);
-        _edgeTriggerHotZoneSize = Math.Clamp(_settingsService.Get(SettingKeys.EdgeTriggerHotZoneSize, 8), 2, 64);
-        _edgeTriggerDwellMs = Math.Clamp(_settingsService.Get(SettingKeys.EdgeTriggerDwellMs, 160), 50, 2000);
-        _edgeTriggerCooldownMs = Math.Clamp(_settingsService.Get(SettingKeys.EdgeTriggerCooldownMs, 450), 150, 5000);
-        _edgeTriggerSlideThreshold = Math.Clamp(_settingsService.Get(SettingKeys.EdgeTriggerSlideThreshold, 56), 24, 400);
+        _edgeTriggerHotZoneSize = _settingsService.Get(SettingKeys.EdgeTriggerHotZoneSize, 8);
+        _edgeTriggerDwellMs = _settingsService.Get(SettingKeys.EdgeTriggerDwellMs, 160);
+        _edgeTriggerCooldownMs = _settingsService.Get(SettingKeys.EdgeTriggerCooldownMs, 450);
+        _edgeTriggerSlideThreshold = _settingsService.Get(SettingKeys.EdgeTriggerSlideThreshold, 56);
         _edgeTriggerSlideLeftEnabled = _settingsService.Get(SettingKeys.EdgeTriggerSlideLeftEnabled, false);
         _edgeTriggerSlideRightEnabled = _settingsService.Get(SettingKeys.EdgeTriggerSlideRightEnabled, false);
         _edgeTriggerSlideTopEnabled = _settingsService.Get(SettingKeys.EdgeTriggerSlideTopEnabled, false);
@@ -208,7 +206,7 @@ public sealed class SettingsViewModel : INotifyPropertyChanged
         _edgeTriggerSlideTopAction = _settingsService.Get(SettingKeys.EdgeTriggerSlideTopAction, BuiltInGestureAction.StartMenu);
         _edgeTriggerSlideBottomAction = _settingsService.Get(SettingKeys.EdgeTriggerSlideBottomAction, BuiltInGestureAction.PasteAndEnter);
         _selectedGesturePreset = _settingsService.Get(SettingKeys.GesturePreset, GesturePreset.EditEnhanced);
-        _gestureTriggerThreshold = Math.Clamp(_settingsService.Get(SettingKeys.GestureTriggerThreshold, 20), 4, 200);
+        _gestureTriggerThreshold = _settingsService.Get(SettingKeys.GestureTriggerThreshold, 20);
         _clipboardMaxItems = _settingsService.Get(SettingKeys.ClipboardMaxItems, 1000);
         _clipboardRetentionDays = _settingsService.Get(SettingKeys.ClipboardRetentionDays, 30);
         _workstationEnabled = _settingsService.Get(SettingKeys.WorkstationEnabled, true);
@@ -263,6 +261,7 @@ public sealed class SettingsViewModel : INotifyPropertyChanged
         SetNewGestureActionCommand = new RelayCommand(SetNewGestureAction);
         SetNewGestureTemplateCommand = new RelayCommand(SetNewGestureTemplate);
         SetSelectedGestureActionCommand = new RelayCommand(SetSelectedGestureAction);
+        SelectGestureBindingCommand = new RelayCommand(SelectGestureBinding);
         AppendGestureDirectionCommand = new RelayCommand(AppendGestureDirection);
         RemoveLastGestureDirectionCommand = new RelayCommand(_ => RemoveLastGestureDirection());
         ClearNewGesturePatternCommand = new RelayCommand(_ => ClearNewGesturePattern());
@@ -432,72 +431,33 @@ public sealed class SettingsViewModel : INotifyPropertyChanged
             }
 
             _selectedGestureBindingCard = value;
-            _selectedPrimaryGestureBindingCard = value is not null && PrimaryGestureBindingCards.Contains(value) ? value : null;
-            _selectedAdvancedGestureBindingCard = value is not null && AdvancedGestureBindingCards.Contains(value) ? value : null;
             OnPropertyChanged();
-            OnPropertyChanged(nameof(SelectedPrimaryGestureBindingCard));
-            OnPropertyChanged(nameof(SelectedAdvancedGestureBindingCard));
             OnPropertyChanged(nameof(HasSelectedGestureBinding));
             OnPropertyChanged(nameof(SelectedGestureBindingPattern));
             OnPropertyChanged(nameof(SelectedGestureBindingDirectionText));
             OnPropertyChanged(nameof(SelectedGestureBindingActionName));
             OnPropertyChanged(nameof(SelectedGestureBindingShortcutText));
             OnPropertyChanged(nameof(SelectedGestureBindingEmptyText));
+            OnPropertyChanged(nameof(SelectedGestureBindingSelectionKey));
         }
     }
 
-
-    public GestureBindingCardViewModel? SelectedPrimaryGestureBindingCard
+    public string SelectedGestureBindingSelectionKey
     {
-        get => _selectedPrimaryGestureBindingCard;
+        get => SelectedGestureBindingCard?.Pattern ?? "";
         set
         {
-            if (ReferenceEquals(_selectedPrimaryGestureBindingCard, value))
+            if (string.IsNullOrWhiteSpace(value))
             {
                 return;
             }
 
-            _selectedPrimaryGestureBindingCard = value;
-            OnPropertyChanged();
-            if (value is null)
+            var card = GestureBindingCards.FirstOrDefault(item =>
+                string.Equals(item.Pattern, value, StringComparison.Ordinal));
+            if (card is not null)
             {
-                return;
+                SelectedGestureBindingCard = card;
             }
-
-            if (_selectedAdvancedGestureBindingCard is not null)
-            {
-                _selectedAdvancedGestureBindingCard = null;
-                OnPropertyChanged(nameof(SelectedAdvancedGestureBindingCard));
-            }
-
-            SelectedGestureBindingCard = value;
-        }
-    }
-
-    public GestureBindingCardViewModel? SelectedAdvancedGestureBindingCard
-    {
-        get => _selectedAdvancedGestureBindingCard;
-        set
-        {
-            if (ReferenceEquals(_selectedAdvancedGestureBindingCard, value))
-            {
-                return;
-            }
-
-            _selectedAdvancedGestureBindingCard = value;
-            OnPropertyChanged();
-            if (value is null)
-            {
-                return;
-            }
-
-            if (_selectedPrimaryGestureBindingCard is not null)
-            {
-                _selectedPrimaryGestureBindingCard = null;
-                OnPropertyChanged(nameof(SelectedPrimaryGestureBindingCard));
-            }
-
-            SelectedGestureBindingCard = value;
         }
     }
 
@@ -557,6 +517,8 @@ public sealed class SettingsViewModel : INotifyPropertyChanged
     public ICommand SetNewGestureTemplateCommand { get; }
 
     public ICommand SetSelectedGestureActionCommand { get; }
+
+    public ICommand SelectGestureBindingCommand { get; }
 
     public ICommand AppendGestureDirectionCommand { get; }
 
@@ -1357,13 +1319,12 @@ public sealed class SettingsViewModel : INotifyPropertyChanged
         get => _gestureTriggerThreshold;
         set
         {
-            var normalized = Math.Clamp(value, 4, 200);
-            if (_gestureTriggerThreshold == normalized)
+            if (_gestureTriggerThreshold == value)
             {
                 return;
             }
 
-            _gestureTriggerThreshold = normalized;
+            _gestureTriggerThreshold = Math.Clamp(value, 4, 200);
             UpdateGestureSettingsSnapshot();
             OnPropertyChanged();
             _ = _settingsService.SetAsync(SettingKeys.GestureTriggerThreshold, _gestureTriggerThreshold, CancellationToken.None);
@@ -2054,19 +2015,12 @@ public sealed class SettingsViewModel : INotifyPropertyChanged
 
     private async Task ExportDiagnosticsAsync()
     {
-        try
+        var packagePath = await _diagnosticsService.ExportPackageAsync(CancellationToken.None);
+        LastDiagnosticsExportText = $"已导出：{packagePath}";
+        var directory = Path.GetDirectoryName(packagePath);
+        if (!string.IsNullOrWhiteSpace(directory))
         {
-            var packagePath = await _diagnosticsService.ExportPackageAsync(CancellationToken.None);
-            LastDiagnosticsExportText = $"诊断包已保存到：{packagePath}\n可以把这个 zip 发给开发者排查问题；它只用于排查本机运行状态，不包含剪贴板正文、数据库或图片原始内容。";
-            var directory = Path.GetDirectoryName(packagePath);
-            if (!string.IsNullOrWhiteSpace(directory))
-            {
-                OpenDirectory(directory);
-            }
-        }
-        catch
-        {
-            LastDiagnosticsExportText = "导出诊断包失败：请确认数据目录可写后重试，或先点“打开日志目录”把日志发给开发者排查。诊断包和日志都不应该包含剪贴板正文。";
+            OpenDirectory(directory);
         }
     }
 
@@ -2444,6 +2398,23 @@ public sealed class SettingsViewModel : INotifyPropertyChanged
         {
             SelectedGestureBindingCard.SelectedAction = action;
         }
+    }
+
+    private void SelectGestureBinding(object? parameter)
+    {
+        var pattern = parameter switch
+        {
+            GestureBindingCardViewModel card => card.Pattern,
+            string text => text,
+            _ => ""
+        };
+
+        if (string.IsNullOrWhiteSpace(pattern))
+        {
+            return;
+        }
+
+        SelectedGestureBindingSelectionKey = pattern;
     }
 
     private static bool TryParseGestureAction(object? parameter, out BuiltInGestureAction action)

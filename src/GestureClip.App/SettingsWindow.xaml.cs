@@ -6,6 +6,7 @@ using System.Windows.Documents;
 using System.Windows.Input;
 using System.Windows.Interop;
 using System.Windows.Media;
+using GestureClip.App.Controls;
 using GestureClip.Core.Gestures;
 using GestureClip.App.Services;
 using GestureClip.App.ViewModels;
@@ -58,7 +59,14 @@ public partial class SettingsWindow : Window
             return;
         }
 
-        DragMove();
+        try
+        {
+            DragMove();
+            e.Handled = true;
+        }
+        catch (InvalidOperationException)
+        {
+        }
     }
 
     private void WindowBackground_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
@@ -71,6 +79,7 @@ public partial class SettingsWindow : Window
         try
         {
             DragMove();
+            e.Handled = true;
         }
         catch (InvalidOperationException)
         {
@@ -176,26 +185,6 @@ public partial class SettingsWindow : Window
         RecordGesturePolyline.Points.Add(new System.Windows.Point(x, y));
     }
 
-    private static bool CanDragFrom(DependencyObject? source)
-    {
-        while (source is not null)
-        {
-            if (source is WpfButtonBase
-                or WpfTextBoxBase
-                or WpfSelector
-                or WpfScrollBar
-                or ScrollViewer
-                or Hyperlink)
-            {
-                return false;
-            }
-
-            source = VisualTreeHelper.GetParent(source);
-        }
-
-        return true;
-    }
-
     private void EnableTaskbarMinimizeBehavior()
     {
         var handle = new WindowInteropHelper(this).Handle;
@@ -218,6 +207,31 @@ public partial class SettingsWindow : Window
         e.Handled = true;
         GestureBindingPageScrollViewer.ScrollToVerticalOffset(
             GestureBindingPageScrollViewer.VerticalOffset - e.Delta);
+    }
+
+    private static bool CanDragFrom(DependencyObject? source)
+    {
+        while (source is not null)
+        {
+            if (source is WpfButtonBase
+                or WpfTextBoxBase
+                or WpfSelector
+                or WpfScrollBar
+                or TabItem
+                or ComboBoxItem
+                or ListBoxItem
+                or Expander
+                or ScrollViewer
+                or Hyperlink
+                or GesturePatternView)
+            {
+                return false;
+            }
+
+            source = VisualTreeHelper.GetParent(source);
+        }
+
+        return true;
     }
 
     private static T? FindAncestor<T>(DependencyObject? source)
