@@ -72,6 +72,76 @@ public sealed class DirectionGestureRecognizerTests
     }
 
     [Fact]
+    public void Recognize_rejects_below_threshold_movement()
+    {
+        var recognizer = new DirectionGestureRecognizer();
+
+        var result = recognizer.Recognize(
+            [
+                Point(0, 0, 0),
+                Point(8, 1, 50),
+                Point(12, -1, 100),
+                Point(15, 0, 150)
+            ],
+            Options);
+
+        Assert.False(result.IsValid);
+    }
+
+    [Fact]
+    public void Recognize_rejects_accidental_micro_drag_even_when_jitter_adds_distance()
+    {
+        var recognizer = new DirectionGestureRecognizer();
+
+        var result = recognizer.Recognize(
+            [
+                Point(0, 0, 0),
+                Point(17, 0, 60),
+                Point(0, 1, 120),
+                Point(17, 1, 180),
+                Point(0, 0, 240)
+            ],
+            Options);
+
+        Assert.False(result.IsValid);
+    }
+
+    [Fact]
+    public void Recognize_simplifies_zigzag_noise_in_intentional_right_stroke()
+    {
+        var recognizer = new DirectionGestureRecognizer();
+
+        var result = recognizer.Recognize(
+            [
+                Point(0, 0, 0),
+                Point(18, 0, 60),
+                Point(20, 18, 120),
+                Point(38, 18, 180),
+                Point(40, 0, 240),
+                Point(65, 0, 300)
+            ],
+            Options);
+
+        Assert.True(result.IsValid);
+        Assert.Equal("R", result.Pattern);
+    }
+
+    [Theory]
+    [InlineData(0, 0, -48, 3, "L")]
+    [InlineData(0, 0, 48, -3, "R")]
+    [InlineData(0, 0, 3, -48, "U")]
+    [InlineData(0, 0, -3, 48, "D")]
+    public void Recognize_keeps_valid_intentional_strokes_responsive(int x1, int y1, int x2, int y2, string expected)
+    {
+        var recognizer = new DirectionGestureRecognizer();
+
+        var result = recognizer.Recognize([Point(x1, y1, 0), Point(x2, y2, 120)], Options);
+
+        Assert.True(result.IsValid);
+        Assert.Equal(expected, result.Pattern);
+    }
+
+    [Fact]
     public void Recognize_accepts_custom_multi_direction_patterns()
     {
         var recognizer = new DirectionGestureRecognizer();
