@@ -195,10 +195,10 @@ public sealed class SettingsViewModel : INotifyPropertyChanged
         _edgeTriggerLeftEdgeXButton1Action = _settingsService.Get(SettingKeys.EdgeTriggerLeftEdgeXButton1Action, BuiltInGestureAction.SwitchApp);
         _edgeTriggerLeftEdgeXButton2Action = _settingsService.Get(SettingKeys.EdgeTriggerLeftEdgeXButton2Action, BuiltInGestureAction.TaskSwitcher);
         _edgeTriggerTopRightWheelAction = _settingsService.Get(SettingKeys.EdgeTriggerTopRightWheelAction, BuiltInGestureAction.TaskSwitcher);
-        _edgeTriggerHotZoneSize = _settingsService.Get(SettingKeys.EdgeTriggerHotZoneSize, 8);
-        _edgeTriggerDwellMs = _settingsService.Get(SettingKeys.EdgeTriggerDwellMs, 160);
-        _edgeTriggerCooldownMs = _settingsService.Get(SettingKeys.EdgeTriggerCooldownMs, 450);
-        _edgeTriggerSlideThreshold = _settingsService.Get(SettingKeys.EdgeTriggerSlideThreshold, 56);
+        _edgeTriggerHotZoneSize = Math.Clamp(_settingsService.Get(SettingKeys.EdgeTriggerHotZoneSize, 8), 2, 64);
+        _edgeTriggerDwellMs = Math.Clamp(_settingsService.Get(SettingKeys.EdgeTriggerDwellMs, 160), 50, 2000);
+        _edgeTriggerCooldownMs = Math.Clamp(_settingsService.Get(SettingKeys.EdgeTriggerCooldownMs, 450), 150, 5000);
+        _edgeTriggerSlideThreshold = Math.Clamp(_settingsService.Get(SettingKeys.EdgeTriggerSlideThreshold, 56), 24, 400);
         _edgeTriggerSlideLeftEnabled = _settingsService.Get(SettingKeys.EdgeTriggerSlideLeftEnabled, false);
         _edgeTriggerSlideRightEnabled = _settingsService.Get(SettingKeys.EdgeTriggerSlideRightEnabled, false);
         _edgeTriggerSlideTopEnabled = _settingsService.Get(SettingKeys.EdgeTriggerSlideTopEnabled, false);
@@ -208,7 +208,7 @@ public sealed class SettingsViewModel : INotifyPropertyChanged
         _edgeTriggerSlideTopAction = _settingsService.Get(SettingKeys.EdgeTriggerSlideTopAction, BuiltInGestureAction.StartMenu);
         _edgeTriggerSlideBottomAction = _settingsService.Get(SettingKeys.EdgeTriggerSlideBottomAction, BuiltInGestureAction.PasteAndEnter);
         _selectedGesturePreset = _settingsService.Get(SettingKeys.GesturePreset, GesturePreset.EditEnhanced);
-        _gestureTriggerThreshold = _settingsService.Get(SettingKeys.GestureTriggerThreshold, 20);
+        _gestureTriggerThreshold = Math.Clamp(_settingsService.Get(SettingKeys.GestureTriggerThreshold, 20), 4, 200);
         _clipboardMaxItems = _settingsService.Get(SettingKeys.ClipboardMaxItems, 1000);
         _clipboardRetentionDays = _settingsService.Get(SettingKeys.ClipboardRetentionDays, 30);
         _workstationEnabled = _settingsService.Get(SettingKeys.WorkstationEnabled, true);
@@ -1357,12 +1357,13 @@ public sealed class SettingsViewModel : INotifyPropertyChanged
         get => _gestureTriggerThreshold;
         set
         {
-            if (_gestureTriggerThreshold == value)
+            var normalized = Math.Clamp(value, 4, 200);
+            if (_gestureTriggerThreshold == normalized)
             {
                 return;
             }
 
-            _gestureTriggerThreshold = Math.Clamp(value, 4, 200);
+            _gestureTriggerThreshold = normalized;
             UpdateGestureSettingsSnapshot();
             OnPropertyChanged();
             _ = _settingsService.SetAsync(SettingKeys.GestureTriggerThreshold, _gestureTriggerThreshold, CancellationToken.None);
@@ -2053,12 +2054,19 @@ public sealed class SettingsViewModel : INotifyPropertyChanged
 
     private async Task ExportDiagnosticsAsync()
     {
-        var packagePath = await _diagnosticsService.ExportPackageAsync(CancellationToken.None);
-        LastDiagnosticsExportText = $"已导出：{packagePath}";
-        var directory = Path.GetDirectoryName(packagePath);
-        if (!string.IsNullOrWhiteSpace(directory))
+        try
         {
-            OpenDirectory(directory);
+            var packagePath = await _diagnosticsService.ExportPackageAsync(CancellationToken.None);
+            LastDiagnosticsExportText = $"诊断包已保存到：{packagePath}\n可以把这个 zip 发给开发者排查问题；它只用于排查本机运行状态，不包含剪贴板正文、数据库或图片原始内容。";
+            var directory = Path.GetDirectoryName(packagePath);
+            if (!string.IsNullOrWhiteSpace(directory))
+            {
+                OpenDirectory(directory);
+            }
+        }
+        catch
+        {
+            LastDiagnosticsExportText = "导出诊断包失败：请确认数据目录可写后重试，或先点“打开日志目录”把日志发给开发者排查。诊断包和日志都不应该包含剪贴板正文。";
         }
     }
 

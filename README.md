@@ -52,12 +52,12 @@ Ctrl + `
 
 ## 现在是什么版本？
 
-当前版本：**v0.6.10 Beta**
+当前版本：**v0.6.11 Beta**
 
 下载地址：
 
-- [GestureClip-v0.6.10-beta-win-x64.zip](https://github.com/hhuhuwang-gif/GestureClip.App/releases/download/v0.6.10-beta/GestureClip-v0.6.10-beta-win-x64.zip)
-- [Release 页面](https://github.com/hhuhuwang-gif/GestureClip.App/releases/tag/v0.6.10-beta)
+- [GestureClip-v0.6.11-beta-win-x64.zip](https://github.com/hhuhuwang-gif/GestureClip.App/releases/download/v0.6.11-beta/GestureClip-v0.6.11-beta-win-x64.zip)
+- [Release 页面](https://github.com/hhuhuwang-gif/GestureClip.App/releases/tag/v0.6.11-beta)
 
 解压后双击：
 
@@ -215,10 +215,10 @@ GestureClip 默认本地运行：
 
 ## 如何覆盖更新？
 
-老用户下载新版 zip 后直接覆盖旧程序目录即可：
+老用户从 [Latest Release](https://github.com/hhuhuwang-gif/GestureClip.App/releases/latest) 下载最新的 Windows x64 zip 后，直接覆盖旧程序目录即可。当前版本文件名示例：
 
 ```text
-GestureClip-v0.6.4-beta-win-x64.zip
+GestureClip-v0.6.11-beta-win-x64.zip
 ```
 
 步骤：
@@ -228,6 +228,8 @@ GestureClip-v0.6.4-beta-win-x64.zip
 3. 解压新版 zip。
 4. 覆盖旧程序目录。
 5. 双击 `GestureClip.exe`。
+
+覆盖更新只替换程序文件，不会删除你的剪贴板历史、设置和本地数据库。
 
 ## 常见问题
 

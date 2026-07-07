@@ -13,6 +13,9 @@
         ResizeMode="NoResize"
         Background="Transparent"
         Foreground="{DynamicResource BrushTextPrimary}">
+    <Window.Resources>
+        <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter" />
+    </Window.Resources>
     <Border CornerRadius="28"
             Background="{DynamicResource BrushAppBackground}"
             BorderBrush="#26FFFFFF"
@@ -111,7 +114,7 @@
                                                    FontSize="18"
                                                    FontWeight="SemiBold"
                                                    Foreground="{DynamicResource BrushTextPrimary}" />
-                                        <TextBlock Text="本地保存，不登录，不上传。先记住下面 3 个动作，就能开始用。"
+                                        <TextBlock Text="下载 zip 后先解压，双击 GestureClip.exe 打开。数据只保存在本机，不登录，不上传剪贴板内容；遇到问题可在“诊断”里导出诊断包。先记住下面 3 个动作，就能开始用。"
                                                    Style="{StaticResource MutedTextStyle}"
                                                    Margin="0,6,0,14"
                                                    TextWrapping="Wrap" />
@@ -664,7 +667,7 @@
                                                  ScrollViewer.CanContentScroll="False"
                                                  PreviewMouseWheel="PassMouseWheelToParent">
                                             <ListBox.ItemContainerStyle>
-                                                <Style TargetType="ListBoxItem" BasedOn="{StaticResource {x:Type ListBoxItem}}">
+                                                <Style TargetType="ListBoxItem">
                                                     <Setter Property="HorizontalContentAlignment" Value="Stretch" />
                                                     <Setter Property="Padding" Value="0" />
                                                     <Setter Property="Margin" Value="0" />
@@ -735,7 +738,7 @@
                                                      ScrollViewer.CanContentScroll="False"
                                                      PreviewMouseWheel="PassMouseWheelToParent">
                                                 <ListBox.ItemContainerStyle>
-                                                    <Style TargetType="ListBoxItem" BasedOn="{StaticResource {x:Type ListBoxItem}}">
+                                                    <Style TargetType="ListBoxItem">
                                                         <Setter Property="HorizontalContentAlignment" Value="Stretch" />
                                                         <Setter Property="Padding" Value="0" />
                                                         <Setter Property="Margin" Value="0" />
@@ -1348,6 +1351,10 @@
                 <TabItem Header="诊断">
                     <GroupBox Header="诊断" Padding="12" Margin="18">
                         <StackPanel>
+                            <TextBlock Text="遇到问题时，先点“导出诊断包”，把生成的 zip 发给开发者排查。诊断包会保存到本机，不会自动上传；它只包含运行状态和日志，不包含剪贴板正文、数据库或图片原始内容。下面也可以直接打开日志目录、数据目录，确认资料都在本机。"
+                                       Style="{StaticResource MutedTextStyle}"
+                                       TextWrapping="Wrap"
+                                       Margin="0,0,0,10" />
                             <StackPanel Orientation="Horizontal">
                                 <Button Content="打开日志目录" Command="{Binding OpenLogDirectoryCommand}" />
                                 <Button Content="打开数据目录" Margin="8,0,0,0" Command="{Binding OpenDataDirectoryCommand}" />

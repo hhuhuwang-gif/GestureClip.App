@@ -584,6 +584,25 @@ public sealed class SettingsViewModelTests
     }
 
     [Fact]
+    public void Numeric_gesture_settings_loaded_from_disk_are_clamped_to_safe_ranges()
+    {
+        var settings = new FakeSettingsService();
+        settings.Values[SettingKeys.GestureTriggerThreshold] = -50;
+        settings.Values[SettingKeys.EdgeTriggerHotZoneSize] = 999;
+        settings.Values[SettingKeys.EdgeTriggerDwellMs] = 5;
+        settings.Values[SettingKeys.EdgeTriggerCooldownMs] = 99;
+        settings.Values[SettingKeys.EdgeTriggerSlideThreshold] = 9999;
+
+        var viewModel = CreateViewModel(settings: settings);
+
+        Assert.Equal(4, viewModel.GestureTriggerThreshold);
+        Assert.Equal(64, viewModel.EdgeTriggerHotZoneSize);
+        Assert.Equal(50, viewModel.EdgeTriggerDwellMs);
+        Assert.Equal(150, viewModel.EdgeTriggerCooldownMs);
+        Assert.Equal(400, viewModel.EdgeTriggerSlideThreshold);
+    }
+
+    [Fact]
     public async Task Worker_level_settings_are_visible_and_saved()
     {
         var settings = new FakeSettingsService();
@@ -637,6 +656,23 @@ public sealed class SettingsViewModelTests
         Assert.Equal("13:00", viewModel.WorkstationLunchEndTime);
         Assert.Equal("1,2,3,4,5", viewModel.WorkstationWorkdays);
     }
+
+    [Fact]
+    public async Task Export_diagnostics_success_message_explains_saved_path_usage_and_privacy_boundary()
+    {
+        var packagePath = "GestureClip-Diagnostics-test.zip";
+        var diagnostics = new FakeDiagnosticsService { PackagePath = packagePath };
+        var viewModel = CreateViewModel(diagnostics: diagnostics);
+
+        viewModel.ExportDiagnosticsCommand.Execute(null);
+
+        await WaitForAsync(() => viewModel.LastDiagnosticsExportText.Contains(packagePath, StringComparison.Ordinal));
+        Assert.Contains("诊断包已保存到", viewModel.LastDiagnosticsExportText);
+        Assert.Contains(packagePath, viewModel.LastDiagnosticsExportText);
+        Assert.Contains("发给开发者排查问题", viewModel.LastDiagnosticsExportText);
+        Assert.Contains("不包含剪贴板正文", viewModel.LastDiagnosticsExportText);
+    }
+
     private static SettingsViewModel CreateViewModel(
         FakeClipboardRepository? repository = null,
         FakeClipboardOverlayService? overlay = null,
@@ -644,7 +680,8 @@ public sealed class SettingsViewModelTests
         FakeSettingsService? settings = null,
         FakeEdgeTriggerService? edgeTriggerService = null,
         FakeGlobalHotkeyService? hotkey = null,
-        FakeWorkerLevelService? workerLevel = null)
+        FakeWorkerLevelService? workerLevel = null,
+        FakeDiagnosticsService? diagnostics = null)
     {
         settings ??= new FakeSettingsService();
         return new SettingsViewModel(
@@ -657,7 +694,7 @@ public sealed class SettingsViewModelTests
             hotkey ?? new FakeGlobalHotkeyService(),
             new FakeAppBlacklistService(),
             new FakeStartupService(),
-            new FakeDiagnosticsService(),
+            diagnostics ?? new FakeDiagnosticsService(),
             new FakeClipboardService(),
             new FakeClipboardWriter(),
             repository ?? new FakeClipboardRepository(),
@@ -865,6 +902,8 @@ public sealed class SettingsViewModelTests
 
     private sealed class FakeDiagnosticsService : IDiagnosticsService
     {
+        public string PackagePath { get; init; } = Path.Combine(Path.GetTempPath(), "GestureClip-Diagnostics-test.zip");
+
         public Task<DiagnosticsSnapshot> GetSnapshotAsync(CancellationToken cancellationToken)
         {
             return Task.FromResult(new DiagnosticsSnapshot("1.0", "app.exe", "db", "logs", false, true, true, "hotkey", "hook", null, null, null, null));
@@ -874,7 +913,7 @@ public sealed class SettingsViewModelTests
 
         public Task<string> ExportPackageAsync(CancellationToken cancellationToken)
         {
-            return Task.FromResult(Path.Combine(Path.GetTempPath(), "GestureClip-Diagnostics-test.zip"));
+            return Task.FromResult(PackagePath);
         }
     }
 

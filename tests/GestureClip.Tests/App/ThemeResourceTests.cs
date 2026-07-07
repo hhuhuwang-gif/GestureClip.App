@@ -251,8 +251,14 @@ public sealed class ThemeResourceTests
         Assert.Contains("Ctrl + `", xaml);
         Assert.Contains("第二步：双击找回内容", xaml);
         Assert.Contains("第三步：试一次右键手势", xaml);
-        Assert.Contains("本地保存，不登录，不上传", xaml);
+        Assert.Contains("不登录", xaml);
         Assert.Contains("设置 → 动作绑定", xaml);
+        Assert.Contains("下载 zip", xaml);
+        Assert.Contains("解压", xaml);
+        Assert.Contains("双击 GestureClip.exe", xaml);
+        Assert.Contains("数据只保存在本机", xaml);
+        Assert.Contains("不上传剪贴板内容", xaml);
+        Assert.Contains("导出诊断包", xaml);
     }
 
     [Fact]
@@ -264,8 +270,12 @@ public sealed class ThemeResourceTests
         Assert.Contains("Text=\"{Binding DatabasePath, Mode=OneWay}\"", xaml);
         Assert.Contains("Text=\"{Binding LogDirectory, Mode=OneWay}\"", xaml);
         Assert.Contains("Text=\"{Binding DiagnosticsText, Mode=OneWay}\"", xaml);
+        Assert.Contains("打开日志目录", xaml);
+        Assert.Contains("打开数据目录", xaml);
         Assert.Contains("导出诊断包", xaml);
         Assert.Contains("ExportDiagnosticsCommand", xaml);
+        Assert.Contains("不会自动上传", xaml);
+        Assert.Contains("不包含剪贴板正文", xaml);
         Assert.DoesNotContain("Text=\"{Binding DatabasePath}\"", xaml);
         Assert.DoesNotContain("Text=\"{Binding LogDirectory}\"", xaml);
         Assert.DoesNotContain("Text=\"{Binding DiagnosticsText}\"", xaml);
@@ -352,7 +362,8 @@ public sealed class ThemeResourceTests
         Assert.Contains("MinHeight=\"220\"", xaml);
         Assert.Contains("删除这个手势", xaml);
         Assert.Contains("Command=\"{Binding DeleteCommand}\"", xaml);
-        Assert.Contains("BasedOn=\"{StaticResource {x:Type ListBoxItem}}\"", xaml);
+        Assert.DoesNotContain("BasedOn=\"{StaticResource {x:Type ListBoxItem}}\"", xaml);
+        Assert.Contains("<BooleanToVisibilityConverter x:Key=\"BooleanToVisibilityConverter\" />", xaml);
         Assert.Contains("当前选中", xaml);
         Assert.Contains("RelativeSource={RelativeSource AncestorType=ListBoxItem}", xaml);
         Assert.Contains("VirtualizingStackPanel.IsVirtualizing=\"True\"", xaml);

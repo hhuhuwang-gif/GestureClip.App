@@ -16,7 +16,7 @@ public static class UpdateErrorMessageFormatter
 
         if (exception is HttpRequestException)
         {
-            return "无法连接 GitHub。请检查网络连接，或稍后再试。";
+            return "无法连接 GitHub。请检查网络连接后重试；也可以打开 GitHub Release 页面手动下载最新 zip。";
         }
 
         return "检查更新失败。请稍后再试，或打开 GitHub Release 页面手动查看。";
