@@ -101,14 +101,25 @@ public sealed class DiagnosticsService : IDiagnosticsService
 
         if (Directory.Exists(_paths.LogDirectory))
         {
-            foreach (var logFile in Directory.EnumerateFiles(_paths.LogDirectory, "*.log").OrderByDescending(File.GetLastWriteTimeUtc).Take(5))
+            var logFiles = Directory.EnumerateFiles(_paths.LogDirectory, "*.log")
+                .OrderByDescending(File.GetLastWriteTimeUtc)
+                .Take(5)
+                .Select(logFile => new FileInfo(logFile))
+                .ToList();
+
+            if (logFiles.Count > 0)
             {
-                cancellationToken.ThrowIfCancellationRequested();
-                var entryName = $"logs/{Path.GetFileName(logFile)}";
-                var entry = archive.CreateEntry(entryName, CompressionLevel.Optimal);
-                await using var source = new FileStream(logFile, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
-                await using var destination = entry.Open();
-                await source.CopyToAsync(destination, cancellationToken);
+                var manifestEntry = archive.CreateEntry("logs/manifest.txt", CompressionLevel.Optimal);
+                await using var manifestStream = manifestEntry.Open();
+                await using var manifestWriter = new StreamWriter(manifestStream, Encoding.UTF8);
+                await manifestWriter.WriteLineAsync("Raw log contents are excluded from diagnostics packages to avoid leaking clipboard contents.");
+
+                foreach (var logFile in logFiles)
+                {
+                    cancellationToken.ThrowIfCancellationRequested();
+                    await manifestWriter.WriteLineAsync(
+                        $"{logFile.Name}\tLastWriteUtc={logFile.LastWriteTimeUtc:O}\tBytes={logFile.Length}");
+                }
             }
         }
 
@@ -129,6 +140,6 @@ public sealed class DiagnosticsService : IDiagnosticsService
             return null;
         }
 
-        return "Recent error exists. See logs for technical details.";
+        return "Recent error exists. See local logs for technical details.";
     }
 }

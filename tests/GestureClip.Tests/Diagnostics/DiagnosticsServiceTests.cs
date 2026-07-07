@@ -64,6 +64,13 @@ public sealed class DiagnosticsServiceTests
         using var reportReader = new StreamReader(reportEntry.Open());
         var report = await reportReader.ReadToEndAsync();
         Assert.DoesNotContain("secret clipboard text", report, StringComparison.OrdinalIgnoreCase);
+
+        foreach (var entry in archive.Entries)
+        {
+            using var reader = new StreamReader(entry.Open());
+            var content = await reader.ReadToEndAsync();
+            Assert.DoesNotContain("secret clipboard text", content, StringComparison.OrdinalIgnoreCase);
+        }
     }
 
     private sealed class FakePermissionService : ISystemPermissionService
