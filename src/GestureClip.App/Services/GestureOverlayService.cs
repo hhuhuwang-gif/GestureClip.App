@@ -2,6 +2,7 @@ using System.Windows;
 using System.Diagnostics;
 using System.Globalization;
 using System.Windows.Media;
+using System.Windows.Media.Animation;
 using GestureClip.App.ViewModels;
 using GestureClip.Core.Abstractions;
 using GestureClip.Core.Gestures;
@@ -13,6 +14,7 @@ namespace GestureClip.App.Services;
 public sealed class GestureOverlayService : IGestureOverlayService
 {
     private const int MaxVisiblePointCount = 96;
+    private const int HideFadeMilliseconds = 140;
 
     private readonly IServiceProvider _serviceProvider;
     private readonly ISettingsService _settingsService;
@@ -56,7 +58,7 @@ public sealed class GestureOverlayService : IGestureOverlayService
             _hideCts?.Cancel();
             ApplyHudInfo(hudInfo);
             _viewModel!.Points = ToPointCollection([point]);
-            _window!.Show();
+            ShowWindow();
         });
     }
 
@@ -95,7 +97,7 @@ public sealed class GestureOverlayService : IGestureOverlayService
             ClearPendingUpdate();
             EnsureWindow();
             ApplyHudInfo(hudInfo);
-            _window!.Show();
+            ShowWindow();
             _hideCts?.Cancel();
             _hideCts = new CancellationTokenSource();
             _ = HideLaterAsync(_hideCts.Token);
@@ -114,7 +116,7 @@ public sealed class GestureOverlayService : IGestureOverlayService
             _viewModel.Pattern = pattern;
             _viewModel.ActionName = "";
             _viewModel.ShortcutText = "";
-            _window!.Show();
+            ShowWindow();
             _hideCts?.Cancel();
             _hideCts = new CancellationTokenSource();
             _ = HideLaterAsync(_hideCts.Token);
@@ -128,7 +130,7 @@ public sealed class GestureOverlayService : IGestureOverlayService
             cancellationToken.ThrowIfCancellationRequested();
             ClearPendingUpdate();
             _hideCts?.Cancel();
-            _window?.Hide();
+            FadeOutAndHideWindow();
         });
     }
 
@@ -165,9 +167,47 @@ public sealed class GestureOverlayService : IGestureOverlayService
         PositionWindow();
         ApplyHudInfo(hudInfo);
         _viewModel!.Points = ToPointCollection(points);
-        _window!.Show();
+        ShowWindow();
         hudWatch.Stop();
         Trace.WriteLine($"GesturePerf HudUpdateDurationMs ElapsedMs={hudWatch.ElapsedMilliseconds} PointCount={points.Count}");
+    }
+
+    private void ShowWindow()
+    {
+        if (_window is null)
+        {
+            return;
+        }
+
+        _window.BeginAnimation(UIElement.OpacityProperty, null);
+        _window.Opacity = 1;
+        _window.Show();
+    }
+
+    private void FadeOutAndHideWindow()
+    {
+        if (_window is null || !_window.IsVisible)
+        {
+            return;
+        }
+
+        var window = _window;
+        var fade = new DoubleAnimation(0, TimeSpan.FromMilliseconds(HideFadeMilliseconds))
+        {
+            FillBehavior = FillBehavior.Stop
+        };
+        fade.Completed += (_, _) =>
+        {
+            if (!ReferenceEquals(_window, window))
+            {
+                return;
+            }
+
+            window.Opacity = 1;
+            window.Hide();
+        };
+
+        window.BeginAnimation(UIElement.OpacityProperty, fade);
     }
 
     private void ClearPendingUpdate()
