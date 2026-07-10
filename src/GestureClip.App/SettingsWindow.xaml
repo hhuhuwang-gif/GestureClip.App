@@ -28,6 +28,14 @@
             <Setter Property="Padding" Value="16" />
             <Setter Property="Margin" Value="0,0,0,12" />
         </Style>
+        <Style x:Key="SettingsCompactIntroCardStyle" TargetType="Border" BasedOn="{StaticResource SettingsIntroCardStyle}">
+            <Setter Property="Padding" Value="14" />
+            <Setter Property="Margin" Value="0,0,0,10" />
+        </Style>
+        <Style x:Key="SettingsCompactFormRowStyle" TargetType="Border" BasedOn="{StaticResource SettingsFormRowStyle}">
+            <Setter Property="Padding" Value="12" />
+            <Setter Property="Margin" Value="0,0,0,8" />
+        </Style>
         <Style x:Key="SettingsActionButtonBaseStyle" TargetType="Button">
             <Setter Property="MinWidth" Value="0" />
             <Setter Property="Width" Value="124" />
@@ -80,6 +88,10 @@
         <Style x:Key="SettingsDangerZoneStyle" TargetType="Border" BasedOn="{StaticResource SettingsFormRowStyle}">
             <Setter Property="Background" Value="#FFF5F5" />
             <Setter Property="BorderBrush" Value="#FECACA" />
+        </Style>
+        <Style x:Key="SettingsCompactDangerZoneStyle" TargetType="Border" BasedOn="{StaticResource SettingsDangerZoneStyle}">
+            <Setter Property="Padding" Value="12" />
+            <Setter Property="Margin" Value="0,0,0,8" />
         </Style>
     </Window.Resources>
     <Border CornerRadius="28"
@@ -238,17 +250,17 @@
 
                 <TabItem Header="剪贴板">
                     <ScrollViewer VerticalScrollBarVisibility="Auto">
-                        <StackPanel Margin="18">
-                            <Border x:Name="ClipboardPageIntro" Style="{StaticResource SettingsIntroCardStyle}">
+                        <StackPanel Margin="14">
+                            <Border x:Name="ClipboardPageIntro" Style="{StaticResource SettingsCompactIntroCardStyle}">
                                 <StackPanel>
                                     <TextBlock Text="剪贴板设置" Style="{StaticResource SettingsIntroTitleStyle}" />
                                     <TextBlock Text="控制是否记录剪贴板历史、热键怎么打开、历史保留多久。清理按钮会明确写出影响范围。"
                                                Style="{StaticResource MutedTextStyle}" />
                                 </StackPanel>
                             </Border>
-                            <GroupBox Header="剪贴板" Padding="12">
+                            <GroupBox Header="剪贴板" Padding="10">
                                 <StackPanel>
-                                    <Border Style="{StaticResource SettingsFormRowStyle}">
+                                    <Border Style="{StaticResource SettingsCompactFormRowStyle}">
                                         <Grid>
                                             <Grid.ColumnDefinitions>
                                                 <ColumnDefinition Width="150" />
@@ -258,7 +270,7 @@
                                             <CheckBox Grid.Column="1" Content="启用剪贴板记录" IsChecked="{Binding ClipboardCaptureEnabled, Mode=TwoWay}" />
                                         </Grid>
                                     </Border>
-                                    <Border Style="{StaticResource SettingsFormRowStyle}">
+                                    <Border Style="{StaticResource SettingsCompactFormRowStyle}">
                                         <Grid>
                                             <Grid.ColumnDefinitions>
                                                 <ColumnDefinition Width="150" />
@@ -276,9 +288,9 @@
                                 </StackPanel>
                             </GroupBox>
 
-                            <GroupBox Header="数据与清理" Padding="12" Margin="0,14,0,0">
+                            <GroupBox Header="数据与清理" Padding="10" Margin="0,10,0,0">
                                 <StackPanel>
-                                    <Border Style="{StaticResource SettingsFormRowStyle}">
+                                    <Border Style="{StaticResource SettingsCompactFormRowStyle}">
                                         <Grid>
                                             <Grid.ColumnDefinitions>
                                                 <ColumnDefinition Width="150" />
@@ -294,7 +306,7 @@
                                             </StackPanel>
                                         </Grid>
                                     </Border>
-                                    <Border Style="{StaticResource SettingsFormRowStyle}">
+                                    <Border Style="{StaticResource SettingsCompactFormRowStyle}">
                                         <Grid>
                                             <Grid.ColumnDefinitions>
                                                 <ColumnDefinition Width="150" />
@@ -315,7 +327,7 @@
                                             </WrapPanel>
                                         </Grid>
                                     </Border>
-                                    <Border Style="{StaticResource SettingsDangerZoneStyle}">
+                                    <Border Style="{StaticResource SettingsCompactDangerZoneStyle}">
                                         <Grid>
                                             <Grid.ColumnDefinitions>
                                                 <ColumnDefinition Width="150" />
@@ -348,17 +360,17 @@
 
                 <TabItem Header="手势">
                     <ScrollViewer VerticalScrollBarVisibility="Auto">
-                        <StackPanel Margin="18">
-                            <Border x:Name="GesturePageIntro" Style="{StaticResource SettingsIntroCardStyle}">
+                        <StackPanel Margin="14">
+                            <Border x:Name="GesturePageIntro" Style="{StaticResource SettingsCompactIntroCardStyle}">
                                 <StackPanel>
                                     <TextBlock Text="鼠标手势设置" Style="{StaticResource SettingsIntroTitleStyle}" />
                                     <TextBlock Text="先开关手势，再选择触发方式。新手建议保留鼠标右键，其他触发方式需要时再开。"
                                                Style="{StaticResource MutedTextStyle}" />
                                 </StackPanel>
                             </Border>
-                            <GroupBox Header="手势" Padding="12">
+                            <GroupBox Header="手势" Padding="10">
                                 <StackPanel>
-                                    <Border Style="{StaticResource SettingsFormRowStyle}">
+                                    <Border Style="{StaticResource SettingsCompactFormRowStyle}">
                                         <StackPanel>
                                             <TextBlock Text="按住右键，往一个方向划一下，松开右键就会执行动作。"
                                                        FontWeight="SemiBold"
@@ -370,7 +382,7 @@
                                         </StackPanel>
                                     </Border>
 
-                                    <Border Style="{StaticResource SettingsFormRowStyle}">
+                                    <Border Style="{StaticResource SettingsCompactFormRowStyle}">
                                         <StackPanel>
                                             <TextBlock Text="打工人等级" FontWeight="SemiBold" />
                                             <TextBlock Text="{Binding WorkerLevelText}" FontSize="18" FontWeight="SemiBold" Margin="0,8,0,0" />
@@ -384,7 +396,7 @@
                                         </StackPanel>
                                     </Border>
 
-                                    <Border Style="{StaticResource SettingsFormRowStyle}">
+                                    <Border Style="{StaticResource SettingsCompactFormRowStyle}">
                                         <Grid>
                                             <Grid.ColumnDefinitions>
                                                 <ColumnDefinition Width="150" />
@@ -401,7 +413,7 @@
                                         </Grid>
                                     </Border>
 
-                                    <Border Style="{StaticResource SettingsFormRowStyle}">
+                                    <Border Style="{StaticResource SettingsCompactFormRowStyle}">
                                         <Grid>
                                             <Grid.ColumnDefinitions>
                                                 <ColumnDefinition Width="150" />
@@ -417,7 +429,7 @@
                                         </Grid>
                                     </Border>
 
-                                    <Border Style="{StaticResource SettingsFormRowStyle}">
+                                    <Border Style="{StaticResource SettingsCompactFormRowStyle}">
                                         <Grid>
                                             <Grid.ColumnDefinitions>
                                                 <ColumnDefinition Width="150" />
@@ -436,10 +448,10 @@
                             </GroupBox>
 
                             <Expander Header="高级设置"
-                                      Margin="0,12,0,0"
-                                      IsExpanded="True">
-                                <StackPanel Margin="0,10,0,0">
-                                    <GroupBox Header="触发方式" Padding="12">
+                                      Margin="0,10,0,0"
+                                      IsExpanded="False">
+                                <StackPanel Margin="0,8,0,0">
+                                    <GroupBox Header="触发方式" Padding="10">
                                         <StackPanel>
                                         <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
                                             <TextBlock Text="当前启用" FontWeight="SemiBold" Foreground="{DynamicResource BrushPrimaryBright}" />
@@ -470,7 +482,7 @@
                                         </StackPanel>
                                     </GroupBox>
 
-                                    <GroupBox Header="高级手势开关" Padding="12" Margin="0,12,0,0">
+                                    <GroupBox Header="高级手势开关" Padding="10" Margin="0,10,0,0">
                                         <StackPanel>
                                             <TextBlock Text="触发方式只允许右键、中键、侧键和屏幕边缘；左键点击可以作为执行动作，但不是手势触发键。"
                                                        Style="{StaticResource MutedTextStyle}"
@@ -490,7 +502,7 @@
                                         </StackPanel>
                                     </GroupBox>
 
-                                    <GroupBox Header="屏幕角落和边缘" Padding="12" Margin="0,12,0,0">
+                                    <GroupBox Header="屏幕角落和边缘" Padding="10" Margin="0,10,0,0">
                                         <StackPanel>
                                             <CheckBox Content="启用屏幕角落触发"
                                                       IsChecked="{Binding EdgeTriggerEnabled, Mode=TwoWay}" />
@@ -636,7 +648,8 @@
                                 </StackPanel>
                             </Expander>
 
-                            <GroupBox Header="手势测试" Padding="12" Margin="0,12,0,0">
+                            <Expander Header="手势测试（需要时展开）" Margin="0,10,0,0" IsExpanded="False">
+                                <Border Padding="10">
                                 <Grid>
                                     <Grid.RowDefinitions>
                                         <RowDefinition Height="Auto" />
@@ -684,7 +697,8 @@
                                         <TextBlock Text="{Binding EdgeTriggerLastEventTime}" Style="{StaticResource MutedTextStyle}" Margin="0,4,0,0" />
                                     </StackPanel>
                                 </Grid>
-                            </GroupBox>
+                                </Border>
+                            </Expander>
                         </StackPanel>
                     </ScrollViewer>
                 </TabItem>
