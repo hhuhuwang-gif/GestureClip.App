@@ -174,18 +174,14 @@ public partial class ClipboardOverlayWindow : Window
         if (e.Key == Key.Enter &&
             (Keyboard.Modifiers & ModifierKeys.Control) == ModifierKeys.Control)
         {
-            await _viewModel.PasteSelectedAsync(keepOverlayOpen: true);
+            await PasteWithFocusRestoreAsync(keepOverlayOpen: true);
             e.Handled = true;
             return;
         }
 
         if (e.Key == Key.Enter)
         {
-            if (await _viewModel.PasteSelectedAsync(keepOverlayOpen: false))
-            {
-                HideOverlayAndReleaseFocus();
-            }
-
+            await PasteWithFocusRestoreAsync(keepOverlayOpen: false);
             e.Handled = true;
             return;
         }
@@ -193,11 +189,7 @@ public partial class ClipboardOverlayWindow : Window
         var index = GetDigitIndex(e.Key);
         if (index is not null)
         {
-            if (await _viewModel.PasteByIndexAsync(index.Value))
-            {
-                HideOverlayAndReleaseFocus();
-            }
-
+            await PasteByIndexWithFocusRestoreAsync(index.Value);
             e.Handled = true;
         }
     }
@@ -472,15 +464,12 @@ public partial class ClipboardOverlayWindow : Window
 
     private async void PasteSelectedMenuItem_Click(object sender, RoutedEventArgs e)
     {
-        if (await _viewModel.PasteSelectedAsync(keepOverlayOpen: false))
-        {
-            HideOverlayAndReleaseFocus();
-        }
+        await PasteWithFocusRestoreAsync(keepOverlayOpen: false);
     }
 
     private async void PasteKeepOpenMenuItem_Click(object sender, RoutedEventArgs e)
     {
-        await _viewModel.PasteSelectedAsync(keepOverlayOpen: true);
+        await PasteWithFocusRestoreAsync(keepOverlayOpen: true);
     }
 
     private async void TogglePinnedMenuItem_Click(object sender, RoutedEventArgs e)
@@ -531,11 +520,7 @@ public partial class ClipboardOverlayWindow : Window
         }
 
         SelectSingleItem(item);
-        if (await _viewModel.PasteSelectedAsync(keepOverlayOpen: false))
-        {
-            HideOverlayAndReleaseFocus();
-        }
-
+        await PasteWithFocusRestoreAsync(keepOverlayOpen: false);
         e.Handled = true;
     }
 
@@ -626,6 +611,61 @@ public partial class ClipboardOverlayWindow : Window
         _viewModel.HideShortcutHelp();
         MoveFocus(new TraversalRequest(FocusNavigationDirection.Next));
         Hide();
+    }
+
+    /// <summary>
+    /// Hide (or briefly hide) the overlay so the previously focused app regains input focus,
+    /// then paste. Pasting while this window is focused would send Ctrl+V into the overlay.
+    /// </summary>
+    private async Task PasteWithFocusRestoreAsync(bool keepOverlayOpen)
+    {
+        PrepareForExternalPaste();
+        try
+        {
+            await Task.Delay(90);
+            await _viewModel.PasteSelectedAsync(keepOverlayOpen);
+        }
+        finally
+        {
+            if (keepOverlayOpen)
+            {
+                RestoreOverlayAfterPaste();
+            }
+        }
+    }
+
+    private async Task PasteByIndexWithFocusRestoreAsync(int index)
+    {
+        PrepareForExternalPaste();
+        try
+        {
+            await Task.Delay(90);
+            await _viewModel.PasteByIndexAsync(index);
+        }
+        finally
+        {
+            // Digit paste always closes (same as Enter).
+        }
+    }
+
+    private void PrepareForExternalPaste()
+    {
+        _viewModel.HideShortcutHelp();
+        // Drop topmost/visibility so the previous foreground app becomes active again.
+        Topmost = false;
+        MoveFocus(new TraversalRequest(FocusNavigationDirection.Next));
+        Hide();
+    }
+
+    private void RestoreOverlayAfterPaste()
+    {
+        Show();
+        Activate();
+        Topmost = _alwaysVisible;
+        if (_alwaysVisible)
+        {
+            Topmost = true;
+        }
     }
 
     private static int? GetDigitIndex(Key key)

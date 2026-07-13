@@ -284,8 +284,9 @@ public sealed class ClipboardService : IClipboardService
                 return;
             }
 
-            SuppressCaptureFor(TimeSpan.FromMilliseconds(1000));
+            SuppressCaptureFor(TimeSpan.FromMilliseconds(1500));
             await _clipboardWriter.SetImagePngBase64Async(image.TextContent, cancellationToken);
+            await Task.Delay(70, cancellationToken);
             await _clipboardWriter.SendPasteHotkeyAsync(cancellationToken);
             await RecordPasteUsageAsync(image.Id, DateTimeOffset.UtcNow, cancellationToken);
             pasteWatch.Stop();

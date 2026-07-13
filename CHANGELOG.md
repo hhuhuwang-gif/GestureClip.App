@@ -1,16 +1,28 @@
 # CHANGELOG
 
+## GestureClip v0.6.17 Beta
+
+### 修复
+
+- **粘贴热键无效**：`Ctrl+Shift+V` 触发后仍按住 Shift 时，合成粘贴被污染；先释放全部修饰键再 `Ctrl+V`，并等待剪贴板落定。
+- **历史面板粘贴无效**：先隐藏面板让原窗口重新获焦，再发送粘贴（避免 Ctrl+V 打进面板自己）。
+- 智能粘贴无文本（如图片）时回退普通粘贴。
+- 便携 zip 分发（Setup 安装器已移除）。
+
+### 验证
+
+- `dotnet test ./GestureClip.sln`
+
 ## GestureClip v0.6.16 Beta
 
 ### 修复
 
-- **粘贴热键无效**：`Ctrl+Shift+V` 等触发后用户仍按住 Shift，合成的 `Ctrl+V` 被污染；现先释放修饰键再粘贴，并在写剪贴板后短暂等待落定。
-- 智能粘贴 / 历史粘贴在无文本（如图片）时回退普通粘贴，避免静默失败。
+- 粘贴修饰键污染初版修复；Setup 安装器下线，保留便携 zip。
 
 ### 分发说明
 
-- 继续使用 **便携 zip** 分发与覆盖更新（Setup 安装器因体验不稳已移除）。
-- 应用内更新下载 `*-win-x64.zip` 并覆盖当前程序目录；用户数据仍在 `%LOCALAPPDATA%\GestureClip`。
+- 使用 **便携 zip** 分发与覆盖更新。
+- 应用内更新下载 `*-win-x64.zip` 覆盖程序目录；用户数据在 `%LOCALAPPDATA%\GestureClip`。
 
 ### UI 视觉升级（D1–D3）
 
