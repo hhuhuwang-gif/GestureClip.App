@@ -17,7 +17,10 @@ public static class ClipboardNativeMethods
     public static extern bool RemoveClipboardFormatListener(IntPtr hwnd);
 
     [DllImport("user32.dll", SetLastError = true)]
-    public static extern uint SendInput(uint cInputs, INPUT[] pInputs, int cbSize);
+    public static extern uint SendInput(
+        uint cInputs,
+        [MarshalAs(UnmanagedType.LPArray), In] INPUT[] pInputs,
+        int cbSize);
 
     [DllImport("user32.dll", SetLastError = true)]
     [return: MarshalAs(UnmanagedType.Bool)]
@@ -47,6 +50,7 @@ public static class ClipboardNativeMethods
     [DllImport("kernel32.dll", SetLastError = true)]
     public static extern IntPtr GlobalFree(IntPtr hMem);
 
+    // Must match Windows x64 INPUT layout (type + 32-byte union ≈ 40 bytes).
     [StructLayout(LayoutKind.Sequential)]
     public struct INPUT
     {
@@ -58,7 +62,13 @@ public static class ClipboardNativeMethods
     public struct InputUnion
     {
         [FieldOffset(0)]
+        public MOUSEINPUT mi;
+
+        [FieldOffset(0)]
         public KEYBDINPUT ki;
+
+        [FieldOffset(0)]
+        public HARDWAREINPUT hi;
     }
 
     [StructLayout(LayoutKind.Sequential)]
@@ -69,5 +79,24 @@ public static class ClipboardNativeMethods
         public uint dwFlags;
         public uint time;
         public nint dwExtraInfo;
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
+    public struct MOUSEINPUT
+    {
+        public int dx;
+        public int dy;
+        public uint mouseData;
+        public uint dwFlags;
+        public uint time;
+        public nint dwExtraInfo;
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
+    public struct HARDWAREINPUT
+    {
+        public uint uMsg;
+        public ushort wParamL;
+        public ushort wParamH;
     }
 }

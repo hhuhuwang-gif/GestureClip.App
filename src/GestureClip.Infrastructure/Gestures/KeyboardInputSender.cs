@@ -25,14 +25,48 @@ public sealed class KeyboardInputSender : IKeyboardInputSender
             return;
         }
 
-        // Release stuck modifiers first so Ctrl+V is not polluted by still-held Shift/Alt.
-        var release = KeyboardPasteInjector.BuildModifierReleaseOnly();
-        _ = KeyboardPasteInjector.Send(release);
+        // Fast path for Ctrl+V: multi-path hardened injector (focus + SendInput + keybd + WM_PASTE).
+        if (keys.Length == 2 &&
+            keys[0] == KeyboardInputNativeMethods.VkControl &&
+            keys[1] == KeyboardInputNativeMethods.VkV)
+        {
+            try
+            {
+                // Clipboard already holds content for paste; enable WM_PASTE fallback.
+                var ok = KeyboardPasteInjector.SendCtrlV(
+                    _logger,
+                    preferredTargetWindow: default,
+                    preferClipboardMessage: true);
+                _lastStatus = ok
+                    ? "Sent Ctrl+V via KeyboardPasteInjector"
+                    : "Ctrl+V multi-path injection reported failure";
+                if (!ok)
+                {
+                    _logger.LogWarning("Ctrl+V multi-path injection reported failure.");
+                }
+            }
+            catch (Exception ex)
+            {
+                _lastStatus = $"Ctrl+V failed: {ex.Message}";
+                _logger.LogWarning(ex, "Ctrl+V via KeyboardPasteInjector failed.");
+            }
+
+            return;
+        }
+
+        // Release mouse + modifiers first.
+        var release = new List<KeyboardInputNativeMethods.INPUT>();
+        release.AddRange(KeyboardPasteInjector.BuildMouseButtonUps());
+        release.AddRange(KeyboardPasteInjector.BuildModifierReleaseOnly());
+        _ = KeyboardPasteInjector.Send(release.ToArray());
 
         var inputs = new List<KeyboardInputNativeMethods.INPUT>();
         inputs.AddRange(keys.Select(key => KeyboardInput(key, 0)));
         inputs.AddRange(keys.Reverse().Select(key => KeyboardInput(key, KeyboardInputNativeMethods.KeyEventKeyUp)));
-        var sent = KeyboardInputNativeMethods.SendInput((uint)inputs.Count, [.. inputs], Marshal.SizeOf<KeyboardInputNativeMethods.INPUT>());
+        var sent = KeyboardInputNativeMethods.SendInput(
+            (uint)inputs.Count,
+            [.. inputs],
+            Marshal.SizeOf<KeyboardInputNativeMethods.INPUT>());
         if (sent != inputs.Count)
         {
             var error = Marshal.GetLastWin32Error();
@@ -63,6 +97,7 @@ public sealed class KeyboardInputSender : IKeyboardInputSender
                 ki = new KeyboardInputNativeMethods.KEYBDINPUT
                 {
                     wVk = virtualKey,
+                    wScan = 0,
                     dwFlags = flags
                 }
             }

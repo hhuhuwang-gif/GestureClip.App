@@ -1,5 +1,6 @@
 using GestureClip.Core.Abstractions;
 using GestureClip.Core.Gestures;
+using GestureClip.Infrastructure.Win32;
 using Microsoft.Extensions.Logging;
 
 namespace GestureClip.Features.Gestures;
@@ -45,6 +46,8 @@ public sealed class MouseGestureService : IMouseGestureService
     private BuiltInGestureAction _lastAction = BuiltInGestureAction.None;
     private string? _lastError;
     private DateTimeOffset? _lastEventAt;
+    /// <summary>Foreground HWND at right-button-down; re-focused before paste injection.</summary>
+    private nint _gestureTargetHwnd;
 
     public MouseGestureService(
         ILowLevelMouseHook mouseHook,
@@ -259,6 +262,8 @@ public sealed class MouseGestureService : IMouseGestureService
                 _startPoint = ToPoint(mouseEvent);
                 _gestureStartedAt = mouseEvent.Time;
                 _points = [_startPoint];
+                // Capture focus target immediately — HUD/overlay must not steal paste destination.
+                _gestureTargetHwnd = WindowNativeMethods.GetForegroundWindow();
                 args.Suppress = true;
                 LogDebug(_activeSettings, "{Button}Down: x={X}, y={Y}", triggerButton, mouseEvent.X, mouseEvent.Y);
                 LogDebug(_activeSettings, "Suppressed original {Button} button", triggerButton);
@@ -406,7 +411,9 @@ public sealed class MouseGestureService : IMouseGestureService
                     _activeSettings.Options,
                     _activeSettings.Preset,
                     _activeSettings.ShowOverlay,
-                    isLeftButtonModified);
+                    isLeftButtonModified,
+                    PatternOverride: null,
+                    TargetWindowHandle: _gestureTargetHwnd);
                 ResetState("StateReset");
                 return pendingGesture;
 
@@ -435,16 +442,35 @@ public sealed class MouseGestureService : IMouseGestureService
                     _lastPattern = pattern;
                 }
 
-                _logger.LogDebug("Recognized Pattern: {Pattern}", pattern);
+                _logger.LogDebug(
+                    "Recognized Pattern: {Pattern} TargetHwnd={TargetHwnd}",
+                    pattern,
+                    pendingGesture.TargetWindowHandle);
+                var executionContext = new GestureExecutionContext(
+                    pattern,
+                    pendingGesture.IsLeftButtonModified,
+                    pendingGesture.TargetWindowHandle);
+
+                // For paste family: hide overlay BEFORE injecting keys so focus stays on target app.
+                var resolvedAction = _presetProvider.GetAction(pendingGesture.Preset, executionContext);
                 if (pendingGesture.ShowOverlay)
                 {
-                    var context = new GestureExecutionContext(pattern, pendingGesture.IsLeftButtonModified);
-                    var hudInfo = _hudInfoProvider.GetInfo(pendingGesture.Preset, context);
-                    await _gestureOverlayService.CompleteGestureAsync(hudInfo, CancellationToken.None);
+                    var hudInfo = _hudInfoProvider.GetInfo(pendingGesture.Preset, executionContext);
+                    if (IsPasteFamilyAction(resolvedAction))
+                    {
+                        // Brief complete flash then hide immediately so paste does not land in HUD.
+                        await _gestureOverlayService.CompleteGestureAsync(hudInfo, CancellationToken.None);
+                        await _gestureOverlayService.HideAsync(CancellationToken.None);
+                        await Task.Delay(40, CancellationToken.None);
+                    }
+                    else
+                    {
+                        await _gestureOverlayService.CompleteGestureAsync(hudInfo, CancellationToken.None);
+                    }
                 }
 
-                await ExecuteGestureAsync(new GestureExecutionContext(pattern, pendingGesture.IsLeftButtonModified));
-                if (pendingGesture.ShowOverlay)
+                await ExecuteGestureAsync(executionContext);
+                if (pendingGesture.ShowOverlay && !IsPasteFamilyAction(resolvedAction))
                 {
                     await _gestureOverlayService.HideAsync(CancellationToken.None);
                 }
@@ -490,6 +516,19 @@ public sealed class MouseGestureService : IMouseGestureService
             {
                 _logger.LogInformation("Close window gesture ignored because it is disabled.");
                 return;
+            }
+
+            // Paste family: longer settle after right-button-up; restore target focus early.
+            if (IsPasteFamilyAction(action))
+            {
+                if (context.TargetWindowHandle != 0)
+                {
+                    WindowNativeMethods.TryActivateWindow((IntPtr)context.TargetWindowHandle);
+                }
+
+                await Task.Delay(80, CancellationToken.None);
+                // Ignore our synthetic mouse-ups from the paste injector for a short window.
+                _ignoreInjectedUntil = DateTimeOffset.UtcNow.AddMilliseconds(400);
             }
 
             await _actionExecutor.ExecuteAsync(action, context, CancellationToken.None);
@@ -562,6 +601,9 @@ public sealed class MouseGestureService : IMouseGestureService
         _rightLeftRockerDown = false;
         _leftClickConfirmDown = false;
         _leftButtonModifier = false;
+        // Keep _gestureTargetHwnd until pending gesture is built; cleared after copy into PendingGesture via reset after return.
+        // Intentionally NOT cleared here when called after PendingGesture construction — value already copied.
+        _gestureTargetHwnd = 0;
     }
 
     private bool TryHandleLeftClickConfirmDown(GestureTriggerButton triggerButton, MouseHookEventArgs args)
@@ -611,7 +653,9 @@ public sealed class MouseGestureService : IMouseGestureService
             _activeSettings.Options,
             _activeSettings.Preset,
             _activeSettings.ShowOverlay,
-            IsLeftButtonModified: true);
+            IsLeftButtonModified: true,
+            PatternOverride: null,
+            TargetWindowHandle: _gestureTargetHwnd);
         _suppressNextButtonUp = GestureTriggerButton.Right;
         ResetState("StateReset");
         return true;
@@ -659,7 +703,8 @@ public sealed class MouseGestureService : IMouseGestureService
             _activeSettings.Preset,
             _activeSettings.ShowOverlay,
             IsLeftButtonModified: false,
-            PatternOverride: "R+L");
+            PatternOverride: "R+L",
+            TargetWindowHandle: _gestureTargetHwnd);
         ResetState("StateReset");
         return true;
     }
@@ -704,6 +749,13 @@ public sealed class MouseGestureService : IMouseGestureService
 
         return Task.CompletedTask;
     }
+
+    private static bool IsPasteFamilyAction(BuiltInGestureAction action) => action is
+        BuiltInGestureAction.Paste or
+        BuiltInGestureAction.SmartPaste or
+        BuiltInGestureAction.PasteAndEnter or
+        BuiltInGestureAction.PastePlainText or
+        BuiltInGestureAction.PasteLatestClipboardItem;
 
     private void SetHookStatus(string status)
     {
@@ -816,7 +868,9 @@ public sealed class MouseGestureService : IMouseGestureService
         GesturePreset Preset,
         bool ShowOverlay,
         bool IsLeftButtonModified = false,
-        string? PatternOverride = null);
+        string? PatternOverride = null,
+        nint TargetWindowHandle = 0);
 }
+
 
 

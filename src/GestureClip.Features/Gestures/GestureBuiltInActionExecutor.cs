@@ -410,12 +410,15 @@ public sealed class GestureBuiltInActionExecutor : IMouseGestureActionExecutor
         bool forceCleanWhenLeftModified,
         bool allowNormalShortcut)
     {
+        // After right-button gesture: settle, restore target focus, then inject.
+        await Task.Delay(50, cancellationToken);
+        TryRestoreGestureTarget(context);
+
         if (!_settingsService.Get(SettingKeys.SmartPasteEnabled, true))
         {
             if (allowNormalShortcut)
             {
-                _keyboardInputSender.SendShortcut(KeyboardInputNativeMethods.VkControl, KeyboardInputNativeMethods.VkV);
-                await RecordPasteAsync(cancellationToken);
+                await SendNormalPasteAsync(context, cancellationToken);
             }
 
             _logger.LogInformation("Smart paste is disabled. Fallback to normal paste.");
@@ -426,43 +429,73 @@ public sealed class GestureBuiltInActionExecutor : IMouseGestureActionExecutor
         var strategy = forceCleanWhenLeftModified && context.IsLeftButtonModified
             ? SmartPasteStrategy.CleanTextPaste
             : SmartPastePolicy.Select(app);
-        if (strategy == SmartPasteStrategy.NormalPaste)
-        {
-            if (allowNormalShortcut)
-            {
-                _keyboardInputSender.SendShortcut(KeyboardInputNativeMethods.VkControl, KeyboardInputNativeMethods.VkV);
-                await RecordPasteAsync(cancellationToken);
-            }
 
-            return;
+        // Prefer rewrite-then-paste for plain/clean; always fall back on any failure
+        // (including injection failure — previously treated as success).
+        if (strategy is SmartPasteStrategy.PlainTextPaste or SmartPasteStrategy.CleanTextPaste)
+        {
+            var text = _clipboardTextReader.TryReadText();
+            if (!string.IsNullOrEmpty(text))
+            {
+                try
+                {
+                    var pasteText = SmartPastePolicy.TransformForStrategy(text, strategy);
+                    _clipboardService.SuppressCaptureFor(TimeSpan.FromMilliseconds(1500));
+                    await _clipboardWriter.SetTextAsync(pasteText, cancellationToken);
+                    await Task.Delay(90, cancellationToken);
+                    TryRestoreGestureTarget(context);
+                    // Goes through IClipboardWriter → hardened multi-path injector in production.
+                    await _clipboardWriter.SendPasteHotkeyAsync(cancellationToken);
+                    await RecordPasteAsync(cancellationToken);
+                    _logger.LogInformation(
+                        "App-aware paste applied. Process={ProcessName} Strategy={Strategy}",
+                        app.ProcessName,
+                        strategy);
+                    return;
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogWarning(
+                        ex,
+                        "App-aware paste failed; falling back to normal paste. Process={ProcessName}",
+                        app.ProcessName);
+                }
+            }
+            else
+            {
+                _logger.LogInformation(
+                    "Smart paste has no text; falling back to normal paste. Process={ProcessName}",
+                    app.ProcessName);
+            }
         }
 
-        var text = _clipboardTextReader.TryReadText();
-        if (string.IsNullOrEmpty(text))
+        if (allowNormalShortcut)
         {
-            // Image-only or empty: fall back to normal paste so Ctrl+V / gesture still works.
-            _logger.LogInformation(
-                "Smart paste has no text; falling back to normal paste. Process={ProcessName}",
-                app.ProcessName);
-            if (allowNormalShortcut)
-            {
-                _keyboardInputSender.SendShortcut(KeyboardInputNativeMethods.VkControl, KeyboardInputNativeMethods.VkV);
-                await RecordPasteAsync(cancellationToken);
-            }
-
-            return;
+            await SendNormalPasteAsync(context, cancellationToken);
         }
+    }
 
-        var pasteText = SmartPastePolicy.TransformForStrategy(text, strategy);
-        _clipboardService.SuppressCaptureFor(TimeSpan.FromMilliseconds(1500));
-        await _clipboardWriter.SetTextAsync(pasteText, cancellationToken);
-        await Task.Delay(70, cancellationToken);
-        await _clipboardWriter.SendPasteHotkeyAsync(cancellationToken);
+    private async Task SendNormalPasteAsync(GestureExecutionContext context, CancellationToken cancellationToken)
+    {
+        TryRestoreGestureTarget(context);
+        // Production KeyboardInputSender routes Ctrl+V through multi-path injector
+        // (SendInput split → keybd_event → WM_PASTE). Tests use fakes via this interface.
+        _keyboardInputSender.SendShortcut(KeyboardInputNativeMethods.VkControl, KeyboardInputNativeMethods.VkV);
         await RecordPasteAsync(cancellationToken);
-        _logger.LogInformation(
-            "App-aware paste applied. Process={ProcessName} Strategy={Strategy}",
-            app.ProcessName,
-            strategy);
+    }
+
+    private void TryRestoreGestureTarget(GestureExecutionContext context)
+    {
+        if (context.TargetWindowHandle == 0)
+        {
+            return;
+        }
+
+        var ok = WindowNativeMethods.TryActivateWindow((IntPtr)context.TargetWindowHandle);
+        _logger.LogDebug(
+            "Gesture paste focus restore hwnd={Hwnd} ok={Ok}",
+            context.TargetWindowHandle,
+            ok);
     }
 
     private async Task SearchSelectedTextAsync(string urlFormat, CancellationToken cancellationToken)

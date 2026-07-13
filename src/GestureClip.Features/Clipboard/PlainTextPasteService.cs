@@ -46,11 +46,18 @@ public sealed class PlainTextPasteService : IPlainTextPasteService
             return;
         }
 
-        _clipboardService.SuppressCaptureFor(TimeSpan.FromMilliseconds(1500));
-        await _clipboardWriter.SetTextAsync(plain, cancellationToken);
-        // Wait for clipboard to settle before Ctrl+V (and for user to release physical keys).
-        await Task.Delay(ClipboardSettleDelay, cancellationToken);
-        await _clipboardWriter.SendPasteHotkeyAsync(cancellationToken);
-        _logger.LogInformation("Plain text paste completed. Length={Length}", plain.Length);
+        try
+        {
+            _clipboardService.SuppressCaptureFor(TimeSpan.FromMilliseconds(1500));
+            await _clipboardWriter.SetTextAsync(plain, cancellationToken);
+            await Task.Delay(ClipboardSettleDelay, cancellationToken);
+            await _clipboardWriter.SendPasteHotkeyAsync(cancellationToken);
+            _logger.LogInformation("Plain text paste completed. Length={Length}", plain.Length);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Plain text rewrite paste failed; retrying normal paste hotkey.");
+            await _clipboardWriter.SendPasteHotkeyAsync(cancellationToken);
+        }
     }
 }

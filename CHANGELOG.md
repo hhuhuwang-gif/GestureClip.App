@@ -1,17 +1,26 @@
 # CHANGELOG
 
-## GestureClip v0.6.17 Beta
+## GestureClip v0.6.18 Beta
 
-### 修复
+### 修复（下滑手势粘贴跨机失败 — 完整加固）
 
-- **粘贴热键无效**：`Ctrl+Shift+V` 触发后仍按住 Shift 时，合成粘贴被污染；先释放全部修饰键再 `Ctrl+V`，并等待剪贴板落定。
-- **历史面板粘贴无效**：先隐藏面板让原窗口重新获焦，再发送粘贴（避免 Ctrl+V 打进面板自己）。
-- 智能粘贴无文本（如图片）时回退普通粘贴。
-- 便携 zip 分发（Setup 安装器已移除）。
+- 修正 x64 下 `SendInput` 的 `INPUT` 结构布局（补齐 MOUSE 联合体），避免注入失败。
+- 粘贴前释放 **鼠标左右中键 + 全部修饰键**，再发带扫描码的 `Ctrl+V`（右键手势后更稳）。
+- **焦点恢复**：右键按下瞬间记录前台窗口，粘贴前 `AttachThreadInput` + `SetForegroundWindow` 拉回目标。
+- **多层注入**：SendInput（Ctrl 与 V 拆开发）→ `keybd_event` → `WM_PASTE` 回退。
+- 粘贴类手势：HUD 先隐藏再注入，避免焦点落在自身；注入失败不再当成成功。
+- 智能粘贴写剪贴板失败 / 注入失败均回退普通粘贴。
+- 历史面板粘贴仍先失焦；`Ctrl+Shift+V` 仍先清修饰键。
 
 ### 验证
 
 - `dotnet test ./GestureClip.sln`
+
+## GestureClip v0.6.17 Beta
+
+### 修复
+
+- 粘贴修饰键污染；历史面板先隐藏再粘贴；无文本回退；Setup 安装器移除。
 
 ## GestureClip v0.6.16 Beta
 

@@ -128,22 +128,16 @@ public sealed class WpfClipboardWriter : IClipboardWriter, IDisposable
     public async Task SendPasteHotkeyAsync(CancellationToken cancellationToken)
     {
         cancellationToken.ThrowIfCancellationRequested();
-
-        // Critical: after RegisterHotKey (e.g. Ctrl+Shift+V), Shift/Ctrl are often still physically down.
-        // Without releasing them, synthetic Ctrl+V becomes Ctrl+Shift+V and paste fails in many apps.
-        var inputs = KeyboardPasteInjector.BuildPasteWithModifierRelease();
-        var sent = KeyboardPasteInjector.Send(inputs);
-        if (sent != inputs.Length)
+        var ok = await KeyboardPasteInjector.SendCtrlVAsync(
+            _logger,
+            cancellationToken,
+            preferredTargetWindow: default,
+            preferClipboardMessage: true);
+        if (!ok)
         {
-            _logger.LogWarning(
-                "Paste SendInput sent {SentInputCount} of {ExpectedInputCount} inputs. Win32={Win32Error}",
-                sent,
-                inputs.Length,
-                Marshal.GetLastWin32Error());
+            _logger.LogWarning("SendPasteHotkeyAsync: all paste injection paths failed.");
+            throw new InvalidOperationException("Paste injection failed (SendInput / keybd_event / WM_PASTE).");
         }
-
-        // Allow target app to process key events before we return / exit.
-        await Task.Delay(25, cancellationToken);
     }
 
     private sealed record ClipboardImageData(

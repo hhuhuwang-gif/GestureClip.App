@@ -52,7 +52,10 @@ public static class KeyboardInputNativeMethods
     public const uint KeyEventKeyUp = 0x0002;
 
     [DllImport("user32.dll", SetLastError = true)]
-    public static extern uint SendInput(uint cInputs, INPUT[] pInputs, int cbSize);
+    public static extern uint SendInput(
+        uint cInputs,
+        [MarshalAs(UnmanagedType.LPArray), In] INPUT[] pInputs,
+        int cbSize);
 
     [StructLayout(LayoutKind.Sequential)]
     public struct INPUT
