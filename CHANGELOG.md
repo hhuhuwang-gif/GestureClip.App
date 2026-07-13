@@ -1,6 +1,6 @@
 # CHANGELOG
 
-## GestureClip v0.6.15 Beta（开发中）
+## GestureClip v0.6.15 Beta
 
 ### 剪贴板人性化快捷
 
@@ -14,6 +14,7 @@
 ### 验证
 
 - `dotnet test ./GestureClip.sln`
+- `scripts/publish-win-x64.ps1`
 
 ## GestureClip v0.6.14 Beta
 
