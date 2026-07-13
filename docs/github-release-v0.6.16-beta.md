@@ -1,24 +1,13 @@
 # GestureClip v0.6.16 Beta
 
-## 下载（推荐顺序）
+## 下载
 
-1. **安装包（推荐）**  
-   `GestureClip-Setup-v0.6.16-beta-win-x64.zip`  
-   解压后双击 `Setup.cmd`，装到 `%LOCALAPPDATA%\Programs\GestureClip`  
-   静默：`Setup.cmd /S`
+- `GestureClip-v0.6.16-beta-win-x64.zip` — 解压后运行 `GestureClip.exe`
+- `SHA256SUMS.txt`
 
-2. **便携包**  
-   `GestureClip-v0.6.16-beta-win-x64.zip`  
-   解压后运行 `GestureClip.exe`
-
-3. 校验：`SHA256SUMS.txt`
+> 说明：曾尝试的 Setup 安装器因兼容问题已下线，请用便携 zip。
 
 ## 本次重点
-
-### 安装与更新
-- 正式 **Setup 安装包**：开始菜单、可卸载、数据与程序分离
-- 应用内更新 **优先下载 Setup**，没有安装包再回退 portable 覆盖
-- 下载仍支持：系统代理 → 直连 → 镜像加速
 
 ### 粘贴力
 - 全局 `Ctrl+Shift+V` 纯文本粘贴
@@ -30,16 +19,18 @@
 - 设置：大卡片分组、字号节奏、深色模式
 - 快捷动作 Spotlight 化；手势迷你轨迹；工位小熊 Emoji IP
 
-## 本地数据
+### 更新
+- 多路径下载 GitHub 便携包后覆盖程序目录（代理 / 直连 / 镜像）
 
-覆盖 / 安装 / 卸载程序文件都不会删除：
+## 本地数据
 
 ```text
 %LOCALAPPDATA%\GestureClip\
 ```
 
+覆盖程序文件不会删除上述数据。
+
 ## 校验
 
 - `dotnet test ./GestureClip.sln`
 - `scripts/publish-win-x64.ps1`
-- `scripts/build-setup.ps1 -SkipPublish`

@@ -168,11 +168,10 @@ public sealed class AppLifecycleService : IAppLifecycleService
         try
         {
             var result = System.Windows.MessageBox.Show(
-                "将从 GitHub 下载最新安装包并升级。\n\n" +
-                "优先使用 Setup 安装程序（正式安装/升级）；若没有安装包再回退到程序目录覆盖。\n" +
+                "将下载 GitHub 最新便携包，关闭当前程序后覆盖本目录并重启。\n\n" +
                 "下载会自动尝试系统代理、直连与镜像加速。\n" +
-                "剪贴板历史与设置在 %LOCALAPPDATA%\\GestureClip，升级不会删除。\n\n是否继续？",
-                "检查并安装更新",
+                "剪贴板历史与设置在 %LOCALAPPDATA%\\GestureClip，不会被删除。\n\n是否继续？",
+                "一键覆盖更新",
                 MessageBoxButton.YesNo,
                 MessageBoxImage.Question);
             if (result != MessageBoxResult.Yes)

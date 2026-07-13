@@ -21,7 +21,7 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/hhuhuwang-gif/GestureClip.App/releases/download/v0.6.16-beta/GestureClip-Setup-v0.6.16-beta-win-x64.zip"><strong>⬇ 安装包 v0.6.16 Beta</strong></a>
+  <a href="https://github.com/hhuhuwang-gif/GestureClip.App/releases/download/v0.6.16-beta/GestureClip-v0.6.16-beta-win-x64.zip"><strong>⬇ 下载 v0.6.16 Beta</strong></a>
   ·
   <a href="https://github.com/hhuhuwang-gif/GestureClip.App/releases/tag/v0.6.16-beta">Release 说明</a>
   ·
@@ -42,8 +42,7 @@
 | 本地文本处理 | `Ctrl + Shift + Q` 打开快捷动作面板 |
 | 工位小熊 | 托盘 → 工位小熊 → 打开 Hub，填月薪与上下班时间 |
 
-**推荐**：下载 **Setup 安装包**（`GestureClip-Setup-*-win-x64.zip`）→ 解压 → 双击 `Setup.cmd`，装到本机开始菜单。  
-**便携**：下载 `GestureClip-v*-win-x64.zip`，解压后双击 `GestureClip.exe`（self-contained，一般无需装 .NET）。
+解压 zip 后双击 `GestureClip.exe` 即可（Windows x64 self-contained，一般**无需**安装 .NET）。
 
 ---
 
@@ -51,17 +50,16 @@
 
 | 资源 | 链接 |
 | --- | --- |
-| **Setup 安装包（推荐）** | [GestureClip-Setup-v0.6.16-beta-win-x64.zip](https://github.com/hhuhuwang-gif/GestureClip.App/releases/download/v0.6.16-beta/GestureClip-Setup-v0.6.16-beta-win-x64.zip) |
-| 便携包 | [GestureClip-v0.6.16-beta-win-x64.zip](https://github.com/hhuhuwang-gif/GestureClip.App/releases/download/v0.6.16-beta/GestureClip-v0.6.16-beta-win-x64.zip) |
+| 安装包 | [GestureClip-v0.6.16-beta-win-x64.zip](https://github.com/hhuhuwang-gif/GestureClip.App/releases/download/v0.6.16-beta/GestureClip-v0.6.16-beta-win-x64.zip) |
 | 校验文件 | [SHA256SUMS.txt](https://github.com/hhuhuwang-gif/GestureClip.App/releases/download/v0.6.16-beta/SHA256SUMS.txt) |
 | 全部版本 | [Releases](https://github.com/hhuhuwang-gif/GestureClip.App/releases) |
 
 ### 本版亮点
 
-- **Setup 安装包**：双击 `Setup.cmd` 装到本机；应用内更新优先下安装包
 - **全局 `Ctrl+Shift+V` 纯文本粘贴**；链接净化 / HTML→文本 / Markdown
 - **智能粘贴按应用**；密码框不记历史
 - **UI**：剪贴板分段筛选、深色模式、快捷动作 Spotlight、手势轨迹、小熊 Emoji
+- **更新**：多路径下载 GitHub 便携包后覆盖程序目录（数据不丢）
 
 完整说明见 [CHANGELOG.md](CHANGELOG.md) 与 [Release Notes](https://github.com/hhuhuwang-gif/GestureClip.App/releases/tag/v0.6.16-beta)。
 
@@ -179,26 +177,17 @@
 
 ---
 
-## 如何安装 / 更新
+## 如何安装 / 覆盖更新
 
-### 普通用户（推荐安装程序）
+1. [下载最新 zip](https://github.com/hhuhuwang-gif/GestureClip.App/releases/latest)
+2. 若已在运行：先退出 GestureClip，任务管理器确认无 `GestureClip.exe`
+3. 解压并覆盖旧目录（或新目录首次使用）
+4. 双击 `GestureClip.exe`
 
-1. 在 [Releases](https://github.com/hhuhuwang-gif/GestureClip.App/releases/latest) 下载 **`GestureClip-Setup-*-win-x64.zip`**
-2. 解压后双击 **`Setup.cmd`**
-3. 默认安装到 `%LOCALAPPDATA%\Programs\GestureClip`，开始菜单可启动
-4. 之后可用应用内「检查更新」拉取新版 **安装包** 升级（数据不丢）
+应用内：**设置 / 托盘 → 检查更新**，可下载新版并覆盖当前目录。  
+用户数据在 `%LOCALAPPDATA%\GestureClip\`，覆盖程序不会删除。详见 [UPDATE.md](UPDATE.md)。
 
-静默安装：`Setup.cmd /S`
-
-### 便携 / 开发
-
-1. 下载 `GestureClip-v*-win-x64.zip` 解压运行  
-2. 覆盖更新：退出进程后解压覆盖程序目录  
-
-详见 [UPDATE.md](UPDATE.md)。
-
-> 当前 Beta 未做代码签名，SmartScreen 可能提示「未知发布者」，属预期现象。  
-> 用户数据始终在 `%LOCALAPPDATA%\GestureClip\`，与安装目录分离。
+> 当前 Beta 未做代码签名，SmartScreen 可能提示「未知发布者」，属预期现象。
 
 ---
 
@@ -230,11 +219,8 @@ dotnet build .\GestureClip.sln -c Release
 # 测试
 dotnet test .\GestureClip.sln
 
-# 发布 Windows x64 portable（产物在 artifacts\release\）
+# 发布 Windows x64（产物在 artifacts\release\）
 powershell -ExecutionPolicy Bypass -File .\scripts\publish-win-x64.ps1
-
-# 打 Setup 安装包（给最终用户）
-powershell -ExecutionPolicy Bypass -File .\scripts\build-setup.ps1 -SkipPublish
 ```
 
 ---

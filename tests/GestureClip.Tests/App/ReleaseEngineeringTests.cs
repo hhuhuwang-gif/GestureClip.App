@@ -45,10 +45,7 @@ public sealed class ReleaseEngineeringTests
         Assert.DoesNotContain("GestureClip-v$packageVersion-update-win-x64.zip", checkScript);
         Assert.Contains("Remove-Item (Join-Path $output \"logs\")", script);
 
-        var setupScript = File.ReadAllText(FindRepositoryFile("scripts", "build-setup.ps1"));
-        Assert.Contains("GestureClip-Setup-v$packageVersion-win-x64.zip", setupScript);
-        Assert.Contains("install.ps1", setupScript);
-        Assert.Contains("Setup.cmd", setupScript);
+        Assert.Null(FindRepositoryFileOptional("scripts", "build-setup.ps1"));
     }
 
     [Fact]
@@ -63,16 +60,15 @@ public sealed class ReleaseEngineeringTests
         var releaseDraft = File.ReadAllText(FindRepositoryFile("docs", "github-release-v0.6.16-beta.md"));
 
         Assert.Contains("v0.6.16 Beta", readme);
-        Assert.Contains("Setup", readme);
-        Assert.Contains("build-setup.ps1", readme);
+        Assert.Contains("GestureClip-v0.6.16-beta-win-x64.zip", readme);
+        Assert.DoesNotContain("Setup.cmd", readme);
         Assert.Contains("%LOCALAPPDATA%\\GestureClip", update);
-        Assert.Contains("Setup", update);
-        Assert.Contains("安装", update);
+        Assert.Contains("覆盖", update);
         Assert.Contains("导出诊断包", help);
         Assert.Contains("公测检查清单", betaTest);
         Assert.Contains("SmartScreen", knownIssues);
         Assert.Contains("GestureClip v0.6.16 Beta", changelog);
-        Assert.Contains("GestureClip-Setup-v0.6.16-beta-win-x64.zip", releaseDraft);
+        Assert.Contains("GestureClip-v0.6.16-beta-win-x64.zip", releaseDraft);
         Assert.Contains("SHA256SUMS.txt", releaseDraft);
         Assert.Contains("Ctrl+Shift+V", releaseDraft);
         var clipboardOverlayXaml = File.ReadAllText(FindRepositoryFile("src", "GestureClip.App", "ClipboardOverlayWindow.xaml"));
@@ -84,6 +80,17 @@ public sealed class ReleaseEngineeringTests
     }
 
     private static string FindRepositoryFile(params string[] segments)
+    {
+        var path = FindRepositoryFileOptional(segments);
+        if (path is null)
+        {
+            throw new FileNotFoundException("Could not locate repository file.", Path.Combine(segments));
+        }
+
+        return path;
+    }
+
+    private static string? FindRepositoryFileOptional(params string[] segments)
     {
         var directory = new DirectoryInfo(AppContext.BaseDirectory);
         while (directory is not null)
@@ -97,7 +104,6 @@ public sealed class ReleaseEngineeringTests
             directory = directory.Parent;
         }
 
-        throw new FileNotFoundException("Could not locate repository file.", Path.Combine(segments));
+        return null;
     }
 }
-
