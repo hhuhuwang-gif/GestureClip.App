@@ -1,6 +1,6 @@
 # CHANGELOG
 
-## GestureClip v0.6.16 Beta（开发中）
+## GestureClip v0.6.16 Beta
 
 ### 安装与更新（正式安装方向）
 
