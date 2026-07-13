@@ -1,13 +1,19 @@
 # CHANGELOG
 
-## GestureClip v0.6.18 Beta (local / unreleased polish)
+## GestureClip v0.6.19 Beta
 
-### 修复（智能粘贴一开就无法粘贴）
+### 修复（智能粘贴开启后无法粘贴）
 
-- **根因**：智能粘贴开启后走「改写剪贴板 + 独立注入并 early return」，与「关闭智能粘贴」的可靠 Ctrl+V 路径分叉；注入假成功时直接结束。
-- **统一路径**：智能粘贴只做**尽力改写剪贴板**（纯文本无变化则跳过 OpenClipboard）；**始终**再走与关闭时相同的键盘 `Ctrl+V`。
-- 焦点：目标已是前台时**不**再 `SetForegroundWindow`，避免抢走编辑框光标。
-- 注入器简化：一次 SendInput Ctrl+V → keybd_event → WM_PASTE；不再无条件重激活当前前台窗。
+- **根因**：智能粘贴开启后走「改写剪贴板 + 独立注入并 early return」，与关闭时可靠的 `Ctrl+V` 分叉。
+- **统一路径**：智能粘贴只做尽力改写剪贴板（内容不变则跳过）；**始终**再走键盘 `Ctrl+V`。
+- 焦点：目标已是前台时不再 `SetForegroundWindow`，避免抢走输入框光标。
+- 注入：SendInput → keybd_event → WM_PASTE。
+
+### 验证
+
+- `dotnet test ./GestureClip.sln`
+
+## GestureClip v0.6.18 Beta
 
 ### 修复（下滑手势粘贴跨机）
 
@@ -15,7 +21,7 @@
 
 ### 验证
 
-- `dotnet test ./GestureClip.sln`（本地验证，本轮不发版）
+- `dotnet test ./GestureClip.sln`
 
 ## GestureClip v0.6.17 Beta
 
