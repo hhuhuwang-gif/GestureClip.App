@@ -29,11 +29,15 @@ public sealed class ClipboardOverlayViewModel : INotifyPropertyChanged
     private bool _isLoadingMore;
     private bool _hasMoreItems;
     private string? _errorMessage;
+    private bool _isShortcutHelpVisible;
+    private IReadOnlyList<ClipboardItem> _undoDeleteItems = [];
 
     public ClipboardOverlayViewModel(IClipboardService clipboardService, TimeSpan? searchDebounceDelay = null)
     {
         _clipboardService = clipboardService;
         _searchDebounceDelay = searchDebounceDelay ?? TimeSpan.FromMilliseconds(180);
+        StatusText = "";
+        RefreshShortcutHint();
     }
 
     public event PropertyChangedEventHandler? PropertyChanged;
@@ -138,6 +142,43 @@ public sealed class ClipboardOverlayViewModel : INotifyPropertyChanged
 
     public string SummaryText => $"共 {Items.Count} 条 · 已选 {_selectedCount} 条";
 
+    public string ShortcutHintText { get; private set; } =
+        "Home 回顶 · End 到底 · Ctrl+Enter 粘贴不关 · Ctrl+Shift+C 纯文本 · ? 快捷键 · Esc 清搜索/关闭";
+
+    public bool CanUndoDelete => _undoDeleteItems.Count > 0;
+
+    public bool IsShortcutHelpVisible
+    {
+        get => _isShortcutHelpVisible;
+        private set
+        {
+            if (_isShortcutHelpVisible == value)
+            {
+                return;
+            }
+
+            _isShortcutHelpVisible = value;
+            OnPropertyChanged();
+        }
+    }
+
+    public string ShortcutHelpText { get; } =
+        """
+        打开/关闭面板    Ctrl + `
+        聚焦搜索         Ctrl + F
+        分类筛选         Ctrl + 1~5
+        复制             Ctrl + C
+        纯文本复制       Ctrl + Shift + C
+        粘贴并关闭       Enter
+        粘贴不关闭       Ctrl + Enter
+        置顶 / 片段      Ctrl + P / Ctrl + S
+        删除             Delete
+        撤销删除         Ctrl + Z（刚删过时）
+        回顶 / 到底      Home / End
+        重置视图         Esc（有搜索时）或「清空」
+        快捷键速查       ? 或 F1
+        """;
+
     public string EmptyStateText
     {
         get => _emptyStateText;
@@ -228,6 +269,7 @@ public sealed class ClipboardOverlayViewModel : INotifyPropertyChanged
     public async Task LoadAsync()
     {
         await SearchAsync();
+        SelectLatestItem();
     }
 
     public async Task SearchAsync()
@@ -246,7 +288,55 @@ public sealed class ClipboardOverlayViewModel : INotifyPropertyChanged
         _searchText = "";
         OnPropertyChanged(nameof(SearchText));
         await SearchAsync();
+        SelectLatestItem();
+        StatusText = "已清空搜索";
         return true;
+    }
+
+    /// <summary>
+    /// Clear search; if search already empty, reset filter to All. Always select latest.
+    /// </summary>
+    public async Task<bool> ResetViewAsync()
+    {
+        var changed = false;
+        if (!string.IsNullOrEmpty(_searchText))
+        {
+            _searchText = "";
+            OnPropertyChanged(nameof(SearchText));
+            changed = true;
+        }
+
+        if (_selectedFilter != ClipboardOverlayFilter.All)
+        {
+            _selectedFilter = ClipboardOverlayFilter.All;
+            OnPropertyChanged(nameof(SelectedFilter));
+            changed = true;
+        }
+
+        if (changed)
+        {
+            await SearchAsync();
+        }
+
+        SelectLatestItem();
+        StatusText = changed ? "已重置视图" : "已回到最新";
+        return true;
+    }
+
+    public void SelectLatestItem()
+    {
+        SelectedItem = Items.FirstOrDefault();
+        UpdateSelectedCount(SelectedItem is null ? 0 : 1);
+    }
+
+    public void ToggleShortcutHelp()
+    {
+        IsShortcutHelpVisible = !IsShortcutHelpVisible;
+    }
+
+    public void HideShortcutHelp()
+    {
+        IsShortcutHelpVisible = false;
     }
 
     private async Task SearchDebouncedAsync()
@@ -427,14 +517,20 @@ public sealed class ClipboardOverlayViewModel : INotifyPropertyChanged
         return next;
     }
 
-    public async Task<bool> PasteSelectedAsync()
+    public async Task<bool> PasteSelectedAsync(bool keepOverlayOpen = false)
     {
         if (SelectedItem is null)
         {
             return false;
         }
 
-        return await TryPasteAsync(SelectedItem);
+        var ok = await TryPasteAsync(SelectedItem);
+        if (ok)
+        {
+            StatusText = keepOverlayOpen ? "已粘贴（面板保持打开）" : "已粘贴";
+        }
+
+        return ok;
     }
 
     public async Task<bool> PasteByIndexAsync(int index)
@@ -444,7 +540,13 @@ public sealed class ClipboardOverlayViewModel : INotifyPropertyChanged
             return false;
         }
 
-        return await TryPasteAsync(Items[index]);
+        var ok = await TryPasteAsync(Items[index]);
+        if (ok)
+        {
+            StatusText = "已粘贴";
+        }
+
+        return ok;
     }
 
     private async Task<bool> TryPasteAsync(ClipboardItem item)
@@ -476,10 +578,10 @@ public sealed class ClipboardOverlayViewModel : INotifyPropertyChanged
             await _clipboardService.CopyItemsAsync(selectedItems, CancellationToken.None);
             MarkItemsUsed(selectedItems.Select(item => item.Id).ToArray());
             StatusText = selectedItems.Count == 1 && selectedItems[0].IsImage
-                ? "图片已复制到系统剪贴板"
+                ? "图片已复制到系统剪贴板 · 面板未关闭"
                 : selectedItems.Count == 1
-                    ? "文字已复制到系统剪贴板"
-                    : $"已合并复制 {selectedItems.Count} 条到系统剪贴板";
+                    ? "文字已复制到系统剪贴板 · 面板未关闭"
+                    : $"已合并复制 {selectedItems.Count} 条 · 面板未关闭";
             return true;
         }
         catch (NotSupportedException ex)
@@ -497,6 +599,67 @@ public sealed class ClipboardOverlayViewModel : INotifyPropertyChanged
         }
     }
 
+    public async Task<bool> CopySelectedAsPlainTextAsync(IReadOnlyList<ClipboardItem> selectedItems)
+    {
+        if (selectedItems.Count == 0)
+        {
+            return false;
+        }
+
+        if (selectedItems.Any(item => item.IsImage))
+        {
+            StatusText = "图片无法复制为纯文本，请改用「复制」";
+            return false;
+        }
+
+        try
+        {
+            ErrorMessage = null;
+            var plainItems = new List<ClipboardItem>(selectedItems.Count);
+            foreach (var item in selectedItems)
+            {
+                var full = await _clipboardService.GetByIdAsync(item.Id, CancellationToken.None) ?? item;
+                var raw = full.TextContent ?? item.TextContent ?? item.PreviewText ?? "";
+                var plain = CleanPlainText(raw);
+                if (string.IsNullOrEmpty(plain))
+                {
+                    continue;
+                }
+
+                plainItems.Add(full with
+                {
+                    ContentType = "text",
+                    TextContent = plain,
+                    PreviewText = plain.Length > 120 ? plain[..120] : plain
+                });
+            }
+
+            if (plainItems.Count == 0)
+            {
+                StatusText = "没有可复制的纯文本";
+                return false;
+            }
+
+            await _clipboardService.CopyItemsAsync(plainItems, CancellationToken.None);
+            MarkItemsUsed(plainItems.Select(item => item.Id).ToArray());
+            StatusText = plainItems.Count == 1
+                ? "已复制为纯文本 · 面板未关闭"
+                : $"已合并复制 {plainItems.Count} 条纯文本 · 面板未关闭";
+            return true;
+        }
+        catch (NotSupportedException ex)
+        {
+            StatusText = ex.Message;
+            return false;
+        }
+        catch (Exception ex)
+        {
+            ErrorMessage = $"纯文本复制失败：{ex.Message}";
+            StatusText = "纯文本复制失败";
+            return false;
+        }
+    }
+
     public async Task<bool> DeleteItemsAsync(IReadOnlyList<ClipboardItem> selectedItems)
     {
         if (selectedItems.Count == 0)
@@ -504,11 +667,108 @@ public sealed class ClipboardOverlayViewModel : INotifyPropertyChanged
             return false;
         }
 
-        var ids = selectedItems.Select(item => item.Id).ToArray();
+        // Prefer full content for undo (images / long text).
+        var stash = new List<ClipboardItem>(selectedItems.Count);
+        foreach (var item in selectedItems)
+        {
+            var full = await _clipboardService.GetByIdAsync(item.Id, CancellationToken.None) ?? item;
+            stash.Add(full);
+        }
+
+        var ids = stash.Select(item => item.Id).ToArray();
         var deleted = await _clipboardService.DeleteItemsAsync(ids, CancellationToken.None);
+        if (deleted <= 0)
+        {
+            StatusText = "删除失败";
+            return false;
+        }
+
+        _undoDeleteItems = stash;
+        OnPropertyChanged(nameof(CanUndoDelete));
+        RefreshShortcutHint();
         RemoveItems(ids);
-        StatusText = $"已删除 {deleted} 条";
-        return deleted > 0;
+        StatusText = deleted == 1
+            ? "已删除 1 条 · Ctrl+Z 撤销"
+            : $"已删除 {deleted} 条 · Ctrl+Z 撤销";
+        return true;
+    }
+
+    public async Task<bool> UndoLastDeleteAsync()
+    {
+        if (_undoDeleteItems.Count == 0)
+        {
+            return false;
+        }
+
+        var items = _undoDeleteItems;
+        try
+        {
+            await _clipboardService.RestoreItemsAsync(items, CancellationToken.None);
+            _undoDeleteItems = [];
+            OnPropertyChanged(nameof(CanUndoDelete));
+            RefreshShortcutHint();
+            await SearchAsync();
+            SelectedItem = Items.FirstOrDefault(item => item.Id == items[0].Id) ?? Items.FirstOrDefault();
+            UpdateSelectedCount(SelectedItem is null ? 0 : 1);
+            StatusText = items.Count == 1
+                ? "已撤销删除"
+                : $"已撤销删除 {items.Count} 条";
+            return true;
+        }
+        catch (Exception ex)
+        {
+            ErrorMessage = $"撤销删除失败：{ex.Message}";
+            StatusText = "撤销失败";
+            return false;
+        }
+    }
+
+    private void RefreshShortcutHint()
+    {
+        ShortcutHintText = CanUndoDelete
+            ? "Ctrl+Z 撤销删除 · Home 回顶 · Ctrl+Enter 粘贴不关 · ? 快捷键"
+            : "Home 回顶 · End 到底 · Ctrl+Enter 粘贴不关 · Ctrl+Shift+C 纯文本 · ? 快捷键 · Esc 清搜索/关闭";
+        OnPropertyChanged(nameof(ShortcutHintText));
+    }
+
+    private static string CleanPlainText(string text)
+    {
+        var normalized = text
+            .Replace("\r\n", "\n", StringComparison.Ordinal)
+            .Replace("\r", "\n", StringComparison.Ordinal);
+        var lines = normalized.Split('\n');
+        var result = new List<string>(lines.Length);
+        var blankCount = 0;
+
+        foreach (var line in lines)
+        {
+            var cleanedLine = line.TrimEnd();
+            if (cleanedLine.Length == 0)
+            {
+                blankCount++;
+                if (blankCount <= 1)
+                {
+                    result.Add("");
+                }
+
+                continue;
+            }
+
+            blankCount = 0;
+            result.Add(cleanedLine);
+        }
+
+        while (result.Count > 0 && result[0].Length == 0)
+        {
+            result.RemoveAt(0);
+        }
+
+        while (result.Count > 0 && result[^1].Length == 0)
+        {
+            result.RemoveAt(result.Count - 1);
+        }
+
+        return string.Join("\r\n", result);
     }
 
     public async Task<bool> ToggleSelectedPinnedAsync()
@@ -683,6 +943,16 @@ public sealed class ClipboardOverlayViewModel : INotifyPropertyChanged
             .Where(item => !idSet.Contains(item.Id))
             .ToArray();
 
+        var firstDeletedIndex = -1;
+        for (var index = 0; index < Items.Count; index++)
+        {
+            if (idSet.Contains(Items[index].Id))
+            {
+                firstDeletedIndex = index;
+                break;
+            }
+        }
+
         for (var index = Items.Count - 1; index >= 0; index--)
         {
             if (idSet.Contains(Items[index].Id))
@@ -691,8 +961,23 @@ public sealed class ClipboardOverlayViewModel : INotifyPropertyChanged
             }
         }
 
-        SelectedItem = Items.FirstOrDefault();
-        UpdateSelectedCount(SelectedItem is null ? 0 : 1);
+        if (Items.Count == 0)
+        {
+            SelectedItem = null;
+            UpdateSelectedCount(0);
+        }
+        else if (firstDeletedIndex >= 0)
+        {
+            var nextIndex = Math.Min(firstDeletedIndex, Items.Count - 1);
+            SelectedItem = Items[nextIndex];
+            UpdateSelectedCount(1);
+        }
+        else
+        {
+            SelectedItem = Items.FirstOrDefault();
+            UpdateSelectedCount(SelectedItem is null ? 0 : 1);
+        }
+
         EmptyStateText = Items.Count == 0 ? "没有匹配的剪贴板记录" : "";
         OnPropertyChanged(nameof(SummaryText));
     }

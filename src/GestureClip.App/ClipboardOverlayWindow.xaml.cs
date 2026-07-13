@@ -31,9 +31,10 @@ public partial class ClipboardOverlayWindow : Window
         SetAlwaysVisible(_settingsService.Get(SettingKeys.ClipboardOverlayAlwaysVisible, false), persist: false);
     }
 
-    public Task LoadHistoryAsync()
+    public async Task LoadHistoryAsync()
     {
-        return _viewModel.LoadAsync();
+        await _viewModel.LoadAsync();
+        ScrollToTopAndSelectLatest();
     }
 
     public void FocusSearchBox()
@@ -44,6 +45,20 @@ public partial class ClipboardOverlayWindow : Window
 
     private async void Window_KeyDown(object sender, System.Windows.Input.KeyEventArgs e)
     {
+        if (IsShortcutHelpToggleKey(e))
+        {
+            _viewModel.ToggleShortcutHelp();
+            e.Handled = true;
+            return;
+        }
+
+        if (_viewModel.IsShortcutHelpVisible && e.Key == Key.Escape)
+        {
+            _viewModel.HideShortcutHelp();
+            e.Handled = true;
+            return;
+        }
+
         if ((Keyboard.Modifiers & ModifierKeys.Control) == ModifierKeys.Control &&
             SelectFilterByShortcut(e.Key))
         {
@@ -58,11 +73,45 @@ public partial class ClipboardOverlayWindow : Window
             return;
         }
 
+        if (e.Key == Key.Home)
+        {
+            ScrollToTopAndSelectLatest();
+            e.Handled = true;
+            return;
+        }
+
+        if (e.Key == Key.End)
+        {
+            ScrollToBottom();
+            e.Handled = true;
+            return;
+        }
+
+        if (e.Key == Key.Z &&
+            (Keyboard.Modifiers & ModifierKeys.Control) == ModifierKeys.Control &&
+            (Keyboard.Modifiers & ModifierKeys.Shift) == 0 &&
+            _viewModel.CanUndoDelete &&
+            !IsSearchBoxTyping())
+        {
+            await _viewModel.UndoLastDeleteAsync();
+            SyncListSelectionFromViewModel();
+            e.Handled = true;
+            return;
+        }
+
         if (e.Key == Key.Escape)
         {
+            if (_viewModel.IsShortcutHelpVisible)
+            {
+                _viewModel.HideShortcutHelp();
+                e.Handled = true;
+                return;
+            }
+
             if (await _viewModel.ClearSearchAsync())
             {
                 FocusSearchBox();
+                ScrollToTopAndSelectLatest();
                 e.Handled = true;
                 return;
             }
@@ -75,6 +124,15 @@ public partial class ClipboardOverlayWindow : Window
         if (e.Key == Key.A && (Keyboard.Modifiers & ModifierKeys.Control) == ModifierKeys.Control)
         {
             HistoryList.SelectAll();
+            e.Handled = true;
+            return;
+        }
+
+        if (e.Key == Key.C &&
+            (Keyboard.Modifiers & ModifierKeys.Control) == ModifierKeys.Control &&
+            (Keyboard.Modifiers & ModifierKeys.Shift) == ModifierKeys.Shift)
+        {
+            await _viewModel.CopySelectedAsPlainTextAsync(GetSelectedItems());
             e.Handled = true;
             return;
         }
@@ -102,14 +160,28 @@ public partial class ClipboardOverlayWindow : Window
 
         if (e.Key == Key.Delete)
         {
-            await _viewModel.DeleteItemsAsync(GetSelectedItems());
+            var selected = GetSelectedItems();
+            if (selected.Count > 0 && ConfirmDeleteSelectedItems(selected))
+            {
+                await _viewModel.DeleteItemsAsync(selected);
+                SyncListSelectionFromViewModel();
+            }
+
+            e.Handled = true;
+            return;
+        }
+
+        if (e.Key == Key.Enter &&
+            (Keyboard.Modifiers & ModifierKeys.Control) == ModifierKeys.Control)
+        {
+            await _viewModel.PasteSelectedAsync(keepOverlayOpen: true);
             e.Handled = true;
             return;
         }
 
         if (e.Key == Key.Enter)
         {
-            if (await _viewModel.PasteSelectedAsync())
+            if (await _viewModel.PasteSelectedAsync(keepOverlayOpen: false))
             {
                 HideOverlayAndReleaseFocus();
             }
@@ -130,9 +202,31 @@ public partial class ClipboardOverlayWindow : Window
         }
     }
 
+    private bool IsSearchBoxTyping()
+    {
+        return SearchBox.IsKeyboardFocusWithin && !string.IsNullOrEmpty(SearchBox.Text);
+    }
+
+    private static bool IsShortcutHelpToggleKey(System.Windows.Input.KeyEventArgs e)
+    {
+        if (e.Key == Key.F1)
+        {
+            return true;
+        }
+
+        // US/many layouts: Shift + /  → ?
+        if ((e.Key is Key.Oem2 or Key.OemQuestion) &&
+            (Keyboard.Modifiers & ModifierKeys.Shift) == ModifierKeys.Shift)
+        {
+            return true;
+        }
+
+        return false;
+    }
+
     private void Window_Deactivated(object sender, EventArgs e)
     {
-        if (_alwaysVisible || _isContextMenuOpen)
+        if (_alwaysVisible || _isContextMenuOpen || _viewModel.IsShortcutHelpVisible)
         {
             return;
         }
@@ -166,6 +260,92 @@ public partial class ClipboardOverlayWindow : Window
     private void ContextMenu_Closed(object sender, RoutedEventArgs e)
     {
         _isContextMenuOpen = false;
+    }
+
+    private void ScrollTopButton_Click(object sender, RoutedEventArgs e)
+    {
+        ScrollToTopAndSelectLatest();
+    }
+
+    private void ShortcutHelpButton_Click(object sender, RoutedEventArgs e)
+    {
+        _viewModel.ToggleShortcutHelp();
+    }
+
+    private void ShortcutHelpBackdrop_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+    {
+        _viewModel.HideShortcutHelp();
+        e.Handled = true;
+    }
+
+    private void ShortcutHelpCard_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+    {
+        // Prevent backdrop close when clicking the card itself.
+        e.Handled = true;
+    }
+
+    private void ScrollToTopAndSelectLatest()
+    {
+        _viewModel.SelectLatestItem();
+        SyncListSelectionFromViewModel();
+        if (FindScrollViewer(HistoryList) is { } scrollViewer)
+        {
+            scrollViewer.ScrollToVerticalOffset(0);
+        }
+
+        if (_viewModel.SelectedItem is { } item)
+        {
+            HistoryList.ScrollIntoView(item);
+        }
+    }
+
+    private void ScrollToBottom()
+    {
+        if (FindScrollViewer(HistoryList) is { } scrollViewer)
+        {
+            scrollViewer.ScrollToEnd();
+        }
+
+        if (_viewModel.Items.Count > 0)
+        {
+            var last = _viewModel.Items[^1];
+            HistoryList.SelectedItem = last;
+            _viewModel.SelectedItem = last;
+            HistoryList.ScrollIntoView(last);
+        }
+    }
+
+    private void SyncListSelectionFromViewModel()
+    {
+        if (_viewModel.SelectedItem is null)
+        {
+            HistoryList.SelectedItems.Clear();
+            return;
+        }
+
+        HistoryList.SelectedItems.Clear();
+        HistoryList.SelectedItem = _viewModel.SelectedItem;
+        HistoryList.ScrollIntoView(_viewModel.SelectedItem);
+    }
+
+    private static ScrollViewer? FindScrollViewer(DependencyObject root)
+    {
+        if (root is ScrollViewer scrollViewer)
+        {
+            return scrollViewer;
+        }
+
+        for (var i = 0; i < VisualTreeHelper.GetChildrenCount(root); i++)
+        {
+            var child = VisualTreeHelper.GetChild(root, i);
+            var found = FindScrollViewer(child);
+            if (found is not null)
+            {
+                return found;
+            }
+        }
+
+        return null;
     }
 
     private bool SelectFilterByShortcut(Key key)
@@ -209,12 +389,22 @@ public partial class ClipboardOverlayWindow : Window
     private void HistoryList_SelectionChanged(object sender, SelectionChangedEventArgs e)
     {
         _viewModel.UpdateSelectedCount(HistoryList.SelectedItems.Count);
+        if (HistoryList.SelectedItem is ClipboardItem selected)
+        {
+            _viewModel.SelectedItem = selected;
+        }
     }
 
     private async void ClearSearchButton_Click(object sender, RoutedEventArgs e)
     {
-        await _viewModel.ClearSearchAsync();
+        await _viewModel.ResetViewAsync();
+        if (AllFilterButton is not null)
+        {
+            AllFilterButton.IsChecked = true;
+        }
+
         FocusSearchBox();
+        ScrollToTopAndSelectLatest();
     }
 
     private async void LoadMoreButton_Click(object sender, RoutedEventArgs e)
@@ -224,6 +414,11 @@ public partial class ClipboardOverlayWindow : Window
 
     private async void HistoryList_ScrollChanged(object sender, ScrollChangedEventArgs e)
     {
+        if (ScrollTopButton is not null)
+        {
+            ScrollTopButton.Opacity = e.VerticalOffset > 24 ? 1.0 : 0.55;
+        }
+
         if (e.VerticalChange <= 0 || !_viewModel.CanLoadMore)
         {
             return;
@@ -270,12 +465,22 @@ public partial class ClipboardOverlayWindow : Window
         await _viewModel.CopySelectedAsync(GetSelectedItems());
     }
 
+    private async void CopyPlainTextMenuItem_Click(object sender, RoutedEventArgs e)
+    {
+        await _viewModel.CopySelectedAsPlainTextAsync(GetSelectedItems());
+    }
+
     private async void PasteSelectedMenuItem_Click(object sender, RoutedEventArgs e)
     {
-        if (await _viewModel.PasteSelectedAsync())
+        if (await _viewModel.PasteSelectedAsync(keepOverlayOpen: false))
         {
-            Hide();
+            HideOverlayAndReleaseFocus();
         }
+    }
+
+    private async void PasteKeepOpenMenuItem_Click(object sender, RoutedEventArgs e)
+    {
+        await _viewModel.PasteSelectedAsync(keepOverlayOpen: true);
     }
 
     private async void TogglePinnedMenuItem_Click(object sender, RoutedEventArgs e)
@@ -297,6 +502,13 @@ public partial class ClipboardOverlayWindow : Window
         }
 
         await _viewModel.DeleteItemsAsync(selectedItems);
+        SyncListSelectionFromViewModel();
+    }
+
+    private async void UndoDeleteMenuItem_Click(object sender, RoutedEventArgs e)
+    {
+        await _viewModel.UndoLastDeleteAsync();
+        SyncListSelectionFromViewModel();
     }
 
     private async void QuickCopyItemButton_Click(object sender, RoutedEventArgs e)
@@ -319,7 +531,7 @@ public partial class ClipboardOverlayWindow : Window
         }
 
         SelectSingleItem(item);
-        if (await _viewModel.PasteSelectedAsync())
+        if (await _viewModel.PasteSelectedAsync(keepOverlayOpen: false))
         {
             HideOverlayAndReleaseFocus();
         }
@@ -359,6 +571,7 @@ public partial class ClipboardOverlayWindow : Window
         if (ConfirmDeleteSelectedItems([item]))
         {
             await _viewModel.DeleteItemsAsync([item]);
+            SyncListSelectionFromViewModel();
         }
 
         e.Handled = true;
@@ -372,8 +585,8 @@ public partial class ClipboardOverlayWindow : Window
         }
 
         var message = selectedItems.Count == 1
-            ? "这会从本机剪贴板历史里删除这条记录。删除后不会影响当前系统剪贴板内容。是否继续？"
-            : $"这会从本机剪贴板历史里删除选中的 {selectedItems.Count} 条记录。删除后不会影响当前系统剪贴板内容。是否继续？";
+            ? "这会从本机剪贴板历史里删除这条记录。删除后可立即 Ctrl+Z 撤销。不会影响当前系统剪贴板内容。是否继续？"
+            : $"这会从本机剪贴板历史里删除选中的 {selectedItems.Count} 条记录。删除后可立即 Ctrl+Z 撤销。不会影响当前系统剪贴板内容。是否继续？";
         return _confirmationService.Confirm("删除剪贴板记录", message);
     }
 
@@ -410,6 +623,7 @@ public partial class ClipboardOverlayWindow : Window
 
     private void HideOverlayAndReleaseFocus()
     {
+        _viewModel.HideShortcutHelp();
         MoveFocus(new TraversalRequest(FocusNavigationDirection.Next));
         Hide();
     }

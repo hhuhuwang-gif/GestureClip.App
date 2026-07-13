@@ -228,10 +228,11 @@ public sealed class ThemeResourceTests
         var path = FindRepositoryFile("src", "GestureClip.App", "ClipboardOverlayWindow.xaml");
         var xaml = File.ReadAllText(path);
 
-        Assert.Contains("Ctrl + 1-5", xaml);
-        Assert.Contains("Ctrl + P", xaml);
-        Assert.Contains("Ctrl + S", xaml);
-        Assert.Contains("Delete", xaml);
+        Assert.Contains("ShortcutHintText", xaml);
+        Assert.Contains("↑ 顶部", xaml);
+        Assert.Contains("Ctrl+Enter", xaml);
+        Assert.Contains("Ctrl+Shift+C", xaml);
+        Assert.Contains("ShortcutHelpText", xaml);
     }
 
     [Fact]

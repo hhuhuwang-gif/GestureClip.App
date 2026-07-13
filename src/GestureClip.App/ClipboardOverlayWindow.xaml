@@ -14,6 +14,9 @@
         WindowStartupLocation="CenterScreen"
         KeyDown="Window_KeyDown"
         Deactivated="Window_Deactivated">
+    <Window.Resources>
+        <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter" />
+    </Window.Resources>
     <Border CornerRadius="20"
             Margin="16"
             Padding="20"
@@ -36,6 +39,27 @@
                 <StackPanel DockPanel.Dock="Right"
                             Orientation="Horizontal"
                             VerticalAlignment="Center">
+                    <Button x:Name="ScrollTopButton"
+                            Content="↑ 顶部"
+                            Width="64"
+                            Height="30"
+                            MinWidth="0"
+                            Padding="0"
+                            FontSize="12"
+                            Margin="0,0,8,0"
+                            ToolTip="回到最新一条（Home）"
+                            Click="ScrollTopButton_Click" />
+                    <Button x:Name="ShortcutHelpButton"
+                            Content="?"
+                            Width="30"
+                            Height="30"
+                            MinWidth="0"
+                            Padding="0"
+                            FontSize="13"
+                            FontWeight="SemiBold"
+                            Margin="0,0,8,0"
+                            ToolTip="快捷键速查（F1 / ?）"
+                            Click="ShortcutHelpButton_Click" />
                     <Button x:Name="AlwaysVisibleButton"
                             Content="常显"
                             Width="58"
@@ -55,7 +79,7 @@
                     <TextBlock Text="剪贴板历史"
                                FontSize="22"
                                FontWeight="SemiBold" />
-                    <TextBlock Text="双击复制并关闭 · Enter/粘贴会粘贴并关闭 · 复制按钮只复制不关闭"
+                    <TextBlock Text="双击复制并关闭 · Enter 粘贴并关闭 · Ctrl+Enter 粘贴不关 · 复制按钮只复制不关闭"
                                Style="{StaticResource MutedTextStyle}"
                                Margin="0,4,0,0" />
                 </StackPanel>
@@ -67,13 +91,14 @@
                             VerticalAlignment="Center"
                             Margin="12,0,0,0">
                     <Button x:Name="ClearSearchButton"
-                            Content="清空"
+                            Content="重置"
                             Width="54"
                             Height="30"
                             MinWidth="0"
                             Padding="0"
                             FontSize="12"
                             Margin="0,0,10,0"
+                            ToolTip="清空搜索；若已清空则恢复「全部」筛选，并回到顶部"
                             Click="ClearSearchButton_Click" />
                     <TextBlock Text="Enter"
                                Style="{StaticResource MutedTextStyle}"
@@ -148,12 +173,15 @@
                     <ContextMenu DataContext="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource Self}}"
                                  Opened="ContextMenu_Opened"
                                  Closed="ContextMenu_Closed">
-                        <MenuItem Header="复制选中" Click="CopySelectedMenuItem_Click" />
-                        <MenuItem Header="粘贴选中" Click="PasteSelectedMenuItem_Click" />
+                        <MenuItem Header="复制选中" Click="CopySelectedMenuItem_Click" InputGestureText="Ctrl+C" />
+                        <MenuItem Header="复制为纯文本" Click="CopyPlainTextMenuItem_Click" InputGestureText="Ctrl+Shift+C" />
+                        <MenuItem Header="粘贴选中并关闭" Click="PasteSelectedMenuItem_Click" InputGestureText="Enter" />
+                        <MenuItem Header="粘贴选中（不关闭）" Click="PasteKeepOpenMenuItem_Click" InputGestureText="Ctrl+Enter" />
                         <Separator />
-                        <MenuItem Header="{Binding SelectedPinActionText}" Click="TogglePinnedMenuItem_Click" />
-                        <MenuItem Header="{Binding SelectedFavoriteActionText}" Click="ToggleFavoriteMenuItem_Click" />
-                        <MenuItem Header="删除选中" Click="DeleteSelectedMenuItem_Click" />
+                        <MenuItem Header="{Binding SelectedPinActionText}" Click="TogglePinnedMenuItem_Click" InputGestureText="Ctrl+P" />
+                        <MenuItem Header="{Binding SelectedFavoriteActionText}" Click="ToggleFavoriteMenuItem_Click" InputGestureText="Ctrl+S" />
+                        <MenuItem Header="删除选中" Click="DeleteSelectedMenuItem_Click" InputGestureText="Delete" />
+                        <MenuItem Header="撤销删除" Click="UndoDeleteMenuItem_Click" InputGestureText="Ctrl+Z" />
                     </ContextMenu>
                 </ListBox.ContextMenu>
                 <ListBox.ItemsPanel>
@@ -551,7 +579,7 @@
                                 <TextBlock Grid.Row="2" Text="提示" Style="{StaticResource MutedTextStyle}" Margin="0,8,0,0" />
                                 <TextBlock Grid.Row="2"
                                            Grid.Column="1"
-                                           Text="Enter 粘贴，Ctrl+C 复制选中"
+                                           Text="Enter 粘贴关窗 · Ctrl+Enter 不关 · Ctrl+Shift+C 纯文本"
                                            TextAlignment="Right"
                                            TextWrapping="Wrap"
                                            Margin="0,8,0,0" />
@@ -564,12 +592,26 @@
                                         MinWidth="0"
                                         Margin="0,0,8,8"
                                         Click="CopySelectedMenuItem_Click" />
+                                <Button x:Name="DetailPlainTextButton"
+                                        Content="纯文本"
+                                        Width="92"
+                                        MinWidth="0"
+                                        Margin="0,0,8,8"
+                                        ToolTip="复制为纯文本（Ctrl+Shift+C）"
+                                        Click="CopyPlainTextMenuItem_Click" />
                                 <Button x:Name="DetailPasteButton"
                                         Content="粘贴"
                                         Width="92"
                                         MinWidth="0"
                                         Margin="0,0,8,8"
                                         Click="PasteSelectedMenuItem_Click" />
+                                <Button x:Name="DetailPasteKeepButton"
+                                        Content="粘贴不关"
+                                        Width="92"
+                                        MinWidth="0"
+                                        Margin="0,0,8,8"
+                                        ToolTip="粘贴后保持面板打开（Ctrl+Enter）"
+                                        Click="PasteKeepOpenMenuItem_Click" />
                                 <Button x:Name="DetailPinButton"
                                         Content="{Binding SelectedPinActionText}"
                                         Width="92"
@@ -629,7 +671,7 @@
                            FontWeight="SemiBold"
                            HorizontalAlignment="Center"
                            Margin="0,0,0,4" />
-                <TextBlock Text="Ctrl + 1-5 分类 · Ctrl + P 置顶 · Ctrl + S 片段 · Ctrl + C 复制 · Delete 删除 · Esc 清搜索/关闭"
+                <TextBlock Text="{Binding ShortcutHintText}"
                            Style="{StaticResource MutedTextStyle}"
                            FontSize="11"
                            TextWrapping="Wrap"
@@ -639,11 +681,77 @@
                 <TextBlock Text="{Binding EmptyStateText}"
                            Style="{StaticResource MutedTextStyle}"
                            HorizontalAlignment="Center" />
-                <TextBlock Text="{Binding StatusText}"
-                           Foreground="{DynamicResource BrushPrimaryBright}"
-                           FontWeight="SemiBold"
-                           HorizontalAlignment="Center" />
+                <StackPanel Orientation="Horizontal"
+                            HorizontalAlignment="Center"
+                            Margin="0,2,0,0">
+                    <TextBlock Text="{Binding StatusText}"
+                               Foreground="{DynamicResource BrushPrimaryBright}"
+                               FontWeight="SemiBold"
+                               VerticalAlignment="Center" />
+                    <Button x:Name="UndoDeleteButton"
+                            Content="撤销删除"
+                            Width="72"
+                            Height="26"
+                            MinWidth="0"
+                            Padding="0"
+                            FontSize="11"
+                            Margin="10,0,0,0"
+                            Click="UndoDeleteMenuItem_Click"
+                            Visibility="{Binding CanUndoDelete, Converter={StaticResource BooleanToVisibilityConverter}}" />
+                </StackPanel>
             </StackPanel>
+
+            <!-- 快捷键速查浮层 -->
+            <Border Grid.RowSpan="5"
+                    Background="#66000000"
+                    CornerRadius="20"
+                    MouseLeftButtonDown="ShortcutHelpBackdrop_MouseLeftButtonDown">
+                <Border.Style>
+                    <Style TargetType="Border">
+                        <Setter Property="Visibility" Value="Collapsed" />
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding IsShortcutHelpVisible}" Value="True">
+                                <Setter Property="Visibility" Value="Visible" />
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </Border.Style>
+                <Border Width="360"
+                        MaxHeight="520"
+                        Margin="24"
+                        Padding="20"
+                        CornerRadius="16"
+                        Background="{DynamicResource BrushOverlayPanel}"
+                        BorderBrush="#22111827"
+                        BorderThickness="1"
+                        HorizontalAlignment="Center"
+                        VerticalAlignment="Center"
+                        MouseLeftButtonDown="ShortcutHelpCard_MouseLeftButtonDown">
+                    <DockPanel>
+                        <DockPanel DockPanel.Dock="Top" Margin="0,0,0,12">
+                            <Button DockPanel.Dock="Right"
+                                    Content="关闭"
+                                    Width="56"
+                                    Height="28"
+                                    MinWidth="0"
+                                    FontSize="12"
+                                    Click="ShortcutHelpButton_Click" />
+                            <TextBlock Text="剪贴板快捷键"
+                                       FontSize="18"
+                                       FontWeight="SemiBold"
+                                       VerticalAlignment="Center" />
+                        </DockPanel>
+                        <ScrollViewer VerticalScrollBarVisibility="Auto">
+                            <TextBlock Text="{Binding ShortcutHelpText}"
+                                       FontFamily="Consolas, Microsoft YaHei UI"
+                                       FontSize="13"
+                                       LineHeight="22"
+                                       Foreground="{DynamicResource BrushTextPrimary}"
+                                       TextWrapping="Wrap" />
+                        </ScrollViewer>
+                    </DockPanel>
+                </Border>
+            </Border>
         </Grid>
     </Border>
 </Window>

@@ -362,6 +362,27 @@ public sealed class ClipboardService : IClipboardService
         return deleted;
     }
 
+    public async Task RestoreItemsAsync(IReadOnlyList<ClipboardItem> items, CancellationToken cancellationToken)
+    {
+        if (items.Count == 0)
+        {
+            return;
+        }
+
+        foreach (var item in items)
+        {
+            var existing = await _clipboardRepository.GetByIdAsync(item.Id, cancellationToken);
+            if (existing is not null)
+            {
+                continue;
+            }
+
+            await _clipboardRepository.InsertAsync(item, cancellationToken);
+        }
+
+        _logger.LogInformation("Clipboard items restored. Count={ClipboardItemCount}", items.Count);
+    }
+
     public async Task SetPinnedAsync(Guid id, bool isPinned, CancellationToken cancellationToken)
     {
         await _clipboardRepository.SetPinnedAsync(id, isPinned, cancellationToken);

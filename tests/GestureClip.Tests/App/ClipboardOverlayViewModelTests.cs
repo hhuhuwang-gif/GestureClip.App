@@ -353,7 +353,66 @@ public sealed class ClipboardOverlayViewModelTests
         Assert.True(deleted);
         Assert.Equal([first.Id], service.DeletedIds);
         Assert.Equal(["second"], viewModel.Items.Select(item => item.TextContent ?? "").ToArray());
-        Assert.Equal("已删除 1 条", viewModel.StatusText);
+        Assert.Equal("已删除 1 条 · Ctrl+Z 撤销", viewModel.StatusText);
+        Assert.True(viewModel.CanUndoDelete);
+        Assert.Equal(second.Id, viewModel.SelectedItem?.Id);
+    }
+
+    [Fact]
+    public async Task UndoLastDeleteAsync_restores_deleted_items()
+    {
+        var first = TextItem("first");
+        var second = TextItem("second");
+        var service = new FakeClipboardService([first, second]);
+        var viewModel = new ClipboardOverlayViewModel(service, TimeSpan.Zero);
+        await viewModel.LoadAsync();
+
+        Assert.True(await viewModel.DeleteItemsAsync([first]));
+        Assert.True(viewModel.CanUndoDelete);
+
+        var undone = await viewModel.UndoLastDeleteAsync();
+
+        Assert.True(undone);
+        Assert.False(viewModel.CanUndoDelete);
+        Assert.Contains(first.Id, viewModel.Items.Select(item => item.Id));
+        Assert.Equal("已撤销删除", viewModel.StatusText);
+        Assert.Contains(first.Id, service.RestoredIds);
+    }
+
+    [Fact]
+    public async Task CopySelectedAsPlainTextAsync_cleans_blank_lines()
+    {
+        var item = TextItem("  hello  \n\n\nworld  \n\n");
+        var service = new FakeClipboardService([item]);
+        service.FullItems[item.Id] = item;
+        var viewModel = new ClipboardOverlayViewModel(service, TimeSpan.Zero);
+        await viewModel.LoadAsync();
+
+        var copied = await viewModel.CopySelectedAsPlainTextAsync([item]);
+
+        Assert.True(copied);
+        Assert.NotNull(service.LastCopiedItems);
+        Assert.Equal("  hello\r\n\r\nworld", service.LastCopiedItems![0].TextContent);
+        Assert.Contains("纯文本", viewModel.StatusText);
+    }
+
+    [Fact]
+    public async Task ResetViewAsync_clears_search_and_filter()
+    {
+        var item = TextItem("hello world");
+        var service = new FakeClipboardService([item]);
+        var viewModel = new ClipboardOverlayViewModel(service, TimeSpan.Zero);
+        await viewModel.LoadAsync();
+        viewModel.SearchText = "hello";
+        await WaitForAsync(() => viewModel.Items.Count == 1);
+        viewModel.SelectedFilter = ClipboardOverlayFilter.Text;
+
+        await viewModel.ResetViewAsync();
+
+        Assert.Equal("", viewModel.SearchText);
+        Assert.Equal(ClipboardOverlayFilter.All, viewModel.SelectedFilter);
+        Assert.Equal(item.Id, viewModel.SelectedItem?.Id);
+        Assert.Equal("已重置视图", viewModel.StatusText);
     }
 
     [Fact]
@@ -372,7 +431,7 @@ public sealed class ClipboardOverlayViewModelTests
         Assert.True(copied);
         Assert.Empty(service.SearchKeywords);
         Assert.Equal(before, viewModel.Items.Select(item => item.Id).ToArray());
-        Assert.Equal("文字已复制到系统剪贴板", viewModel.StatusText);
+        Assert.Contains("文字已复制到系统剪贴板", viewModel.StatusText);
     }
 
     [Fact]
@@ -391,7 +450,7 @@ public sealed class ClipboardOverlayViewModelTests
 
         Assert.Empty(service.SearchKeywords);
         Assert.Equal(20, service.CopyCount);
-        Assert.Equal("文字已复制到系统剪贴板", viewModel.StatusText);
+        Assert.Contains("文字已复制到系统剪贴板", viewModel.StatusText);
     }
 
     [Fact]
@@ -429,7 +488,7 @@ public sealed class ClipboardOverlayViewModelTests
         Assert.Empty(service.SearchKeywords);
         Assert.Single(viewModel.Items);
         Assert.Equal(100, viewModel.Items[0].UseCount);
-        Assert.Equal("文字已复制到系统剪贴板", viewModel.StatusText);
+        Assert.Contains("文字已复制到系统剪贴板", viewModel.StatusText);
     }
 
     [Fact]
@@ -648,7 +707,7 @@ public sealed class ClipboardOverlayViewModelTests
         var copied = await viewModel.CopySelectedAsync([image]);
 
         Assert.True(copied);
-        Assert.Equal("图片已复制到系统剪贴板", viewModel.StatusText);
+        Assert.Contains("图片已复制到系统剪贴板", viewModel.StatusText);
     }
 
     [Fact]
@@ -750,6 +809,8 @@ public sealed class ClipboardOverlayViewModelTests
 
         public List<Guid> DeletedIds { get; } = [];
 
+        public List<Guid> RestoredIds { get; } = [];
+
         public Dictionary<Guid, ClipboardItem> FullItems { get; } = [];
 
         public List<Guid> GetByIdRequests { get; } = [];
@@ -759,6 +820,8 @@ public sealed class ClipboardOverlayViewModelTests
         public List<(Guid Id, bool IsFavorite)> FavoriteUpdates { get; } = [];
 
         public int CopyCount { get; private set; }
+
+        public IReadOnlyList<ClipboardItem>? LastCopiedItems { get; private set; }
 
         public Func<string, int, int, CancellationToken, Task<IReadOnlyList<ClipboardItem>>>? SearchHandler { get; set; }
 
@@ -852,6 +915,7 @@ public sealed class ClipboardOverlayViewModelTests
         public Task CopyItemsAsync(IReadOnlyList<ClipboardItem> items, CancellationToken cancellationToken)
         {
             CopyCount++;
+            LastCopiedItems = items.ToArray();
             return CopyHandler is null
                 ? Task.CompletedTask
                 : CopyHandler(items, cancellationToken);
@@ -861,6 +925,17 @@ public sealed class ClipboardOverlayViewModelTests
         {
             DeletedIds.AddRange(ids);
             return Task.FromResult(ids.Count);
+        }
+
+        public Task RestoreItemsAsync(IReadOnlyList<ClipboardItem> items, CancellationToken cancellationToken)
+        {
+            foreach (var item in items)
+            {
+                RestoredIds.Add(item.Id);
+                DeletedIds.RemoveAll(id => id == item.Id);
+            }
+
+            return Task.CompletedTask;
         }
 
         public Task SetPinnedAsync(Guid id, bool isPinned, CancellationToken cancellationToken)

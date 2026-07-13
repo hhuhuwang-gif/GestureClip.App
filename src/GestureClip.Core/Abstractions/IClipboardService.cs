@@ -51,6 +51,14 @@ public interface IClipboardService
 
     Task<int> DeleteItemsAsync(IReadOnlyList<Guid> ids, CancellationToken cancellationToken);
 
+    /// <summary>
+    /// Re-insert previously deleted history items (same ids). Used for short-lived undo.
+    /// </summary>
+    Task RestoreItemsAsync(IReadOnlyList<ClipboardItem> items, CancellationToken cancellationToken)
+    {
+        return Task.CompletedTask;
+    }
+
     Task SetPinnedAsync(Guid id, bool isPinned, CancellationToken cancellationToken);
 
     Task SetFavoriteAsync(Guid id, bool isFavorite, CancellationToken cancellationToken);
