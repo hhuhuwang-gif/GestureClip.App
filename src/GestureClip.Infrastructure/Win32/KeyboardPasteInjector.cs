@@ -45,8 +45,10 @@ public static class KeyboardPasteInjector
 
     public static KeyboardInputNativeMethods.INPUT[] BuildFullPasteSequence()
     {
-        var list = new List<KeyboardInputNativeMethods.INPUT>(32);
-        list.AddRange(BuildMouseButtonUps());
+        // Keyboard only. Do NOT inject synthetic mouse button-ups here:
+        // after a right-button gesture (down/up already eaten by the LL hook), a
+        // synthetic RIGHTUP often reaches the app and opens the context menu.
+        var list = new List<KeyboardInputNativeMethods.INPUT>(16);
         foreach (var vk in ModifierVirtualKeys)
         {
             list.Add(KeyEvent(vk, KeyEventKeyUp));
@@ -112,17 +114,17 @@ public static class KeyboardPasteInjector
             await Task.Delay(20, cancellationToken);
         }
 
-        // Phase 1: clear stuck mouse buttons + modifiers after right-button gesture / hotkeys.
-        var release = new List<KeyboardInputNativeMethods.INPUT>(16);
-        release.AddRange(BuildMouseButtonUps());
-        release.AddRange(BuildModifierReleaseOnly());
-        var released = Send(release.ToArray());
-        if (released != release.Count)
+        // Phase 1: release keyboard modifiers only (Shift stuck after Ctrl+Shift+V, etc.).
+        // Never inject mouse button-ups: after right-gesture the LL hook already ate
+        // physical down/up; synthetic RIGHTUP commonly pops the context menu.
+        var release = BuildModifierReleaseOnly();
+        var released = Send(release);
+        if (released != release.Length)
         {
             logger?.LogWarning(
-                "Modifier/mouse release SendInput {Sent}/{Expected}, Win32={Win32}",
+                "Modifier release SendInput {Sent}/{Expected}, Win32={Win32}",
                 released,
-                release.Count,
+                release.Length,
                 Marshal.GetLastWin32Error());
         }
 

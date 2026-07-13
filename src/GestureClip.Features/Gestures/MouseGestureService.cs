@@ -32,6 +32,11 @@ public sealed class MouseGestureService : IMouseGestureService
     private GesturePoint? _startPoint;
     private DateTimeOffset? _gestureStartedAt;
     private DateTimeOffset _ignoreInjectedUntil = DateTimeOffset.MinValue;
+    /// <summary>
+    /// After a successful right-button gesture, swallow residual right-button events so
+    /// apps do not open the context menu (synthetic RIGHTUP / delayed physical up).
+    /// </summary>
+    private DateTimeOffset _suppressRightButtonUntil = DateTimeOffset.MinValue;
     private DateTimeOffset _lastMoveDebugLogAt = DateTimeOffset.MinValue;
     private bool _synthesizeRightClickOnNextRightButtonUp;
     private GestureTriggerButton _pendingSyntheticClickButton = GestureTriggerButton.Right;
@@ -202,9 +207,22 @@ public sealed class MouseGestureService : IMouseGestureService
         }
 
         var mouseEvent = args.Event;
+
         if (mouseEvent.IsInjected && DateTimeOffset.UtcNow < _ignoreInjectedUntil)
         {
+            // Do not Suppress here: intentional SynthesizeClick must reach the app.
             _logger.LogDebug("GestureRecovery InjectedMouseClickIgnored");
+            return null;
+        }
+
+        // Post-gesture guard (Idle only): swallow residual RIGHT UP that would open context menu.
+        // Must not apply while Tracking/GestureActive — that would kill the next gesture's button-up.
+        if (mouseEvent.Type == MouseHookEventType.RightButtonUp &&
+            _state == GestureRuntimeState.Idle &&
+            DateTimeOffset.UtcNow < _suppressRightButtonUntil)
+        {
+            args.Suppress = true;
+            _logger.LogDebug("Post-gesture residual right-up suppressed to prevent context menu.");
             return null;
         }
 
@@ -469,6 +487,12 @@ public sealed class MouseGestureService : IMouseGestureService
                     }
                 }
 
+                // Block residual right-button events during action (paste inject / focus restore).
+                lock (_syncRoot)
+                {
+                    _suppressRightButtonUntil = DateTimeOffset.UtcNow.AddMilliseconds(450);
+                }
+
                 await ExecuteGestureAsync(executionContext);
                 if (pendingGesture.ShowOverlay && !IsPasteFamilyAction(resolvedAction))
                 {
@@ -532,8 +556,10 @@ public sealed class MouseGestureService : IMouseGestureService
                 }
 
                 await Task.Delay(50, CancellationToken.None);
-                // Ignore our synthetic mouse-ups from the paste injector for a short window.
-                _ignoreInjectedUntil = DateTimeOffset.UtcNow.AddMilliseconds(400);
+                lock (_syncRoot)
+                {
+                    _suppressRightButtonUntil = DateTimeOffset.UtcNow.AddMilliseconds(500);
+                }
             }
 
             await _actionExecutor.ExecuteAsync(action, context, CancellationToken.None);
@@ -736,6 +762,8 @@ public sealed class MouseGestureService : IMouseGestureService
         {
             lock (_syncRoot)
             {
+                // Allow this intentional click through (clear post-gesture right suppress).
+                _suppressRightButtonUntil = DateTimeOffset.MinValue;
                 _ignoreInjectedUntil = DateTimeOffset.UtcNow.AddMilliseconds(500);
             }
 
@@ -761,6 +789,9 @@ public sealed class MouseGestureService : IMouseGestureService
         BuiltInGestureAction.PasteAndEnter or
         BuiltInGestureAction.PastePlainText or
         BuiltInGestureAction.PasteLatestClipboardItem;
+
+    private static bool IsRightButtonEvent(MouseHookEventType type) =>
+        type is MouseHookEventType.RightButtonDown or MouseHookEventType.RightButtonUp;
 
     private void SetHookStatus(string status)
     {

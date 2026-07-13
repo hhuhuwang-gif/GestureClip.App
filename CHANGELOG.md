@@ -9,6 +9,11 @@
 - 焦点：目标已是前台时不再 `SetForegroundWindow`，避免抢走输入框光标。
 - 注入：SendInput → keybd_event → WM_PASTE。
 
+### 修复（下滑手势弹出右键菜单）
+
+- 粘贴注入**不再发送合成鼠标键抬起**（尤其 RIGHTUP，会进应用变成右键菜单）。
+- 手势完成后短时吞掉残留的右键抬起（Idle 态），不挡下一次手势。
+
 ### 验证
 
 - `dotnet test ./GestureClip.sln`

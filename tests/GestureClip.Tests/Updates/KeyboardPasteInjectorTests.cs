@@ -7,19 +7,16 @@ namespace GestureClip.Tests.Updates;
 public sealed class KeyboardPasteInjectorTests
 {
     [Fact]
-    public void BuildFullPasteSequence_releases_mouse_and_modifiers_before_ctrl_v()
+    public void BuildFullPasteSequence_is_keyboard_only_no_mouse_ups()
     {
+        // Mouse button-ups after right-gesture open the context menu on many apps.
         var events = KeyboardPasteInjector.BuildFullPasteSequence();
-        Assert.True(events.Length >= 15);
+        Assert.True(events.Length >= 10);
+        Assert.All(events, e => Assert.Equal(1u, e.type)); // keyboard only
 
-        // First events are mouse (type 0)
-        Assert.Equal(0u, events[0].type);
-        Assert.Equal(0u, events[1].type);
-
-        // Then modifier key-ups (keyboard type 1, KEYUP flag)
         const uint keyUp = 0x0002;
-        var firstKeyboard = events.First(e => e.type == 1);
-        Assert.Equal(keyUp, firstKeyboard.u.ki.dwFlags & keyUp);
+        var first = events[0];
+        Assert.Equal(keyUp, first.u.ki.dwFlags & keyUp);
 
         // Ends with Ctrl up
         var last = events[^1];
@@ -27,7 +24,6 @@ public sealed class KeyboardPasteInjectorTests
         Assert.Equal(0x11, last.u.ki.wVk);
         Assert.Equal(keyUp, last.u.ki.dwFlags & keyUp);
 
-        // Contains V key
         Assert.Contains(events, e => e.type == 1 && e.u.ki.wVk == 0x56);
     }
 

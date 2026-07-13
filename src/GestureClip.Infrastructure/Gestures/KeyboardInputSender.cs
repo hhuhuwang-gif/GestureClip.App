@@ -54,11 +54,8 @@ public sealed class KeyboardInputSender : IKeyboardInputSender
             return;
         }
 
-        // Release mouse + modifiers first.
-        var release = new List<KeyboardInputNativeMethods.INPUT>();
-        release.AddRange(KeyboardPasteInjector.BuildMouseButtonUps());
-        release.AddRange(KeyboardPasteInjector.BuildModifierReleaseOnly());
-        _ = KeyboardPasteInjector.Send(release.ToArray());
+        // Release keyboard modifiers only (no synthetic mouse ups — avoids context menu).
+        _ = KeyboardPasteInjector.Send(KeyboardPasteInjector.BuildModifierReleaseOnly());
 
         var inputs = new List<KeyboardInputNativeMethods.INPUT>();
         inputs.AddRange(keys.Select(key => KeyboardInput(key, 0)));
