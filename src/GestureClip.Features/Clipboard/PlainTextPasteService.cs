@@ -7,6 +7,8 @@ namespace GestureClip.Features.Clipboard;
 
 public sealed class PlainTextPasteService : IPlainTextPasteService
 {
+    private static readonly TimeSpan ClipboardSettleDelay = TimeSpan.FromMilliseconds(70);
+
     private readonly IClipboardService _clipboardService;
     private readonly IClipboardTextReader _clipboardTextReader;
     private readonly IClipboardWriter _clipboardWriter;
@@ -29,7 +31,9 @@ public sealed class PlainTextPasteService : IPlainTextPasteService
         var text = _clipboardTextReader.TryReadText();
         if (string.IsNullOrEmpty(text))
         {
-            _logger.LogInformation("Plain text paste skipped: empty clipboard.");
+            // No text (maybe image-only clipboard): still try a normal paste hotkey.
+            _logger.LogInformation("Plain text rewrite skipped (empty text); sending normal paste hotkey.");
+            await _clipboardWriter.SendPasteHotkeyAsync(cancellationToken);
             return;
         }
 
@@ -37,12 +41,15 @@ public sealed class PlainTextPasteService : IPlainTextPasteService
         plain = SmartPastePolicy.CleanText(plain);
         if (string.IsNullOrEmpty(plain))
         {
-            _logger.LogInformation("Plain text paste skipped: cleaned text empty.");
+            _logger.LogInformation("Plain text cleaned to empty; sending normal paste hotkey.");
+            await _clipboardWriter.SendPasteHotkeyAsync(cancellationToken);
             return;
         }
 
-        _clipboardService.SuppressCaptureFor(TimeSpan.FromMilliseconds(1200));
+        _clipboardService.SuppressCaptureFor(TimeSpan.FromMilliseconds(1500));
         await _clipboardWriter.SetTextAsync(plain, cancellationToken);
+        // Wait for clipboard to settle before Ctrl+V (and for user to release physical keys).
+        await Task.Delay(ClipboardSettleDelay, cancellationToken);
         await _clipboardWriter.SendPasteHotkeyAsync(cancellationToken);
         _logger.LogInformation("Plain text paste completed. Length={Length}", plain.Length);
     }

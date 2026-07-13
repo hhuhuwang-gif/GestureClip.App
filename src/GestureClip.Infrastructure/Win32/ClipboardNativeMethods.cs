@@ -2,7 +2,7 @@ using System.Runtime.InteropServices;
 
 namespace GestureClip.Infrastructure.Win32;
 
-internal static class ClipboardNativeMethods
+public static class ClipboardNativeMethods
 {
     public const int WmClipboardUpdate = 0x031D;
     public const uint CF_UNICODETEXT = 13;

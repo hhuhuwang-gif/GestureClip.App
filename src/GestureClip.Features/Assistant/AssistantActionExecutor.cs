@@ -132,6 +132,7 @@ public sealed class AssistantActionExecutor : IAssistantActionExecutor
             await _clipboardWriter.SetTextAsync(output, cancellationToken);
             if (outputKind == AssistantOutputKind.Paste)
             {
+                await Task.Delay(70, cancellationToken);
                 await _clipboardWriter.SendPasteHotkeyAsync(cancellationToken);
             }
         }

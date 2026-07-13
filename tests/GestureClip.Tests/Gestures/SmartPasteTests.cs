@@ -203,7 +203,7 @@ public sealed class SmartPasteTests
     }
 
     [Fact]
-    public async Task SmartPaste_without_text_does_not_crash_or_write_clipboard()
+    public async Task SmartPaste_without_text_falls_back_to_normal_ctrl_v()
     {
         var keyboard = new FakeKeyboardInputSender();
         var writer = new FakeClipboardWriter();
@@ -218,7 +218,7 @@ public sealed class SmartPasteTests
 
         Assert.Null(writer.Text);
         Assert.False(writer.PasteHotkeySent);
-        Assert.Empty(keyboard.Sent);
+        Assert.Equal(["Ctrl+V"], keyboard.Sent);
     }
 
     private static GestureBuiltInActionExecutor CreateExecutor(

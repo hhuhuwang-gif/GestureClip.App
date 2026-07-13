@@ -310,8 +310,9 @@ public sealed class ClipboardService : IClipboardService
             pasteText = SmartPastePolicy.TransformForStrategy(pasteText, strategy);
         }
 
-        SuppressCaptureFor(TimeSpan.FromMilliseconds(1000));
+        SuppressCaptureFor(TimeSpan.FromMilliseconds(1500));
         await _clipboardWriter.SetTextAsync(pasteText, cancellationToken);
+        await Task.Delay(70, cancellationToken);
         await _clipboardWriter.SendPasteHotkeyAsync(cancellationToken);
         await RecordPasteUsageAsync(textItem.Id, DateTimeOffset.UtcNow, cancellationToken);
         pasteWatch.Stop();

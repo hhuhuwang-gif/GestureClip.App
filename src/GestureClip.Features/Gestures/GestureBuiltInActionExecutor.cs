@@ -440,15 +440,23 @@ public sealed class GestureBuiltInActionExecutor : IMouseGestureActionExecutor
         var text = _clipboardTextReader.TryReadText();
         if (string.IsNullOrEmpty(text))
         {
+            // Image-only or empty: fall back to normal paste so Ctrl+V / gesture still works.
             _logger.LogInformation(
-                "Smart paste skipped because clipboard has no text. Process={ProcessName}",
+                "Smart paste has no text; falling back to normal paste. Process={ProcessName}",
                 app.ProcessName);
+            if (allowNormalShortcut)
+            {
+                _keyboardInputSender.SendShortcut(KeyboardInputNativeMethods.VkControl, KeyboardInputNativeMethods.VkV);
+                await RecordPasteAsync(cancellationToken);
+            }
+
             return;
         }
 
         var pasteText = SmartPastePolicy.TransformForStrategy(text, strategy);
-        _clipboardService.SuppressCaptureFor(TimeSpan.FromMilliseconds(1200));
+        _clipboardService.SuppressCaptureFor(TimeSpan.FromMilliseconds(1500));
         await _clipboardWriter.SetTextAsync(pasteText, cancellationToken);
+        await Task.Delay(70, cancellationToken);
         await _clipboardWriter.SendPasteHotkeyAsync(cancellationToken);
         await RecordPasteAsync(cancellationToken);
         _logger.LogInformation(

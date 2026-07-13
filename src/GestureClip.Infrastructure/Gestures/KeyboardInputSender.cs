@@ -25,6 +25,10 @@ public sealed class KeyboardInputSender : IKeyboardInputSender
             return;
         }
 
+        // Release stuck modifiers first so Ctrl+V is not polluted by still-held Shift/Alt.
+        var release = KeyboardPasteInjector.BuildModifierReleaseOnly();
+        _ = KeyboardPasteInjector.Send(release);
+
         var inputs = new List<KeyboardInputNativeMethods.INPUT>();
         inputs.AddRange(keys.Select(key => KeyboardInput(key, 0)));
         inputs.AddRange(keys.Reverse().Select(key => KeyboardInput(key, KeyboardInputNativeMethods.KeyEventKeyUp)));

@@ -8,10 +8,6 @@ namespace GestureClip.Infrastructure.Clipboard;
 
 public sealed class WpfClipboardWriter : IClipboardWriter, IDisposable
 {
-    private const ushort VkControl = 0x11;
-    private const ushort VkV = 0x56;
-    private const uint InputKeyboard = 1;
-    private const uint KeyEventKeyUp = 0x0002;
     private readonly ClipboardStaDispatcher _clipboardStaThread;
     private readonly ILogger<WpfClipboardWriter> _logger;
 
@@ -129,51 +125,25 @@ public sealed class WpfClipboardWriter : IClipboardWriter, IDisposable
         }
     }
 
-    public Task SendPasteHotkeyAsync(CancellationToken cancellationToken)
+    public async Task SendPasteHotkeyAsync(CancellationToken cancellationToken)
     {
         cancellationToken.ThrowIfCancellationRequested();
 
-        var inputs = new[]
-        {
-            KeyDown(VkControl),
-            KeyDown(VkV),
-            KeyUp(VkV),
-            KeyUp(VkControl)
-        };
-
-        var sent = ClipboardNativeMethods.SendInput((uint)inputs.Length, inputs, Marshal.SizeOf<ClipboardNativeMethods.INPUT>());
+        // Critical: after RegisterHotKey (e.g. Ctrl+Shift+V), Shift/Ctrl are often still physically down.
+        // Without releasing them, synthetic Ctrl+V becomes Ctrl+Shift+V and paste fails in many apps.
+        var inputs = KeyboardPasteInjector.BuildPasteWithModifierRelease();
+        var sent = KeyboardPasteInjector.Send(inputs);
         if (sent != inputs.Length)
         {
-            _logger.LogWarning("SendInput sent {SentInputCount} of {ExpectedInputCount} inputs.", sent, inputs.Length);
+            _logger.LogWarning(
+                "Paste SendInput sent {SentInputCount} of {ExpectedInputCount} inputs. Win32={Win32Error}",
+                sent,
+                inputs.Length,
+                Marshal.GetLastWin32Error());
         }
 
-        return Task.CompletedTask;
-    }
-
-    private static ClipboardNativeMethods.INPUT KeyDown(ushort virtualKey)
-    {
-        return KeyboardInput(virtualKey, 0);
-    }
-
-    private static ClipboardNativeMethods.INPUT KeyUp(ushort virtualKey)
-    {
-        return KeyboardInput(virtualKey, KeyEventKeyUp);
-    }
-
-    private static ClipboardNativeMethods.INPUT KeyboardInput(ushort virtualKey, uint flags)
-    {
-        return new ClipboardNativeMethods.INPUT
-        {
-            type = InputKeyboard,
-            u = new ClipboardNativeMethods.InputUnion
-            {
-                ki = new ClipboardNativeMethods.KEYBDINPUT
-                {
-                    wVk = virtualKey,
-                    dwFlags = flags
-                }
-            }
-        };
+        // Allow target app to process key events before we return / exit.
+        await Task.Delay(25, cancellationToken);
     }
 
     private sealed record ClipboardImageData(
