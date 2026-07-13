@@ -168,7 +168,9 @@ public sealed class AppLifecycleService : IAppLifecycleService
         try
         {
             var result = System.Windows.MessageBox.Show(
-                "将下载 GitHub 最新版本，关闭当前 GestureClip 后自动覆盖旧程序并重启。\n\n本地剪贴板历史和设置会保留。是否继续？",
+                "将下载 GitHub 最新版本，关闭当前 GestureClip 后自动覆盖旧程序并重启。\n\n" +
+                "下载时会自动尝试系统代理、直连与镜像加速，提高成功率。\n" +
+                "本地剪贴板历史和设置会保留。是否继续？",
                 "一键覆盖更新",
                 MessageBoxButton.YesNo,
                 MessageBoxImage.Question);

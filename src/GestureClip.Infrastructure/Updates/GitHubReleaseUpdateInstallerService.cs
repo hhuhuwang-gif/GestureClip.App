@@ -2,7 +2,6 @@ using System.Diagnostics;
 using System.IO;
 using System.IO.Compression;
 using System.Net.Http;
-using System.Text.Json.Serialization;
 using GestureClip.Core.Abstractions;
 using Microsoft.Extensions.Logging;
 
@@ -22,10 +21,11 @@ public sealed class GitHubReleaseUpdateInstallerService : IUpdateInstallerServic
 
     public async Task StartCoverUpdateAsync(CancellationToken cancellationToken = default)
     {
-        var release = await new GitHubReleaseUpdateCheckService(_httpClient).GetLatestReleaseAsync(cancellationToken);
+        var checkService = new GitHubReleaseUpdateCheckService(_httpClient);
+        var release = await checkService.GetLatestReleaseAsync(cancellationToken);
         var asset = release.Assets.FirstOrDefault(item =>
             item.Name.EndsWith(GitHubReleaseUpdateCheckService.PackageAssetSuffix, StringComparison.OrdinalIgnoreCase));
-        if (asset is null)
+        if (asset is null || string.IsNullOrWhiteSpace(asset.BrowserDownloadUrl))
         {
             throw new InvalidOperationException("最新版本没有 Windows x64 安装包。");
         }
@@ -40,7 +40,9 @@ public sealed class GitHubReleaseUpdateInstallerService : IUpdateInstallerServic
             Directory.Delete(extractPath, recursive: true);
         }
 
-        await DownloadFileAsync(asset.BrowserDownloadUrl, downloadPath, cancellationToken);
+        _logger.LogInformation("Downloading update package from multi-path transport. Asset={AssetName}", asset.Name);
+        await GitHubUpdateTransport.DownloadToFileAsync(asset.BrowserDownloadUrl, downloadPath, cancellationToken);
+
         ZipFile.ExtractToDirectory(downloadPath, extractPath, overwriteFiles: true);
 
         var installDirectory = AppContext.BaseDirectory.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
@@ -59,27 +61,4 @@ public sealed class GitHubReleaseUpdateInstallerService : IUpdateInstallerServic
         });
         _logger.LogInformation("Cover update installer started from {ScriptPath}.", scriptPath);
     }
-
-    private async Task DownloadFileAsync(string url, string destinationPath, CancellationToken cancellationToken)
-    {
-        try
-        {
-            await DownloadFileWithClientAsync(_httpClient, url, destinationPath, cancellationToken);
-        }
-        catch (HttpRequestException)
-        {
-            using var directClient = UpdateHttpClientFactory.CreateDirectClient();
-            await DownloadFileWithClientAsync(directClient, url, destinationPath, cancellationToken);
-        }
-    }
-
-    private static async Task DownloadFileWithClientAsync(HttpClient httpClient, string url, string destinationPath, CancellationToken cancellationToken)
-    {
-        using var response = await httpClient.GetAsync(url, HttpCompletionOption.ResponseHeadersRead, cancellationToken);
-        response.EnsureSuccessStatusCode();
-        await using var source = await response.Content.ReadAsStreamAsync(cancellationToken);
-        await using var destination = File.Create(destinationPath);
-        await source.CopyToAsync(destination, cancellationToken);
-    }
-
 }

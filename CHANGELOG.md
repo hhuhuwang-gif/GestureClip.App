@@ -1,5 +1,17 @@
 # CHANGELOG
 
+## GestureClip v0.6.16 Beta（开发中）
+
+### 更新网络
+
+- 检查更新 / 一键覆盖下载改为多路径：系统代理 → 直连 → 公共镜像加速。
+- 单次请求缩短超时，避免卡死在失效的本机代理上；成功路径会优先复用。
+- 失败文案说明已尝试的路径，并引导手动打开 Release 下载。
+
+### 验证
+
+- `dotnet test ./GestureClip.sln --filter FullyQualifiedName~Update`
+
 ## GestureClip v0.6.15 Beta
 
 ### 剪贴板人性化快捷

@@ -9,9 +9,10 @@ namespace GestureClip.Infrastructure.Updates;
 
 public sealed class GitHubReleaseUpdateCheckService : IUpdateCheckService
 {
-    public const string LatestReleaseApiUrl = "https://api.github.com/repos/hhuhuwang-gif/GestureClip.App/releases/latest";
+    public const string LatestReleaseApiUrl = GitHubUpdateTransport.OfficialLatestReleaseApi;
     public const string PackageAssetSuffix = "-win-x64.zip";
 
+    // Kept for DI compatibility; transport creates per-route clients.
     private readonly HttpClient _httpClient;
 
     public GitHubReleaseUpdateCheckService(HttpClient httpClient)
@@ -29,34 +30,19 @@ public sealed class GitHubReleaseUpdateCheckService : IUpdateCheckService
             currentVersion,
             latestVersion,
             string.IsNullOrWhiteSpace(release.Name) ? latestVersion : release.Name,
-            release.HtmlUrl,
+            string.IsNullOrWhiteSpace(release.HtmlUrl)
+                ? GitHubUpdateTransport.OfficialReleasesPage
+                : release.HtmlUrl,
             release.Body ?? string.Empty,
             UpdateVersionComparer.IsNewerRelease(currentVersion, latestVersion));
     }
 
     public async Task<GitHubRelease> GetLatestReleaseAsync(CancellationToken cancellationToken = default)
     {
-        try
-        {
-            return await GetLatestReleaseWithClientAsync(_httpClient, cancellationToken);
-        }
-        catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException or InvalidOperationException)
-        {
-            using var directClient = UpdateHttpClientFactory.CreateDirectClient();
-            return await GetLatestReleaseWithClientAsync(directClient, cancellationToken);
-        }
-    }
-
-    private static async Task<GitHubRelease> GetLatestReleaseWithClientAsync(HttpClient httpClient, CancellationToken cancellationToken)
-    {
-        UpdateHttpClientFactory.ConfigureHeaders(httpClient);
-        using var response = await httpClient.GetAsync(LatestReleaseApiUrl, cancellationToken);
-        if (!response.IsSuccessStatusCode)
-        {
-            var body = await response.Content.ReadAsStringAsync(cancellationToken);
-            throw new InvalidOperationException(
-                $"GitHub 返回 {(int)response.StatusCode}：{(string.IsNullOrWhiteSpace(body) ? response.ReasonPhrase : body)}");
-        }
+        using var response = await GitHubUpdateTransport.GetAsync(
+            GitHubUpdateTransport.BuildApiRoutes(),
+            HttpCompletionOption.ResponseContentRead,
+            cancellationToken);
 
         var release = await response.Content.ReadFromJsonAsync<GitHubRelease>(cancellationToken: cancellationToken);
         if (release is null || string.IsNullOrWhiteSpace(release.TagName))

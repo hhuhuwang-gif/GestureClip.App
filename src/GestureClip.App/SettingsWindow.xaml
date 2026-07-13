@@ -2080,7 +2080,7 @@
                                                 Style="{StaticResource SettingsSecondaryActionButtonStyle}"
                                                 Click="OpenReleaseButton_Click" />
                                     </WrapPanel>
-                                    <TextBlock Text="检查更新会比较当前版本和 GitHub Latest Release，并显示更新说明。一键覆盖更新会下载最新 zip，退出后覆盖并重启，本地历史与设置保留。失败时会给出人话提示并打开 Release 页面。"
+                                    <TextBlock Text="检查更新会比较当前版本和 GitHub Latest Release。网络不佳时会自动尝试：系统代理 → 直连 → 镜像加速。一键覆盖更新下载最新 zip 后覆盖重启，本地历史与设置保留。仍失败时可打开 Release 手动下载。"
                                                Style="{StaticResource MutedTextStyle}"
                                                TextWrapping="Wrap"
                                                Margin="0,8,0,0" />

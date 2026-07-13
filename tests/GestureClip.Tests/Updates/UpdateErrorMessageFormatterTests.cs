@@ -13,7 +13,7 @@ public sealed class UpdateErrorMessageFormatterTests
         var message = UpdateErrorMessageFormatter.ToUserMessage(exception);
 
         Assert.Contains("本机代理", message);
-        Assert.Contains("直连重试", message);
+        Assert.Contains("镜像", message);
         Assert.DoesNotContain("127.0.0.1:7890", message);
         Assert.DoesNotContain("积极拒绝", message);
     }
@@ -25,9 +25,25 @@ public sealed class UpdateErrorMessageFormatterTests
 
         var message = UpdateErrorMessageFormatter.ToUserMessage(exception);
 
-        Assert.Contains("Release 页面", message);
+        Assert.Contains("Release", message);
         Assert.Contains("手动下载", message);
         Assert.DoesNotContain("127.0.0.1:10809", message);
         Assert.DoesNotContain("Connection failed", message);
+    }
+
+    [Fact]
+    public void ToUserMessage_for_aggregate_multi_path_failure_mentions_mirrors()
+    {
+        var exception = new AggregateException(
+            "已尝试系统代理、直连与镜像加速，仍无法访问 GitHub 更新服务。",
+            new HttpRequestException("timeout"),
+            new TaskCanceledException("canceled"));
+
+        var message = UpdateErrorMessageFormatter.ToUserMessage(exception);
+
+        Assert.Contains("镜像", message);
+        Assert.True(
+            message.Contains("超时", StringComparison.Ordinal) ||
+            message.Contains("无法", StringComparison.Ordinal));
     }
 }
