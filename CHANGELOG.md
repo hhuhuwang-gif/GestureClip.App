@@ -2,6 +2,14 @@
 
 ## GestureClip v0.6.16 Beta（开发中）
 
+### 安装与更新（正式安装方向）
+
+- 新增 `scripts/build-setup.ps1`：生成 **Setup 安装包**（当前用户目录、开始菜单、可卸载）。
+- 安装脚本 `scripts/install/install.ps1`：默认装到 `%LOCALAPPDATA%\Programs\GestureClip`，**不碰**用户数据。
+- 应用内更新 **优先下载 Setup.exe / Setup zip**，没有安装包时才回退 portable zip 覆盖。
+- 可选 Inno Setup 脚本：有 `iscc` 时产出单文件 `Setup.exe`。
+- 文档 `UPDATE.md` 改为安装包优先说明。
+
 ### UI 视觉升级（D1–D3）
 
 - **D1 剪贴板**：图标顶栏、分段筛选、类型色条卡片、相对时间、空状态插画。

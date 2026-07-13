@@ -44,6 +44,11 @@ public sealed class ReleaseEngineeringTests
         Assert.Contains("GestureClip-v$packageVersion-win-x64.zip", checkScript);
         Assert.DoesNotContain("GestureClip-v$packageVersion-update-win-x64.zip", checkScript);
         Assert.Contains("Remove-Item (Join-Path $output \"logs\")", script);
+
+        var setupScript = File.ReadAllText(FindRepositoryFile("scripts", "build-setup.ps1"));
+        Assert.Contains("GestureClip-Setup-v$packageVersion-win-x64.zip", setupScript);
+        Assert.Contains("install.ps1", setupScript);
+        Assert.Contains("Setup.cmd", setupScript);
     }
 
     [Fact]
@@ -58,9 +63,11 @@ public sealed class ReleaseEngineeringTests
         var releaseDraft = File.ReadAllText(FindRepositoryFile("docs", "github-release-v0.6.15-beta.md"));
 
         Assert.Contains("v0.6.15 Beta", readme);
-        Assert.Contains("GestureClip-v0.6.15-beta-win-x64.zip", readme);
+        Assert.Contains("Setup", readme);
+        Assert.Contains("build-setup.ps1", readme);
         Assert.Contains("%LOCALAPPDATA%\\GestureClip", update);
-        Assert.Contains("覆盖更新", update);
+        Assert.Contains("Setup", update);
+        Assert.Contains("安装", update);
         Assert.Contains("导出诊断包", help);
         Assert.Contains("公测检查清单", betaTest);
         Assert.Contains("SmartScreen", knownIssues);

@@ -10,7 +10,10 @@ namespace GestureClip.Infrastructure.Updates;
 public sealed class GitHubReleaseUpdateCheckService : IUpdateCheckService
 {
     public const string LatestReleaseApiUrl = GitHubUpdateTransport.OfficialLatestReleaseApi;
+    /// <summary>Legacy portable package suffix (cover-update fallback).</summary>
     public const string PackageAssetSuffix = "-win-x64.zip";
+    /// <summary>Preferred end-user installer markers on GitHub Releases.</summary>
+    public const string SetupPackageMarker = "Setup";
 
     // Kept for DI compatibility; transport creates per-route clients.
     private readonly HttpClient _httpClient;
