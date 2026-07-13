@@ -518,15 +518,20 @@ public sealed class MouseGestureService : IMouseGestureService
                 return;
             }
 
-            // Paste family: longer settle after right-button-up; restore target focus early.
+            // Paste family: brief settle; only restore focus if target lost foreground.
             if (IsPasteFamilyAction(action))
             {
                 if (context.TargetWindowHandle != 0)
                 {
-                    WindowNativeMethods.TryActivateWindow((IntPtr)context.TargetWindowHandle);
+                    var hwnd = (IntPtr)context.TargetWindowHandle;
+                    if (WindowNativeMethods.IsWindow(hwnd) &&
+                        WindowNativeMethods.GetForegroundWindow() != hwnd)
+                    {
+                        WindowNativeMethods.TryActivateWindow(hwnd);
+                    }
                 }
 
-                await Task.Delay(80, CancellationToken.None);
+                await Task.Delay(50, CancellationToken.None);
                 // Ignore our synthetic mouse-ups from the paste injector for a short window.
                 _ignoreInjectedUntil = DateTimeOffset.UtcNow.AddMilliseconds(400);
             }

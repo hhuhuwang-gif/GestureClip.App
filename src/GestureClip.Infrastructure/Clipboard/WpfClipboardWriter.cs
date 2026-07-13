@@ -135,8 +135,9 @@ public sealed class WpfClipboardWriter : IClipboardWriter, IDisposable
             preferClipboardMessage: true);
         if (!ok)
         {
+            // Do not throw: callers (history paste / assistant) already wrote clipboard;
+            // throwing aborts UI flows without improving paste success rate.
             _logger.LogWarning("SendPasteHotkeyAsync: all paste injection paths failed.");
-            throw new InvalidOperationException("Paste injection failed (SendInput / keybd_event / WM_PASTE).");
         }
     }
 

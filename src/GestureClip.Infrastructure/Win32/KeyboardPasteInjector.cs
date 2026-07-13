@@ -4,14 +4,9 @@ using Microsoft.Extensions.Logging;
 namespace GestureClip.Infrastructure.Win32;
 
 /// <summary>
-/// Reliable synthetic paste for gestures and hotkeys across machines.
-/// Hardening for common failures:
-/// 1) Wrong INPUT struct size on x64 (union must include MOUSEINPUT)
-/// 2) Stuck keyboard modifiers after hotkeys
-/// 3) Stuck mouse buttons after right-button gestures
-/// 4) Missing scan codes rejected by some apps
-/// 5) Focus lost after overlays → paste lands nowhere
-/// 6) SendInput silently ineffective → keybd_event + WM_PASTE fallbacks
+/// Reliable synthetic Ctrl+V for gestures and hotkeys.
+/// Keep the happy path simple: release stuck input → one-shot Ctrl+V.
+/// Fallbacks only when SendInput reports incomplete delivery.
 /// </summary>
 public static class KeyboardPasteInjector
 {
@@ -48,10 +43,6 @@ public static class KeyboardPasteInjector
         VkLWin, VkRWin
     ];
 
-    /// <summary>
-    /// Full paste sequence: mouse button ups → modifier key ups → Ctrl+V (with scan codes).
-    /// Uses <see cref="KeyboardInputNativeMethods.INPUT"/> for correct x64 layout.
-    /// </summary>
     public static KeyboardInputNativeMethods.INPUT[] BuildFullPasteSequence()
     {
         var list = new List<KeyboardInputNativeMethods.INPUT>(32);
@@ -99,8 +90,9 @@ public static class KeyboardPasteInjector
     }
 
     /// <summary>
-    /// Preferred entry: multi-path paste with focus restore.
-    /// Path order: release → activate → SendInput Ctrl+V → keybd_event → WM_PASTE.
+    /// Preferred entry for paste injection.
+    /// Does not re-activate the current foreground window (that can steal caret focus).
+    /// Only activates when an explicit preferred target is provided and it is not already FG.
     /// </summary>
     public static async Task<bool> SendCtrlVAsync(
         ILogger? logger = null,
@@ -109,25 +101,19 @@ public static class KeyboardPasteInjector
         bool preferClipboardMessage = false)
     {
         cancellationToken.ThrowIfCancellationRequested();
+        _ = preferClipboardMessage; // reserved: all paths may end with WM_PASTE
 
-        // Phase 0: restore target focus early (overlays / HUD must not own input).
-        if (preferredTargetWindow != IntPtr.Zero)
+        if (preferredTargetWindow != IntPtr.Zero &&
+            WindowNativeMethods.IsWindow(preferredTargetWindow) &&
+            WindowNativeMethods.GetForegroundWindow() != preferredTargetWindow)
         {
             var activated = WindowNativeMethods.TryActivateWindow(preferredTargetWindow);
-            logger?.LogDebug("Paste focus restore preferredHwnd={Hwnd} ok={Ok}", preferredTargetWindow, activated);
-        }
-        else
-        {
-            // Soft re-assert current foreground (helps after non-activating topmost HUD).
-            var fg = WindowNativeMethods.GetForegroundWindow();
-            if (fg != IntPtr.Zero)
-            {
-                WindowNativeMethods.TryActivateWindow(fg);
-            }
+            logger?.LogDebug("Paste activate preferredHwnd={Hwnd} ok={Ok}", preferredTargetWindow, activated);
+            await Task.Delay(20, cancellationToken);
         }
 
-        // Phase 1: release mouse + keyboard modifiers only
-        var release = new List<KeyboardInputNativeMethods.INPUT>();
+        // Phase 1: clear stuck mouse buttons + modifiers after right-button gesture / hotkeys.
+        var release = new List<KeyboardInputNativeMethods.INPUT>(16);
         release.AddRange(BuildMouseButtonUps());
         release.AddRange(BuildModifierReleaseOnly());
         var released = Send(release.ToArray());
@@ -140,59 +126,27 @@ public static class KeyboardPasteInjector
                 Marshal.GetLastWin32Error());
         }
 
-        await Task.Delay(50, cancellationToken);
+        await Task.Delay(30, cancellationToken);
 
-        // Re-assert focus after synthetic mouse ups (some apps re-focus on mouse change).
-        if (preferredTargetWindow != IntPtr.Zero)
+        // Phase 2: one-shot Ctrl+V (VK + scan). This is the path that works when smart paste is off.
+        if (TrySendCtrlVViaSendInput(logger))
         {
-            WindowNativeMethods.TryActivateWindow(preferredTargetWindow);
-            await Task.Delay(25, cancellationToken);
-        }
-        else
-        {
-            var fg = WindowNativeMethods.GetForegroundWindow();
-            if (fg != IntPtr.Zero)
-            {
-                WindowNativeMethods.TryActivateWindow(fg);
-            }
-        }
-
-        // Phase 2: SendInput Ctrl+V (split Ctrl down / V for apps that drop chorded synthetic input)
-        if (await TrySendCtrlVViaSendInputSplitAsync(logger, cancellationToken))
-        {
-            await Task.Delay(25, cancellationToken);
-            // When clipboard was just rewritten, also fire WM_PASTE as a no-harm recovery for
-            // hosts that accept SendInput count but drop the chord (rare). Skip if not preferred
-            // to avoid double-paste in hosts that honor both.
-            if (preferClipboardMessage)
-            {
-                // Only as soft secondary when primary keyboard path ran — many edit controls
-                // ignore a second paste if selection already replaced; risk accepted for rewrite path.
-                // Actually double-paste is bad. Do NOT dual-fire.
-            }
-
+            await Task.Delay(15, cancellationToken);
             return true;
         }
 
         // Phase 3: keybd_event fallback
         if (TrySendCtrlVViaKeybdEvent(logger))
         {
-            await Task.Delay(25, cancellationToken);
+            await Task.Delay(15, cancellationToken);
             return true;
         }
 
-        // Phase 4: WM_PASTE to focused control / preferred window (best for classic Win32 edits)
+        // Phase 4: WM_PASTE (classic edit controls)
         if (WindowNativeMethods.TryPostPasteMessage(preferredTargetWindow))
         {
             logger?.LogInformation("Paste recovered via WM_PASTE fallback.");
-            await Task.Delay(20, cancellationToken);
-            return true;
-        }
-
-        // Phase 5: last try — classic single-batch SendInput
-        if (TrySendCtrlVViaSendInput(logger))
-        {
-            await Task.Delay(20, cancellationToken);
+            await Task.Delay(15, cancellationToken);
             return true;
         }
 
@@ -200,7 +154,6 @@ public static class KeyboardPasteInjector
         return false;
     }
 
-    /// <summary>Synchronous multi-path paste for callers that cannot await.</summary>
     public static bool SendCtrlV(
         ILogger? logger = null,
         IntPtr preferredTargetWindow = default,
@@ -210,8 +163,6 @@ public static class KeyboardPasteInjector
             .GetAwaiter()
             .GetResult();
     }
-
-    // --- Legacy API used by older tests / ClipboardNativeMethods path ---
 
     public static ClipboardNativeMethods.INPUT[] BuildPasteWithModifierRelease()
     {
@@ -230,47 +181,6 @@ public static class KeyboardPasteInjector
             (uint)inputs.Length,
             inputs,
             Marshal.SizeOf<ClipboardNativeMethods.INPUT>());
-    }
-
-    private static async Task<bool> TrySendCtrlVViaSendInputSplitAsync(
-        ILogger? logger,
-        CancellationToken cancellationToken)
-    {
-        // Ctrl down first, brief gap, then V down/up + Ctrl up — more reliable after right-button gestures.
-        var ctrlDown = new[] { KeyEvent(VkControl, 0) };
-        var sent = Send(ctrlDown);
-        if (sent != 1)
-        {
-            logger?.LogWarning(
-                "Ctrl-down SendInput {Sent}/1, Win32={Win32}",
-                sent,
-                Marshal.GetLastWin32Error());
-            return false;
-        }
-
-        await Task.Delay(18, cancellationToken);
-
-        var rest =
-            new[]
-            {
-                KeyEvent(VkV, 0),
-                KeyEvent(VkV, KeyEventKeyUp),
-                KeyEvent(VkControl, KeyEventKeyUp)
-            };
-        sent = Send(rest);
-        if (sent == rest.Length)
-        {
-            return true;
-        }
-
-        // Ensure Ctrl is not left stuck.
-        _ = Send([KeyEvent(VkControl, KeyEventKeyUp), KeyEvent(VkLControl, KeyEventKeyUp), KeyEvent(VkRControl, KeyEventKeyUp)]);
-        logger?.LogWarning(
-            "Ctrl+V tail SendInput {Sent}/{Expected}, Win32={Win32}",
-            sent,
-            rest.Length,
-            Marshal.GetLastWin32Error());
-        return false;
     }
 
     private static bool TrySendCtrlVViaSendInput(ILogger? logger)
@@ -295,7 +205,15 @@ public static class KeyboardPasteInjector
             paste.Length,
             Marshal.GetLastWin32Error());
 
-        // Second attempt: pure scan-code keys (some hosts reject VK-only synthesis).
+        // Ensure Ctrl is not left down if partial delivery happened.
+        _ = Send(
+        [
+            KeyEvent(VkControl, KeyEventKeyUp),
+            KeyEvent(VkLControl, KeyEventKeyUp),
+            KeyEvent(VkRControl, KeyEventKeyUp)
+        ]);
+
+        // Scan-code-only retry.
         var scanPaste =
             new[]
             {
@@ -323,7 +241,6 @@ public static class KeyboardPasteInjector
     {
         try
         {
-            // Release common modifiers first.
             foreach (var vk in ModifierVirtualKeys)
             {
                 keybd_event((byte)vk, 0, KeyEventKeyUp, UIntPtr.Zero);

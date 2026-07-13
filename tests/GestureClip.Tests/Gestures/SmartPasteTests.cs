@@ -56,20 +56,45 @@ public sealed class SmartPasteTests
     public async Task SmartPaste_chat_apps_write_plain_text_suppress_capture_and_send_paste(string processName)
     {
         var clipboard = new FakeClipboardService();
+        var keyboard = new FakeKeyboardInputSender();
         var writer = new FakeClipboardWriter();
+        // HTML clipboard forces a real rewrite; pure plain text is left unchanged (skip OpenClipboard).
         var executor = CreateExecutor(
-            new FakeKeyboardInputSender(),
+            keyboard,
             clipboard,
-            new FakeClipboardTextReader { Text = "hello\r\nworld" },
+            new FakeClipboardTextReader { Text = "<b>hello</b><br>world" },
             writer,
             new FakeForegroundAppService(processName, "聊天窗口"));
 
         await executor.ExecuteAsync(BuiltInGestureAction.SmartPaste, CancellationToken.None);
 
+        // Rewrite is best-effort; injection always uses the same Ctrl+V path as smart-paste-off.
         Assert.True(clipboard.SuppressCalled);
-        Assert.Equal("hello\r\nworld", writer.Text);
-        Assert.True(writer.PasteHotkeySent);
+        Assert.False(string.IsNullOrEmpty(writer.Text));
+        Assert.DoesNotContain("<b>", writer.Text, StringComparison.Ordinal);
+        Assert.False(writer.PasteHotkeySent);
+        Assert.Equal(["Ctrl+V"], keyboard.Sent);
         Assert.Null(writer.ImagePngBase64);
+    }
+
+    [Fact]
+    public async Task SmartPaste_plain_clipboard_skips_noop_rewrite_but_still_pastes()
+    {
+        var clipboard = new FakeClipboardService();
+        var keyboard = new FakeKeyboardInputSender();
+        var writer = new FakeClipboardWriter();
+        var executor = CreateExecutor(
+            keyboard,
+            clipboard,
+            new FakeClipboardTextReader { Text = "hello\r\nworld" },
+            writer,
+            new FakeForegroundAppService("WeChat.exe", "聊天"));
+
+        await executor.ExecuteAsync(BuiltInGestureAction.SmartPaste, CancellationToken.None);
+
+        Assert.False(clipboard.SuppressCalled);
+        Assert.Null(writer.Text);
+        Assert.Equal(["Ctrl+V"], keyboard.Sent);
     }
 
     [Fact]
@@ -109,9 +134,10 @@ public sealed class SmartPasteTests
     public async Task SmartPaste_browser_or_chatgpt_writes_clean_text_not_html(string processName, string title)
     {
         var clipboard = new FakeClipboardService();
+        var keyboard = new FakeKeyboardInputSender();
         var writer = new FakeClipboardWriter();
         var executor = CreateExecutor(
-            new FakeKeyboardInputSender(),
+            keyboard,
             clipboard,
             new FakeClipboardTextReader
             {
@@ -126,7 +152,8 @@ public sealed class SmartPasteTests
         Assert.True(clipboard.SuppressCalled);
         Assert.Equal("第一行\r\n\r\n    缩进行\r\n第二行", writer.Text);
         Assert.Null(writer.ImagePngBase64);
-        Assert.True(writer.PasteHotkeySent);
+        Assert.False(writer.PasteHotkeySent);
+        Assert.Equal(["Ctrl+V"], keyboard.Sent);
     }
 
     [Theory]
@@ -172,10 +199,10 @@ public sealed class SmartPasteTests
             new GestureExecutionContext("D", true),
             CancellationToken.None);
 
-        Assert.Empty(keyboard.Sent);
         Assert.True(clipboard.SuppressCalled);
         Assert.Equal("  标题\r\n\r\n正文", writer.Text);
-        Assert.True(writer.PasteHotkeySent);
+        Assert.False(writer.PasteHotkeySent);
+        Assert.Equal(["Ctrl+V"], keyboard.Sent);
     }
 
     [Theory]
@@ -185,10 +212,12 @@ public sealed class SmartPasteTests
     public async Task SmartPaste_code_editors_write_text_without_removing_newlines_or_indentation(string processName)
     {
         var clipboard = new FakeClipboardService();
+        var keyboard = new FakeKeyboardInputSender();
         var writer = new FakeClipboardWriter();
+        // HTML-ish clipboard that becomes plain for code editors (rewrite must change content).
         var code = "public void M()\r\n{\r\n    Console.WriteLine(\"x\");\r\n}";
         var executor = CreateExecutor(
-            new FakeKeyboardInputSender(),
+            keyboard,
             clipboard,
             new FakeClipboardTextReader { Text = code },
             writer,
@@ -196,10 +225,12 @@ public sealed class SmartPasteTests
 
         await executor.ExecuteAsync(BuiltInGestureAction.SmartPaste, CancellationToken.None);
 
-        Assert.Equal(code, writer.Text);
-        Assert.Contains("\r\n    Console", writer.Text, StringComparison.Ordinal);
-        Assert.True(clipboard.SuppressCalled);
-        Assert.True(writer.PasteHotkeySent);
+        // PlainText transform leaves pure code unchanged → skip rewrite (no OpenClipboard).
+        Assert.Null(writer.Text);
+        Assert.False(clipboard.SuppressCalled);
+        Assert.False(writer.PasteHotkeySent);
+        Assert.Equal(["Ctrl+V"], keyboard.Sent);
+        Assert.Contains("\r\n    Console", code, StringComparison.Ordinal);
     }
 
     [Fact]

@@ -1,20 +1,21 @@
 # CHANGELOG
 
-## GestureClip v0.6.18 Beta
+## GestureClip v0.6.18 Beta (local / unreleased polish)
 
-### 修复（下滑手势粘贴跨机失败 — 完整加固）
+### 修复（智能粘贴一开就无法粘贴）
 
-- 修正 x64 下 `SendInput` 的 `INPUT` 结构布局（补齐 MOUSE 联合体），避免注入失败。
-- 粘贴前释放 **鼠标左右中键 + 全部修饰键**，再发带扫描码的 `Ctrl+V`（右键手势后更稳）。
-- **焦点恢复**：右键按下瞬间记录前台窗口，粘贴前 `AttachThreadInput` + `SetForegroundWindow` 拉回目标。
-- **多层注入**：SendInput（Ctrl 与 V 拆开发）→ `keybd_event` → `WM_PASTE` 回退。
-- 粘贴类手势：HUD 先隐藏再注入，避免焦点落在自身；注入失败不再当成成功。
-- 智能粘贴写剪贴板失败 / 注入失败均回退普通粘贴。
-- 历史面板粘贴仍先失焦；`Ctrl+Shift+V` 仍先清修饰键。
+- **根因**：智能粘贴开启后走「改写剪贴板 + 独立注入并 early return」，与「关闭智能粘贴」的可靠 Ctrl+V 路径分叉；注入假成功时直接结束。
+- **统一路径**：智能粘贴只做**尽力改写剪贴板**（纯文本无变化则跳过 OpenClipboard）；**始终**再走与关闭时相同的键盘 `Ctrl+V`。
+- 焦点：目标已是前台时**不**再 `SetForegroundWindow`，避免抢走编辑框光标。
+- 注入器简化：一次 SendInput Ctrl+V → keybd_event → WM_PASTE；不再无条件重激活当前前台窗。
+
+### 修复（下滑手势粘贴跨机）
+
+- x64 `INPUT` 联合体、粘贴前松鼠标/修饰键、HUD 先藏再注入、手势起点记 HWND。
 
 ### 验证
 
-- `dotnet test ./GestureClip.sln`
+- `dotnet test ./GestureClip.sln`（本地验证，本轮不发版）
 
 ## GestureClip v0.6.17 Beta
 

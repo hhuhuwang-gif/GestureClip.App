@@ -410,63 +410,21 @@ public sealed class GestureBuiltInActionExecutor : IMouseGestureActionExecutor
         bool forceCleanWhenLeftModified,
         bool allowNormalShortcut)
     {
-        // After right-button gesture: settle, restore target focus, then inject.
-        await Task.Delay(50, cancellationToken);
-        TryRestoreGestureTarget(context);
+        // Right-button gesture settle only. Do not steal focus before we know we need it.
+        await Task.Delay(35, cancellationToken);
 
-        if (!_settingsService.Get(SettingKeys.SmartPasteEnabled, true))
+        // Smart paste = optional clipboard rewrite ONLY.
+        // Injection MUST always use the same path as "smart paste off" (keyboard Ctrl+V).
+        // Previous design used a separate SendPasteHotkeyAsync path and early-return; when that
+        // path reported success without actually pasting, gesture paste was dead while
+        // "disable smart paste" still worked.
+        if (_settingsService.Get(SettingKeys.SmartPasteEnabled, true))
         {
-            if (allowNormalShortcut)
-            {
-                await SendNormalPasteAsync(context, cancellationToken);
-            }
-
-            _logger.LogInformation("Smart paste is disabled. Fallback to normal paste.");
-            return;
+            await TryPrepareSmartClipboardAsync(context, forceCleanWhenLeftModified, cancellationToken);
         }
-
-        var app = _foregroundAppService.GetCurrent();
-        var strategy = forceCleanWhenLeftModified && context.IsLeftButtonModified
-            ? SmartPasteStrategy.CleanTextPaste
-            : SmartPastePolicy.Select(app);
-
-        // Prefer rewrite-then-paste for plain/clean; always fall back on any failure
-        // (including injection failure — previously treated as success).
-        if (strategy is SmartPasteStrategy.PlainTextPaste or SmartPasteStrategy.CleanTextPaste)
+        else
         {
-            var text = _clipboardTextReader.TryReadText();
-            if (!string.IsNullOrEmpty(text))
-            {
-                try
-                {
-                    var pasteText = SmartPastePolicy.TransformForStrategy(text, strategy);
-                    _clipboardService.SuppressCaptureFor(TimeSpan.FromMilliseconds(1500));
-                    await _clipboardWriter.SetTextAsync(pasteText, cancellationToken);
-                    await Task.Delay(90, cancellationToken);
-                    TryRestoreGestureTarget(context);
-                    // Goes through IClipboardWriter → hardened multi-path injector in production.
-                    await _clipboardWriter.SendPasteHotkeyAsync(cancellationToken);
-                    await RecordPasteAsync(cancellationToken);
-                    _logger.LogInformation(
-                        "App-aware paste applied. Process={ProcessName} Strategy={Strategy}",
-                        app.ProcessName,
-                        strategy);
-                    return;
-                }
-                catch (Exception ex)
-                {
-                    _logger.LogWarning(
-                        ex,
-                        "App-aware paste failed; falling back to normal paste. Process={ProcessName}",
-                        app.ProcessName);
-                }
-            }
-            else
-            {
-                _logger.LogInformation(
-                    "Smart paste has no text; falling back to normal paste. Process={ProcessName}",
-                    app.ProcessName);
-            }
+            _logger.LogInformation("Smart paste is disabled. Using normal paste only.");
         }
 
         if (allowNormalShortcut)
@@ -475,11 +433,78 @@ public sealed class GestureBuiltInActionExecutor : IMouseGestureActionExecutor
         }
     }
 
+    /// <summary>
+    /// Best-effort rewrite of system clipboard for plain/clean strategies.
+    /// Never throws out; never injects keys. Failure must not block normal paste.
+    /// </summary>
+    private async Task TryPrepareSmartClipboardAsync(
+        GestureExecutionContext context,
+        bool forceCleanWhenLeftModified,
+        CancellationToken cancellationToken)
+    {
+        try
+        {
+            var app = _foregroundAppService.GetCurrent();
+            var strategy = forceCleanWhenLeftModified && context.IsLeftButtonModified
+                ? SmartPasteStrategy.CleanTextPaste
+                : SmartPastePolicy.Select(app);
+
+            if (strategy is not (SmartPasteStrategy.PlainTextPaste or SmartPasteStrategy.CleanTextPaste))
+            {
+                _logger.LogDebug(
+                    "Smart paste skip rewrite (NormalPaste). Process={ProcessName}",
+                    app.ProcessName);
+                return;
+            }
+
+            var text = _clipboardTextReader.TryReadText();
+            if (string.IsNullOrEmpty(text))
+            {
+                _logger.LogInformation(
+                    "Smart paste has no text; skip rewrite. Process={ProcessName}",
+                    app.ProcessName);
+                return;
+            }
+
+            var pasteText = SmartPastePolicy.TransformForStrategy(text, strategy);
+            if (string.IsNullOrEmpty(pasteText))
+            {
+                _logger.LogInformation(
+                    "Smart paste transform empty; keep original clipboard. Process={ProcessName}",
+                    app.ProcessName);
+                return;
+            }
+
+            // No-op rewrite: avoid OpenClipboard churn that can race paste on some PCs.
+            if (string.Equals(pasteText, text, StringComparison.Ordinal))
+            {
+                _logger.LogDebug(
+                    "Smart paste transform unchanged; skip rewrite. Process={ProcessName}",
+                    app.ProcessName);
+                return;
+            }
+
+            _clipboardService.SuppressCaptureFor(TimeSpan.FromMilliseconds(1500));
+            await _clipboardWriter.SetTextAsync(pasteText, cancellationToken);
+            // Clipboard ownership / viewer notify must settle before Ctrl+V.
+            await Task.Delay(100, cancellationToken);
+            _logger.LogInformation(
+                "Smart paste rewrote clipboard. Process={ProcessName} Strategy={Strategy} Length={Length}",
+                app.ProcessName,
+                strategy,
+                pasteText.Length);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Smart paste clipboard prepare failed; will still attempt normal Ctrl+V.");
+        }
+    }
+
     private async Task SendNormalPasteAsync(GestureExecutionContext context, CancellationToken cancellationToken)
     {
         TryRestoreGestureTarget(context);
-        // Production KeyboardInputSender routes Ctrl+V through multi-path injector
-        // (SendInput split → keybd_event → WM_PASTE). Tests use fakes via this interface.
+        // Production KeyboardInputSender routes Ctrl+V through hardened injector.
+        // This is the ONLY injection path for gesture paste (smart or not).
         _keyboardInputSender.SendShortcut(KeyboardInputNativeMethods.VkControl, KeyboardInputNativeMethods.VkV);
         await RecordPasteAsync(cancellationToken);
     }
@@ -491,7 +516,22 @@ public sealed class GestureBuiltInActionExecutor : IMouseGestureActionExecutor
             return;
         }
 
-        var ok = WindowNativeMethods.TryActivateWindow((IntPtr)context.TargetWindowHandle);
+        var hwnd = (IntPtr)context.TargetWindowHandle;
+        if (!WindowNativeMethods.IsWindow(hwnd))
+        {
+            return;
+        }
+
+        // If target is already foreground, do NOT re-activate — SetForegroundWindow on the
+        // top-level window can steal focus from the caret/edit child and make Ctrl+V a no-op.
+        var foreground = WindowNativeMethods.GetForegroundWindow();
+        if (foreground == hwnd)
+        {
+            _logger.LogDebug("Gesture paste target already foreground hwnd={Hwnd}", context.TargetWindowHandle);
+            return;
+        }
+
+        var ok = WindowNativeMethods.TryActivateWindow(hwnd);
         _logger.LogDebug(
             "Gesture paste focus restore hwnd={Hwnd} ok={Ok}",
             context.TargetWindowHandle,
