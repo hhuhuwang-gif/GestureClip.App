@@ -3,6 +3,8 @@ using System.Threading.Channels;
 using GestureClip.Core.Abstractions;
 using GestureClip.Core.Clipboard;
 using GestureClip.Core.Settings;
+using GestureClip.Features.Assistant;
+using GestureClip.Features.Gestures;
 using Microsoft.Extensions.Logging;
 
 namespace GestureClip.Features.Clipboard;
@@ -19,6 +21,7 @@ public sealed class ClipboardService : IClipboardService
     private readonly IClipboardRepository _clipboardRepository;
     private readonly IClipboardHashService _clipboardHashService;
     private readonly ISensitiveContentDetector _sensitiveContentDetector;
+    private readonly ISensitiveCaptureGate? _sensitiveCaptureGate;
     private readonly IForegroundAppService _foregroundAppService;
     private readonly IAppBlacklistService _appBlacklistService;
     private readonly ISettingsService _settingsService;
@@ -44,7 +47,8 @@ public sealed class ClipboardService : IClipboardService
         IAppBlacklistService appBlacklistService,
         ISettingsService settingsService,
         IWorkstationDashboardService workstationDashboardService,
-        ILogger<ClipboardService> logger)
+        ILogger<ClipboardService> logger,
+        ISensitiveCaptureGate? sensitiveCaptureGate = null)
     {
         _clipboardListener = clipboardListener;
         _clipboardTextReader = clipboardTextReader;
@@ -52,6 +56,7 @@ public sealed class ClipboardService : IClipboardService
         _clipboardRepository = clipboardRepository;
         _clipboardHashService = clipboardHashService;
         _sensitiveContentDetector = sensitiveContentDetector;
+        _sensitiveCaptureGate = sensitiveCaptureGate;
         _foregroundAppService = foregroundAppService;
         _appBlacklistService = appBlacklistService;
         _settingsService = settingsService;
@@ -162,6 +167,12 @@ public sealed class ClipboardService : IClipboardService
         if (await _appBlacklistService.IsClipboardBlockedAsync(capture.SourceProcess, cancellationToken))
         {
             _logger.LogInformation("Clipboard capture skipped: source process is blacklisted.");
+            return;
+        }
+
+        if (_sensitiveCaptureGate?.ShouldSkipCapture(capture.SourceProcess, capture.SourceApp) == true)
+        {
+            _logger.LogInformation("Clipboard capture skipped: sensitive UI context (password/login).");
             return;
         }
 
@@ -288,8 +299,19 @@ public sealed class ClipboardService : IClipboardService
             return;
         }
 
+        var pasteText = textItem.TextContent;
+        if (options.PlainText)
+        {
+            pasteText = LocalTextTransforms.ToPlainText(pasteText);
+        }
+        else if (_settingsService.Get(SettingKeys.SmartPasteEnabled, true))
+        {
+            var strategy = SmartPastePolicy.Select(_foregroundAppService.GetCurrent());
+            pasteText = SmartPastePolicy.TransformForStrategy(pasteText, strategy);
+        }
+
         SuppressCaptureFor(TimeSpan.FromMilliseconds(1000));
-        await _clipboardWriter.SetTextAsync(textItem.TextContent, cancellationToken);
+        await _clipboardWriter.SetTextAsync(pasteText, cancellationToken);
         await _clipboardWriter.SendPasteHotkeyAsync(cancellationToken);
         await RecordPasteUsageAsync(textItem.Id, DateTimeOffset.UtcNow, cancellationToken);
         pasteWatch.Stop();

@@ -8,6 +8,7 @@ using GestureClip.Infrastructure.Settings;
 using GestureClip.Infrastructure.Startup;
 using GestureClip.Infrastructure.SystemIntegration;
 using GestureClip.Infrastructure.SystemInfo;
+using GestureClip.Infrastructure.Privacy;
 using GestureClip.Infrastructure.Updates;
 using Microsoft.Extensions.DependencyInjection;
 using System.Net.Http;
@@ -46,6 +47,7 @@ public static class InfrastructureServiceCollectionExtensions
         services.AddSingleton(provider => UpdateHttpClientFactory.CreateDefaultClient());
         services.AddSingleton<IUpdateCheckService, GitHubReleaseUpdateCheckService>();
         services.AddSingleton<IUpdateInstallerService, GitHubReleaseUpdateInstallerService>();
+        services.AddSingleton<ISensitiveCaptureGate, SensitiveCaptureGate>();
 
         return services;
     }

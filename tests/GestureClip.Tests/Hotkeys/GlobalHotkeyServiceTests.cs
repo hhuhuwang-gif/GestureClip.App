@@ -22,8 +22,10 @@ public sealed class GlobalHotkeyServiceTests
 
         Assert.Equal(1, registrar.RegisterCount);
         Assert.Equal(1, registrar.QuickActionRegisterCount);
+        Assert.Equal(1, registrar.PastePlainRegisterCount);
         Assert.Equal(1, registrar.UnregisterCount);
         Assert.Equal(1, registrar.QuickActionUnregisterCount);
+        Assert.Equal(1, registrar.PastePlainUnregisterCount);
     }
 
     [Fact]
@@ -47,6 +49,17 @@ public sealed class GlobalHotkeyServiceTests
         service.Start();
 
         Assert.Equal("Ctrl + Shift + Q", registrar.LastQuickActionHotkeyText);
+    }
+
+    [Fact]
+    public void Start_registers_default_plain_text_paste_hotkey()
+    {
+        var registrar = new FakeHotkeyRegistrar();
+        var service = CreateService(registrar);
+
+        service.Start();
+
+        Assert.Equal("Ctrl + Shift + V", registrar.LastPastePlainHotkeyText);
     }
 
     [Fact]
@@ -138,16 +151,32 @@ public sealed class GlobalHotkeyServiceTests
         Assert.Equal(2, quickAction.ToggleCount);
     }
 
+    [Fact]
+    public async Task Plain_text_paste_hotkey_triggers_service()
+    {
+        var registrar = new FakeHotkeyRegistrar();
+        var plainPaste = new FakePlainTextPasteService();
+        var service = CreateService(registrar, plainPaste: plainPaste);
+        service.Start();
+
+        registrar.RaisePastePlainTextHotkeyPressed();
+        await WaitForAsync(() => plainPaste.CallCount == 1);
+
+        Assert.Equal(1, plainPaste.CallCount);
+    }
+
     private static GlobalHotkeyService CreateService(
         FakeHotkeyRegistrar registrar,
         FakeClipboardOverlayService? overlay = null,
         FakeSettingsService? settings = null,
-        FakeQuickActionCenterService? quickAction = null)
+        FakeQuickActionCenterService? quickAction = null,
+        FakePlainTextPasteService? plainPaste = null)
     {
         return new GlobalHotkeyService(
             registrar,
             overlay ?? new FakeClipboardOverlayService(),
             quickAction ?? new FakeQuickActionCenterService(),
+            plainPaste ?? new FakePlainTextPasteService(),
             settings ?? new FakeSettingsService(),
             NullLogger<GlobalHotkeyService>.Instance);
     }
@@ -172,14 +201,18 @@ public sealed class GlobalHotkeyServiceTests
     {
         public event EventHandler? HotkeyPressed;
         public event EventHandler? QuickActionHotkeyPressed;
+        public event EventHandler? PastePlainTextHotkeyPressed;
         public bool RegisterResult { get; set; } = true;
         public int LastError { get; set; }
         public int RegisterCount { get; private set; }
         public int UnregisterCount { get; private set; }
         public int QuickActionRegisterCount { get; private set; }
         public int QuickActionUnregisterCount { get; private set; }
+        public int PastePlainRegisterCount { get; private set; }
+        public int PastePlainUnregisterCount { get; private set; }
         public string? LastHotkeyText { get; private set; }
         public string? LastQuickActionHotkeyText { get; private set; }
+        public string? LastPastePlainHotkeyText { get; private set; }
         public List<string> FailedHotkeys { get; } = [];
         public List<string> RegisteredHotkeys { get; } = [];
 
@@ -214,11 +247,25 @@ public sealed class GlobalHotkeyServiceTests
             QuickActionUnregisterCount++;
         }
 
+        public bool RegisterPastePlainTextHotkey(HotkeyDefinition hotkey)
+        {
+            PastePlainRegisterCount++;
+            LastPastePlainHotkeyText = hotkey.DisplayText;
+            return true;
+        }
+
+        public void UnregisterPastePlainTextHotkey()
+        {
+            PastePlainUnregisterCount++;
+        }
+
         public int GetLastError() => LastError;
 
         public void RaiseHotkeyPressed() => HotkeyPressed?.Invoke(this, EventArgs.Empty);
 
         public void RaiseQuickActionHotkeyPressed() => QuickActionHotkeyPressed?.Invoke(this, EventArgs.Empty);
+
+        public void RaisePastePlainTextHotkeyPressed() => PastePlainTextHotkeyPressed?.Invoke(this, EventArgs.Empty);
     }
 
     private sealed class FakeSettingsService : ISettingsService
@@ -262,8 +309,14 @@ public sealed class GlobalHotkeyServiceTests
     private sealed class FakeQuickActionCenterService : IQuickActionCenterService
     {
         public int ToggleCount { get; private set; }
+        public int ShowCount { get; private set; }
+        public int HideCount { get; private set; }
 
-        public Task ShowAsync() => Task.CompletedTask;
+        public Task ShowAsync()
+        {
+            ShowCount++;
+            return Task.CompletedTask;
+        }
 
         public Task ToggleAsync()
         {
@@ -271,6 +324,21 @@ public sealed class GlobalHotkeyServiceTests
             return Task.CompletedTask;
         }
 
-        public Task HideAsync() => Task.CompletedTask;
+        public Task HideAsync()
+        {
+            HideCount++;
+            return Task.CompletedTask;
+        }
+    }
+
+    private sealed class FakePlainTextPasteService : IPlainTextPasteService
+    {
+        public int CallCount { get; private set; }
+
+        public Task PastePlainTextAsync(CancellationToken cancellationToken = default)
+        {
+            CallCount++;
+            return Task.CompletedTask;
+        }
     }
 }

@@ -2,6 +2,13 @@
 
 ## GestureClip v0.6.16 Beta（开发中）
 
+### 粘贴力爆款包
+
+- **S1** 全局 `Ctrl+Shift+V` 纯文本粘贴（可改键）。
+- **S2** 快捷动作：纯文本 / HTML→文本 / 轻量 Markdown / **链接净化**（去 utm/spm 等）。
+- **A1** 智能粘贴扩展：普通「粘贴/粘贴并回车」也按前台应用选策略（聊天/IDE 默认纯文本）。
+- **A5** 密码框、密码管理器、登录/密码窗口默认不写入剪贴板历史。
+
 ### 更新网络
 
 - 检查更新 / 一键覆盖下载改为多路径：系统代理 → 直连 → 公共镜像加速。
@@ -10,7 +17,7 @@
 
 ### 验证
 
-- `dotnet test ./GestureClip.sln --filter FullyQualifiedName~Update`
+- `dotnet test ./GestureClip.sln`
 
 ## GestureClip v0.6.15 Beta
 

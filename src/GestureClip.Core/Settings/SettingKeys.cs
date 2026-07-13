@@ -14,6 +14,8 @@ public static class SettingKeys
     public const string HotkeyOpenClipboardOverlayKey = "Hotkey.OpenClipboardOverlay.Key";
     public const string HotkeyOpenQuickActionCenterEnabled = "Hotkey.OpenQuickActionCenter.Enabled";
     public const string HotkeyOpenQuickActionCenterKey = "Hotkey.OpenQuickActionCenter.Key";
+    public const string HotkeyPastePlainTextEnabled = "Hotkey.PastePlainText.Enabled";
+    public const string HotkeyPastePlainTextKey = "Hotkey.PastePlainText.Key";
     public const string AssistantEnabled = "Assistant.Enabled";
     public const string GestureEnabled = "Gesture.Enabled";
     public const string GestureShowOverlay = "Gesture.ShowOverlay";
@@ -60,6 +62,7 @@ public static class SettingKeys
     public const string EdgeTriggerSlideBottomEnabled = "EdgeTrigger.Slide.Bottom.Enabled";
     public const string EdgeTriggerSlideBottomAction = "EdgeTrigger.Slide.Bottom.Action";
     public const string PrivacySuppressSensitive = "Privacy.SuppressSensitive";
+    public const string PrivacySuppressPasswordFields = "Privacy.SuppressPasswordFields";
     public const string WorkstationEnabled = "Workstation.Enabled";
     public const string WorkstationMonthlySalary = "Workstation.MonthlySalary";
     public const string WorkstationWorkStartTime = "Workstation.WorkStartTime";

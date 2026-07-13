@@ -17,6 +17,10 @@ public sealed class BuiltInAssistantActionCatalog : IAssistantActionCatalog
     public const string QuoteId = "text.quote";
     public const string UnquoteId = "text.unquote";
     public const string CollapseBlankLinesId = "text.collapse_blank_lines";
+    public const string PlainTextId = "text.plain";
+    public const string HtmlToTextId = "text.html_to_text";
+    public const string ToMarkdownId = "text.to_markdown";
+    public const string CleanUrlId = "text.clean_url";
     public const string OpenSettingsId = "app.open_settings";
     public const string ExportDiagnosticsId = "app.export_diagnostics";
 
@@ -25,6 +29,10 @@ public sealed class BuiltInAssistantActionCatalog : IAssistantActionCatalog
         new(TrimId, "去除首尾空格", "文本整理", "去掉剪贴板文本开头和结尾的空白。", AssistantInputKind.ClipboardText, AssistantOutputKind.Clipboard, AssistantPrivacyLevel.LocalOnly),
         new(NormalizeWhitespaceId, "合并多余空格", "文本整理", "把连续空白压成单个空格，并去掉首尾空白。", AssistantInputKind.ClipboardText, AssistantOutputKind.Clipboard, AssistantPrivacyLevel.LocalOnly),
         new(CollapseBlankLinesId, "合并多余空行", "文本整理", "把连续空行压成最多一个空行。", AssistantInputKind.ClipboardText, AssistantOutputKind.Clipboard, AssistantPrivacyLevel.LocalOnly),
+        new(PlainTextId, "转为纯文本", "粘贴变形", "去掉 HTML/多余空白，只保留可读纯文本。", AssistantInputKind.ClipboardText, AssistantOutputKind.Clipboard, AssistantPrivacyLevel.LocalOnly),
+        new(HtmlToTextId, "HTML 转文本", "粘贴变形", "剥离 HTML 标签与脚本样式，保留正文。", AssistantInputKind.ClipboardText, AssistantOutputKind.Clipboard, AssistantPrivacyLevel.LocalOnly),
+        new(ToMarkdownId, "转为 Markdown", "粘贴变形", "把简单 HTML 转成轻量 Markdown（标题/链接/列表）。", AssistantInputKind.ClipboardText, AssistantOutputKind.Clipboard, AssistantPrivacyLevel.LocalOnly),
+        new(CleanUrlId, "链接净化", "粘贴变形", "去掉 utm、spm、fbclid 等追踪参数，保留干净链接。", AssistantInputKind.ClipboardText, AssistantOutputKind.Clipboard, AssistantPrivacyLevel.LocalOnly),
         new(UpperId, "转成大写", "大小写", "把文本全部转成大写。", AssistantInputKind.ClipboardText, AssistantOutputKind.Clipboard, AssistantPrivacyLevel.LocalOnly),
         new(LowerId, "转成小写", "大小写", "把文本全部转成小写。", AssistantInputKind.ClipboardText, AssistantOutputKind.Clipboard, AssistantPrivacyLevel.LocalOnly),
         new(TitleCaseId, "转成标题大小写", "大小写", "按当前语言规则转成标题大小写。", AssistantInputKind.ClipboardText, AssistantOutputKind.Clipboard, AssistantPrivacyLevel.LocalOnly),

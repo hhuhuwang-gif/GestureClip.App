@@ -75,5 +75,10 @@ public enum BuiltInGestureAction
     AssistantUrlEncode = 70,
     AssistantUrlDecode = 71,
     AssistantQuote = 72,
-    AssistantUnquote = 73
+    AssistantUnquote = 73,
+    AssistantPlainText = 74,
+    AssistantHtmlToText = 75,
+    AssistantToMarkdown = 76,
+    AssistantCleanUrl = 77,
+    PastePlainText = 78
 }

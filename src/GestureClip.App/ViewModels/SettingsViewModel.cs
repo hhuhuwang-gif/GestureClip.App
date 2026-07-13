@@ -88,6 +88,7 @@ public sealed class SettingsViewModel : INotifyPropertyChanged
     private int _clipboardRetentionDays;
     private string _openClipboardHotkeyText = HotkeyDefinition.DefaultOpenClipboardOverlay;
     private string _openQuickActionHotkeyText = HotkeyDefinition.DefaultOpenQuickActionCenter;
+    private string _pastePlainTextHotkeyText = HotkeyDefinition.DefaultPastePlainText;
     private string _gestureStrokeColor;
     private bool _workstationEnabled;
     private decimal _workstationMonthlySalary;
@@ -252,6 +253,12 @@ public sealed class SettingsViewModel : INotifyPropertyChanged
         _openQuickActionHotkeyText = HotkeyDefinition.TryParse(quickActionHotkeyText, out var quickActionHotkey)
             ? quickActionHotkey.DisplayText
             : HotkeyDefinition.DefaultOpenQuickActionCenter;
+        var pastePlainHotkeyText = _settingsService.Get(
+            SettingKeys.HotkeyPastePlainTextKey,
+            HotkeyDefinition.DefaultPastePlainText);
+        _pastePlainTextHotkeyText = HotkeyDefinition.TryParse(pastePlainHotkeyText, out var pastePlainHotkey)
+            ? pastePlainHotkey.DisplayText
+            : HotkeyDefinition.DefaultPastePlainText;
         _gestureStrokeColor = _settingsService.Get(SettingKeys.GestureStrokeColor, "#8CC8FF");
         _gestureDiagnostics = _mouseGestureService.Diagnostics;
         _startWithWindows = _startupService.IsEnabled();
@@ -348,6 +355,30 @@ public sealed class SettingsViewModel : INotifyPropertyChanged
             _openQuickActionHotkeyText = hotkey.DisplayText;
             OnPropertyChanged();
             _ = ApplyOpenQuickActionHotkeyAsync(hotkey.DisplayText);
+        }
+    }
+
+    public string PastePlainTextHotkeyText
+    {
+        get => _pastePlainTextHotkeyText;
+        set
+        {
+            if (!HotkeyDefinition.TryParse(value, out var hotkey))
+            {
+                hotkey = new HotkeyDefinition(
+                    HotkeyModifier.Control | HotkeyModifier.Shift,
+                    (uint)'V',
+                    HotkeyDefinition.DefaultPastePlainText);
+            }
+
+            if (_pastePlainTextHotkeyText == hotkey.DisplayText)
+            {
+                return;
+            }
+
+            _pastePlainTextHotkeyText = hotkey.DisplayText;
+            OnPropertyChanged();
+            _ = ApplyPastePlainTextHotkeyAsync(hotkey.DisplayText);
         }
     }
 
@@ -1935,6 +1966,12 @@ public sealed class SettingsViewModel : INotifyPropertyChanged
     private async Task ApplyOpenQuickActionHotkeyAsync(string hotkeyText)
     {
         await _settingsService.SetAsync(SettingKeys.HotkeyOpenQuickActionCenterKey, hotkeyText, CancellationToken.None);
+        RestartGlobalHotkeys();
+    }
+
+    private async Task ApplyPastePlainTextHotkeyAsync(string hotkeyText)
+    {
+        await _settingsService.SetAsync(SettingKeys.HotkeyPastePlainTextKey, hotkeyText, CancellationToken.None);
         RestartGlobalHotkeys();
     }
 

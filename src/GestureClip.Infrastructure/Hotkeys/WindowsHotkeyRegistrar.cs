@@ -12,6 +12,7 @@ public sealed class WindowsHotkeyRegistrar : IHotkeyRegistrar, IDisposable
 {
     private const int OpenClipboardOverlayHotkeyId = 0x4743;
     private const int OpenQuickActionHotkeyId = 0x4744;
+    private const int PastePlainTextHotkeyId = 0x4745;
     private readonly Dispatcher _dispatcher;
     private HwndSource? _source;
     private int _lastError;
@@ -24,6 +25,8 @@ public sealed class WindowsHotkeyRegistrar : IHotkeyRegistrar, IDisposable
     public event EventHandler? HotkeyPressed;
 
     public event EventHandler? QuickActionHotkeyPressed;
+
+    public event EventHandler? PastePlainTextHotkeyPressed;
 
     public bool RegisterOpenClipboardHotkey(HotkeyDefinition hotkey)
     {
@@ -45,6 +48,16 @@ public sealed class WindowsHotkeyRegistrar : IHotkeyRegistrar, IDisposable
         Unregister(OpenQuickActionHotkeyId);
     }
 
+    public bool RegisterPastePlainTextHotkey(HotkeyDefinition hotkey)
+    {
+        return Register(PastePlainTextHotkeyId, hotkey);
+    }
+
+    public void UnregisterPastePlainTextHotkey()
+    {
+        Unregister(PastePlainTextHotkeyId);
+    }
+
     public int GetLastError() => _lastError;
 
     public void Dispose()
@@ -58,6 +71,7 @@ public sealed class WindowsHotkeyRegistrar : IHotkeyRegistrar, IDisposable
 
             HotkeyNativeMethods.UnregisterHotKey(_source.Handle, OpenClipboardOverlayHotkeyId);
             HotkeyNativeMethods.UnregisterHotKey(_source.Handle, OpenQuickActionHotkeyId);
+            HotkeyNativeMethods.UnregisterHotKey(_source.Handle, PastePlainTextHotkeyId);
             _source.RemoveHook(WndProc);
             _source.Dispose();
             _source = null;
@@ -126,6 +140,11 @@ public sealed class WindowsHotkeyRegistrar : IHotkeyRegistrar, IDisposable
         else if (id == OpenQuickActionHotkeyId)
         {
             QuickActionHotkeyPressed?.Invoke(this, EventArgs.Empty);
+            handled = true;
+        }
+        else if (id == PastePlainTextHotkeyId)
+        {
+            PastePlainTextHotkeyPressed?.Invoke(this, EventArgs.Empty);
             handled = true;
         }
 

@@ -6,6 +6,8 @@ public sealed record HotkeyDefinition(uint Modifiers, uint VirtualKey, string Di
     public const string FallbackOpenClipboardOverlay = "Ctrl + Alt + V";
     public const string DefaultOpenQuickActionCenter = "Ctrl + Shift + Q";
     public const string FallbackOpenQuickActionCenter = "Ctrl + Alt + Q";
+    public const string DefaultPastePlainText = "Ctrl + Shift + V";
+    public const string FallbackPastePlainText = "Ctrl + Alt + Shift + V";
 
     public static HotkeyDefinition ParseOrDefault(string? text)
     {

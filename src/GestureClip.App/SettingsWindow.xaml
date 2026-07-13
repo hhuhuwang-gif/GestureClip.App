@@ -479,6 +479,24 @@
                                             </StackPanel>
                                         </Grid>
                                     </Border>
+                                    <Border Style="{StaticResource SettingsCompactFormRowStyle}">
+                                        <Grid>
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="150" />
+                                                <ColumnDefinition Width="*" />
+                                            </Grid.ColumnDefinitions>
+                                            <TextBlock Text="纯文本粘贴热键" FontWeight="SemiBold" VerticalAlignment="Center" />
+                                            <StackPanel Grid.Column="1">
+                                                <TextBox Width="190"
+                                                         HorizontalAlignment="Left"
+                                                         Text="{Binding PastePlainTextHotkeyText, Mode=TwoWay, UpdateSourceTrigger=LostFocus}" />
+                                                <TextBlock Text="默认 Ctrl + Shift + V。网页复制后进微信/文档一键去格式。智能粘贴开启时，手势「粘贴」会按当前软件自动选策略。"
+                                                           Margin="0,6,0,0"
+                                                           Style="{StaticResource MutedTextStyle}"
+                                                           TextWrapping="Wrap" />
+                                            </StackPanel>
+                                        </Grid>
+                                    </Border>
                                 </StackPanel>
                             </GroupBox>
 

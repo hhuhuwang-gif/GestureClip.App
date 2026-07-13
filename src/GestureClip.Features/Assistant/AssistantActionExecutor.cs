@@ -217,6 +217,18 @@ public sealed class AssistantActionExecutor : IAssistantActionExecutor
             case BuiltInAssistantActionCatalog.UnquoteId:
                 output = LocalTextTransforms.Unquote(input);
                 return true;
+            case BuiltInAssistantActionCatalog.PlainTextId:
+                output = LocalTextTransforms.ToPlainText(input);
+                return true;
+            case BuiltInAssistantActionCatalog.HtmlToTextId:
+                output = LocalTextTransforms.HtmlToPlainText(input);
+                return true;
+            case BuiltInAssistantActionCatalog.ToMarkdownId:
+                output = LocalTextTransforms.ToMarkdownLite(input);
+                return true;
+            case BuiltInAssistantActionCatalog.CleanUrlId:
+                output = LocalTextTransforms.CleanTrackingUrls(input);
+                return true;
             default:
                 errorClass = "unknown_action";
                 errorMessage = "找不到这个动作。";

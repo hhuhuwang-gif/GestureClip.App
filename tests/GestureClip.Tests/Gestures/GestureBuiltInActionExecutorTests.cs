@@ -203,7 +203,13 @@ public sealed class GestureBuiltInActionExecutorTests
             dashboard ?? new FakeWorkstationDashboardService(),
             assistant ?? new FakeAssistantActionExecutor(),
             quickAction ?? new FakeQuickActionCenterService(),
+            new FakePlainTextPasteService(),
             NullLogger<GestureBuiltInActionExecutor>.Instance);
+    }
+
+    private sealed class FakePlainTextPasteService : IPlainTextPasteService
+    {
+        public Task PastePlainTextAsync(CancellationToken cancellationToken = default) => Task.CompletedTask;
     }
 
     private sealed class FakeKeyboardInputSender : IKeyboardInputSender

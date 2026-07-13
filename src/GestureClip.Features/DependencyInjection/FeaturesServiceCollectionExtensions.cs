@@ -21,6 +21,7 @@ public static class FeaturesServiceCollectionExtensions
         services.AddSingleton<IClipboardHashService, ClipboardHashService>();
         services.AddSingleton<ISensitiveContentDetector, SensitiveContentDetector>();
         services.AddSingleton<IClipboardRepository, ClipboardRepository>();
+        services.AddSingleton<IPlainTextPasteService, PlainTextPasteService>();
         services.AddSingleton<IClipboardService, ClipboardService>();
         services.AddSingleton<IAppBlacklistService, AppBlacklistService>();
         services.AddSingleton<IMouseGestureRecognizer, DirectionGestureRecognizer>();

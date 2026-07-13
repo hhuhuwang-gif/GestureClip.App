@@ -31,6 +31,10 @@ public sealed class DefaultDataSeeder
         await SeedSettingAsync(connection, SettingKeys.ClipboardOverlayAlwaysVisible, "false", "bool", now);
         await SeedSettingAsync(connection, SettingKeys.HotkeyOpenClipboardOverlayEnabled, "true", "bool", now);
         await SeedSettingAsync(connection, SettingKeys.HotkeyOpenClipboardOverlayKey, "\"Ctrl + `\"", "string", now);
+        await SeedSettingAsync(connection, SettingKeys.HotkeyPastePlainTextEnabled, "true", "bool", now);
+        await SeedSettingAsync(connection, SettingKeys.HotkeyPastePlainTextKey, "\"Ctrl + Shift + V\"", "string", now);
+        await SeedSettingAsync(connection, SettingKeys.SmartPasteEnabled, "true", "bool", now);
+        await SeedSettingAsync(connection, SettingKeys.PrivacySuppressPasswordFields, "true", "bool", now);
         await MigrateOldDefaultHotkeyAsync(connection, now);
         await SeedSettingAsync(connection, SettingKeys.GestureEnabled, "true", "bool", now);
         await SeedSettingAsync(connection, SettingKeys.GestureShowOverlay, "true", "bool", now);

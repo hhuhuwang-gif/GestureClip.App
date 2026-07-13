@@ -62,4 +62,38 @@ public sealed class LocalTextTransformsTests
     {
         Assert.Equal("a\n\nb", LocalTextTransforms.CollapseBlankLines("a\n\n\n\nb\n"));
     }
+
+    [Fact]
+    public void HtmlToPlainText_strips_tags()
+    {
+        var plain = LocalTextTransforms.HtmlToPlainText("<p>Hello <b>world</b></p>");
+        Assert.Contains("Hello", plain);
+        Assert.Contains("world", plain);
+        Assert.DoesNotContain("<", plain);
+    }
+
+    [Fact]
+    public void ToMarkdownLite_converts_simple_link_and_heading()
+    {
+        var md = LocalTextTransforms.ToMarkdownLite("<h2>Title</h2><p><a href=\"https://example.com\">Go</a></p>");
+        Assert.Contains("## Title", md);
+        Assert.Contains("[Go](https://example.com)", md);
+    }
+
+    [Fact]
+    public void CleanTrackingUrls_removes_utm_and_spm()
+    {
+        var cleaned = LocalTextTransforms.CleanTrackingUrls(
+            "see https://example.com/path?id=1&utm_source=tw&spm=a.b.c&keep=yes end");
+        Assert.Contains("https://example.com/path?id=1&keep=yes", cleaned);
+        Assert.DoesNotContain("utm_source", cleaned);
+        Assert.DoesNotContain("spm=", cleaned);
+    }
+
+    [Fact]
+    public void ToPlainText_handles_plain_input()
+    {
+        // Plain input keeps original content (no aggressive collapse).
+        Assert.Equal("hi\n\n\n", LocalTextTransforms.ToPlainText("hi\n\n\n"));
+    }
 }

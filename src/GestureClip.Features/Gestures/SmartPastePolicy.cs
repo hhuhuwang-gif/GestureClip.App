@@ -1,4 +1,5 @@
 using GestureClip.Core.SystemInfo;
+using GestureClip.Features.Assistant;
 
 namespace GestureClip.Features.Gestures;
 
@@ -16,12 +17,19 @@ public static class SmartPastePolicy
         "WeChat.exe",
         "Weixin.exe",
         "WXWork.exe",
+        "WeComApp.exe",
         "Feishu.exe",
         "Lark.exe",
         "Teams.exe",
+        "ms-teams.exe",
         "Slack.exe",
         "QQ.exe",
-        "TIM.exe"
+        "TIM.exe",
+        "DingTalk.exe",
+        "Discord.exe",
+        "Telegram.exe",
+        "WhatsApp.exe",
+        "Line.exe"
     };
 
     private static readonly HashSet<string> BrowserProcesses = new(StringComparer.OrdinalIgnoreCase)
@@ -53,8 +61,30 @@ public static class SmartPastePolicy
         "clion64.exe",
         "datagrip64.exe",
         "phpstorm64.exe",
-        "goland64.exe"
+        "goland64.exe",
+        "WindowsTerminal.exe",
+        "wt.exe",
+        "powershell.exe",
+        "pwsh.exe",
+        "cmd.exe"
     };
+
+    /// <summary>Prepare clipboard text for the current foreground app strategy.</summary>
+    public static string TransformForStrategy(string text, SmartPasteStrategy strategy)
+    {
+        if (string.IsNullOrEmpty(text))
+        {
+            return text;
+        }
+
+        return strategy switch
+        {
+            // SetTextAsync already writes Unicode-only; strip HTML if present, keep code/newlines intact.
+            SmartPasteStrategy.PlainTextPaste => LocalTextTransforms.ToPlainText(text),
+            SmartPasteStrategy.CleanTextPaste => CleanText(LocalTextTransforms.ToPlainText(text)),
+            _ => text
+        };
+    }
 
     public static SmartPasteStrategy Select(ForegroundAppInfo app)
     {

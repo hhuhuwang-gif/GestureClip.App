@@ -25,6 +25,7 @@ public sealed class GestureBuiltInActionExecutor : IMouseGestureActionExecutor
     private readonly IWorkstationDashboardService _workstationDashboardService;
     private readonly IAssistantActionExecutor _assistantActionExecutor;
     private readonly IQuickActionCenterService _quickActionCenterService;
+    private readonly IPlainTextPasteService _plainTextPasteService;
     private readonly ILogger<GestureBuiltInActionExecutor> _logger;
 
     public GestureBuiltInActionExecutor(
@@ -41,6 +42,7 @@ public sealed class GestureBuiltInActionExecutor : IMouseGestureActionExecutor
         IWorkstationDashboardService workstationDashboardService,
         IAssistantActionExecutor assistantActionExecutor,
         IQuickActionCenterService quickActionCenterService,
+        IPlainTextPasteService plainTextPasteService,
         ILogger<GestureBuiltInActionExecutor> logger)
     {
         _clipboardOverlayService = clipboardOverlayService;
@@ -56,6 +58,7 @@ public sealed class GestureBuiltInActionExecutor : IMouseGestureActionExecutor
         _workstationDashboardService = workstationDashboardService;
         _assistantActionExecutor = assistantActionExecutor;
         _quickActionCenterService = quickActionCenterService;
+        _plainTextPasteService = plainTextPasteService;
         _logger = logger;
     }
 
@@ -79,12 +82,12 @@ public sealed class GestureBuiltInActionExecutor : IMouseGestureActionExecutor
                 break;
 
             case BuiltInGestureAction.Paste:
-                _keyboardInputSender.SendShortcut(KeyboardInputNativeMethods.VkControl, KeyboardInputNativeMethods.VkV);
-                await RecordPasteAsync(cancellationToken);
+                // A1: when smart paste is on, ordinary paste also respects app policy.
+                await ExecuteSmartPasteAsync(context, cancellationToken, forceCleanWhenLeftModified: false, allowNormalShortcut: true);
                 break;
 
             case BuiltInGestureAction.SmartPaste:
-                await ExecuteSmartPasteAsync(context, cancellationToken);
+                await ExecuteSmartPasteAsync(context, cancellationToken, forceCleanWhenLeftModified: true, allowNormalShortcut: true);
                 break;
 
             case BuiltInGestureAction.Cut:
@@ -120,8 +123,7 @@ public sealed class GestureBuiltInActionExecutor : IMouseGestureActionExecutor
                 break;
 
             case BuiltInGestureAction.PasteAndEnter:
-                _keyboardInputSender.SendShortcut(KeyboardInputNativeMethods.VkControl, KeyboardInputNativeMethods.VkV);
-                await RecordPasteAsync(cancellationToken);
+                await ExecuteSmartPasteAsync(context, cancellationToken, forceCleanWhenLeftModified: false, allowNormalShortcut: true);
                 _keyboardInputSender.SendKey(KeyboardInputNativeMethods.VkReturn);
                 break;
 
@@ -145,7 +147,16 @@ public sealed class GestureBuiltInActionExecutor : IMouseGestureActionExecutor
             case BuiltInGestureAction.AssistantUrlDecode:
             case BuiltInGestureAction.AssistantQuote:
             case BuiltInGestureAction.AssistantUnquote:
+            case BuiltInGestureAction.AssistantPlainText:
+            case BuiltInGestureAction.AssistantHtmlToText:
+            case BuiltInGestureAction.AssistantToMarkdown:
+            case BuiltInGestureAction.AssistantCleanUrl:
                 await ExecuteAssistantActionAsync(action, cancellationToken);
+                break;
+
+            case BuiltInGestureAction.PastePlainText:
+                await _plainTextPasteService.PastePlainTextAsync(cancellationToken);
+                await RecordPasteAsync(cancellationToken);
                 break;
 
             case BuiltInGestureAction.PasteLatestClipboardItem:
@@ -393,24 +404,36 @@ public sealed class GestureBuiltInActionExecutor : IMouseGestureActionExecutor
         }
     }
 
-    private async Task ExecuteSmartPasteAsync(GestureExecutionContext context, CancellationToken cancellationToken)
+    private async Task ExecuteSmartPasteAsync(
+        GestureExecutionContext context,
+        CancellationToken cancellationToken,
+        bool forceCleanWhenLeftModified,
+        bool allowNormalShortcut)
     {
         if (!_settingsService.Get(SettingKeys.SmartPasteEnabled, true))
         {
-            _keyboardInputSender.SendShortcut(KeyboardInputNativeMethods.VkControl, KeyboardInputNativeMethods.VkV);
-            await RecordPasteAsync(cancellationToken);
+            if (allowNormalShortcut)
+            {
+                _keyboardInputSender.SendShortcut(KeyboardInputNativeMethods.VkControl, KeyboardInputNativeMethods.VkV);
+                await RecordPasteAsync(cancellationToken);
+            }
+
             _logger.LogInformation("Smart paste is disabled. Fallback to normal paste.");
             return;
         }
 
         var app = _foregroundAppService.GetCurrent();
-        var strategy = context.IsLeftButtonModified
+        var strategy = forceCleanWhenLeftModified && context.IsLeftButtonModified
             ? SmartPasteStrategy.CleanTextPaste
             : SmartPastePolicy.Select(app);
         if (strategy == SmartPasteStrategy.NormalPaste)
         {
-            _keyboardInputSender.SendShortcut(KeyboardInputNativeMethods.VkControl, KeyboardInputNativeMethods.VkV);
-            await RecordPasteAsync(cancellationToken);
+            if (allowNormalShortcut)
+            {
+                _keyboardInputSender.SendShortcut(KeyboardInputNativeMethods.VkControl, KeyboardInputNativeMethods.VkV);
+                await RecordPasteAsync(cancellationToken);
+            }
+
             return;
         }
 
@@ -423,13 +446,15 @@ public sealed class GestureBuiltInActionExecutor : IMouseGestureActionExecutor
             return;
         }
 
-        var pasteText = strategy == SmartPasteStrategy.CleanTextPaste
-            ? SmartPastePolicy.CleanText(text)
-            : text;
+        var pasteText = SmartPastePolicy.TransformForStrategy(text, strategy);
         _clipboardService.SuppressCaptureFor(TimeSpan.FromMilliseconds(1200));
         await _clipboardWriter.SetTextAsync(pasteText, cancellationToken);
         await _clipboardWriter.SendPasteHotkeyAsync(cancellationToken);
         await RecordPasteAsync(cancellationToken);
+        _logger.LogInformation(
+            "App-aware paste applied. Process={ProcessName} Strategy={Strategy}",
+            app.ProcessName,
+            strategy);
     }
 
     private async Task SearchSelectedTextAsync(string urlFormat, CancellationToken cancellationToken)

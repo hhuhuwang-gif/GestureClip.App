@@ -10,6 +10,7 @@ public sealed class GlobalHotkeyService : IGlobalHotkeyService
     private readonly IHotkeyRegistrar _registrar;
     private readonly IClipboardOverlayService _clipboardOverlayService;
     private readonly IQuickActionCenterService _quickActionCenterService;
+    private readonly IPlainTextPasteService _plainTextPasteService;
     private readonly ISettingsService _settingsService;
     private readonly ILogger<GlobalHotkeyService> _logger;
     private int _started;
@@ -18,12 +19,14 @@ public sealed class GlobalHotkeyService : IGlobalHotkeyService
         IHotkeyRegistrar registrar,
         IClipboardOverlayService clipboardOverlayService,
         IQuickActionCenterService quickActionCenterService,
+        IPlainTextPasteService plainTextPasteService,
         ISettingsService settingsService,
         ILogger<GlobalHotkeyService> logger)
     {
         _registrar = registrar;
         _clipboardOverlayService = clipboardOverlayService;
         _quickActionCenterService = quickActionCenterService;
+        _plainTextPasteService = plainTextPasteService;
         _settingsService = settingsService;
         _logger = logger;
     }
@@ -40,8 +43,10 @@ public sealed class GlobalHotkeyService : IGlobalHotkeyService
 
         _registrar.HotkeyPressed += OnHotkeyPressed;
         _registrar.QuickActionHotkeyPressed += OnQuickActionHotkeyPressed;
+        _registrar.PastePlainTextHotkeyPressed += OnPastePlainTextHotkeyPressed;
         RegisterClipboardHotkey();
         RegisterQuickActionHotkey();
+        RegisterPastePlainTextHotkey();
     }
 
     public void Stop()
@@ -53,8 +58,10 @@ public sealed class GlobalHotkeyService : IGlobalHotkeyService
 
         _registrar.HotkeyPressed -= OnHotkeyPressed;
         _registrar.QuickActionHotkeyPressed -= OnQuickActionHotkeyPressed;
+        _registrar.PastePlainTextHotkeyPressed -= OnPastePlainTextHotkeyPressed;
         _registrar.UnregisterOpenClipboardHotkey();
         _registrar.UnregisterOpenQuickActionHotkey();
+        _registrar.UnregisterPastePlainTextHotkey();
         Status = new HotkeyStatus(HotkeyRegistrationState.NotStarted, "未注册");
         _logger.LogInformation("Global hotkey unregistered.");
     }
@@ -123,6 +130,44 @@ public sealed class GlobalHotkeyService : IGlobalHotkeyService
             _registrar.GetLastError());
     }
 
+    private void RegisterPastePlainTextHotkey()
+    {
+        if (!_settingsService.Get(SettingKeys.HotkeyPastePlainTextEnabled, true))
+        {
+            return;
+        }
+
+        if (!HotkeyDefinition.TryParse(
+                _settingsService.Get(SettingKeys.HotkeyPastePlainTextKey, HotkeyDefinition.DefaultPastePlainText),
+                out var hotkey))
+        {
+            hotkey = new HotkeyDefinition(
+                HotkeyModifier.Control | HotkeyModifier.Shift,
+                (uint)'V',
+                HotkeyDefinition.DefaultPastePlainText);
+        }
+
+        if (_registrar.RegisterPastePlainTextHotkey(hotkey))
+        {
+            _logger.LogInformation("Plain text paste hotkey registered: {Hotkey}.", hotkey.DisplayText);
+            return;
+        }
+
+        if (HotkeyDefinition.TryParse(HotkeyDefinition.FallbackPastePlainText, out var fallback) &&
+            _registrar.RegisterPastePlainTextHotkey(fallback))
+        {
+            _logger.LogInformation(
+                "Plain text paste hotkey fallback registered: {Hotkey}.",
+                fallback.DisplayText);
+            return;
+        }
+
+        _logger.LogWarning(
+            "Plain text paste hotkey registration failed. Hotkey={Hotkey} Win32Error={Win32Error}",
+            hotkey.DisplayText,
+            _registrar.GetLastError());
+    }
+
     private void OnHotkeyPressed(object? sender, EventArgs e)
     {
         _ = ShowClipboardOverlayAsync();
@@ -131,6 +176,11 @@ public sealed class GlobalHotkeyService : IGlobalHotkeyService
     private void OnQuickActionHotkeyPressed(object? sender, EventArgs e)
     {
         _ = ToggleQuickActionCenterAsync();
+    }
+
+    private void OnPastePlainTextHotkeyPressed(object? sender, EventArgs e)
+    {
+        _ = PastePlainTextAsync();
     }
 
     private bool TryRegisterClipboard(HotkeyDefinition hotkey, string? successMessage)
@@ -166,6 +216,18 @@ public sealed class GlobalHotkeyService : IGlobalHotkeyService
         catch (Exception ex)
         {
             _logger.LogError(ex, "Quick action hotkey action failed.");
+        }
+    }
+
+    private async Task PastePlainTextAsync()
+    {
+        try
+        {
+            await _plainTextPasteService.PastePlainTextAsync();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Plain text paste hotkey action failed.");
         }
     }
 }

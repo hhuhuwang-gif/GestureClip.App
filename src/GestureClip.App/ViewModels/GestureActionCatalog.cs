@@ -15,6 +15,7 @@ public static class GestureActionCatalog
         Option(BuiltInGestureAction.Copy),
         Option(BuiltInGestureAction.Paste),
         Option(BuiltInGestureAction.SmartPaste),
+        Option(BuiltInGestureAction.PastePlainText),
         Option(BuiltInGestureAction.Cut),
         Option(BuiltInGestureAction.SelectAll),
         Option(BuiltInGestureAction.Undo),
@@ -40,6 +41,10 @@ public static class GestureActionCatalog
         Option(BuiltInGestureAction.AssistantUrlDecode),
         Option(BuiltInGestureAction.AssistantQuote),
         Option(BuiltInGestureAction.AssistantUnquote),
+        Option(BuiltInGestureAction.AssistantPlainText),
+        Option(BuiltInGestureAction.AssistantHtmlToText),
+        Option(BuiltInGestureAction.AssistantToMarkdown),
+        Option(BuiltInGestureAction.AssistantCleanUrl),
         Option(BuiltInGestureAction.SearchSelectedTextWithGoogle),
         Option(BuiltInGestureAction.SearchSelectedTextWithBaidu),
         Option(BuiltInGestureAction.SearchSelectedTextWithBing),
@@ -92,6 +97,7 @@ public static class GestureActionCatalog
     public static string Description(BuiltInGestureAction action) => action switch
     {
         BuiltInGestureAction.SmartPaste => "根据当前软件自动选择普通粘贴、纯文本粘贴或干净粘贴。",
+        BuiltInGestureAction.PastePlainText => "强制纯文本粘贴（等同全局 Ctrl+Shift+V）。",
         BuiltInGestureAction.OpenQuickActionCenter => "打开本地快捷动作面板，可搜索并执行文本处理。",
         BuiltInGestureAction.AssistantTrim => "去掉剪贴板文本首尾空白，并写回系统剪贴板。",
         BuiltInGestureAction.AssistantNormalizeWhitespace => "合并多余空格后写回剪贴板。",
@@ -105,6 +111,10 @@ public static class GestureActionCatalog
         BuiltInGestureAction.AssistantUrlDecode => "URL 解码后写回剪贴板。",
         BuiltInGestureAction.AssistantQuote => "给文本加双引号后写回剪贴板。",
         BuiltInGestureAction.AssistantUnquote => "去掉外层引号后写回剪贴板。",
+        BuiltInGestureAction.AssistantPlainText => "转为纯文本后写回剪贴板。",
+        BuiltInGestureAction.AssistantHtmlToText => "HTML 转纯文本后写回剪贴板。",
+        BuiltInGestureAction.AssistantToMarkdown => "转为轻量 Markdown 后写回剪贴板。",
+        BuiltInGestureAction.AssistantCleanUrl => "去掉链接追踪参数后写回剪贴板。",
         _ => ""
     };
 
@@ -122,7 +132,11 @@ public static class GestureActionCatalog
         BuiltInGestureAction.AssistantUrlEncode or
         BuiltInGestureAction.AssistantUrlDecode or
         BuiltInGestureAction.AssistantQuote or
-        BuiltInGestureAction.AssistantUnquote => AssistantCategory,
+        BuiltInGestureAction.AssistantUnquote or
+        BuiltInGestureAction.AssistantPlainText or
+        BuiltInGestureAction.AssistantHtmlToText or
+        BuiltInGestureAction.AssistantToMarkdown or
+        BuiltInGestureAction.AssistantCleanUrl => AssistantCategory,
 
         BuiltInGestureAction.SearchSelectedTextWithGoogle or
         BuiltInGestureAction.SearchSelectedTextWithBaidu or

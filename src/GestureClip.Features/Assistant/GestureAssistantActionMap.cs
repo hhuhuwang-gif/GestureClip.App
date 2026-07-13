@@ -18,6 +18,10 @@ public static class GestureAssistantActionMap
         BuiltInGestureAction.AssistantUrlDecode => BuiltInAssistantActionCatalog.UrlDecodeId,
         BuiltInGestureAction.AssistantQuote => BuiltInAssistantActionCatalog.QuoteId,
         BuiltInGestureAction.AssistantUnquote => BuiltInAssistantActionCatalog.UnquoteId,
+        BuiltInGestureAction.AssistantPlainText => BuiltInAssistantActionCatalog.PlainTextId,
+        BuiltInGestureAction.AssistantHtmlToText => BuiltInAssistantActionCatalog.HtmlToTextId,
+        BuiltInGestureAction.AssistantToMarkdown => BuiltInAssistantActionCatalog.ToMarkdownId,
+        BuiltInGestureAction.AssistantCleanUrl => BuiltInAssistantActionCatalog.CleanUrlId,
         _ => null
     };
 

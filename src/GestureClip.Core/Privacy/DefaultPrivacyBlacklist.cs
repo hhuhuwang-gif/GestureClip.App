@@ -10,6 +10,11 @@ public static class DefaultPrivacyBlacklist
         "KeePassXC.exe",
         "LastPass.exe",
         "Enpass.exe",
-        "Dashlane.exe"
+        "Dashlane.exe",
+        "Authenticator.exe",
+        "Authy Desktop.exe",
+        "RoboForm.exe",
+        "NordPass.exe",
+        "ProtonPass.exe"
     ];
 }

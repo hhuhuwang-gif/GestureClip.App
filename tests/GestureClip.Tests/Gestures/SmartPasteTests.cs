@@ -243,7 +243,13 @@ public sealed class SmartPasteTests
             new FakeWorkstationDashboardService(),
             new FakeAssistantActionExecutor(),
             new FakeQuickActionCenterService(),
+            new FakePlainTextPasteService(),
             NullLogger<GestureBuiltInActionExecutor>.Instance);
+    }
+
+    private sealed class FakePlainTextPasteService : IPlainTextPasteService
+    {
+        public Task PastePlainTextAsync(CancellationToken cancellationToken = default) => Task.CompletedTask;
     }
 
     private sealed class FakeKeyboardInputSender : IKeyboardInputSender

@@ -76,8 +76,8 @@ public sealed class DefaultDataSeederTests
         var restSnoozed = await connection.ExecuteScalarAsync<string>("SELECT Value FROM Settings WHERE Key = 'WorkBear.RestReminder.SnoozedUntil';");
         var restMuted = await connection.ExecuteScalarAsync<string>("SELECT Value FROM Settings WHERE Key = 'WorkBear.RestReminder.MutedDate';");
 
-        Assert.Equal(92, settingCount);
-        Assert.Equal(7, blacklistCount);
+        Assert.Equal(96, settingCount);
+        Assert.Equal(12, blacklistCount);
         Assert.Equal(12, gestureCount);
         Assert.Equal("1000", maxItems);
         Assert.Equal("30", retentionDays);
