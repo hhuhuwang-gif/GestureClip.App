@@ -81,6 +81,26 @@ public sealed class OverworkReminderService : IOverworkReminderService, IDisposa
             return;
         }
 
+        var maxPerDay = Math.Clamp(_settingsService.Get(SettingKeys.WorkstationOverworkReminderMaxPerDay, 4), 1, 12);
+        var maxPerWeek = Math.Clamp(_settingsService.Get(SettingKeys.WorkstationOverworkReminderMaxPerWeek, 16), 1, 40);
+        try
+        {
+            var dashboard = await _dashboardService.GetSnapshotAsync(now, cancellationToken);
+            if (dashboard.RestReminderCount >= maxPerDay)
+            {
+                return;
+            }
+        }
+        catch
+        {
+            // Snapshot is best-effort; do not block reminder path if stats fail.
+        }
+
+        if (GetWeekCount(now) >= maxPerWeek)
+        {
+            return;
+        }
+
         var snapshot = _stageService.GetSnapshot(now);
         var notification = BuildNotification(snapshot, now);
         if (notification is null)
@@ -90,6 +110,7 @@ public sealed class OverworkReminderService : IOverworkReminderService, IDisposa
 
         var result = await _toastService.ShowAsync(notification, cancellationToken);
         await _dashboardService.RecordOverworkReminderAsync(now, cancellationToken);
+        await IncrementWeekCountAsync(now, cancellationToken);
         ApplyToastResult(result, now);
     }
 
@@ -97,6 +118,10 @@ public sealed class OverworkReminderService : IOverworkReminderService, IDisposa
     {
         var interval = Math.Clamp(_settingsService.Get(SettingKeys.WorkstationOverworkReminderIntervalMinutes, 60), 30, 180);
         var highRiskAfterHours = Math.Clamp(_settingsService.Get(SettingKeys.WorkstationOverworkHighRiskAfterHours, 8d), 6d, 12d);
+        var minContinuousMinutes = Math.Clamp(
+            _settingsService.Get(SettingKeys.WorkstationOverworkReminderMinContinuousMinutes, 45),
+            15,
+            180);
         var canSnooze = _settingsService.Get(SettingKeys.WorkstationOverworkReminderCanSnooze, true);
         var strongWarning = _settingsService.Get(SettingKeys.WorkstationEnableStrongOverworkWarning, false);
         var title = "工位小熊提醒";
@@ -133,17 +158,51 @@ public sealed class OverworkReminderService : IOverworkReminderService, IDisposa
             return new OverworkReminderNotification(title, "今日工作已进入后半程，注意补水。", "快到下班线了，别把自己跑冒烟。", snapshot.Stage, canSnooze);
         }
 
-        if (snapshot.Stage is WorkTimeStage.EarlyWork or WorkTimeStage.MidWork && snapshot.EffectiveWorkedTime.TotalMinutes >= interval)
+        // Only remind in early/mid work after continuous work threshold + interval cadence.
+        if (snapshot.Stage is WorkTimeStage.EarlyWork or WorkTimeStage.MidWork &&
+            snapshot.EffectiveWorkedTime.TotalMinutes >= Math.Max(interval, minContinuousMinutes))
         {
             return new OverworkReminderNotification(
                 title,
-                $"已连续工作 {interval} 分钟，建议休息 3 分钟。",
+                $"已连续工作约 {(int)snapshot.EffectiveWorkedTime.TotalMinutes} 分钟，建议休息 3 分钟。",
                 "起来走两步，喝口水，看远处 20 秒。",
                 snapshot.Stage,
                 canSnooze);
         }
 
         return null;
+    }
+
+    private int GetWeekCount(DateTimeOffset now)
+    {
+        var key = GetIsoWeekKey(now);
+        var storedKey = _settingsService.Get(SettingKeys.WorkBearRestReminderWeekKey, string.Empty);
+        if (!string.Equals(storedKey, key, StringComparison.Ordinal))
+        {
+            return 0;
+        }
+
+        return Math.Max(0, _settingsService.Get(SettingKeys.WorkBearRestReminderWeekCount, 0));
+    }
+
+    private async Task IncrementWeekCountAsync(DateTimeOffset now, CancellationToken cancellationToken)
+    {
+        var key = GetIsoWeekKey(now);
+        var storedKey = _settingsService.Get(SettingKeys.WorkBearRestReminderWeekKey, string.Empty);
+        var count = string.Equals(storedKey, key, StringComparison.Ordinal)
+            ? Math.Max(0, _settingsService.Get(SettingKeys.WorkBearRestReminderWeekCount, 0))
+            : 0;
+        count++;
+        await _settingsService.SetAsync(SettingKeys.WorkBearRestReminderWeekKey, key, cancellationToken);
+        await _settingsService.SetAsync(SettingKeys.WorkBearRestReminderWeekCount, count, cancellationToken);
+    }
+
+    private static string GetIsoWeekKey(DateTimeOffset now)
+    {
+        var date = DateOnly.FromDateTime(now.Date);
+        var week = System.Globalization.ISOWeek.GetWeekOfYear(date.ToDateTime(TimeOnly.MinValue));
+        var year = System.Globalization.ISOWeek.GetYear(date.ToDateTime(TimeOnly.MinValue));
+        return $"{year:D4}-W{week:D2}";
     }
 
     private bool CanShowStageReminder(WorkTimeStage stage, DateTimeOffset now, TimeSpan cooldown)
@@ -240,5 +299,7 @@ public sealed class OverworkReminderService : IOverworkReminderService, IDisposa
         public Task MuteTodayAsync(DateTimeOffset now, CancellationToken cancellationToken) => Task.CompletedTask;
         public Task<WorkBearDailyReport> GenerateDailyReportAsync(DateTimeOffset now, CancellationToken cancellationToken) =>
             Task.FromResult(new WorkBearDailyReport(DateOnly.FromDateTime(now.Date), TimeSpan.Zero, TimeSpan.Zero, 0, TimeSpan.Zero, 0, 0, 0, 0, 0, 0, 0, TimeSpan.Zero, "", "", ""));
+        public Task<string> GeneratePeriodReportAsync(DateTimeOffset now, int dayCount, CancellationToken cancellationToken) =>
+            Task.FromResult("暂无周期报告。");
     }
 }

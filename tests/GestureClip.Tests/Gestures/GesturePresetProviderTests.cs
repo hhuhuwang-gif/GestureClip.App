@@ -8,7 +8,7 @@ public sealed class GesturePresetProviderTests
 {
     [Theory]
     [InlineData("U", BuiltInGestureAction.Copy)]
-    [InlineData("D", BuiltInGestureAction.Paste)]
+    [InlineData("D", BuiltInGestureAction.SmartPaste)]
     [InlineData("UD", BuiltInGestureAction.Enter)]
     [InlineData("DU", BuiltInGestureAction.Escape)]
     [InlineData("L", BuiltInGestureAction.SendAltLeft)]
@@ -24,6 +24,70 @@ public sealed class GesturePresetProviderTests
         var provider = new GesturePresetProvider();
 
         Assert.Equal(expected, provider.GetAction(GesturePreset.EditEnhanced, pattern));
+    }
+
+    [Fact]
+    public void EditEnhanced_resolves_left_button_modifier_bindings_before_plain_bindings()
+    {
+        var provider = new GesturePresetProvider();
+
+        Assert.Equal(
+            BuiltInGestureAction.SmartPaste,
+            provider.GetAction(GesturePreset.EditEnhanced, new GestureExecutionContext("D", false)));
+        Assert.Equal(
+            BuiltInGestureAction.SmartPaste,
+            provider.GetAction(GesturePreset.EditEnhanced, new GestureExecutionContext("D", true)));
+        Assert.Equal(
+            BuiltInGestureAction.SelectAll,
+            provider.GetAction(GesturePreset.EditEnhanced, new GestureExecutionContext("U", true)));
+    }
+
+    [Fact]
+    public void Modifier_binding_falls_back_to_plain_action_when_enhanced_action_is_missing()
+    {
+        var provider = new GesturePresetProvider();
+
+        Assert.Equal(
+            BuiltInGestureAction.SelectAll,
+            provider.GetAction(GesturePreset.EditEnhanced, new GestureExecutionContext("LR", true)));
+    }
+
+    [Fact]
+    public void Left_button_enhanced_map_overrides_plain_binding_when_present()
+    {
+        var provider = new GesturePresetProvider();
+        provider.UpdateCustomBindings(new Dictionary<string, BuiltInGestureAction>
+        {
+            ["D"] = BuiltInGestureAction.Paste
+        });
+
+        // Default left enhanced keeps D -> SmartPaste.
+        Assert.Equal(
+            BuiltInGestureAction.SmartPaste,
+            provider.GetAction(GesturePreset.Custom, new GestureExecutionContext("D", true)));
+
+        provider.UpdateLeftButtonEnhancedBindings(new Dictionary<string, BuiltInGestureAction>
+        {
+            ["D"] = BuiltInGestureAction.Copy
+        });
+        Assert.Equal(
+            BuiltInGestureAction.Copy,
+            provider.GetAction(GesturePreset.Custom, new GestureExecutionContext("D", true)));
+    }
+
+    [Fact]
+    public void Left_button_falls_back_to_plain_when_enhanced_cleared()
+    {
+        var provider = new GesturePresetProvider();
+        provider.UpdateCustomBindings(new Dictionary<string, BuiltInGestureAction>
+        {
+            ["D"] = BuiltInGestureAction.Paste
+        });
+        provider.UpdateLeftButtonEnhancedBindings(new Dictionary<string, BuiltInGestureAction>());
+
+        Assert.Equal(
+            BuiltInGestureAction.Paste,
+            provider.GetAction(GesturePreset.Custom, new GestureExecutionContext("D", true)));
     }
 
     [Theory]

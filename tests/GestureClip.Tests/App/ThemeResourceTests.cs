@@ -64,16 +64,34 @@ public sealed class ThemeResourceTests
     public void Theme_uses_readable_soft_macos_inspired_palette()
     {
         var colorsPath = FindRepositoryFile("src", "GestureClip.App", "Themes", "Colors.xaml");
+        var brushesPath = FindRepositoryFile("src", "GestureClip.App", "Themes", "Brushes.xaml");
         var colors = File.ReadAllText(colorsPath);
+        var brushes = File.ReadAllText(brushesPath);
 
-        Assert.Contains("#F6F7FB", colors);
+        Assert.Contains("#F5F5F7", colors);
         Assert.Contains("#FFFFFFFF", colors);
-        Assert.Contains("#17182733", colors);
-        Assert.Contains("#15171D", colors);
-        Assert.Contains("#5E6675", colors);
-        Assert.Contains("#101011", colors);
-        Assert.Contains("#F36D64", colors);
+        Assert.Contains("#1D1D1F", colors);
+        Assert.Contains("#6E6E73", colors);
+        Assert.Contains("#0071E3", colors);
+        Assert.Contains("#FF6B5A", colors);
         Assert.Contains("ColorTabSelected", colors);
+        Assert.Contains("BrushOverlayPanel", brushes);
+        Assert.Contains("BrushAccentSoft", brushes);
+        Assert.Contains("BrushSidebarBackground", brushes);
+        Assert.Contains("BrushPrimarySolid", brushes);
+        Assert.Contains("TrafficLightButtonStyle", File.ReadAllText(
+            FindRepositoryFile("src", "GestureClip.App", "Themes", "GlassStyles.xaml")));
+
+        var controls = File.ReadAllText(FindRepositoryFile("src", "GestureClip.App", "Themes", "Controls.xaml"));
+        Assert.Contains("PrimaryButtonStyle", controls);
+        Assert.Contains("Value=\"#FFFFFF\"", controls);
+        Assert.Contains("BrushPrimarySolid", controls);
+        // Global TextBlock must not force dark text (breaks white labels on primary buttons).
+        var textBlockStyleStart = controls.IndexOf("<Style TargetType=\"TextBlock\">", StringComparison.Ordinal);
+        Assert.True(textBlockStyleStart >= 0);
+        var textBlockStyleEnd = controls.IndexOf("</Style>", textBlockStyleStart, StringComparison.Ordinal);
+        var textBlockStyle = controls.Substring(textBlockStyleStart, textBlockStyleEnd - textBlockStyleStart);
+        Assert.DoesNotContain("BrushTextPrimary", textBlockStyle);
     }
 
     [Fact]
@@ -102,8 +120,8 @@ public sealed class ThemeResourceTests
         Assert.Contains("Width=\"860\"", xaml);
         Assert.Contains("Height=\"760\"", xaml);
         Assert.Contains("AllowsTransparency=\"True\"", xaml);
-        Assert.Contains("CornerRadius=\"28\"", xaml);
-        Assert.Contains("Background=\"{DynamicResource BrushGlassStrong}\"", xaml);
+        Assert.Contains("CornerRadius=\"20\"", xaml);
+        Assert.Contains("Background=\"{DynamicResource BrushOverlayPanel}\"", xaml);
         Assert.Contains("IsSelected", xaml);
         Assert.Contains("ShortcutNumberConverter", xaml);
         Assert.Contains("VirtualizingPanel.IsVirtualizing=\"True\"", xaml);
@@ -264,9 +282,9 @@ public sealed class ThemeResourceTests
 
         Assert.Contains("WindowStyle=\"None\"", xaml);
         Assert.Contains("AllowsTransparency=\"True\"", xaml);
-        Assert.Contains("CornerRadius=\"28\"", xaml);
-        Assert.Contains("Background=\"#CCFFFFFF\"", xaml);
-        Assert.Contains("BorderBrush=\"{DynamicResource BrushBorder}\"", xaml);
+        Assert.Contains("CornerRadius=\"20\"", xaml);
+        Assert.Contains("Background=\"#FBFBFD\"", xaml);
+        Assert.Contains("TrafficLightButtonStyle", xaml);
         Assert.Contains("搜索设置稍后开放", xaml);
         Assert.Contains("GestureStrokeColorOptions", xaml);
         Assert.Contains("NewGesturePattern", xaml);
@@ -286,14 +304,16 @@ public sealed class ThemeResourceTests
         var workstation = File.ReadAllText(workstationPath);
         var controls = File.ReadAllText(controlsPath);
 
-        Assert.Contains("Width=\"42\"", settings);
-        Assert.Contains("Height=\"34\"", settings);
-        Assert.Contains("MinWidth=\"0\"", settings);
-        Assert.Contains("Focusable=\"False\"", settings);
-        Assert.Contains("FocusVisualStyle=\"{x:Null}\"", settings);
-        Assert.Contains("Width=\"42\"", workstation);
-        Assert.Contains("Height=\"34\"", workstation);
-        Assert.Contains("FocusVisualStyle=\"{x:Null}\"", workstation);
+        Assert.Contains("TrafficLightButtonStyle", settings);
+        Assert.Contains("BrushTrafficClose", settings);
+        Assert.Contains("BrushTrafficYellow", settings);
+        Assert.Contains("BrushTrafficGreen", settings);
+        Assert.Contains("MaximizeButton_Click", settings);
+        Assert.Contains("MinimizeButton_Click", settings);
+        Assert.Contains("TrafficLightButtonStyle", workstation);
+        Assert.Contains("BrushTrafficYellow", workstation);
+        Assert.Contains("BrushTrafficGreen", workstation);
+        Assert.Contains("MaximizeButton_Click", workstation);
         Assert.Contains("GlassScrollBarStyle", controls);
         Assert.Contains("ScrollBarThumb", controls);
         Assert.Contains("CornerRadius=\"6\"", controls);
@@ -440,15 +460,15 @@ public sealed class ThemeResourceTests
 
         Assert.Contains("SettingsFormRowStyle", xaml);
         Assert.Contains("BasedOn=\"{StaticResource SettingRowStyle}\"", xaml);
-        Assert.Contains("<Setter Property=\"Margin\" Value=\"0,0,0,12\" />", xaml);
+        Assert.Contains("<Setter Property=\"Margin\" Value=\"0,0,0,8\" />", xaml);
         Assert.Contains("SettingsSecondaryActionButtonStyle", xaml);
         Assert.Contains("SettingsPrimaryActionButtonStyle", xaml);
         Assert.Contains("SettingsDangerActionButtonStyle", xaml);
         Assert.Contains("SettingsCompactActionButtonStyle", xaml);
         Assert.Contains("SettingsGestureTemplateButtonStyle", xaml);
         Assert.Contains("SettingsDangerZoneStyle", xaml);
-        Assert.Contains("Background\" Value=\"#FFF5F5\"", xaml);
-        Assert.Contains("BorderBrush\" Value=\"#FECACA\"", xaml);
+        Assert.Contains("Background\" Value=\"#FFF2F2\"", xaml);
+        Assert.Contains("BorderBrush\" Value=\"#22FF3B30\"", xaml);
         Assert.Contains("Text=\"危险操作\"", xaml);
         Assert.Contains("会影响剪贴板历史，执行前请确认。", xaml);
         Assert.Contains("Command=\"{Binding ClearAllClipboardItemsCommand}\"", xaml);

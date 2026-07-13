@@ -29,8 +29,8 @@ public sealed class WorkstationDashboardServiceTests
         Assert.Equal(4, snapshot.GestureCount);
         Assert.Equal(12, snapshot.EstimatedSavedClicks);
         Assert.Equal("开工状态", snapshot.WorkStatusText);
-        Assert.Equal("上班中", snapshot.WorkStageText);
-        Assert.Equal("专注小熊", snapshot.BearStatusText);
+        Assert.Equal("上午开工", snapshot.WorkStageText);
+        Assert.Equal("晨间小熊", snapshot.BearStatusText);
         Assert.DoesNotContain("secret clipboard text", snapshot.DailyReportText);
     }
 

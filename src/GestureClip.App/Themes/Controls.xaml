@@ -2,53 +2,61 @@
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
     <Style TargetType="Control">
         <Setter Property="FontFamily" Value="Segoe UI Variable Text, Segoe UI, Microsoft YaHei UI" />
-        <Setter Property="FontSize" Value="14" />
+        <Setter Property="FontSize" Value="13.5" />
         <Setter Property="Foreground" Value="{DynamicResource BrushTextPrimary}" />
     </Style>
 
+    <!-- Do NOT force Foreground here: it overrides Button primary white text via ContentPresenter TextBlock. -->
     <Style TargetType="TextBlock">
         <Setter Property="FontFamily" Value="Segoe UI Variable Text, Segoe UI, Microsoft YaHei UI" />
-        <Setter Property="Foreground" Value="{DynamicResource BrushTextPrimary}" />
         <Setter Property="TextOptions.TextFormattingMode" Value="Display" />
         <Setter Property="TextOptions.TextRenderingMode" Value="ClearType" />
     </Style>
 
     <Style x:Key="BaseButtonStyle" TargetType="Button">
-        <Setter Property="Height" Value="38" />
-        <Setter Property="MinWidth" Value="96" />
-        <Setter Property="Padding" Value="18,0" />
+        <Setter Property="Height" Value="34" />
+        <Setter Property="MinWidth" Value="88" />
+        <Setter Property="Padding" Value="16,0" />
+        <Setter Property="FontWeight" Value="SemiBold" />
         <Setter Property="Foreground" Value="{DynamicResource BrushTextPrimary}" />
-        <Setter Property="Background" Value="#F0F2F7" />
-        <Setter Property="BorderBrush" Value="{DynamicResource BrushBorder}" />
+        <Setter Property="Background" Value="#F2F2F7" />
+        <Setter Property="BorderBrush" Value="#0F000000" />
         <Setter Property="BorderThickness" Value="1" />
         <Setter Property="Cursor" Value="Hand" />
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="Button">
                     <Border x:Name="Root"
-                            CornerRadius="14"
+                            CornerRadius="10"
                             Background="{TemplateBinding Background}"
                             BorderBrush="{TemplateBinding BorderBrush}"
-                            BorderThickness="{TemplateBinding BorderThickness}">
+                            BorderThickness="{TemplateBinding BorderThickness}"
+                            TextElement.Foreground="{TemplateBinding Foreground}">
                         <ContentPresenter x:Name="ContentHost"
                                           HorizontalAlignment="Center"
                                           VerticalAlignment="Center"
-                                          TextElement.Foreground="{TemplateBinding Foreground}"
-                                          RecognizesAccessKey="True" />
+                                          RecognizesAccessKey="True">
+                            <ContentPresenter.Resources>
+                                <Style TargetType="TextBlock">
+                                    <Setter Property="Foreground" Value="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" />
+                                    <Setter Property="FontWeight" Value="{Binding FontWeight, RelativeSource={RelativeSource AncestorType=Button}}" />
+                                    <Setter Property="FontSize" Value="{Binding FontSize, RelativeSource={RelativeSource AncestorType=Button}}" />
+                                </Style>
+                            </ContentPresenter.Resources>
+                        </ContentPresenter>
                     </Border>
                     <ControlTemplate.Triggers>
                         <Trigger Property="IsMouseOver" Value="True">
-                            <Setter TargetName="Root" Property="Background" Value="#E7EBF2" />
+                            <Setter TargetName="Root" Property="Background" Value="#E5E5EA" />
                         </Trigger>
                         <Trigger Property="IsPressed" Value="True">
-                            <Setter TargetName="Root" Property="Opacity" Value="0.82" />
+                            <Setter TargetName="Root" Property="Opacity" Value="0.92" />
                         </Trigger>
                         <Trigger Property="IsEnabled" Value="False">
                             <Setter TargetName="Root" Property="Background" Value="{DynamicResource BrushControlDisabled}" />
                             <Setter TargetName="Root" Property="BorderBrush" Value="{DynamicResource BrushBorder}" />
                             <Setter Property="Foreground" Value="{DynamicResource BrushTextMuted}" />
-                            <Setter TargetName="ContentHost" Property="TextElement.Foreground" Value="{DynamicResource BrushTextMuted}" />
-                            <Setter TargetName="Root" Property="Opacity" Value="0.92" />
+                            <Setter TargetName="Root" Property="Opacity" Value="0.7" />
                         </Trigger>
                     </ControlTemplate.Triggers>
                 </ControlTemplate>
@@ -56,36 +64,111 @@
         </Setter>
     </Style>
 
+    <!-- High-contrast primary CTA: solid deeper blue + pure white bold label -->
     <Style x:Key="PrimaryButtonStyle" TargetType="Button" BasedOn="{StaticResource BaseButtonStyle}">
-        <Setter Property="Background" Value="{DynamicResource BrushPrimaryGradient}" />
-        <Setter Property="Foreground" Value="White" />
-        <Setter Property="BorderBrush" Value="#44FFFFFF" />
+        <Setter Property="Background" Value="{DynamicResource BrushPrimarySolid}" />
+        <Setter Property="Foreground" Value="#FFFFFF" />
+        <Setter Property="BorderBrush" Value="#00000000" />
+        <Setter Property="BorderThickness" Value="0" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="Button">
+                    <Border x:Name="Root"
+                            CornerRadius="10"
+                            Background="{TemplateBinding Background}"
+                            BorderBrush="{TemplateBinding BorderBrush}"
+                            BorderThickness="{TemplateBinding BorderThickness}"
+                            TextElement.Foreground="#FFFFFF"
+                            SnapsToDevicePixels="True">
+                        <ContentPresenter x:Name="ContentHost"
+                                          HorizontalAlignment="Center"
+                                          VerticalAlignment="Center"
+                                          RecognizesAccessKey="True">
+                            <ContentPresenter.Resources>
+                                <Style TargetType="TextBlock">
+                                    <Setter Property="Foreground" Value="#FFFFFF" />
+                                    <Setter Property="FontWeight" Value="SemiBold" />
+                                    <Setter Property="FontSize" Value="{Binding FontSize, RelativeSource={RelativeSource AncestorType=Button}}" />
+                                </Style>
+                            </ContentPresenter.Resources>
+                        </ContentPresenter>
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="Root" Property="Background" Value="{DynamicResource BrushPrimarySolidHover}" />
+                        </Trigger>
+                        <Trigger Property="IsPressed" Value="True">
+                            <Setter TargetName="Root" Property="Background" Value="{DynamicResource BrushPrimarySolidPressed}" />
+                        </Trigger>
+                        <Trigger Property="IsEnabled" Value="False">
+                            <Setter TargetName="Root" Property="Background" Value="#99A9C7" />
+                            <Setter TargetName="Root" Property="Opacity" Value="0.85" />
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
     </Style>
 
     <Style x:Key="SecondaryButtonStyle" TargetType="Button" BasedOn="{StaticResource BaseButtonStyle}" />
 
     <Style x:Key="DangerButtonStyle" TargetType="Button" BasedOn="{StaticResource BaseButtonStyle}">
-        <Setter Property="Background" Value="{DynamicResource BrushDangerSoft}" />
-        <Setter Property="Foreground" Value="#B42318" />
-        <Setter Property="BorderBrush" Value="#33EF4444" />
+        <Setter Property="Background" Value="#FFEBEA" />
+        <Setter Property="Foreground" Value="#B00014" />
+        <Setter Property="BorderBrush" Value="#33FF3B30" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="Button">
+                    <Border x:Name="Root"
+                            CornerRadius="10"
+                            Background="{TemplateBinding Background}"
+                            BorderBrush="{TemplateBinding BorderBrush}"
+                            BorderThickness="{TemplateBinding BorderThickness}"
+                            TextElement.Foreground="{TemplateBinding Foreground}">
+                        <ContentPresenter x:Name="ContentHost"
+                                          HorizontalAlignment="Center"
+                                          VerticalAlignment="Center"
+                                          RecognizesAccessKey="True">
+                            <ContentPresenter.Resources>
+                                <Style TargetType="TextBlock">
+                                    <Setter Property="Foreground" Value="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" />
+                                    <Setter Property="FontWeight" Value="SemiBold" />
+                                </Style>
+                            </ContentPresenter.Resources>
+                        </ContentPresenter>
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="Root" Property="Background" Value="#FFD8D6" />
+                        </Trigger>
+                        <Trigger Property="IsPressed" Value="True">
+                            <Setter TargetName="Root" Property="Opacity" Value="0.9" />
+                        </Trigger>
+                        <Trigger Property="IsEnabled" Value="False">
+                            <Setter TargetName="Root" Property="Opacity" Value="0.55" />
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
     </Style>
 
     <Style TargetType="Button" BasedOn="{StaticResource SecondaryButtonStyle}" />
 
     <Style x:Key="GlassTextBoxStyle" TargetType="TextBox">
-        <Setter Property="Height" Value="38" />
+        <Setter Property="Height" Value="34" />
         <Setter Property="Padding" Value="12,0" />
         <Setter Property="VerticalContentAlignment" Value="Center" />
         <Setter Property="Foreground" Value="{DynamicResource BrushTextPrimary}" />
         <Setter Property="CaretBrush" Value="{DynamicResource BrushPrimaryBright}" />
-        <Setter Property="Background" Value="#F8FAFD" />
-        <Setter Property="BorderBrush" Value="{DynamicResource BrushBorder}" />
+        <Setter Property="Background" Value="#FFFFFF" />
+        <Setter Property="BorderBrush" Value="#18000000" />
         <Setter Property="BorderThickness" Value="1" />
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="TextBox">
                     <Border x:Name="Root"
-                            CornerRadius="14"
+                            CornerRadius="10"
                             Background="{TemplateBinding Background}"
                             BorderBrush="{TemplateBinding BorderBrush}"
                             BorderThickness="{TemplateBinding BorderThickness}">
@@ -97,7 +180,8 @@
                             <Setter TargetName="Root" Property="Background" Value="#FFFFFFFF" />
                         </Trigger>
                         <Trigger Property="IsReadOnly" Value="True">
-                            <Setter TargetName="Root" Property="Opacity" Value="0.82" />
+                            <Setter TargetName="Root" Property="Background" Value="#F2F2F7" />
+                            <Setter TargetName="Root" Property="BorderBrush" Value="#0A000000" />
                         </Trigger>
                         <Trigger Property="IsEnabled" Value="False">
                             <Setter TargetName="Root" Property="Background" Value="{DynamicResource BrushControlDisabled}" />
@@ -109,14 +193,51 @@
         </Setter>
     </Style>
 
+    <Style x:Key="GlassListBoxItemStyle" TargetType="ListBoxItem">
+        <Setter Property="Padding" Value="0" />
+        <Setter Property="Margin" Value="0,0,0,4" />
+        <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+        <Setter Property="Background" Value="Transparent" />
+        <Setter Property="BorderThickness" Value="0" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="ListBoxItem">
+                    <Border x:Name="Root"
+                            CornerRadius="12"
+                            Background="{TemplateBinding Background}"
+                            BorderBrush="#00000000"
+                            BorderThickness="1"
+                            Padding="2">
+                        <ContentPresenter />
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="Root" Property="Background" Value="#F2F2F7" />
+                        </Trigger>
+                        <Trigger Property="IsSelected" Value="True">
+                            <Setter TargetName="Root" Property="Background" Value="{DynamicResource BrushControlSelected}" />
+                        </Trigger>
+                        <MultiTrigger>
+                            <MultiTrigger.Conditions>
+                                <Condition Property="IsSelected" Value="True" />
+                                <Condition Property="IsMouseOver" Value="True" />
+                            </MultiTrigger.Conditions>
+                            <Setter TargetName="Root" Property="Background" Value="#D6EBFF" />
+                        </MultiTrigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
     <Style TargetType="TextBox" BasedOn="{StaticResource GlassTextBoxStyle}" />
 
     <Style x:Key="GlassComboBoxStyle" TargetType="ComboBox">
-        <Setter Property="Height" Value="38" />
+        <Setter Property="Height" Value="34" />
         <Setter Property="Padding" Value="10,0" />
         <Setter Property="Foreground" Value="{DynamicResource BrushTextPrimary}" />
-        <Setter Property="Background" Value="#F8FAFD" />
-        <Setter Property="BorderBrush" Value="{DynamicResource BrushBorder}" />
+        <Setter Property="Background" Value="#FFFFFF" />
+        <Setter Property="BorderBrush" Value="#18000000" />
         <Setter Property="BorderThickness" Value="1" />
         <Setter Property="Template">
             <Setter.Value>
@@ -129,14 +250,14 @@
                             <ToggleButton.Template>
                                 <ControlTemplate TargetType="ToggleButton">
                                     <Border x:Name="Root"
-                                            CornerRadius="14"
+                                            CornerRadius="10"
                                             Background="{Binding Background, RelativeSource={RelativeSource AncestorType=ComboBox}}"
-                                            BorderBrush="{DynamicResource BrushBorder}"
+                                            BorderBrush="#18000000"
                                             BorderThickness="1">
                                         <Grid>
                                             <Grid.ColumnDefinitions>
                                                 <ColumnDefinition Width="*" />
-                                                <ColumnDefinition Width="32" />
+                                                <ColumnDefinition Width="30" />
                                             </Grid.ColumnDefinitions>
                                             <ContentPresenter Grid.Column="0"
                                                               Margin="12,0,4,0"
@@ -149,14 +270,14 @@
                                             <TextBlock Grid.Column="1"
                                                        Text="⌄"
                                                        Foreground="{DynamicResource BrushTextSecondary}"
-                                                       FontSize="16"
+                                                       FontSize="14"
                                                        HorizontalAlignment="Center"
                                                        VerticalAlignment="Center" />
                                         </Grid>
                                     </Border>
                                     <ControlTemplate.Triggers>
                                         <Trigger Property="IsMouseOver" Value="True">
-                                            <Setter TargetName="Root" Property="Background" Value="{DynamicResource BrushControlHover}" />
+                                            <Setter TargetName="Root" Property="Background" Value="#F7F7F9" />
                                         </Trigger>
                                         <Trigger Property="IsChecked" Value="True">
                                             <Setter TargetName="Root" Property="BorderBrush" Value="{DynamicResource BrushPrimaryBright}" />
@@ -178,10 +299,14 @@
                             <Border MinWidth="{Binding ActualWidth, RelativeSource={RelativeSource TemplatedParent}}"
                                     MaxHeight="{TemplateBinding MaxDropDownHeight}"
                                     Background="{DynamicResource BrushComboBoxDropDown}"
-                                    BorderBrush="{DynamicResource BrushBorder}"
+                                    BorderBrush="#14000000"
                                     BorderThickness="1"
-                                    CornerRadius="14"
-                                    Padding="4">
+                                    CornerRadius="12"
+                                    Padding="4"
+                                    Margin="0,4,0,0">
+                                <Border.Effect>
+                                    <DropShadowEffect Color="#000000" BlurRadius="18" ShadowDepth="2" Opacity="0.12" Direction="270" />
+                                </Border.Effect>
                                 <ScrollViewer CanContentScroll="True">
                                     <ItemsPresenter />
                                 </ScrollViewer>
@@ -236,42 +361,43 @@
     <Style TargetType="ComboBox" BasedOn="{StaticResource GlassComboBoxStyle}" />
     <Style TargetType="ComboBoxItem" BasedOn="{StaticResource GlassComboBoxItemStyle}" />
 
+    <!-- macOS Settings sidebar row -->
     <Style x:Key="GlassTabItemStyle" TargetType="TabItem">
-        <Setter Property="Foreground" Value="{DynamicResource BrushTextSecondary}" />
-        <Setter Property="Padding" Value="16,0" />
-        <Setter Property="Margin" Value="0,0,0,7" />
-        <Setter Property="MinWidth" Value="190" />
-        <Setter Property="Height" Value="44" />
-        <Setter Property="FontWeight" Value="Medium" />
+        <Setter Property="Foreground" Value="{DynamicResource BrushTextPrimary}" />
+        <Setter Property="Padding" Value="14,0" />
+        <Setter Property="Margin" Value="0,0,0,3" />
+        <Setter Property="MinWidth" Value="168" />
+        <Setter Property="Height" Value="36" />
+        <Setter Property="FontWeight" Value="Normal" />
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="TabItem">
                     <Border x:Name="Root"
-                            CornerRadius="14"
+                            CornerRadius="10"
                             Background="{DynamicResource BrushTabIdle}"
                             BorderBrush="Transparent"
-                            BorderThickness="1"
-                            Padding="{TemplateBinding Padding}">
+                            BorderThickness="0"
+                            Padding="{TemplateBinding Padding}"
+                            Margin="8,0,10,0">
                         <TextBlock Text="{TemplateBinding Header}"
                                    HorizontalAlignment="Left"
                                    VerticalAlignment="Center"
                                    Foreground="{TemplateBinding Foreground}"
                                    FontWeight="{TemplateBinding FontWeight}"
-                                   FontSize="14" />
+                                   FontSize="13.5" />
                     </Border>
                     <ControlTemplate.Triggers>
                         <Trigger Property="IsMouseOver" Value="True">
-                            <Setter TargetName="Root" Property="Background" Value="{DynamicResource BrushControlHover}" />
+                            <Setter TargetName="Root" Property="Background" Value="#E8E8ED" />
                             <Setter Property="Foreground" Value="{DynamicResource BrushTextPrimary}" />
                         </Trigger>
                         <Trigger Property="IsSelected" Value="True">
                             <Setter TargetName="Root" Property="Background" Value="{DynamicResource BrushTabSelectedGradient}" />
-                            <Setter TargetName="Root" Property="BorderBrush" Value="#22000000" />
                             <Setter Property="Foreground" Value="{DynamicResource BrushTabSelectedText}" />
                             <Setter Property="FontWeight" Value="SemiBold" />
                         </Trigger>
                         <Trigger Property="IsEnabled" Value="False">
-                            <Setter TargetName="Root" Property="Opacity" Value="0.45" />
+                            <Setter TargetName="Root" Property="Opacity" Value="0.4" />
                         </Trigger>
                     </ControlTemplate.Triggers>
                 </ControlTemplate>
@@ -362,7 +488,7 @@
 
     <Style TargetType="ListBoxItem">
         <Setter Property="Padding" Value="0" />
-        <Setter Property="Margin" Value="0,0,0,8" />
+        <Setter Property="Margin" Value="0,0,0,6" />
         <Setter Property="HorizontalContentAlignment" Value="Stretch" />
         <Setter Property="Foreground" Value="{DynamicResource BrushTextPrimary}" />
         <Setter Property="Background" Value="Transparent" />
@@ -370,7 +496,7 @@
             <Setter.Value>
                 <ControlTemplate TargetType="ListBoxItem">
                     <Border x:Name="Root"
-                            CornerRadius="16"
+                            CornerRadius="14"
                             Background="{TemplateBinding Background}"
                             BorderBrush="Transparent"
                             BorderThickness="1">
@@ -378,12 +504,10 @@
                     </Border>
                     <ControlTemplate.Triggers>
                         <Trigger Property="IsMouseOver" Value="True">
-                            <Setter TargetName="Root" Property="Background" Value="{DynamicResource BrushControlHover}" />
-                            <Setter TargetName="Root" Property="BorderBrush" Value="{DynamicResource BrushBorder}" />
+                            <Setter TargetName="Root" Property="Background" Value="#F2F2F7" />
                         </Trigger>
                         <Trigger Property="IsSelected" Value="True">
-                            <Setter TargetName="Root" Property="Background" Value="#EAF3FF" />
-                            <Setter TargetName="Root" Property="BorderBrush" Value="{DynamicResource BrushPrimaryBright}" />
+                            <Setter TargetName="Root" Property="Background" Value="{DynamicResource BrushControlSelected}" />
                             <Setter Property="Foreground" Value="{DynamicResource BrushTextPrimary}" />
                         </Trigger>
                     </ControlTemplate.Triggers>

@@ -99,10 +99,16 @@ public sealed class AppLifecycleService : IAppLifecycleService
         try
         {
             var result = await _serviceProvider.GetRequiredService<IUpdateCheckService>().CheckLatestAsync();
+            var notes = TruncateReleaseNotes(result.ReleaseNotes);
             if (!result.IsUpdateAvailable)
             {
                 var openRelease = System.Windows.MessageBox.Show(
-                    $"当前已是最新版本。\n\n当前版本：{result.CurrentVersion}\n最新版本：{result.LatestVersion}\n\n是否打开 Release 页面查看详情？",
+                    $"当前已是最新版本。\n\n" +
+                    $"当前版本：{result.CurrentVersion}\n" +
+                    $"最新版本：{result.LatestVersion}\n" +
+                    $"发布名：{result.ReleaseName}\n\n" +
+                    $"更新说明：\n{notes}\n\n" +
+                    "是否打开 Release 页面查看完整内容？",
                     "检查更新",
                     MessageBoxButton.YesNo,
                     MessageBoxImage.Information);
@@ -115,7 +121,11 @@ public sealed class AppLifecycleService : IAppLifecycleService
             }
 
             var updateNow = System.Windows.MessageBox.Show(
-                $"发现新版本：{result.LatestVersion}\n\n当前版本：{result.CurrentVersion}\n最新版本：{result.LatestVersion}\n\n是否现在下载并覆盖安装？",
+                $"发现新版本：{result.LatestVersion}\n\n" +
+                $"当前版本：{result.CurrentVersion}\n" +
+                $"发布名：{result.ReleaseName}\n\n" +
+                $"更新说明：\n{notes}\n\n" +
+                "是否现在下载并覆盖安装？\n（本地剪贴板历史和设置会保留）",
                 "发现新版本",
                 MessageBoxButton.YesNo,
                 MessageBoxImage.Information);
@@ -137,6 +147,20 @@ public sealed class AppLifecycleService : IAppLifecycleService
                 OpenLatestReleasePage();
             }
         }
+    }
+
+    private static string TruncateReleaseNotes(string? notes)
+    {
+        if (string.IsNullOrWhiteSpace(notes))
+        {
+            return "（暂无更新说明）";
+        }
+
+        var normalized = notes.Replace("\r\n", "\n").Trim();
+        const int max = 900;
+        return normalized.Length <= max
+            ? normalized
+            : normalized[..max] + "\n…(已截断，完整说明见 Release 页面)";
     }
 
     public async Task StartCoverUpdateAsync()

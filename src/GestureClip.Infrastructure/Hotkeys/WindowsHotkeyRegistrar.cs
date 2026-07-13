@@ -11,6 +11,7 @@ namespace GestureClip.Infrastructure.Hotkeys;
 public sealed class WindowsHotkeyRegistrar : IHotkeyRegistrar, IDisposable
 {
     private const int OpenClipboardOverlayHotkeyId = 0x4743;
+    private const int OpenQuickActionHotkeyId = 0x4744;
     private readonly Dispatcher _dispatcher;
     private HwndSource? _source;
     private int _lastError;
@@ -22,32 +23,26 @@ public sealed class WindowsHotkeyRegistrar : IHotkeyRegistrar, IDisposable
 
     public event EventHandler? HotkeyPressed;
 
+    public event EventHandler? QuickActionHotkeyPressed;
+
     public bool RegisterOpenClipboardHotkey(HotkeyDefinition hotkey)
     {
-        return _dispatcher.Invoke(() =>
-        {
-            EnsureSource();
-            var ok = HotkeyNativeMethods.RegisterHotKey(
-                _source!.Handle,
-                OpenClipboardOverlayHotkeyId,
-                hotkey.Modifiers,
-                hotkey.VirtualKey);
-            _lastError = ok ? 0 : Marshal.GetLastWin32Error();
-            return ok;
-        });
+        return Register(OpenClipboardOverlayHotkeyId, hotkey);
     }
 
     public void UnregisterOpenClipboardHotkey()
     {
-        _dispatcher.Invoke(() =>
-        {
-            if (_source is null)
-            {
-                return;
-            }
+        Unregister(OpenClipboardOverlayHotkeyId);
+    }
 
-            HotkeyNativeMethods.UnregisterHotKey(_source.Handle, OpenClipboardOverlayHotkeyId);
-        });
+    public bool RegisterOpenQuickActionHotkey(HotkeyDefinition hotkey)
+    {
+        return Register(OpenQuickActionHotkeyId, hotkey);
+    }
+
+    public void UnregisterOpenQuickActionHotkey()
+    {
+        Unregister(OpenQuickActionHotkeyId);
     }
 
     public int GetLastError() => _lastError;
@@ -62,9 +57,39 @@ public sealed class WindowsHotkeyRegistrar : IHotkeyRegistrar, IDisposable
             }
 
             HotkeyNativeMethods.UnregisterHotKey(_source.Handle, OpenClipboardOverlayHotkeyId);
+            HotkeyNativeMethods.UnregisterHotKey(_source.Handle, OpenQuickActionHotkeyId);
             _source.RemoveHook(WndProc);
             _source.Dispose();
             _source = null;
+        });
+    }
+
+    private bool Register(int hotkeyId, HotkeyDefinition hotkey)
+    {
+        return _dispatcher.Invoke(() =>
+        {
+            EnsureSource();
+            HotkeyNativeMethods.UnregisterHotKey(_source!.Handle, hotkeyId);
+            var ok = HotkeyNativeMethods.RegisterHotKey(
+                _source.Handle,
+                hotkeyId,
+                hotkey.Modifiers,
+                hotkey.VirtualKey);
+            _lastError = ok ? 0 : Marshal.GetLastWin32Error();
+            return ok;
+        });
+    }
+
+    private void Unregister(int hotkeyId)
+    {
+        _dispatcher.Invoke(() =>
+        {
+            if (_source is null)
+            {
+                return;
+            }
+
+            HotkeyNativeMethods.UnregisterHotKey(_source.Handle, hotkeyId);
         });
     }
 
@@ -87,9 +112,20 @@ public sealed class WindowsHotkeyRegistrar : IHotkeyRegistrar, IDisposable
 
     private IntPtr WndProc(IntPtr hwnd, int msg, IntPtr wParam, IntPtr lParam, ref bool handled)
     {
-        if (msg == HotkeyNativeMethods.WmHotkey && wParam.ToInt32() == OpenClipboardOverlayHotkeyId)
+        if (msg != HotkeyNativeMethods.WmHotkey)
+        {
+            return IntPtr.Zero;
+        }
+
+        var id = wParam.ToInt32();
+        if (id == OpenClipboardOverlayHotkeyId)
         {
             HotkeyPressed?.Invoke(this, EventArgs.Empty);
+            handled = true;
+        }
+        else if (id == OpenQuickActionHotkeyId)
+        {
+            QuickActionHotkeyPressed?.Invoke(this, EventArgs.Empty);
             handled = true;
         }
 

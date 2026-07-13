@@ -17,7 +17,7 @@ public sealed class GitHubReleaseUpdateCheckService : IUpdateCheckService
     public GitHubReleaseUpdateCheckService(HttpClient httpClient)
     {
         _httpClient = httpClient;
-        EnsureUserAgent(_httpClient);
+        UpdateHttpClientFactory.ConfigureHeaders(_httpClient);
     }
 
     public async Task<UpdateCheckResult> CheckLatestAsync(CancellationToken cancellationToken = default)
@@ -28,7 +28,7 @@ public sealed class GitHubReleaseUpdateCheckService : IUpdateCheckService
         return new UpdateCheckResult(
             currentVersion,
             latestVersion,
-            release.Name,
+            string.IsNullOrWhiteSpace(release.Name) ? latestVersion : release.Name,
             release.HtmlUrl,
             release.Body ?? string.Empty,
             UpdateVersionComparer.IsNewerRelease(currentVersion, latestVersion));
@@ -40,7 +40,7 @@ public sealed class GitHubReleaseUpdateCheckService : IUpdateCheckService
         {
             return await GetLatestReleaseWithClientAsync(_httpClient, cancellationToken);
         }
-        catch (HttpRequestException)
+        catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException or InvalidOperationException)
         {
             using var directClient = UpdateHttpClientFactory.CreateDirectClient();
             return await GetLatestReleaseWithClientAsync(directClient, cancellationToken);
@@ -49,24 +49,34 @@ public sealed class GitHubReleaseUpdateCheckService : IUpdateCheckService
 
     private static async Task<GitHubRelease> GetLatestReleaseWithClientAsync(HttpClient httpClient, CancellationToken cancellationToken)
     {
-        return await httpClient.GetFromJsonAsync<GitHubRelease>(LatestReleaseApiUrl, cancellationToken)
-            ?? throw new InvalidOperationException("无法读取 GitHub 最新版本信息。");
+        UpdateHttpClientFactory.ConfigureHeaders(httpClient);
+        using var response = await httpClient.GetAsync(LatestReleaseApiUrl, cancellationToken);
+        if (!response.IsSuccessStatusCode)
+        {
+            var body = await response.Content.ReadAsStringAsync(cancellationToken);
+            throw new InvalidOperationException(
+                $"GitHub 返回 {(int)response.StatusCode}：{(string.IsNullOrWhiteSpace(body) ? response.ReasonPhrase : body)}");
+        }
+
+        var release = await response.Content.ReadFromJsonAsync<GitHubRelease>(cancellationToken: cancellationToken);
+        if (release is null || string.IsNullOrWhiteSpace(release.TagName))
+        {
+            throw new InvalidOperationException("无法读取 GitHub 最新版本信息。");
+        }
+
+        return release;
     }
 
     public static string GetCurrentVersion()
     {
-        return Assembly.GetEntryAssembly()?.GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion
+        var version = Assembly.GetEntryAssembly()?.GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion
             ?? Assembly.GetExecutingAssembly().GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion
             ?? "0.0.0";
+        var plus = version.IndexOf('+');
+        return plus > 0 ? version[..plus] : version;
     }
 
-    public static void EnsureUserAgent(HttpClient httpClient)
-    {
-        if (!httpClient.DefaultRequestHeaders.UserAgent.Any())
-        {
-            httpClient.DefaultRequestHeaders.UserAgent.ParseAdd("GestureClip-Updater");
-        }
-    }
+    public static void EnsureUserAgent(HttpClient httpClient) => UpdateHttpClientFactory.ConfigureHeaders(httpClient);
 
     public sealed record GitHubRelease(
         [property: JsonPropertyName("tag_name")] string TagName,

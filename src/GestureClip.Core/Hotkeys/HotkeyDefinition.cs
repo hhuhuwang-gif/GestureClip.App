@@ -4,6 +4,8 @@ public sealed record HotkeyDefinition(uint Modifiers, uint VirtualKey, string Di
 {
     public const string DefaultOpenClipboardOverlay = "Ctrl + `";
     public const string FallbackOpenClipboardOverlay = "Ctrl + Alt + V";
+    public const string DefaultOpenQuickActionCenter = "Ctrl + Shift + Q";
+    public const string FallbackOpenQuickActionCenter = "Ctrl + Alt + Q";
 
     public static HotkeyDefinition ParseOrDefault(string? text)
     {

@@ -12,4 +12,9 @@ public interface IWorkerLevelService
         bool isGestureSuccess,
         DateTimeOffset now,
         CancellationToken cancellationToken);
+
+    Task<WorkerLevelSnapshot> RecordBonusXpAsync(
+        int xp,
+        DateTimeOffset now,
+        CancellationToken cancellationToken);
 }

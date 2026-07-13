@@ -27,6 +27,23 @@ public sealed class GestureHudInfoProvider : IGestureHudInfoProvider
             PresetName(preset)) { Action = action };
     }
 
+    public GestureHudInfo GetInfo(GesturePreset preset, GestureExecutionContext context)
+    {
+        var action = _presetProvider.GetAction(preset, context);
+        var directionText = DirectionText(context.Pattern);
+        if (context.IsLeftButtonModified)
+        {
+            directionText += " + 左键";
+        }
+
+        return new GestureHudInfo(
+            directionText,
+            context.Pattern,
+            ActionName(action, context),
+            ShortcutText(action, context),
+            PresetName(preset)) { Action = action };
+    }
+
     private static string DirectionText(string pattern)
     {
         if (pattern == "-")
@@ -57,6 +74,7 @@ public sealed class GestureHudInfoProvider : IGestureHudInfoProvider
         {
             BuiltInGestureAction.Copy => "复制",
             BuiltInGestureAction.Paste => "粘贴",
+            BuiltInGestureAction.SmartPaste => "智能粘贴",
             BuiltInGestureAction.Cut => "剪切",
             BuiltInGestureAction.SelectAll => "全选",
             BuiltInGestureAction.Undo => "撤销",
@@ -87,12 +105,23 @@ public sealed class GestureHudInfoProvider : IGestureHudInfoProvider
         };
     }
 
+    private static string ActionName(BuiltInGestureAction action, GestureExecutionContext context)
+    {
+        if (context.IsLeftButtonModified && action == BuiltInGestureAction.SmartPaste)
+        {
+            return "干净粘贴";
+        }
+
+        return ActionName(action);
+    }
+
     private static string ShortcutText(BuiltInGestureAction action)
     {
         return action switch
         {
             BuiltInGestureAction.Copy => "Ctrl + C",
             BuiltInGestureAction.Paste => "Ctrl + V",
+            BuiltInGestureAction.SmartPaste => "根据当前软件自动选择",
             BuiltInGestureAction.Cut => "Ctrl + X",
             BuiltInGestureAction.SelectAll => "Ctrl + A",
             BuiltInGestureAction.Undo => "Ctrl + Z",
@@ -122,5 +151,14 @@ public sealed class GestureHudInfoProvider : IGestureHudInfoProvider
             _ => "暂无动作"
         };
     }
-}
 
+    private static string ShortcutText(BuiltInGestureAction action, GestureExecutionContext context)
+    {
+        if (context.IsLeftButtonModified && action == BuiltInGestureAction.SmartPaste)
+        {
+            return "强制纯文本 / 干净粘贴";
+        }
+
+        return ShortcutText(action);
+    }
+}

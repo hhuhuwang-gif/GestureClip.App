@@ -9,6 +9,7 @@ public sealed class GlobalHotkeyService : IGlobalHotkeyService
 {
     private readonly IHotkeyRegistrar _registrar;
     private readonly IClipboardOverlayService _clipboardOverlayService;
+    private readonly IQuickActionCenterService _quickActionCenterService;
     private readonly ISettingsService _settingsService;
     private readonly ILogger<GlobalHotkeyService> _logger;
     private int _started;
@@ -16,11 +17,13 @@ public sealed class GlobalHotkeyService : IGlobalHotkeyService
     public GlobalHotkeyService(
         IHotkeyRegistrar registrar,
         IClipboardOverlayService clipboardOverlayService,
+        IQuickActionCenterService quickActionCenterService,
         ISettingsService settingsService,
         ILogger<GlobalHotkeyService> logger)
     {
         _registrar = registrar;
         _clipboardOverlayService = clipboardOverlayService;
+        _quickActionCenterService = quickActionCenterService;
         _settingsService = settingsService;
         _logger = logger;
     }
@@ -36,26 +39,9 @@ public sealed class GlobalHotkeyService : IGlobalHotkeyService
         }
 
         _registrar.HotkeyPressed += OnHotkeyPressed;
-        var hotkey = HotkeyDefinition.ParseOrDefault(_settingsService.Get(
-            SettingKeys.HotkeyOpenClipboardOverlayKey,
-            HotkeyDefinition.DefaultOpenClipboardOverlay));
-
-        if (TryRegister(hotkey, null))
-        {
-            return;
-        }
-
-        var firstError = _registrar.GetLastError();
-        var fallback = HotkeyDefinition.ParseOrDefault(HotkeyDefinition.FallbackOpenClipboardOverlay);
-        if (!string.Equals(hotkey.DisplayText, fallback.DisplayText, StringComparison.Ordinal) &&
-            TryRegister(fallback, $"{hotkey.DisplayText} 被占用，已改用 {fallback.DisplayText}"))
-        {
-            return;
-        }
-
-        var error = _registrar.GetLastError();
-        Status = new HotkeyStatus(HotkeyRegistrationState.Failed, $"{hotkey.DisplayText} 注册失败，请在剪贴板页换一个热键", error == 0 ? firstError : error);
-        _logger.LogWarning("Global hotkey registration failed. Hotkey={Hotkey} Win32Error={Win32Error}", hotkey.DisplayText, error);
+        _registrar.QuickActionHotkeyPressed += OnQuickActionHotkeyPressed;
+        RegisterClipboardHotkey();
+        RegisterQuickActionHotkey();
     }
 
     public void Stop()
@@ -66,9 +52,75 @@ public sealed class GlobalHotkeyService : IGlobalHotkeyService
         }
 
         _registrar.HotkeyPressed -= OnHotkeyPressed;
+        _registrar.QuickActionHotkeyPressed -= OnQuickActionHotkeyPressed;
         _registrar.UnregisterOpenClipboardHotkey();
+        _registrar.UnregisterOpenQuickActionHotkey();
         Status = new HotkeyStatus(HotkeyRegistrationState.NotStarted, "未注册");
         _logger.LogInformation("Global hotkey unregistered.");
+    }
+
+    private void RegisterClipboardHotkey()
+    {
+        var hotkey = HotkeyDefinition.ParseOrDefault(_settingsService.Get(
+            SettingKeys.HotkeyOpenClipboardOverlayKey,
+            HotkeyDefinition.DefaultOpenClipboardOverlay));
+
+        if (TryRegisterClipboard(hotkey, null))
+        {
+            return;
+        }
+
+        var firstError = _registrar.GetLastError();
+        var fallback = HotkeyDefinition.ParseOrDefault(HotkeyDefinition.FallbackOpenClipboardOverlay);
+        if (!string.Equals(hotkey.DisplayText, fallback.DisplayText, StringComparison.Ordinal) &&
+            TryRegisterClipboard(fallback, $"{hotkey.DisplayText} 被占用，已改用 {fallback.DisplayText}"))
+        {
+            return;
+        }
+
+        var error = _registrar.GetLastError();
+        Status = new HotkeyStatus(
+            HotkeyRegistrationState.Failed,
+            $"{hotkey.DisplayText} 注册失败，请在剪贴板页换一个热键",
+            error == 0 ? firstError : error);
+        _logger.LogWarning(
+            "Global hotkey registration failed. Hotkey={Hotkey} Win32Error={Win32Error}",
+            hotkey.DisplayText,
+            error);
+    }
+
+    private void RegisterQuickActionHotkey()
+    {
+        if (!_settingsService.Get(SettingKeys.HotkeyOpenQuickActionCenterEnabled, true) ||
+            !_settingsService.Get(SettingKeys.AssistantEnabled, true))
+        {
+            return;
+        }
+
+        var hotkey = HotkeyDefinition.ParseOrDefault(_settingsService.Get(
+            SettingKeys.HotkeyOpenQuickActionCenterKey,
+            HotkeyDefinition.DefaultOpenQuickActionCenter));
+
+        if (_registrar.RegisterOpenQuickActionHotkey(hotkey))
+        {
+            _logger.LogInformation("Quick action hotkey registered: {Hotkey}.", hotkey.DisplayText);
+            return;
+        }
+
+        var fallback = HotkeyDefinition.ParseOrDefault(HotkeyDefinition.FallbackOpenQuickActionCenter);
+        if (!string.Equals(hotkey.DisplayText, fallback.DisplayText, StringComparison.Ordinal) &&
+            _registrar.RegisterOpenQuickActionHotkey(fallback))
+        {
+            _logger.LogInformation(
+                "Quick action hotkey fallback registered: {Hotkey}.",
+                fallback.DisplayText);
+            return;
+        }
+
+        _logger.LogWarning(
+            "Quick action hotkey registration failed. Hotkey={Hotkey} Win32Error={Win32Error}",
+            hotkey.DisplayText,
+            _registrar.GetLastError());
     }
 
     private void OnHotkeyPressed(object? sender, EventArgs e)
@@ -76,7 +128,12 @@ public sealed class GlobalHotkeyService : IGlobalHotkeyService
         _ = ShowClipboardOverlayAsync();
     }
 
-    private bool TryRegister(HotkeyDefinition hotkey, string? successMessage)
+    private void OnQuickActionHotkeyPressed(object? sender, EventArgs e)
+    {
+        _ = ToggleQuickActionCenterAsync();
+    }
+
+    private bool TryRegisterClipboard(HotkeyDefinition hotkey, string? successMessage)
     {
         if (!_registrar.RegisterOpenClipboardHotkey(hotkey))
         {
@@ -97,6 +154,18 @@ public sealed class GlobalHotkeyService : IGlobalHotkeyService
         catch (Exception ex)
         {
             _logger.LogError(ex, "Global hotkey action failed.");
+        }
+    }
+
+    private async Task ToggleQuickActionCenterAsync()
+    {
+        try
+        {
+            await _quickActionCenterService.ToggleAsync();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Quick action hotkey action failed.");
         }
     }
 }

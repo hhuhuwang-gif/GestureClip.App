@@ -15,12 +15,18 @@
         Foreground="{DynamicResource BrushTextPrimary}"
         Loaded="Window_Loaded"
         Closing="Window_Closing">
-    <Border CornerRadius="28"
+    <Window.Resources>
+        <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter" />
+    </Window.Resources>
+    <Border CornerRadius="20"
             Background="{DynamicResource BrushAppBackground}"
-            BorderBrush="{DynamicResource BrushBorder}"
+            BorderBrush="#14000000"
             BorderThickness="1"
-            Padding="22"
+            Padding="20"
             MouseLeftButtonDown="WindowBackground_MouseLeftButtonDown">
+        <Border.Effect>
+            <DropShadowEffect Color="#000000" BlurRadius="40" ShadowDepth="6" Opacity="0.14" Direction="270" />
+        </Border.Effect>
         <Grid>
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto" />
@@ -28,96 +34,190 @@
                 <RowDefinition Height="Auto" />
             </Grid.RowDefinitions>
 
-            <DockPanel Margin="2,0,2,16">
-                <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
-                    <Button Content="－" Width="42" Height="34" MinWidth="0" Padding="0" Focusable="False" FocusVisualStyle="{x:Null}" FontSize="17" FontWeight="SemiBold" Background="#00FFFFFF" BorderBrush="#00000000" ToolTip="最小化" Click="MinimizeButton_Click" />
-                    <Button Content="×" Width="42" Height="34" MinWidth="0" Padding="0" Margin="6,0,0,0" Focusable="False" FocusVisualStyle="{x:Null}" FontSize="17" FontWeight="SemiBold" Background="#00FFFFFF" BorderBrush="#00000000" Foreground="{DynamicResource BrushTextSecondary}" ToolTip="关闭" Click="CloseButton_Click" />
+            <DockPanel Margin="2,0,2,14">
+                <StackPanel DockPanel.Dock="Left"
+                            Orientation="Horizontal"
+                            VerticalAlignment="Center"
+                            Margin="0,0,14,0">
+                    <Button Style="{StaticResource TrafficLightButtonStyle}"
+                            Background="{DynamicResource BrushTrafficClose}"
+                            ToolTip="关闭"
+                            Click="CloseButton_Click" />
+                    <Button Style="{StaticResource TrafficLightButtonStyle}"
+                            Background="{DynamicResource BrushTrafficYellow}"
+                            ToolTip="放大窗口"
+                            Click="MaximizeButton_Click" />
+                    <Button Style="{StaticResource TrafficLightButtonStyle}"
+                            Background="{DynamicResource BrushTrafficGreen}"
+                            ToolTip="缩小窗口"
+                            Click="MinimizeButton_Click" />
                 </StackPanel>
                 <StackPanel>
-                    <TextBlock Text="工位小熊 Hub" FontSize="30" FontWeight="SemiBold" />
-                    <TextBlock Text="{Binding Subtitle}" Margin="0,5,0,0" FontSize="13" Foreground="{DynamicResource BrushTextSecondary}" />
+                    <TextBlock Text="工位小熊 Hub" FontSize="24" FontWeight="SemiBold" />
+                    <TextBlock Text="{Binding Subtitle}" Margin="0,4,0,0" FontSize="12" Foreground="{DynamicResource BrushTextSecondary}" />
+                    <TextBlock Text="{Binding PrivacyHintText}" Style="{StaticResource MutedTextStyle}" FontSize="12" Margin="0,6,0,0" />
                 </StackPanel>
             </DockPanel>
 
             <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
                 <StackPanel>
-                    <Border Style="{StaticResource GlassCardStyle}" Padding="24" Margin="0,0,0,14" Background="#CC172033">
+                    <!-- B: First-time 30s setup -->
+                    <Border Style="{StaticResource GlassCardStyle}"
+                            Padding="18"
+                            Margin="0,0,0,12"
+                            Background="#EAF3FF"
+                            BorderBrush="#330071E3"
+                            Visibility="{Binding NeedsSetup, Converter={StaticResource BooleanToVisibilityConverter}}">
+                        <StackPanel>
+                            <TextBlock Text="30 秒开工配置" FontSize="18" FontWeight="SemiBold" />
+                            <TextBlock Text="填月薪和上下班时间，小熊才能估算今日已赚和倒计时。可随时改，也可先跳过。"
+                                       Style="{StaticResource MutedTextStyle}"
+                                       Margin="0,6,0,12" />
+                            <UniformGrid Columns="3">
+                                <StackPanel Margin="0,0,10,0">
+                                    <TextBlock Text="月薪（元）" Style="{StaticResource MutedTextStyle}" />
+                                    <TextBox Text="{Binding SetupSalaryText, UpdateSourceTrigger=PropertyChanged}" Margin="0,4,0,0" />
+                                </StackPanel>
+                                <StackPanel Margin="0,0,10,0">
+                                    <TextBlock Text="上班" Style="{StaticResource MutedTextStyle}" />
+                                    <TextBox Text="{Binding SetupStartTime, UpdateSourceTrigger=PropertyChanged}" Margin="0,4,0,0" />
+                                </StackPanel>
+                                <StackPanel>
+                                    <TextBlock Text="下班" Style="{StaticResource MutedTextStyle}" />
+                                    <TextBox Text="{Binding SetupEndTime, UpdateSourceTrigger=PropertyChanged}" Margin="0,4,0,0" />
+                                </StackPanel>
+                            </UniformGrid>
+                            <TextBlock Text="快捷模板" Style="{StaticResource MutedTextStyle}" Margin="0,12,0,6" />
+                            <ItemsControl ItemsSource="{Binding WorkTemplateOptions}">
+                                <ItemsControl.ItemsPanel>
+                                    <ItemsPanelTemplate>
+                                        <WrapPanel />
+                                    </ItemsPanelTemplate>
+                                </ItemsControl.ItemsPanel>
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <Button Content="{Binding Name}"
+                                                Style="{StaticResource SettingsCompactActionButtonStyle}"
+                                                Command="{Binding DataContext.ApplyWorkTemplateCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                                CommandParameter="{Binding}" />
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                            <WrapPanel Margin="0,12,0,0">
+                                <Button Content="保存并开始"
+                                        Style="{StaticResource PrimaryButtonStyle}"
+                                        Command="{Binding CompleteSetupCommand}"
+                                        Margin="0,0,10,0" />
+                                <Button Content="先跳过"
+                                        Style="{StaticResource SecondaryButtonStyle}"
+                                        Command="{Binding DismissSetupCommand}" />
+                            </WrapPanel>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- Always-on status -->
+                    <Border Style="{StaticResource GlassCardStyle}" Padding="20" Margin="0,0,0,12" Background="#FBFBFD">
                         <Grid>
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="*" />
                                 <ColumnDefinition Width="Auto" />
                             </Grid.ColumnDefinitions>
                             <StackPanel>
-                                <TextBlock Text="顶部实时状态" Style="{StaticResource MutedTextStyle}" />
-                                <TextBlock Text="{Binding CurrentStateText}" FontSize="28" FontWeight="SemiBold" Foreground="{DynamicResource BrushPrimaryBright}" Margin="0,6,0,0" />
-                                <TextBlock Text="{Binding BearStatusText}" FontSize="16" FontWeight="SemiBold" Margin="0,6,0,0" />
+                                <TextBlock Text="当前状态" Style="{StaticResource MutedTextStyle}" />
+                                <TextBlock Text="{Binding CurrentStateText}" FontSize="26" FontWeight="SemiBold" Foreground="{DynamicResource BrushPrimaryBright}" Margin="0,6,0,0" />
+                                <TextBlock Text="{Binding BearStatusText}" FontSize="15" FontWeight="SemiBold" Margin="0,6,0,0" />
                                 <TextBlock Text="{Binding BearLineText}" Style="{StaticResource MutedTextStyle}" TextWrapping="Wrap" Margin="0,8,0,0" />
                             </StackPanel>
-                            <StackPanel Grid.Column="1" HorizontalAlignment="Right" MinWidth="240">
+                            <StackPanel Grid.Column="1" HorizontalAlignment="Right" MinWidth="200">
                                 <TextBlock Text="今日已赚" Style="{StaticResource MutedTextStyle}" TextAlignment="Right" />
-                                <TextBlock Text="{Binding TodayEarnedText}" FontSize="34" FontWeight="SemiBold" TextAlignment="Right" />
+                                <TextBlock Text="{Binding TodayEarnedText}" FontSize="30" FontWeight="SemiBold" TextAlignment="Right" />
                                 <TextBlock Text="距离下班" Style="{StaticResource MutedTextStyle}" TextAlignment="Right" Margin="0,10,0,0" />
-                                <TextBlock Text="{Binding OffWorkCountdownText}" FontSize="26" FontWeight="SemiBold" TextAlignment="Right" />
+                                <TextBlock Text="{Binding OffWorkCountdownText}" FontSize="22" FontWeight="SemiBold" TextAlignment="Right" />
                                 <TextBlock Text="{Binding SavedClicksText}" Style="{StaticResource MutedTextStyle}" TextAlignment="Right" Margin="0,8,0,0" />
                             </StackPanel>
                         </Grid>
                     </Border>
 
-                    <UniformGrid Columns="2" Margin="0,0,0,14">
-                        <Border Style="{StaticResource GlassCardStyle}" Padding="20" Margin="0,0,7,0">
+                    <!-- A: Collapsible sections -->
+                    <Expander Header="收益与效率"
+                              IsExpanded="{Binding EarningsExpanded, Mode=TwoWay}"
+                              Margin="0,0,0,8"
+                              Foreground="{DynamicResource BrushTextPrimary}">
+                        <Border Style="{StaticResource SoftStatusCardStyle}" Margin="0,8,0,0" Padding="16">
                             <StackPanel>
-                                <TextBlock Text="今日收益与效率" FontSize="18" FontWeight="SemiBold" />
-                                <TextBlock Text="{Binding SalaryHintText}" Style="{StaticResource MutedTextStyle}" TextWrapping="Wrap" Margin="0,6,0,12" />
-                                <TextBlock Text="老板今日已支出" Style="{StaticResource MutedTextStyle}" />
-                                <TextBlock Text="{Binding BossPaidText}" FontSize="24" FontWeight="SemiBold" />
-                                <TextBlock Text="你每分钟约值" Style="{StaticResource MutedTextStyle}" Margin="0,10,0,0" />
-                                <TextBlock Text="{Binding MinuteValueText}" FontSize="20" FontWeight="SemiBold" />
-                                <TextBlock Text="{Binding ActionStatsText}" Style="{StaticResource MutedTextStyle}" TextWrapping="Wrap" Margin="0,12,0,0" />
-                            </StackPanel>
-                        </Border>
-
-                        <Border Style="{StaticResource GlassCardStyle}" Padding="20" Margin="7,0,0,0">
-                            <StackPanel>
-                                <TextBlock Text="操作统计" FontSize="18" FontWeight="SemiBold" />
-                                <UniformGrid Columns="2" Margin="0,12,0,0">
-                                    <TextBlock Text="复制" Style="{StaticResource MutedTextStyle}" />
-                                    <TextBlock Text="{Binding CopyCountText}" FontWeight="SemiBold" HorizontalAlignment="Right" />
-                                    <TextBlock Text="粘贴" Style="{StaticResource MutedTextStyle}" />
-                                    <TextBlock Text="{Binding PasteCountText}" FontWeight="SemiBold" HorizontalAlignment="Right" />
-                                    <TextBlock Text="手势" Style="{StaticResource MutedTextStyle}" />
-                                    <TextBlock Text="{Binding GestureCountText}" FontWeight="SemiBold" HorizontalAlignment="Right" />
-                                    <TextBlock Text="打开剪贴板" Style="{StaticResource MutedTextStyle}" />
-                                    <TextBlock Text="{Binding OpenClipboardCountText}" FontWeight="SemiBold" HorizontalAlignment="Right" />
+                                <TextBlock Text="{Binding SalaryHintText}" Style="{StaticResource MutedTextStyle}" TextWrapping="Wrap" Margin="0,0,0,10" />
+                                <UniformGrid Columns="2">
+                                    <StackPanel Margin="0,0,8,8">
+                                        <TextBlock Text="老板今日已支出" Style="{StaticResource MutedTextStyle}" />
+                                        <TextBlock Text="{Binding BossPaidText}" FontSize="22" FontWeight="SemiBold" />
+                                    </StackPanel>
+                                    <StackPanel Margin="8,0,0,8">
+                                        <TextBlock Text="每分钟约值" Style="{StaticResource MutedTextStyle}" />
+                                        <TextBlock Text="{Binding MinuteValueText}" FontSize="22" FontWeight="SemiBold" />
+                                    </StackPanel>
+                                    <StackPanel Margin="0,0,8,0">
+                                        <TextBlock Text="发薪日还剩" Style="{StaticResource MutedTextStyle}" />
+                                        <TextBlock Text="{Binding PaydayText}" FontSize="18" FontWeight="SemiBold" />
+                                    </StackPanel>
+                                    <StackPanel Margin="8,0,0,0">
+                                        <TextBlock Text="操作统计" Style="{StaticResource MutedTextStyle}" />
+                                        <TextBlock Text="{Binding ActionStatsText}" FontSize="13" FontWeight="SemiBold" TextWrapping="Wrap" />
+                                    </StackPanel>
                                 </UniformGrid>
-                                <TextBlock Text="GestureClip 今日帮你减少重复点击。" Style="{StaticResource MutedTextStyle}" TextWrapping="Wrap" Margin="0,14,0,0" />
                             </StackPanel>
                         </Border>
-                    </UniformGrid>
+                    </Expander>
 
-                    <UniformGrid Columns="2" Margin="0,0,0,14">
-                        <Border Style="{StaticResource GlassCardStyle}" Padding="20" Margin="0,0,7,0">
+                    <Expander Header="摸鱼模式"
+                              IsExpanded="{Binding FishingExpanded, Mode=TwoWay}"
+                              Margin="0,0,0,8"
+                              Foreground="{DynamicResource BrushTextPrimary}">
+                        <Border Style="{StaticResource SoftStatusCardStyle}" Margin="0,8,0,0" Padding="16">
                             <StackPanel>
-                                <TextBlock Text="摸鱼模式" FontSize="18" FontWeight="SemiBold" />
-                                <TextBlock Text="默认只记录你手动开启的摸鱼，不识别网页、不读取标题。" Style="{StaticResource MutedTextStyle}" TextWrapping="Wrap" Margin="0,6,0,12" />
-                                <TextBlock Text="{Binding CurrentFishingText, StringFormat=本次 {0}}" FontSize="20" FontWeight="SemiBold" />
-                                <TextBlock Text="{Binding CurrentFishingValueText, StringFormat=本次约值 {0}}" Style="{StaticResource MutedTextStyle}" Margin="0,6,0,0" />
-                                <TextBlock Text="{Binding TodayFishingDurationText, StringFormat=今日累计 {0}}" Style="{StaticResource MutedTextStyle}" Margin="0,6,0,0" />
-                                <TextBlock Text="{Binding TodayFishingValueText, StringFormat=今日摸鱼价值 {0}}" Style="{StaticResource MutedTextStyle}" Margin="0,6,0,12" />
+                                <TextBlock Text="只记录你手动开始/结束，不识别网页和应用。"
+                                           Style="{StaticResource MutedTextStyle}"
+                                           TextWrapping="Wrap"
+                                           Margin="0,0,0,10" />
+                                <TextBlock Text="{Binding CurrentFishingText, StringFormat=本次 {0}}" FontSize="18" FontWeight="SemiBold" />
+                                <TextBlock Text="{Binding CurrentFishingValueText, StringFormat=本次约值 {0}}" Style="{StaticResource MutedTextStyle}" Margin="0,4,0,0" />
+                                <TextBlock Text="{Binding TodayFishingDurationText, StringFormat=今日累计 {0}}" Style="{StaticResource MutedTextStyle}" Margin="0,4,0,0" />
+                                <TextBlock Text="{Binding TodayFishingValueText, StringFormat=今日摸鱼价值 {0}}" Style="{StaticResource MutedTextStyle}" Margin="0,4,0,10" />
                                 <WrapPanel>
-                                    <Button Content="{Binding FishingButtonText}" Style="{StaticResource PrimaryButtonStyle}" Command="{Binding ToggleFishingCommand}" Margin="0,0,10,8" />
-                                    <Button Content="清除今日摸鱼" Style="{StaticResource SecondaryButtonStyle}" Command="{Binding ClearFishingCommand}" Margin="0,0,10,8" />
+                                    <Button Content="{Binding FishingButtonText}" Style="{StaticResource PrimaryButtonStyle}" Command="{Binding ToggleFishingCommand}" Margin="0,0,10,0" />
+                                    <Button Content="清除今日摸鱼" Style="{StaticResource SecondaryButtonStyle}" Command="{Binding ClearFishingCommand}" />
                                 </WrapPanel>
                             </StackPanel>
                         </Border>
+                    </Expander>
 
-                        <Border Style="{StaticResource GlassCardStyle}" Padding="20" Margin="7,0,0,0">
+                    <Expander Header="休息提醒"
+                              IsExpanded="{Binding RestExpanded, Mode=TwoWay}"
+                              Margin="0,0,0,8"
+                              Foreground="{DynamicResource BrushTextPrimary}">
+                        <Border Style="{StaticResource SoftStatusCardStyle}" Margin="0,8,0,0" Padding="16">
                             <StackPanel>
-                                <TextBlock Text="休息提醒" FontSize="18" FontWeight="SemiBold" />
-                                <TextBlock Text="轻量提醒，可稍后、可关闭，不抢焦点。" Style="{StaticResource MutedTextStyle}" TextWrapping="Wrap" Margin="0,6,0,12" />
-                                <TextBlock Text="{Binding ContinuousWorkText, StringFormat=连续工作 {0}}" FontSize="20" FontWeight="SemiBold" />
-                                <TextBlock Text="{Binding NextRestReminderText, StringFormat=下次提醒 {0}}" Style="{StaticResource MutedTextStyle}" Margin="0,6,0,0" />
-                                <TextBlock Text="{Binding RestReminderCountText}" Style="{StaticResource MutedTextStyle}" Margin="0,6,0,0" />
-                                <TextBlock Text="{Binding RestRiskText, StringFormat=当前风险等级：{0}}" Style="{StaticResource MutedTextStyle}" Margin="0,6,0,12" />
+                                <TextBlock Text="轻量提醒，可稍后、可关闭；到日上限后今天不再弹。"
+                                           Style="{StaticResource MutedTextStyle}"
+                                           TextWrapping="Wrap"
+                                           Margin="0,0,0,10" />
+                                <TextBlock Text="{Binding ContinuousWorkText, StringFormat=连续工作 {0}}" FontSize="18" FontWeight="SemiBold" />
+                                <TextBlock Text="{Binding NextRestReminderText, StringFormat=下次提醒 {0}}" Style="{StaticResource MutedTextStyle}" Margin="0,4,0,0" />
+                                <TextBlock Text="{Binding RestReminderLimitText}" Style="{StaticResource MutedTextStyle}" TextWrapping="Wrap" Margin="0,4,0,0" />
+                                <TextBlock Text="{Binding RestRiskText, StringFormat=当前风险等级：{0}}" Style="{StaticResource MutedTextStyle}" Margin="0,4,0,10" />
+                                <UniformGrid Columns="3" Margin="0,0,0,12">
+                                    <StackPanel Margin="0,0,8,0">
+                                        <TextBlock Text="每日上限" Style="{StaticResource MutedTextStyle}" />
+                                        <ComboBox ItemsSource="{Binding RestReminderMaxOptions}" SelectedItem="{Binding RestReminderMaxPerDay, Mode=TwoWay}" Margin="0,4,0,0" />
+                                    </StackPanel>
+                                    <StackPanel Margin="0,0,8,0">
+                                        <TextBlock Text="本周上限" Style="{StaticResource MutedTextStyle}" />
+                                        <ComboBox ItemsSource="{Binding RestReminderWeekMaxOptions}" SelectedItem="{Binding RestReminderMaxPerWeek, Mode=TwoWay}" Margin="0,4,0,0" />
+                                    </StackPanel>
+                                    <StackPanel>
+                                        <TextBlock Text="连续满(分钟)才弹" Style="{StaticResource MutedTextStyle}" />
+                                        <ComboBox ItemsSource="{Binding RestReminderMinContinuousOptions}" SelectedItem="{Binding RestReminderMinContinuousMinutes, Mode=TwoWay}" Margin="0,4,0,0" />
+                                    </StackPanel>
+                                </UniformGrid>
                                 <WrapPanel>
                                     <Button Content="稍后提醒" Style="{StaticResource SecondaryButtonStyle}" Command="{Binding SnoozeRestReminderCommand}" Margin="0,0,10,8" />
                                     <Button Content="{Binding RestReminderButtonText}" Style="{StaticResource SecondaryButtonStyle}" Command="{Binding ToggleRestReminderCommand}" Margin="0,0,10,8" />
@@ -125,50 +225,83 @@
                                 </WrapPanel>
                             </StackPanel>
                         </Border>
-                    </UniformGrid>
+                    </Expander>
 
-                    <Border Style="{StaticResource GlassCardStyle}" Padding="20" Margin="0,0,0,14">
-                        <Grid>
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*" />
-                                <ColumnDefinition Width="Auto" />
-                            </Grid.ColumnDefinitions>
+                    <Expander Header="下班冲刺"
+                              IsExpanded="{Binding SprintExpanded, Mode=TwoWay}"
+                              Margin="0,0,0,8"
+                              Foreground="{DynamicResource BrushTextPrimary}">
+                        <Border Style="{StaticResource SoftStatusCardStyle}" Margin="0,8,0,0" Padding="16">
                             <StackPanel>
-                                <TextBlock Text="下班冲刺" FontSize="18" FontWeight="SemiBold" />
-                                <TextBlock Text="{Binding ProtectionHintText}" Style="{StaticResource MutedTextStyle}" TextWrapping="Wrap" Margin="0,6,0,0" />
-                                <TextBlock Text="{Binding SprintSuggestionText}" FontSize="20" FontWeight="SemiBold" TextWrapping="Wrap" Margin="0,12,0,0" />
-                            </StackPanel>
-                            <StackPanel Grid.Column="1" HorizontalAlignment="Right">
-                                <TextBlock Text="距离下班" Style="{StaticResource MutedTextStyle}" TextAlignment="Right" />
-                                <TextBlock Text="{Binding SprintCountdownText}" FontSize="24" FontWeight="SemiBold" TextAlignment="Right" />
-                                <WrapPanel Margin="0,12,0,0" HorizontalAlignment="Right">
+                                <TextBlock Text="{Binding ProtectionHintText}" Style="{StaticResource MutedTextStyle}" TextWrapping="Wrap" />
+                                <TextBlock Text="{Binding SprintSuggestionText}" FontSize="16" FontWeight="SemiBold" TextWrapping="Wrap" Margin="0,10,0,0" />
+                                <TextBlock Text="{Binding SprintCountdownText, StringFormat=距离下班 {0}}" Style="{StaticResource MutedTextStyle}" Margin="0,8,0,10" />
+                                <WrapPanel>
                                     <Button Content="开启冲刺" Style="{StaticResource PrimaryButtonStyle}" Command="{Binding StartSprintCommand}" Margin="0,0,10,0" />
                                     <Button Content="关闭" Style="{StaticResource SecondaryButtonStyle}" Command="{Binding StopSprintCommand}" />
                                 </WrapPanel>
                             </StackPanel>
-                        </Grid>
-                    </Border>
+                        </Border>
+                    </Expander>
 
-                    <Border Style="{StaticResource GlassCardStyle}" Padding="20" Margin="0,0,0,14">
-                        <StackPanel>
-                            <DockPanel>
-                                <TextBlock Text="今日牛马生存报告" FontSize="18" FontWeight="SemiBold" />
-                                <TextBlock Text="{Binding DailyRatingText}" DockPanel.Dock="Right" FontSize="16" FontWeight="SemiBold" Foreground="{DynamicResource BrushPrimaryBright}" HorizontalAlignment="Right" />
-                            </DockPanel>
-                            <TextBlock Text="{Binding DailyReportText}" TextWrapping="Wrap" Margin="0,10,0,0" Foreground="{DynamicResource BrushTextSecondary}" />
-                            <WrapPanel Margin="0,14,0,0">
-                                <Button Content="生成今日报告" Style="{StaticResource PrimaryButtonStyle}" Command="{Binding GenerateReportCommand}" Margin="0,0,10,8" />
-                                <Button Content="生成 PNG 分享卡片" Style="{StaticResource SecondaryButtonStyle}" Command="{Binding GenerateShareCardCommand}" Margin="0,0,10,8" />
-                                <Button Content="{Binding AutoDailyReportButtonText}" Style="{StaticResource SecondaryButtonStyle}" Command="{Binding ToggleAutoDailyReportCommand}" Margin="0,0,10,8" />
-                                <Button Content="今天不再显示" Style="{StaticResource SecondaryButtonStyle}" Command="{Binding MuteDailyReportTodayCommand}" Margin="0,0,10,8" />
-                            </WrapPanel>
-                        </StackPanel>
-                    </Border>
-
-                    <Expander Header="工作规则设置" Margin="0,0,0,14" Foreground="{DynamicResource BrushTextPrimary}">
-                        <Border Style="{StaticResource GlassCardStyle}" Padding="18" Margin="0,10,0,0">
+                    <Expander Header="今日生存报告"
+                              IsExpanded="{Binding ReportExpanded, Mode=TwoWay}"
+                              Margin="0,0,0,8"
+                              Foreground="{DynamicResource BrushTextPrimary}">
+                        <Border Style="{StaticResource SoftStatusCardStyle}" Margin="0,8,0,0" Padding="16">
                             <StackPanel>
-                                <TextBlock Text="设置放在底部；缺少月薪时工资显示 0，不会崩溃。工作日：0=周日，1=周一 ... 6=周六。" Style="{StaticResource MutedTextStyle}" TextWrapping="Wrap" Margin="0,0,0,12" />
+                                <DockPanel>
+                                    <TextBlock Text="评级" Style="{StaticResource MutedTextStyle}" />
+                                    <TextBlock Text="{Binding DailyRatingText}" DockPanel.Dock="Right" FontWeight="SemiBold" Foreground="{DynamicResource BrushPrimaryBright}" HorizontalAlignment="Right" />
+                                </DockPanel>
+                                <TextBlock Text="{Binding DailyReportText}" TextWrapping="Wrap" Margin="0,10,0,0" Foreground="{DynamicResource BrushTextSecondary}" />
+                                <DockPanel Margin="0,12,0,8">
+                                    <TextBlock Text="分享卡片样式" VerticalAlignment="Center" Style="{StaticResource MutedTextStyle}" />
+                                    <ComboBox Width="140"
+                                              HorizontalAlignment="Right"
+                                              ItemsSource="{Binding ShareCardStyleOptions}"
+                                              SelectedItem="{Binding ShareCardStyle, Mode=TwoWay}" />
+                                </DockPanel>
+                                <WrapPanel>
+                                    <Button Content="生成今日报告" Style="{StaticResource PrimaryButtonStyle}" Command="{Binding GenerateReportCommand}" Margin="0,0,10,8" />
+                                    <Button Content="生成 PNG 分享卡片" Style="{StaticResource SecondaryButtonStyle}" Command="{Binding GenerateShareCardCommand}" Margin="0,0,10,8" />
+                                    <Button Content="打开卡片文件夹" Style="{StaticResource SecondaryButtonStyle}" Command="{Binding OpenLastShareCardFolderCommand}" Margin="0,0,10,8" />
+                                    <Button Content="{Binding AutoDailyReportButtonText}" Style="{StaticResource SecondaryButtonStyle}" Command="{Binding ToggleAutoDailyReportCommand}" Margin="0,0,10,8" />
+                                    <Button Content="今天不再显示" Style="{StaticResource SecondaryButtonStyle}" Command="{Binding MuteDailyReportTodayCommand}" Margin="0,0,10,8" />
+                                </WrapPanel>
+                            </StackPanel>
+                        </Border>
+                    </Expander>
+
+                    <Expander Header="周报 / 月报（本地）"
+                              IsExpanded="{Binding PeriodExpanded, Mode=TwoWay}"
+                              Margin="0,0,0,8"
+                              Foreground="{DynamicResource BrushTextPrimary}">
+                        <Border Style="{StaticResource SoftStatusCardStyle}" Margin="0,8,0,0" Padding="16">
+                            <StackPanel>
+                                <TextBlock Text="仅汇总本机统计，不上传。适合周五回顾或月底看看自己有多拼。"
+                                           Style="{StaticResource MutedTextStyle}"
+                                           TextWrapping="Wrap"
+                                           Margin="0,0,0,10" />
+                                <TextBlock Text="{Binding PeriodReportText}" TextWrapping="Wrap" Foreground="{DynamicResource BrushTextSecondary}" />
+                                <WrapPanel Margin="0,12,0,0">
+                                    <Button Content="生成本周总结" Style="{StaticResource PrimaryButtonStyle}" Command="{Binding GenerateWeeklyReportCommand}" Margin="0,0,10,0" />
+                                    <Button Content="近 30 天总结" Style="{StaticResource SecondaryButtonStyle}" Command="{Binding GenerateMonthlyReportCommand}" />
+                                </WrapPanel>
+                            </StackPanel>
+                        </Border>
+                    </Expander>
+
+                    <Expander Header="工作规则设置"
+                              IsExpanded="{Binding SettingsExpanded, Mode=TwoWay}"
+                              Margin="0,0,0,8"
+                              Foreground="{DynamicResource BrushTextPrimary}">
+                        <Border Style="{StaticResource SoftStatusCardStyle}" Margin="0,8,0,0" Padding="16">
+                            <StackPanel>
+                                <TextBlock Text="工作日：0=周日，1=周一 ... 6=周六。缺少月薪时工资显示 0，不会崩溃。"
+                                           Style="{StaticResource MutedTextStyle}"
+                                           TextWrapping="Wrap"
+                                           Margin="0,0,0,12" />
                                 <TextBlock Text="工作制模板" Style="{StaticResource MutedTextStyle}" />
                                 <ItemsControl ItemsSource="{Binding WorkTemplateOptions}" Margin="0,6,0,12">
                                     <ItemsControl.ItemsPanel>
@@ -180,7 +313,7 @@
                                         <DataTemplate>
                                             <Button Content="{Binding Name}"
                                                     Style="{StaticResource SecondaryButtonStyle}"
-                                                    Command="{Binding DataContext.ApplyWorkTemplateCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                                                    Command="{Binding DataContext.ApplyWorkTemplateCommand, RelativeSource={RelativeSource AncestorType=Window}}"
                                                     CommandParameter="{Binding}"
                                                     Margin="0,0,8,8" />
                                         </DataTemplate>
@@ -197,14 +330,16 @@
                                 <TextBlock Text="工作日" Style="{StaticResource MutedTextStyle}" />
                                 <TextBox Text="{Binding WorkstationWorkdays, Mode=TwoWay, UpdateSourceTrigger=LostFocus}" Margin="0,4,0,10" />
                                 <TextBlock Text="文案风格" Style="{StaticResource MutedTextStyle}" />
-                                <ComboBox ItemsSource="{Binding WorkBearTextStyleOptions}" SelectedItem="{Binding WorkBearTextStyle, Mode=TwoWay}" Margin="0,4,0,0" />
+                                <ComboBox ItemsSource="{Binding WorkBearTextStyleOptions}" SelectedItem="{Binding WorkBearTextStyle, Mode=TwoWay}" Margin="0,4,0,10" />
+                                <CheckBox Content="HUD 动作彩蛋文案（可关）" IsChecked="{Binding HudFunEnabled, Mode=TwoWay}" Margin="0,0,0,6" />
+                                <CheckBox Content="快捷动作成功时加 XP（可关）" IsChecked="{Binding GestureXpBonusEnabled, Mode=TwoWay}" />
                             </StackPanel>
                         </Border>
                     </Expander>
                 </StackPanel>
             </ScrollViewer>
 
-            <DockPanel Grid.Row="2" Margin="0,16,0,0">
+            <DockPanel Grid.Row="2" Margin="0,14,0,0">
                 <TextBlock Text="{Binding LastMessage}" TextWrapping="Wrap" Foreground="{DynamicResource BrushTextSecondary}" VerticalAlignment="Center" />
                 <WrapPanel DockPanel.Dock="Right" HorizontalAlignment="Right">
                     <Button Content="刷新" Style="{StaticResource SecondaryButtonStyle}" Command="{Binding RefreshCommand}" Margin="0,0,10,0" />
@@ -215,4 +350,3 @@
         </Grid>
     </Border>
 </Window>
-

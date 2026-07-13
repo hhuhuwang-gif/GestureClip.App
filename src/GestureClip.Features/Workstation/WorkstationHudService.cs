@@ -59,7 +59,10 @@ public sealed class WorkstationHudService : IWorkstationHudService
             : WorkTimeStageThemeProvider.GetTheme(WorkTimeStage.OffWork);
 
         var displayXp = gainedXp > 0 ? gainedXp : EstimateGestureXp(hudInfo.Action);
-        var funText = showFun ? GetFunText(hudInfo.Action) : string.Empty;
+        var hudFunEnabled = _settingsService.Get(SettingKeys.WorkBearHudFunEnabled, true);
+        var funText = showFun && hudFunEnabled
+            ? GetFunText(hudInfo.Action, stageSnapshot.Stage, dashboard.IsFishing, now)
+            : string.Empty;
         var mergedActionCount = GetMergedActionCount(hudInfo.Action, now);
         if (showFun && enableTimeColor && !string.IsNullOrWhiteSpace(funText))
         {
@@ -182,79 +185,31 @@ public sealed class WorkstationHudService : IWorkstationHudService
             ? actionPrefix
             : actionPrefix[..36];
     }
-    private static string GetFunText(BuiltInGestureAction action)
+    private string GetFunText(
+        BuiltInGestureAction action,
+        WorkTimeStage stage,
+        bool isFishing,
+        DateTimeOffset now)
     {
-        var reports = action switch
+        var style = WorkBearTextProvider.ParseStyle(
+            _settingsService.Get(SettingKeys.WorkBearTextStyle, "打工人模式"));
+        var stageLine = WorkBearTextProvider.HudFunLine(stage, isFishing, style, now);
+
+        var actionLine = action switch
         {
-            BuiltInGestureAction.Copy => new[]
-            {
-                "复制成功，知识正在搬砖",
-                "Ctrl+C 已打入灵魂",
-                "已复制，打工素材已入库"
-            },
-            BuiltInGestureAction.Paste => new[]
-            {
-                "粘贴成功，牛马效率 +1",
-                "Ctrl+V 成功，复用才是生产力",
-                "已粘贴，拒绝重复造轮子"
-            },
-            BuiltInGestureAction.Enter => new[]
-            {
-                "回车确认，命运提交成功",
-                "Enter 已按下，无法撤回的人生",
-                "确认完成，需求已被推进"
-            },
-            BuiltInGestureAction.Escape => new[]
-            {
-                "Esc 成功，及时跑路也是智慧",
-                "撤退成功，牛马保命 +1",
-                "取消完成，逃过一劫"
-            },
-            BuiltInGestureAction.Undo => new[]
-            {
-                "撤销成功，人生还有后悔药",
-                "Ctrl+Z，时间回溯一点点",
-                "撤销完成，工位时间倒流"
-            },
-            BuiltInGestureAction.SelectAll => new[]
-            {
-                "全选完成，材料一锅端走",
-                "Ctrl+A 成功，整页打包带走"
-            },
-            BuiltInGestureAction.SendAltLeft => new[]
-            {
-                "后退成功，先撤一步",
-                "Alt+← 成功，回到上一幕"
-            },
-            BuiltInGestureAction.SendAltRight => new[]
-            {
-                "前进成功，继续推进",
-                "Alt+→ 成功，剧情继续"
-            },
-            BuiltInGestureAction.OpenClipboardOverlay => new[]
-            {
-                "剪贴板已打开，素材库上线",
-                "历史面板已召唤，打工材料集合"
-            },
-            BuiltInGestureAction.PasteLatestClipboardItem => new[]
-            {
-                "最近一条已粘贴，复用才是生产力",
-                "历史粘贴完成，少打一遍是一遍"
-            },
-            BuiltInGestureAction.PasteAndEnter => new[]
-            {
-                "粘贴并确认，一套连招完成",
-                "Ctrl+V + Enter，打工连击 +1"
-            },
-            BuiltInGestureAction.None => new[] { "这个手势还没绑定动作" },
-            _ => new[]
-            {
-                "动作完成，工位效率 +1",
-                "手势生效，鼠标已被驯服"
-            }
+            BuiltInGestureAction.Copy => "复制成功",
+            BuiltInGestureAction.Paste or BuiltInGestureAction.SmartPaste => "粘贴成功",
+            BuiltInGestureAction.PasteAndEnter => "粘贴并回车",
+            BuiltInGestureAction.OpenClipboardOverlay => "剪贴板已开",
+            BuiltInGestureAction.OpenQuickActionCenter => "快捷动作",
+            BuiltInGestureAction.Enter => "回车确认",
+            BuiltInGestureAction.Escape => "及时撤退",
+            BuiltInGestureAction.None => "未绑定动作",
+            _ when action.ToString().StartsWith("Assistant", StringComparison.Ordinal) => "文本处理完成",
+            _ => "手势生效"
         };
 
-        return reports[Random.Shared.Next(reports.Length)];
+        return $"{actionLine} · {stageLine}";
     }
 
     private static string FormatMoney(decimal value)

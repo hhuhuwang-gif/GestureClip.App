@@ -43,7 +43,7 @@ public static class InfrastructureServiceCollectionExtensions
         services.AddSingleton<IStartupRegistry, WindowsStartupRegistry>();
         services.AddSingleton<IStartupService, WindowsStartupService>();
         services.AddSingleton<IUrlLauncher, WindowsUrlLauncher>();
-        services.AddSingleton<HttpClient>();
+        services.AddSingleton(provider => UpdateHttpClientFactory.CreateDefaultClient());
         services.AddSingleton<IUpdateCheckService, GitHubReleaseUpdateCheckService>();
         services.AddSingleton<IUpdateInstallerService, GitHubReleaseUpdateInstallerService>();
 

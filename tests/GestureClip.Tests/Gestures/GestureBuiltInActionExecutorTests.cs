@@ -1,7 +1,10 @@
 using GestureClip.Core.Abstractions;
+using GestureClip.Core.Assistant;
 using GestureClip.Core.Clipboard;
 using GestureClip.Core.Gestures;
 using GestureClip.Core.Settings;
+using GestureClip.Core.SystemInfo;
+using GestureClip.Features.Assistant;
 using GestureClip.Features.Gestures;
 using Microsoft.Extensions.Logging.Abstractions;
 using Xunit;
@@ -152,6 +155,29 @@ public sealed class GestureBuiltInActionExecutorTests
 
         Assert.Equal(expectedUrl, launcher.OpenedUrls.Single());
     }
+    [Fact]
+    public async Task Execute_assistant_trim_routes_to_assistant_executor()
+    {
+        var assistant = new FakeAssistantActionExecutor();
+        var executor = CreateExecutor(new FakeKeyboardInputSender(), assistant: assistant);
+
+        await executor.ExecuteAsync(BuiltInGestureAction.AssistantTrim, CancellationToken.None);
+
+        Assert.Equal(BuiltInAssistantActionCatalog.TrimId, assistant.LastRequest?.ActionId);
+        Assert.Equal(AssistantOutputKind.Clipboard, assistant.LastRequest?.OutputOverride);
+    }
+
+    [Fact]
+    public async Task Execute_open_quick_action_center_shows_panel()
+    {
+        var quickAction = new FakeQuickActionCenterService();
+        var executor = CreateExecutor(new FakeKeyboardInputSender(), quickAction: quickAction);
+
+        await executor.ExecuteAsync(BuiltInGestureAction.OpenQuickActionCenter, CancellationToken.None);
+
+        Assert.Equal(1, quickAction.ShowCount);
+    }
+
     private static GestureBuiltInActionExecutor CreateExecutor(
         FakeKeyboardInputSender keyboard,
         FakeRightClickSynthesizer? mouse = null,
@@ -159,7 +185,9 @@ public sealed class GestureBuiltInActionExecutorTests
         FakeClipboardService? clipboardService = null,
         FakeClipboardTextReader? clipboardTextReader = null,
         FakeUrlLauncher? urlLauncher = null,
-        FakeWorkstationDashboardService? dashboard = null)
+        FakeWorkstationDashboardService? dashboard = null,
+        FakeAssistantActionExecutor? assistant = null,
+        FakeQuickActionCenterService? quickAction = null)
     {
         return new GestureBuiltInActionExecutor(
             new FakeClipboardOverlayService(),
@@ -169,8 +197,12 @@ public sealed class GestureBuiltInActionExecutorTests
             mouse ?? new FakeRightClickSynthesizer(),
             cursor ?? new FakeCursorPositionProvider(),
             clipboardTextReader ?? new FakeClipboardTextReader(),
+            new FakeClipboardWriter(),
+            new FakeForegroundAppService(),
             urlLauncher ?? new FakeUrlLauncher(),
             dashboard ?? new FakeWorkstationDashboardService(),
+            assistant ?? new FakeAssistantActionExecutor(),
+            quickAction ?? new FakeQuickActionCenterService(),
             NullLogger<GestureBuiltInActionExecutor>.Instance);
     }
 
@@ -288,6 +320,18 @@ public sealed class GestureBuiltInActionExecutorTests
         public string? TryReadImagePngBase64() => null;
     }
 
+    private sealed class FakeClipboardWriter : IClipboardWriter
+    {
+        public Task SetTextAsync(string text, CancellationToken cancellationToken) => Task.CompletedTask;
+        public Task SetImagePngBase64Async(string pngBase64, CancellationToken cancellationToken) => Task.CompletedTask;
+        public Task SendPasteHotkeyAsync(CancellationToken cancellationToken) => Task.CompletedTask;
+    }
+
+    private sealed class FakeForegroundAppService : IForegroundAppService
+    {
+        public ForegroundAppInfo GetCurrent() => new("unknown.exe", "unknown");
+    }
+
     private sealed class FakeUrlLauncher : IUrlLauncher
     {
         public List<string> OpenedUrls { get; } = [];
@@ -321,6 +365,31 @@ public sealed class GestureBuiltInActionExecutorTests
     {
         public T Get<T>(string key, T defaultValue) => defaultValue;
         public Task SetAsync<T>(string key, T value, CancellationToken cancellationToken) => Task.CompletedTask;
+    }
+
+    private sealed class FakeAssistantActionExecutor : IAssistantActionExecutor
+    {
+        public AssistantActionRequest? LastRequest { get; private set; }
+
+        public Task<AssistantActionResult> ExecuteAsync(AssistantActionRequest request, CancellationToken cancellationToken)
+        {
+            LastRequest = request;
+            return Task.FromResult(new AssistantActionResult(true, Message: "ok"));
+        }
+    }
+
+    private sealed class FakeQuickActionCenterService : IQuickActionCenterService
+    {
+        public int ShowCount { get; private set; }
+
+        public Task ShowAsync()
+        {
+            ShowCount++;
+            return Task.CompletedTask;
+        }
+
+        public Task ToggleAsync() => Task.CompletedTask;
+        public Task HideAsync() => Task.CompletedTask;
     }
 }
 

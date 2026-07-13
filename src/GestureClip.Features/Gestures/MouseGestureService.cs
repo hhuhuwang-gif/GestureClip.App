@@ -38,6 +38,7 @@ public sealed class MouseGestureService : IMouseGestureService
     private GestureTriggerButton _activeTriggerButton = GestureTriggerButton.Right;
     private bool _rightLeftRockerDown;
     private bool _leftClickConfirmDown;
+    private bool _leftButtonModifier;
     private GestureTriggerButton? _suppressNextButtonUp;
     private string _hookStatus = "未安装";
     private string? _lastPattern;
@@ -297,7 +298,7 @@ public sealed class MouseGestureService : IMouseGestureService
                     LogDebug(_activeSettings, "GestureActive entered");
                     if (_activeSettings.ShowOverlay)
                     {
-                        var startHudInfo = _hudInfoProvider.GetInfo(_activeSettings.Preset, null);
+                        var startHudInfo = _hudInfoProvider.GetInfo(_activeSettings.Preset, (string?)null);
                         _ = _gestureOverlayService.ShowGestureStartAsync(_startPoint, startHudInfo, CancellationToken.None);
                     }
                 }
@@ -307,7 +308,9 @@ public sealed class MouseGestureService : IMouseGestureService
                 {
                     var preview = _recognizer.Recognize(_points, _activeSettings.Options);
                     var previewPattern = NormalizePreviewPattern(preview.Pattern);
-                    var hudInfo = _hudInfoProvider.GetInfo(_activeSettings.Preset, previewPattern);
+                    var hudInfo = previewPattern is null
+                        ? _hudInfoProvider.GetInfo(_activeSettings.Preset, previewPattern)
+                        : _hudInfoProvider.GetInfo(_activeSettings.Preset, new GestureExecutionContext(previewPattern, _leftButtonModifier));
                     _ = _gestureOverlayService.UpdateGestureAsync([.. _points], hudInfo, CancellationToken.None);
                 }
 
@@ -392,7 +395,18 @@ public sealed class MouseGestureService : IMouseGestureService
                     return null;
                 }
 
-                var pendingGesture = new PendingGesture([.. _points], _activeSettings.Options, _activeSettings.Preset, _activeSettings.ShowOverlay);
+                var isLeftButtonModified = _leftButtonModifier;
+                if (_leftClickConfirmDown)
+                {
+                    _suppressNextButtonUp = GestureTriggerButton.Left;
+                }
+
+                var pendingGesture = new PendingGesture(
+                    [.. _points],
+                    _activeSettings.Options,
+                    _activeSettings.Preset,
+                    _activeSettings.ShowOverlay,
+                    isLeftButtonModified);
                 ResetState("StateReset");
                 return pendingGesture;
 
@@ -424,11 +438,12 @@ public sealed class MouseGestureService : IMouseGestureService
                 _logger.LogDebug("Recognized Pattern: {Pattern}", pattern);
                 if (pendingGesture.ShowOverlay)
                 {
-                    var hudInfo = _hudInfoProvider.GetInfo(pendingGesture.Preset, pattern);
+                    var context = new GestureExecutionContext(pattern, pendingGesture.IsLeftButtonModified);
+                    var hudInfo = _hudInfoProvider.GetInfo(pendingGesture.Preset, context);
                     await _gestureOverlayService.CompleteGestureAsync(hudInfo, CancellationToken.None);
                 }
 
-                await ExecuteGestureAsync(pattern);
+                await ExecuteGestureAsync(new GestureExecutionContext(pattern, pendingGesture.IsLeftButtonModified));
                 if (pendingGesture.ShowOverlay)
                 {
                     await _gestureOverlayService.HideAsync(CancellationToken.None);
@@ -454,12 +469,12 @@ public sealed class MouseGestureService : IMouseGestureService
         }
     }
 
-    private async Task ExecuteGestureAsync(string pattern)
+    private async Task ExecuteGestureAsync(GestureExecutionContext context)
     {
         try
         {
             var settings = _settingsProvider.GetCurrent();
-            var action = _presetProvider.GetAction(settings.Preset, pattern);
+            var action = _presetProvider.GetAction(settings.Preset, context);
             lock (_syncRoot)
             {
                 _lastAction = action;
@@ -477,7 +492,7 @@ public sealed class MouseGestureService : IMouseGestureService
                 return;
             }
 
-            await _actionExecutor.ExecuteAsync(action, CancellationToken.None);
+            await _actionExecutor.ExecuteAsync(action, context, CancellationToken.None);
             RecordPostGestureStatsInBackground(action);
             LogDebug(settings, "Action Executed: {Action}", action);
         }
@@ -546,6 +561,7 @@ public sealed class MouseGestureService : IMouseGestureService
         _activeTriggerButton = GestureTriggerButton.Right;
         _rightLeftRockerDown = false;
         _leftClickConfirmDown = false;
+        _leftButtonModifier = false;
     }
 
     private bool TryHandleLeftClickConfirmDown(GestureTriggerButton triggerButton, MouseHookEventArgs args)
@@ -558,6 +574,7 @@ public sealed class MouseGestureService : IMouseGestureService
             return false;
         }
 
+        _leftButtonModifier = true;
         _leftClickConfirmDown = true;
         args.Suppress = true;
         LogDebug(_activeSettings, "Suppressed original Left button for gesture click confirm");
@@ -589,7 +606,12 @@ public sealed class MouseGestureService : IMouseGestureService
             TrimTrackedPoints();
         }
 
-        pendingGesture = new PendingGesture([.. _points], _activeSettings.Options, _activeSettings.Preset, _activeSettings.ShowOverlay);
+        pendingGesture = new PendingGesture(
+            [.. _points],
+            _activeSettings.Options,
+            _activeSettings.Preset,
+            _activeSettings.ShowOverlay,
+            IsLeftButtonModified: true);
         _suppressNextButtonUp = GestureTriggerButton.Right;
         ResetState("StateReset");
         return true;
@@ -636,7 +658,8 @@ public sealed class MouseGestureService : IMouseGestureService
             _activeSettings.Options,
             _activeSettings.Preset,
             _activeSettings.ShowOverlay,
-            "R+L");
+            IsLeftButtonModified: false,
+            PatternOverride: "R+L");
         ResetState("StateReset");
         return true;
     }
@@ -792,6 +815,7 @@ public sealed class MouseGestureService : IMouseGestureService
         GestureOptions Options,
         GesturePreset Preset,
         bool ShowOverlay,
+        bool IsLeftButtonModified = false,
         string? PatternOverride = null);
 }
 

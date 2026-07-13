@@ -130,7 +130,17 @@ public sealed class SettingsViewModelTests
 
         Assert.True(viewModel.GestureBindingCards.Count >= 20);
         Assert.Contains(viewModel.GestureBindingCards, card => card.Pattern == "U" && card.SelectedAction == BuiltInGestureAction.Copy);
-        Assert.Contains(viewModel.GestureBindingCards, card => card.Pattern == "D" && card.SelectedAction == BuiltInGestureAction.Paste);
+        var downCard = Assert.Single(viewModel.GestureBindingCards, card => card.Pattern == "D");
+        Assert.Equal(BuiltInGestureAction.SmartPaste, downCard.SelectedAction);
+        Assert.Equal("智能粘贴", downCard.ActionName);
+        Assert.Contains("智能粘贴", downCard.ActionSummaryText, StringComparison.Ordinal);
+        Assert.Contains("画手势时再点一下左键，会执行增强动作", downCard.InstructionText, StringComparison.Ordinal);
+        Assert.Contains("左键增强", downCard.InstructionText, StringComparison.Ordinal);
+        Assert.Contains(downCard.ActionOptions, option => option.Action == BuiltInGestureAction.Paste && option.Name == "粘贴");
+        Assert.Contains(downCard.ActionOptions, option =>
+            option.Action == BuiltInGestureAction.SmartPaste &&
+            option.DisplayName.Contains("智能粘贴", StringComparison.Ordinal) &&
+            option.DisplayName.Contains("根据当前软件自动选择", StringComparison.Ordinal));
         Assert.Contains(viewModel.GestureBindingCards, card => card.Pattern == "DL" && card.SelectedAction == BuiltInGestureAction.PasteAndEnter);
         Assert.Contains(viewModel.GestureBindingCards, card => card.Pattern == "R+L" && card.SelectedAction == BuiltInGestureAction.PasteAndEnter);
         Assert.Contains(viewModel.PrimaryGestureBindingCards, card => card.Pattern == "DL");
@@ -142,6 +152,55 @@ public sealed class SettingsViewModelTests
         Assert.Contains(viewModel.PrimaryGestureBindingCards, card => card.Pattern == "DL" && card.ActionSummaryText.Contains("粘贴并回车", StringComparison.Ordinal));
         Assert.Contains(viewModel.AdvancedGestureBindingCards, card => card.Pattern == "URD" && card.SelectedAction == BuiltInGestureAction.None);
         Assert.Contains(viewModel.AdvancedGestureBindingCards, card => card.Pattern == "RDL" && card.SelectedAction == BuiltInGestureAction.None);
+    }
+
+    [Fact]
+    public void Gesture_binding_cards_show_primary_and_left_button_modifier_actions()
+    {
+        var viewModel = CreateViewModel();
+
+        var downCard = Assert.Single(viewModel.GestureBindingCards, card => card.Pattern == "D");
+        Assert.Equal("普通动作", downCard.PrimaryActionLabel);
+        Assert.Equal("智能粘贴", downCard.PrimaryActionValueText);
+        Assert.Equal("点左键增强", downCard.LeftButtonModifierLabel);
+        Assert.Equal("智能粘贴 / 干净粘贴", downCard.LeftButtonModifierValueText);
+        Assert.True(downCard.HasLeftButtonModifierAction);
+        Assert.Equal("点左键增强：智能粘贴 / 干净粘贴", downCard.LeftButtonModifierBadgeText);
+
+        var upCard = Assert.Single(viewModel.GestureBindingCards, card => card.Pattern == "U");
+        Assert.Equal("全选", upCard.LeftButtonModifierValueText);
+        Assert.True(upCard.HasLeftButtonModifierAction);
+
+        var noModifierCard = Assert.Single(viewModel.GestureBindingCards, card => card.Pattern == "DL");
+        Assert.Equal("暂无增强动作", noModifierCard.LeftButtonModifierValueText);
+        Assert.False(noModifierCard.HasLeftButtonModifierAction);
+        Assert.Equal("点左键增强：暂无增强动作", noModifierCard.LeftButtonModifierBadgeText);
+    }
+
+    [Fact]
+    public async Task SmartPaste_setting_defaults_on_and_saves_changes()
+    {
+        var settings = new FakeSettingsService();
+        var viewModel = CreateViewModel(settings: settings);
+
+        Assert.True(viewModel.IsSmartPasteEnabled);
+
+        viewModel.IsSmartPasteEnabled = false;
+
+        await WaitForAsync(() =>
+            settings.Values.TryGetValue(SettingKeys.SmartPasteEnabled, out var value) &&
+            Equals(value, false));
+    }
+
+    [Fact]
+    public void SmartPaste_setting_reads_saved_value()
+    {
+        var settings = new FakeSettingsService();
+        settings.Values[SettingKeys.SmartPasteEnabled] = false;
+
+        var viewModel = CreateViewModel(settings: settings);
+
+        Assert.False(viewModel.IsSmartPasteEnabled);
     }
 
     [Fact]
@@ -464,7 +523,7 @@ public sealed class SettingsViewModelTests
         await WaitForAsync(() => viewModel.RecommendedGestureStatusText.Contains("已添加 2 个", StringComparison.Ordinal));
         Assert.Contains(viewModel.GestureBindingCards, card => card.Pattern == "URDL" && card.SelectedAction == BuiltInGestureAction.Enter);
         Assert.Contains(viewModel.GestureBindingCards, card => card.Pattern == "U" && card.SelectedAction == BuiltInGestureAction.Copy);
-        Assert.Contains(viewModel.GestureBindingCards, card => card.Pattern == "D" && card.SelectedAction == BuiltInGestureAction.Paste);
+        Assert.Contains(viewModel.GestureBindingCards, card => card.Pattern == "D" && card.SelectedAction == BuiltInGestureAction.SmartPaste);
         Assert.Contains(viewModel.GestureBindingCards, card => card.Pattern == "LR" && card.SelectedAction == BuiltInGestureAction.Copy);
         Assert.Contains("已跳过 1 个已存在手势", viewModel.RecommendedGestureStatusText, StringComparison.Ordinal);
         Assert.Contains(confirmation.Prompts, prompt => prompt.Message.Contains("已有的自定义手势不会被删除", StringComparison.Ordinal));
@@ -511,6 +570,19 @@ public sealed class SettingsViewModelTests
         Assert.Contains(viewModel.GestureBindingCards, card => card.Pattern == "D" && card.SelectedAction == BuiltInGestureAction.None);
         Assert.Contains(viewModel.GestureBindingCards, card => card.Pattern == "LR" && card.SelectedAction == BuiltInGestureAction.None);
         Assert.False(settings.Values.ContainsKey(SettingKeys.GestureCustomBindingsJson));
+    }
+
+    [Fact]
+    public void Recommended_down_gesture_uses_smart_paste_and_plain_paste_still_exists()
+    {
+        var viewModel = CreateViewModel();
+
+        Assert.Contains(viewModel.RecommendedGestureBindings, item =>
+            item.Pattern == "D" &&
+            item.Action == BuiltInGestureAction.SmartPaste &&
+            item.ActionName == "智能粘贴" &&
+            item.InstructionText.Contains("根据当前软件自动选择", StringComparison.Ordinal));
+        Assert.Contains(viewModel.GestureActionOptions, item => item.Action == BuiltInGestureAction.Paste);
     }
 
     [Fact]
@@ -821,6 +893,11 @@ public sealed class SettingsViewModelTests
         }
 
         public Task<Core.WorkerLevel.WorkerLevelSnapshot> RecordActionAsync(BuiltInGestureAction action, bool isGestureSuccess, DateTimeOffset now, CancellationToken cancellationToken)
+        {
+            return GetSnapshotAsync(cancellationToken);
+        }
+
+        public Task<Core.WorkerLevel.WorkerLevelSnapshot> RecordBonusXpAsync(int xp, DateTimeOffset now, CancellationToken cancellationToken)
         {
             return GetSnapshotAsync(cancellationToken);
         }

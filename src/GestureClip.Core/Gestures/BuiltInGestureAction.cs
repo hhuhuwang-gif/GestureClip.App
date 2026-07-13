@@ -61,5 +61,19 @@ public enum BuiltInGestureAction
     SearchSelectedTextWithBaidu = 56,
     SearchSelectedTextWithBing = 57,
     OpenGoogle = 58,
-    OpenBaidu = 59
+    OpenBaidu = 59,
+    SmartPaste = 60,
+    OpenQuickActionCenter = 61,
+    AssistantTrim = 62,
+    AssistantNormalizeWhitespace = 63,
+    AssistantCollapseBlankLines = 64,
+    AssistantUpper = 65,
+    AssistantLower = 66,
+    AssistantTitleCase = 67,
+    AssistantJsonFormat = 68,
+    AssistantJsonMinify = 69,
+    AssistantUrlEncode = 70,
+    AssistantUrlDecode = 71,
+    AssistantQuote = 72,
+    AssistantUnquote = 73
 }

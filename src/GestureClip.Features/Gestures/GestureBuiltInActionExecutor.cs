@@ -1,7 +1,9 @@
 using GestureClip.Core.Abstractions;
+using GestureClip.Core.Assistant;
 using GestureClip.Core.Clipboard;
 using GestureClip.Core.Gestures;
 using GestureClip.Core.Settings;
+using GestureClip.Features.Assistant;
 using GestureClip.Infrastructure.Win32;
 using Microsoft.Extensions.Logging;
 using System.Diagnostics;
@@ -17,8 +19,12 @@ public sealed class GestureBuiltInActionExecutor : IMouseGestureActionExecutor
     private readonly IRightClickSynthesizer _mouseClickSynthesizer;
     private readonly ICursorPositionProvider _cursorPositionProvider;
     private readonly IClipboardTextReader _clipboardTextReader;
+    private readonly IClipboardWriter _clipboardWriter;
+    private readonly IForegroundAppService _foregroundAppService;
     private readonly IUrlLauncher _urlLauncher;
     private readonly IWorkstationDashboardService _workstationDashboardService;
+    private readonly IAssistantActionExecutor _assistantActionExecutor;
+    private readonly IQuickActionCenterService _quickActionCenterService;
     private readonly ILogger<GestureBuiltInActionExecutor> _logger;
 
     public GestureBuiltInActionExecutor(
@@ -29,8 +35,12 @@ public sealed class GestureBuiltInActionExecutor : IMouseGestureActionExecutor
         IRightClickSynthesizer mouseClickSynthesizer,
         ICursorPositionProvider cursorPositionProvider,
         IClipboardTextReader clipboardTextReader,
+        IClipboardWriter clipboardWriter,
+        IForegroundAppService foregroundAppService,
         IUrlLauncher urlLauncher,
         IWorkstationDashboardService workstationDashboardService,
+        IAssistantActionExecutor assistantActionExecutor,
+        IQuickActionCenterService quickActionCenterService,
         ILogger<GestureBuiltInActionExecutor> logger)
     {
         _clipboardOverlayService = clipboardOverlayService;
@@ -40,12 +50,24 @@ public sealed class GestureBuiltInActionExecutor : IMouseGestureActionExecutor
         _mouseClickSynthesizer = mouseClickSynthesizer;
         _cursorPositionProvider = cursorPositionProvider;
         _clipboardTextReader = clipboardTextReader;
+        _clipboardWriter = clipboardWriter;
+        _foregroundAppService = foregroundAppService;
         _urlLauncher = urlLauncher;
         _workstationDashboardService = workstationDashboardService;
+        _assistantActionExecutor = assistantActionExecutor;
+        _quickActionCenterService = quickActionCenterService;
         _logger = logger;
     }
 
     public async Task ExecuteAsync(BuiltInGestureAction action, CancellationToken cancellationToken)
+    {
+        await ExecuteAsync(action, new GestureExecutionContext("", false), cancellationToken);
+    }
+
+    public async Task ExecuteAsync(
+        BuiltInGestureAction action,
+        GestureExecutionContext context,
+        CancellationToken cancellationToken)
     {
         switch (action)
         {
@@ -59,6 +81,10 @@ public sealed class GestureBuiltInActionExecutor : IMouseGestureActionExecutor
             case BuiltInGestureAction.Paste:
                 _keyboardInputSender.SendShortcut(KeyboardInputNativeMethods.VkControl, KeyboardInputNativeMethods.VkV);
                 await RecordPasteAsync(cancellationToken);
+                break;
+
+            case BuiltInGestureAction.SmartPaste:
+                await ExecuteSmartPasteAsync(context, cancellationToken);
                 break;
 
             case BuiltInGestureAction.Cut:
@@ -101,6 +127,25 @@ public sealed class GestureBuiltInActionExecutor : IMouseGestureActionExecutor
 
             case BuiltInGestureAction.OpenClipboardOverlay:
                 await _clipboardOverlayService.ShowAsync();
+                break;
+
+            case BuiltInGestureAction.OpenQuickActionCenter:
+                await _quickActionCenterService.ShowAsync();
+                break;
+
+            case BuiltInGestureAction.AssistantTrim:
+            case BuiltInGestureAction.AssistantNormalizeWhitespace:
+            case BuiltInGestureAction.AssistantCollapseBlankLines:
+            case BuiltInGestureAction.AssistantUpper:
+            case BuiltInGestureAction.AssistantLower:
+            case BuiltInGestureAction.AssistantTitleCase:
+            case BuiltInGestureAction.AssistantJsonFormat:
+            case BuiltInGestureAction.AssistantJsonMinify:
+            case BuiltInGestureAction.AssistantUrlEncode:
+            case BuiltInGestureAction.AssistantUrlDecode:
+            case BuiltInGestureAction.AssistantQuote:
+            case BuiltInGestureAction.AssistantUnquote:
+                await ExecuteAssistantActionAsync(action, cancellationToken);
                 break;
 
             case BuiltInGestureAction.PasteLatestClipboardItem:
@@ -348,6 +393,45 @@ public sealed class GestureBuiltInActionExecutor : IMouseGestureActionExecutor
         }
     }
 
+    private async Task ExecuteSmartPasteAsync(GestureExecutionContext context, CancellationToken cancellationToken)
+    {
+        if (!_settingsService.Get(SettingKeys.SmartPasteEnabled, true))
+        {
+            _keyboardInputSender.SendShortcut(KeyboardInputNativeMethods.VkControl, KeyboardInputNativeMethods.VkV);
+            await RecordPasteAsync(cancellationToken);
+            _logger.LogInformation("Smart paste is disabled. Fallback to normal paste.");
+            return;
+        }
+
+        var app = _foregroundAppService.GetCurrent();
+        var strategy = context.IsLeftButtonModified
+            ? SmartPasteStrategy.CleanTextPaste
+            : SmartPastePolicy.Select(app);
+        if (strategy == SmartPasteStrategy.NormalPaste)
+        {
+            _keyboardInputSender.SendShortcut(KeyboardInputNativeMethods.VkControl, KeyboardInputNativeMethods.VkV);
+            await RecordPasteAsync(cancellationToken);
+            return;
+        }
+
+        var text = _clipboardTextReader.TryReadText();
+        if (string.IsNullOrEmpty(text))
+        {
+            _logger.LogInformation(
+                "Smart paste skipped because clipboard has no text. Process={ProcessName}",
+                app.ProcessName);
+            return;
+        }
+
+        var pasteText = strategy == SmartPasteStrategy.CleanTextPaste
+            ? SmartPastePolicy.CleanText(text)
+            : text;
+        _clipboardService.SuppressCaptureFor(TimeSpan.FromMilliseconds(1200));
+        await _clipboardWriter.SetTextAsync(pasteText, cancellationToken);
+        await _clipboardWriter.SendPasteHotkeyAsync(cancellationToken);
+        await RecordPasteAsync(cancellationToken);
+    }
+
     private async Task SearchSelectedTextAsync(string urlFormat, CancellationToken cancellationToken)
     {
         _clipboardService.SuppressCaptureFor(TimeSpan.FromMilliseconds(1200));
@@ -363,6 +447,28 @@ public sealed class GestureBuiltInActionExecutor : IMouseGestureActionExecutor
 
         var encoded = Uri.EscapeDataString(text.Trim());
         _urlLauncher.OpenUrl(string.Format(System.Globalization.CultureInfo.InvariantCulture, urlFormat, encoded));
+    }
+
+    private async Task ExecuteAssistantActionAsync(BuiltInGestureAction action, CancellationToken cancellationToken)
+    {
+        var actionId = GestureAssistantActionMap.ToAssistantActionId(action);
+        if (actionId is null)
+        {
+            return;
+        }
+
+        var result = await _assistantActionExecutor.ExecuteAsync(
+            new AssistantActionRequest(actionId, OutputOverride: AssistantOutputKind.Clipboard),
+            cancellationToken);
+
+        _logger.LogInformation(
+            "Gesture assistant action finished. GestureAction={GestureAction} AssistantId={AssistantId} Success={Success} ErrorClass={ErrorClass} InputLength={InputLength} OutputLength={OutputLength}",
+            action,
+            actionId,
+            result.Success,
+            result.ErrorClass ?? "",
+            result.InputLength,
+            result.OutputLength);
     }
 
     private void StartProcess(string fileName, string? arguments = null)

@@ -14,12 +14,14 @@
         WindowStartupLocation="CenterScreen"
         KeyDown="Window_KeyDown"
         Deactivated="Window_Deactivated">
-    <Border CornerRadius="28"
+    <Border CornerRadius="20"
             Margin="16"
-            Padding="22"
-            Background="{DynamicResource BrushGlassStrong}">
+            Padding="20"
+            Background="{DynamicResource BrushOverlayPanel}"
+            BorderBrush="#14000000"
+            BorderThickness="1">
         <Border.Effect>
-            <DropShadowEffect Color="#9AA8BA" BlurRadius="34" ShadowDepth="10" Opacity="0.18" />
+            <DropShadowEffect Color="#000000" BlurRadius="40" ShadowDepth="6" Opacity="0.14" Direction="270" />
         </Border.Effect>
         <Grid>
             <Grid.RowDefinitions>
@@ -43,12 +45,9 @@
                             FontSize="12"
                             Margin="0,0,10,0"
                             Click="AlwaysVisibleButton_Click" />
-                    <Border CornerRadius="13"
-                            Background="#F0F2F7"
-                            Padding="12,6"
-                            VerticalAlignment="Center">
+                    <Border Style="{StaticResource AccentChipStyle}">
                         <TextBlock Text="Ctrl + `"
-                                   Foreground="{DynamicResource BrushTextSecondary}"
+                                   Foreground="{DynamicResource BrushPrimaryBright}"
                                    FontWeight="SemiBold" />
                     </Border>
                 </StackPanel>
@@ -56,7 +55,7 @@
                     <TextBlock Text="剪贴板历史"
                                FontSize="22"
                                FontWeight="SemiBold" />
-                    <TextBlock Text="双击复制并关闭；Enter/粘贴按钮会粘贴并关闭；复制按钮只复制不关闭"
+                    <TextBlock Text="双击复制并关闭 · Enter/粘贴会粘贴并关闭 · 复制按钮只复制不关闭"
                                Style="{StaticResource MutedTextStyle}"
                                Margin="0,4,0,0" />
                 </StackPanel>

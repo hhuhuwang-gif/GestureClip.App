@@ -2,6 +2,7 @@ using System.ComponentModel;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.IO;
+using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Text.Json;
 using System.Windows.Input;
@@ -43,6 +44,7 @@ public sealed class SettingsViewModel : INotifyPropertyChanged
     private bool _gestureShowOverlay;
     private bool _gestureDebugEnabled;
     private bool _gestureCloseWindowEnabled;
+    private bool _isSmartPasteEnabled;
     private bool _gestureRightButtonEnabled;
     private bool _gestureLeftButtonEnabled;
     private bool _gestureMiddleButtonEnabled;
@@ -84,7 +86,8 @@ public sealed class SettingsViewModel : INotifyPropertyChanged
     private int _clipboardItemCount;
     private int _clipboardMaxItems;
     private int _clipboardRetentionDays;
-    private string _openClipboardHotkeyText;
+    private string _openClipboardHotkeyText = HotkeyDefinition.DefaultOpenClipboardOverlay;
+    private string _openQuickActionHotkeyText = HotkeyDefinition.DefaultOpenQuickActionCenter;
     private string _gestureStrokeColor;
     private bool _workstationEnabled;
     private decimal _workstationMonthlySalary;
@@ -174,6 +177,7 @@ public sealed class SettingsViewModel : INotifyPropertyChanged
         _gestureShowOverlay = _settingsService.Get(SettingKeys.GestureShowOverlay, true);
         _gestureDebugEnabled = _settingsService.Get(SettingKeys.GestureDebugEnabled, false);
         _gestureCloseWindowEnabled = _settingsService.Get(SettingKeys.GestureCloseWindowEnabled, false);
+        _isSmartPasteEnabled = _settingsService.Get(SettingKeys.SmartPasteEnabled, true);
         _gestureRightButtonEnabled = _settingsService.Get(SettingKeys.GestureTriggerRightButtonEnabled, true);
         _gestureLeftButtonEnabled = _settingsService.Get(SettingKeys.GestureTriggerLeftButtonEnabled, false);
         _gestureMiddleButtonEnabled = _settingsService.Get(SettingKeys.GestureTriggerMiddleButtonEnabled, false);
@@ -242,6 +246,12 @@ public sealed class SettingsViewModel : INotifyPropertyChanged
         _openClipboardHotkeyText = HotkeyDefinition.ParseOrDefault(_settingsService.Get(
             SettingKeys.HotkeyOpenClipboardOverlayKey,
             HotkeyDefinition.DefaultOpenClipboardOverlay)).DisplayText;
+        var quickActionHotkeyText = _settingsService.Get(
+            SettingKeys.HotkeyOpenQuickActionCenterKey,
+            HotkeyDefinition.DefaultOpenQuickActionCenter);
+        _openQuickActionHotkeyText = HotkeyDefinition.TryParse(quickActionHotkeyText, out var quickActionHotkey)
+            ? quickActionHotkey.DisplayText
+            : HotkeyDefinition.DefaultOpenQuickActionCenter;
         _gestureStrokeColor = _settingsService.Get(SettingKeys.GestureStrokeColor, "#8CC8FF");
         _gestureDiagnostics = _mouseGestureService.Diagnostics;
         _startWithWindows = _startupService.IsEnabled();
@@ -259,6 +269,8 @@ public sealed class SettingsViewModel : INotifyPropertyChanged
         ApplyRecommendedGestureBindingsCommand = new AsyncRelayCommand(_ => ApplyRecommendedGestureBindingsAsync());
         AddCustomGestureBindingCommand = new AsyncRelayCommand(_ => AddCustomGestureBindingAsync());
         DeleteSelectedGestureBindingCommand = new AsyncRelayCommand(_ => DeleteSelectedGestureBindingAsync());
+        AddLeftButtonEnhancedBindingCommand = new RelayCommand(_ => AddLeftButtonEnhancedBinding());
+        ResetLeftButtonEnhancedBindingsCommand = new AsyncRelayCommand(_ => ResetLeftButtonEnhancedBindingsAsync());
         SetNewGesturePatternCommand = new RelayCommand(SetNewGesturePattern);
         SetNewGestureActionCommand = new RelayCommand(SetNewGestureAction);
         SetNewGestureTemplateCommand = new RelayCommand(SetNewGestureTemplate);
@@ -280,6 +292,8 @@ public sealed class SettingsViewModel : INotifyPropertyChanged
         _ = RefreshDiagnosticsAsync();
         _ = RefreshClipboardStatsAsync();
         RefreshGestureBindingCards();
+        RefreshLeftButtonEnhancedBindings();
+        LoadChangelogText();
         _ = RefreshWorkerLevelAsync();
     }
 
@@ -318,7 +332,24 @@ public sealed class SettingsViewModel : INotifyPropertyChanged
         }
     }
 
+    public string OpenQuickActionHotkeyText
+    {
+        get => _openQuickActionHotkeyText;
+        set
+        {
+            var hotkey = HotkeyDefinition.TryParse(value, out var parsed)
+                ? parsed
+                : HotkeyDefinition.ParseOrDefault(HotkeyDefinition.DefaultOpenQuickActionCenter);
+            if (_openQuickActionHotkeyText == hotkey.DisplayText)
+            {
+                return;
+            }
 
+            _openQuickActionHotkeyText = hotkey.DisplayText;
+            OnPropertyChanged();
+            _ = ApplyOpenQuickActionHotkeyAsync(hotkey.DisplayText);
+        }
+    }
 
     public string WorkerLevelText
     {
@@ -421,6 +452,8 @@ public sealed class SettingsViewModel : INotifyPropertyChanged
     public ObservableCollection<GestureBindingCardViewModel> PrimaryGestureBindingCards { get; } = [];
 
     public ObservableCollection<GestureBindingCardViewModel> AdvancedGestureBindingCards { get; } = [];
+
+    public ObservableCollection<LeftButtonEnhancedBindingViewModel> LeftButtonEnhancedBindings { get; } = [];
 
     public IReadOnlyList<RecommendedGestureBindingViewModel> RecommendedGestureBindings { get; } = BuildRecommendedGestureBindings();
 
@@ -550,6 +583,31 @@ public sealed class SettingsViewModel : INotifyPropertyChanged
     public ICommand AddCustomGestureBindingCommand { get; }
 
     public ICommand DeleteSelectedGestureBindingCommand { get; }
+
+    public ICommand AddLeftButtonEnhancedBindingCommand { get; }
+
+    public ICommand ResetLeftButtonEnhancedBindingsCommand { get; }
+
+    public string LeftButtonEnhancedStatusText { get; private set; } =
+        "按住右键画手势时，再点一下左键，会执行这里配置的增强动作。";
+
+    public string ChangelogText { get; private set; } = "更新日志加载中…";
+
+    public string AppVersionText
+    {
+        get
+        {
+            var version = Assembly.GetEntryAssembly()
+                ?.GetCustomAttribute<AssemblyInformationalVersionAttribute>()
+                ?.InformationalVersion
+                ?? Assembly.GetExecutingAssembly()
+                    .GetCustomAttribute<AssemblyInformationalVersionAttribute>()
+                    ?.InformationalVersion
+                ?? "unknown";
+            var plus = version.IndexOf('+');
+            return plus > 0 ? version[..plus] : version;
+        }
+    }
 
     public ICommand SetNewGesturePatternCommand { get; }
 
@@ -1270,6 +1328,22 @@ public sealed class SettingsViewModel : INotifyPropertyChanged
 
     public string GestureStatusText => GestureEnabled ? "已开启" : "已暂停";
 
+    public bool IsSmartPasteEnabled
+    {
+        get => _isSmartPasteEnabled;
+        set
+        {
+            if (_isSmartPasteEnabled == value)
+            {
+                return;
+            }
+
+            _isSmartPasteEnabled = value;
+            OnPropertyChanged();
+            _ = _settingsService.SetAsync(SettingKeys.SmartPasteEnabled, value, CancellationToken.None);
+        }
+    }
+
     public string EnabledGestureTriggerSummary
     {
         get
@@ -1855,6 +1929,17 @@ public sealed class SettingsViewModel : INotifyPropertyChanged
     private async Task ApplyOpenClipboardHotkeyAsync(string hotkeyText)
     {
         await _settingsService.SetAsync(SettingKeys.HotkeyOpenClipboardOverlayKey, hotkeyText, CancellationToken.None);
+        RestartGlobalHotkeys();
+    }
+
+    private async Task ApplyOpenQuickActionHotkeyAsync(string hotkeyText)
+    {
+        await _settingsService.SetAsync(SettingKeys.HotkeyOpenQuickActionCenterKey, hotkeyText, CancellationToken.None);
+        RestartGlobalHotkeys();
+    }
+
+    private void RestartGlobalHotkeys()
+    {
         _globalHotkeyService.Stop();
         _globalHotkeyService.Start();
         OnPropertyChanged(nameof(HotkeyStatusText));
@@ -2270,7 +2355,143 @@ public sealed class SettingsViewModel : INotifyPropertyChanged
             action,
             GestureActionOptions,
             ApplyGestureBindingAsync,
-            DeleteGestureBindingAsync);
+            DeleteGestureBindingAsync,
+            ResolveLeftButtonEnhancedAction);
+    }
+
+    private BuiltInGestureAction ResolveLeftButtonEnhancedAction(string pattern)
+    {
+        var map = _gesturePresetProvider.GetLeftButtonEnhancedBindings();
+        return map.TryGetValue(pattern, out var action) ? action : BuiltInGestureAction.None;
+    }
+
+    private void RefreshLeftButtonEnhancedBindings()
+    {
+        LeftButtonEnhancedBindings.Clear();
+        foreach (var pair in _gesturePresetProvider.GetLeftButtonEnhancedBindings()
+                     .OrderBy(item => item.Key, StringComparer.Ordinal))
+        {
+            LeftButtonEnhancedBindings.Add(CreateLeftButtonEnhancedBinding(pair.Key, pair.Value));
+        }
+
+        LeftButtonEnhancedStatusText = LeftButtonEnhancedBindings.Count == 0
+            ? "当前没有左键增强动作。可点“添加一条”，例如：下划 + 左键 = 智能粘贴。"
+            : $"已配置 {LeftButtonEnhancedBindings.Count} 条左键增强。按住右键画手势时再点左键即可触发。";
+        OnPropertyChanged(nameof(LeftButtonEnhancedStatusText));
+        foreach (var card in GestureBindingCards)
+        {
+            card.RefreshLeftButtonModifierDisplay();
+        }
+    }
+
+    private LeftButtonEnhancedBindingViewModel CreateLeftButtonEnhancedBinding(string pattern, BuiltInGestureAction action)
+    {
+        var item = new LeftButtonEnhancedBindingViewModel(
+            pattern,
+            action,
+            GestureActionOptions,
+            SaveLeftButtonEnhancedBindingsAsync);
+        item.DeleteRequested += (_, _) =>
+        {
+            LeftButtonEnhancedBindings.Remove(item);
+        };
+        return item;
+    }
+
+    private void AddLeftButtonEnhancedBinding()
+    {
+        var pattern = "D";
+        if (LeftButtonEnhancedBindings.Any(item => string.Equals(item.Pattern, pattern, StringComparison.Ordinal)))
+        {
+            pattern = "U";
+        }
+
+        if (LeftButtonEnhancedBindings.Any(item => string.Equals(item.Pattern, pattern, StringComparison.Ordinal)))
+        {
+            pattern = "L";
+        }
+
+        var item = CreateLeftButtonEnhancedBinding(pattern, BuiltInGestureAction.SmartPaste);
+        LeftButtonEnhancedBindings.Add(item);
+        _ = SaveLeftButtonEnhancedBindingsAsync();
+    }
+
+    private async Task ResetLeftButtonEnhancedBindingsAsync()
+    {
+        if (!_confirmationService.Confirm(
+            "恢复默认左键增强",
+            "要恢复默认左键增强吗？\n\n默认：\n下划 + 左键 → 智能粘贴（干净粘贴）\n上划 + 左键 → 全选\n\n你现在的自定义增强会被替换。"))
+        {
+            return;
+        }
+
+        _gesturePresetProvider.UpdateLeftButtonEnhancedBindings(GesturePresetProvider.DefaultLeftButtonEnhanced);
+        await _settingsService.SetAsync(
+            SettingKeys.GestureLeftButtonEnhancedJson,
+            JsonSerializer.Serialize(GesturePresetProvider.DefaultLeftButtonEnhanced),
+            CancellationToken.None);
+        RefreshLeftButtonEnhancedBindings();
+        LeftButtonEnhancedStatusText = "已恢复默认左键增强。";
+        OnPropertyChanged(nameof(LeftButtonEnhancedStatusText));
+    }
+
+    private async Task SaveLeftButtonEnhancedBindingsAsync()
+    {
+        var map = LeftButtonEnhancedBindings
+            .Where(item => !string.IsNullOrWhiteSpace(item.Pattern) && item.Action != BuiltInGestureAction.None)
+            .GroupBy(item => item.Pattern.Trim().ToUpperInvariant(), StringComparer.Ordinal)
+            .ToDictionary(group => group.Key, group => group.Last().Action, StringComparer.Ordinal);
+
+        _gesturePresetProvider.UpdateLeftButtonEnhancedBindings(map);
+        await _settingsService.SetAsync(
+            SettingKeys.GestureLeftButtonEnhancedJson,
+            JsonSerializer.Serialize(map),
+            CancellationToken.None);
+
+        LeftButtonEnhancedStatusText = map.Count == 0
+            ? "已保存：当前没有左键增强动作。"
+            : $"已保存 {map.Count} 条左键增强。";
+        OnPropertyChanged(nameof(LeftButtonEnhancedStatusText));
+        foreach (var card in GestureBindingCards)
+        {
+            card.RefreshLeftButtonModifierDisplay();
+        }
+    }
+
+    private void LoadChangelogText()
+    {
+        try
+        {
+            var candidates = new[]
+            {
+                Path.Combine(AppContext.BaseDirectory, "CHANGELOG.md"),
+                Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "..", "..", "CHANGELOG.md")),
+                Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "..", "CHANGELOG.md"))
+            };
+
+            foreach (var path in candidates.Distinct(StringComparer.OrdinalIgnoreCase))
+            {
+                if (!File.Exists(path))
+                {
+                    continue;
+                }
+
+                var text = File.ReadAllText(path);
+                ChangelogText = text.Length > 12000 ? text[..12000] + "\n\n…(已截断，完整内容见 CHANGELOG.md)" : text;
+                OnPropertyChanged(nameof(ChangelogText));
+                return;
+            }
+
+            ChangelogText =
+                "## 本机未找到 CHANGELOG.md\n\n" +
+                "发布包会附带 CHANGELOG.md。你也可以点“检查更新”查看 GitHub 最新版本说明。";
+            OnPropertyChanged(nameof(ChangelogText));
+        }
+        catch
+        {
+            ChangelogText = "更新日志读取失败。可打开 GitHub Release 页面查看。";
+            OnPropertyChanged(nameof(ChangelogText));
+        }
     }
 
     private async Task ApplyGestureBindingAsync(GestureBindingCardViewModel card)
@@ -2743,7 +2964,7 @@ public sealed class SettingsViewModel : INotifyPropertyChanged
         return
         [
             new("U", DirectionText("U"), GestureName("U"), BuiltInGestureAction.OpenClipboardOverlay, "向上划，快速打开剪贴板历史。"),
-            new("D", DirectionText("D"), GestureName("D"), BuiltInGestureAction.Paste, "向下划，执行当前版本已有的粘贴动作。"),
+            new("D", DirectionText("D"), GestureName("D"), BuiltInGestureAction.SmartPaste, "向下划，根据当前软件自动选择普通粘贴、纯文本粘贴或干净粘贴。"),
             new("LR", DirectionText("LR"), GestureName("LR"), BuiltInGestureAction.Copy, "先左后右，复制当前选中的文字。")
         ];
     }
@@ -2808,6 +3029,7 @@ public sealed class SettingsViewModel : INotifyPropertyChanged
     {
         BuiltInGestureAction.Copy => "Ctrl+C",
         BuiltInGestureAction.Paste => "Ctrl+V",
+        BuiltInGestureAction.SmartPaste => "SmartPaste",
         BuiltInGestureAction.Cut => "Ctrl+X",
         BuiltInGestureAction.SelectAll => "Ctrl+A",
         BuiltInGestureAction.Undo => "Ctrl+Z",

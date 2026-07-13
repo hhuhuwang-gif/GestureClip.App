@@ -27,12 +27,12 @@
 
 ## 现在是什么版本？
 
-当前版本：**v0.6.13 Beta**
+当前版本：**v0.6.14 Beta**
 
 下载地址：
 
-- [GestureClip-v0.6.13-beta-win-x64.zip](https://github.com/hhuhuwang-gif/GestureClip.App/releases/download/v0.6.13-beta/GestureClip-v0.6.13-beta-win-x64.zip)
-- [Release 页面](https://github.com/hhuhuwang-gif/GestureClip.App/releases/tag/v0.6.13-beta)
+- [GestureClip-v0.6.14-beta-win-x64.zip](https://github.com/hhuhuwang-gif/GestureClip.App/releases/download/v0.6.14-beta/GestureClip-v0.6.14-beta-win-x64.zip)
+- [Release 页面](https://github.com/hhuhuwang-gif/GestureClip.App/releases/tag/v0.6.14-beta)
 
 解压后双击：
 
@@ -80,7 +80,17 @@ Ctrl + `
 
 作用：打开 / 关闭剪贴板历史面板。
 
-### 3. 鼠标右键手势
+### 3. 快捷动作面板（本地助手 MVP）
+
+默认快捷键：
+
+```text
+Ctrl + Shift + Q
+```
+
+对当前剪贴板文本做本地处理：去空格、大小写、JSON 美化/压缩、URL 编解码等。结果可预览、写回剪贴板，或直接粘贴。不登录、不上传。
+
+### 4. 鼠标右键手势
 
 按住鼠标右键，往一个方向划一下，松开就执行动作。
 
@@ -101,7 +111,7 @@ Ctrl + `
 
 ![鼠标手势设置](docs/images/settings-gestures.png)
 
-### 4. 自定义手势绑定
+### 5. 自定义手势绑定
 
 可以自己设计常用动作，例如：
 
@@ -117,7 +127,7 @@ Ctrl + `
 
 ![手势绑定页面](docs/images/gesture-bindings.png)
 
-### 5. 手势 HUD + 工位小熊
+### 6. 手势 HUD + 工位小熊
 
 右键划动时会出现 HUD。它不只是提示“执行了什么动作”，还会显示一点打工人状态：
 
@@ -135,7 +145,7 @@ Ctrl + `
 
 ![手势 HUD](docs/images/gesture-hud-workbear.png)
 
-### 6. 工位小熊面板
+### 7. 工位小熊面板
 
 工位小熊是一个轻量娱乐状态面板，主要给办公过程一点反馈感。
 

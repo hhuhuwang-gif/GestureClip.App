@@ -28,4 +28,7 @@ public interface IWorkstationDashboardService
 
     Task<WorkBearDailyReport> GenerateDailyReportAsync(DateTimeOffset now, CancellationToken cancellationToken) =>
         Task.FromResult(new WorkBearDailyReport(DateOnly.FromDateTime(now.Date), TimeSpan.Zero, TimeSpan.Zero, 0, TimeSpan.Zero, 0, 0, 0, 0, 0, 0, 0, TimeSpan.Zero, "", "", ""));
+
+    Task<string> GeneratePeriodReportAsync(DateTimeOffset now, int dayCount, CancellationToken cancellationToken) =>
+        Task.FromResult("暂无周期报告。");
 }

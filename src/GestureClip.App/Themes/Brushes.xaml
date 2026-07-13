@@ -24,26 +24,59 @@
     <SolidColorBrush x:Key="BrushDarkPanel" Color="{StaticResource ColorDarkPanel}" />
     <SolidColorBrush x:Key="BrushDarkPanelSoft" Color="{StaticResource ColorDarkPanelSoft}" />
     <SolidColorBrush x:Key="BrushCoral" Color="{StaticResource ColorCoral}" />
+    <SolidColorBrush x:Key="BrushAccentSoft" Color="{StaticResource ColorAccentSoft}" />
+    <SolidColorBrush x:Key="BrushSuccess" Color="{StaticResource ColorSuccess}" />
+    <SolidColorBrush x:Key="BrushSeparator" Color="{StaticResource ColorSeparator}" />
+    <SolidColorBrush x:Key="BrushFillTertiary" Color="{StaticResource ColorFillTertiary}" />
+    <SolidColorBrush x:Key="BrushTrafficClose" Color="{StaticResource ColorTrafficClose}" />
+    <SolidColorBrush x:Key="BrushTrafficYellow" Color="{StaticResource ColorTrafficYellow}" />
+    <SolidColorBrush x:Key="BrushTrafficGreen" Color="{StaticResource ColorTrafficGreen}" />
+    <SolidColorBrush x:Key="BrushTrafficMinimize" Color="{StaticResource ColorTrafficYellow}" />
+    <SolidColorBrush x:Key="BrushTrafficMaximize" Color="{StaticResource ColorTrafficGreen}" />
+
+    <!-- Soft daylight wash, not loud blue -->
     <LinearGradientBrush x:Key="BrushAppBackground" StartPoint="0,0" EndPoint="1,1">
-        <GradientStop Color="#ECFBFCFF" Offset="0" />
-        <GradientStop Color="#E7F6F8FC" Offset="0.48" />
-        <GradientStop Color="#DCEEF2F8" Offset="1" />
+        <GradientStop Color="#FBFBFD" Offset="0" />
+        <GradientStop Color="#F5F5F7" Offset="0.45" />
+        <GradientStop Color="#EEF1F6" Offset="0.82" />
+        <GradientStop Color="#F7F8FA" Offset="1" />
     </LinearGradientBrush>
-    <LinearGradientBrush x:Key="BrushGlassHighlight" StartPoint="0,0" EndPoint="1,1">
+
+    <LinearGradientBrush x:Key="BrushGlassHighlight" StartPoint="0,0" EndPoint="0,1">
         <GradientStop Color="#FFFFFFFF" Offset="0" />
-        <GradientStop Color="#F1FFFFFF" Offset="0.62" />
-        <GradientStop Color="#E3FFFFFF" Offset="1" />
+        <GradientStop Color="#FBFCFF" Offset="0.55" />
+        <GradientStop Color="#F7F8FA" Offset="1" />
     </LinearGradientBrush>
-    <LinearGradientBrush x:Key="BrushTabSelectedGradient" StartPoint="0,0" EndPoint="1,1">
-        <GradientStop Color="#171719" Offset="0" />
-        <GradientStop Color="#0D0D0F" Offset="1" />
+
+    <!-- Sidebar selected pill -->
+    <LinearGradientBrush x:Key="BrushTabSelectedGradient" StartPoint="0,0" EndPoint="0,1">
+        <GradientStop Color="#EEEEF2" Offset="0" />
+        <GradientStop Color="#E5E5EA" Offset="1" />
     </LinearGradientBrush>
-    <LinearGradientBrush x:Key="BrushPrimaryGradient" StartPoint="0,0" EndPoint="1,1">
-        <GradientStop Color="#3B82F6" Offset="0" />
-        <GradientStop Color="#2563EB" Offset="1" />
+
+    <!-- Apple blue primary CTA (gradient kept for non-text accents) -->
+    <LinearGradientBrush x:Key="BrushPrimaryGradient" StartPoint="0,0" EndPoint="0,1">
+        <GradientStop Color="#0A84FF" Offset="0" />
+        <GradientStop Color="#0071E3" Offset="0.55" />
+        <GradientStop Color="#0060C0" Offset="1" />
     </LinearGradientBrush>
+    <!-- Solid blue for primary buttons: better white-text contrast than light gradient -->
+    <SolidColorBrush x:Key="BrushPrimarySolid" Color="#0071E3" />
+    <SolidColorBrush x:Key="BrushPrimarySolidHover" Color="#0066CC" />
+    <SolidColorBrush x:Key="BrushPrimarySolidPressed" Color="#0055AA" />
+
     <LinearGradientBrush x:Key="BrushCoralGradient" StartPoint="0,0" EndPoint="1,1">
-        <GradientStop Color="#FF8A78" Offset="0" />
-        <GradientStop Color="#F36D64" Offset="1" />
+        <GradientStop Color="#FF8A7A" Offset="0" />
+        <GradientStop Color="#FF6B5A" Offset="1" />
+    </LinearGradientBrush>
+
+    <LinearGradientBrush x:Key="BrushOverlayPanel" StartPoint="0,0" EndPoint="0,1">
+        <GradientStop Color="#FCFCFF" Offset="0" />
+        <GradientStop Color="#F7F8FA" Offset="1" />
+    </LinearGradientBrush>
+
+    <LinearGradientBrush x:Key="BrushSidebarBackground" StartPoint="0,0" EndPoint="0,1">
+        <GradientStop Color="#F2F2F7" Offset="0" />
+        <GradientStop Color="#ECECF0" Offset="1" />
     </LinearGradientBrush>
 </ResourceDictionary>

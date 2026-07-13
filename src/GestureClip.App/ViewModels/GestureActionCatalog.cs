@@ -5,6 +5,7 @@ namespace GestureClip.App.ViewModels;
 public static class GestureActionCatalog
 {
     public const string CommonCategory = "常用动作";
+    public const string AssistantCategory = "快捷动作 / 文本处理";
     public const string WebSearchCategory = "网页搜索";
     public const string MoreCategory = "更多动作";
 
@@ -13,6 +14,7 @@ public static class GestureActionCatalog
         Option(BuiltInGestureAction.None),
         Option(BuiltInGestureAction.Copy),
         Option(BuiltInGestureAction.Paste),
+        Option(BuiltInGestureAction.SmartPaste),
         Option(BuiltInGestureAction.Cut),
         Option(BuiltInGestureAction.SelectAll),
         Option(BuiltInGestureAction.Undo),
@@ -24,7 +26,20 @@ public static class GestureActionCatalog
         Option(BuiltInGestureAction.SendAltLeft),
         Option(BuiltInGestureAction.SendAltRight),
         Option(BuiltInGestureAction.OpenClipboardOverlay),
+        Option(BuiltInGestureAction.OpenQuickActionCenter),
         Option(BuiltInGestureAction.PasteAndEnter),
+        Option(BuiltInGestureAction.AssistantTrim),
+        Option(BuiltInGestureAction.AssistantNormalizeWhitespace),
+        Option(BuiltInGestureAction.AssistantCollapseBlankLines),
+        Option(BuiltInGestureAction.AssistantUpper),
+        Option(BuiltInGestureAction.AssistantLower),
+        Option(BuiltInGestureAction.AssistantTitleCase),
+        Option(BuiltInGestureAction.AssistantJsonFormat),
+        Option(BuiltInGestureAction.AssistantJsonMinify),
+        Option(BuiltInGestureAction.AssistantUrlEncode),
+        Option(BuiltInGestureAction.AssistantUrlDecode),
+        Option(BuiltInGestureAction.AssistantQuote),
+        Option(BuiltInGestureAction.AssistantUnquote),
         Option(BuiltInGestureAction.SearchSelectedTextWithGoogle),
         Option(BuiltInGestureAction.SearchSelectedTextWithBaidu),
         Option(BuiltInGestureAction.SearchSelectedTextWithBing),
@@ -70,11 +85,45 @@ public static class GestureActionCatalog
             action,
             GestureActionText.Name(action),
             GestureActionText.Shortcut(action),
-            Category(action));
+            Category(action),
+            Description(action));
     }
+
+    public static string Description(BuiltInGestureAction action) => action switch
+    {
+        BuiltInGestureAction.SmartPaste => "根据当前软件自动选择普通粘贴、纯文本粘贴或干净粘贴。",
+        BuiltInGestureAction.OpenQuickActionCenter => "打开本地快捷动作面板，可搜索并执行文本处理。",
+        BuiltInGestureAction.AssistantTrim => "去掉剪贴板文本首尾空白，并写回系统剪贴板。",
+        BuiltInGestureAction.AssistantNormalizeWhitespace => "合并多余空格后写回剪贴板。",
+        BuiltInGestureAction.AssistantCollapseBlankLines => "合并多余空行后写回剪贴板。",
+        BuiltInGestureAction.AssistantUpper => "转成大写后写回剪贴板。",
+        BuiltInGestureAction.AssistantLower => "转成小写后写回剪贴板。",
+        BuiltInGestureAction.AssistantTitleCase => "转成标题大小写后写回剪贴板。",
+        BuiltInGestureAction.AssistantJsonFormat => "美化 JSON 后写回剪贴板。",
+        BuiltInGestureAction.AssistantJsonMinify => "压缩 JSON 后写回剪贴板。",
+        BuiltInGestureAction.AssistantUrlEncode => "URL 编码后写回剪贴板。",
+        BuiltInGestureAction.AssistantUrlDecode => "URL 解码后写回剪贴板。",
+        BuiltInGestureAction.AssistantQuote => "给文本加双引号后写回剪贴板。",
+        BuiltInGestureAction.AssistantUnquote => "去掉外层引号后写回剪贴板。",
+        _ => ""
+    };
 
     public static string Category(BuiltInGestureAction action) => action switch
     {
+        BuiltInGestureAction.OpenQuickActionCenter or
+        BuiltInGestureAction.AssistantTrim or
+        BuiltInGestureAction.AssistantNormalizeWhitespace or
+        BuiltInGestureAction.AssistantCollapseBlankLines or
+        BuiltInGestureAction.AssistantUpper or
+        BuiltInGestureAction.AssistantLower or
+        BuiltInGestureAction.AssistantTitleCase or
+        BuiltInGestureAction.AssistantJsonFormat or
+        BuiltInGestureAction.AssistantJsonMinify or
+        BuiltInGestureAction.AssistantUrlEncode or
+        BuiltInGestureAction.AssistantUrlDecode or
+        BuiltInGestureAction.AssistantQuote or
+        BuiltInGestureAction.AssistantUnquote => AssistantCategory,
+
         BuiltInGestureAction.SearchSelectedTextWithGoogle or
         BuiltInGestureAction.SearchSelectedTextWithBaidu or
         BuiltInGestureAction.SearchSelectedTextWithBing or

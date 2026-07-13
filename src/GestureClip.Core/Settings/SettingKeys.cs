@@ -12,6 +12,9 @@ public static class SettingKeys
     public const string ClipboardOverlayAlwaysVisible = "Clipboard.Overlay.AlwaysVisible";
     public const string HotkeyOpenClipboardOverlayEnabled = "Hotkey.OpenClipboardOverlay.Enabled";
     public const string HotkeyOpenClipboardOverlayKey = "Hotkey.OpenClipboardOverlay.Key";
+    public const string HotkeyOpenQuickActionCenterEnabled = "Hotkey.OpenQuickActionCenter.Enabled";
+    public const string HotkeyOpenQuickActionCenterKey = "Hotkey.OpenQuickActionCenter.Key";
+    public const string AssistantEnabled = "Assistant.Enabled";
     public const string GestureEnabled = "Gesture.Enabled";
     public const string GestureShowOverlay = "Gesture.ShowOverlay";
     public const string GestureDebugEnabled = "Gesture.DebugEnabled";
@@ -20,7 +23,9 @@ public static class SettingKeys
     public const string GestureSegmentThreshold = "Gesture.SegmentThreshold";
     public const string GestureMaxDurationMs = "Gesture.MaxDurationMs";
     public const string GestureCloseWindowEnabled = "Gesture.CloseWindowEnabled";
+    public const string SmartPasteEnabled = "SmartPaste.Enabled";
     public const string GestureCustomBindingsJson = "Gesture.CustomBindingsJson";
+    public const string GestureLeftButtonEnhancedJson = "Gesture.LeftButtonEnhancedJson";
     public const string GestureStrokeColor = "Gesture.StrokeColor";
     public const string GestureTriggerRightButtonEnabled = "Gesture.Trigger.RightButton.Enabled";
     public const string GestureTriggerLeftButtonEnabled = "Gesture.Trigger.LeftButton.Enabled";
@@ -89,6 +94,14 @@ public static class SettingKeys
     public const string WorkstationEnableStrongOverworkWarning = "Workstation.OverworkReminder.StrongWarning.Enabled";
     public const string WorkstationOverworkReminderCanSnooze = "Workstation.OverworkReminder.CanSnooze";
     public const string WorkstationOverworkSnoozeMinutes = "Workstation.OverworkReminder.SnoozeMinutes";
+    public const string WorkstationOverworkReminderMaxPerDay = "Workstation.OverworkReminder.MaxPerDay";
+    public const string WorkstationOverworkReminderMaxPerWeek = "Workstation.OverworkReminder.MaxPerWeek";
+    public const string WorkstationOverworkReminderMinContinuousMinutes = "Workstation.OverworkReminder.MinContinuousMinutes";
+    public const string WorkBearRestReminderWeekKey = "WorkBear.RestReminder.WeekKey";
+    public const string WorkBearRestReminderWeekCount = "WorkBear.RestReminder.WeekCount";
+    public const string WorkBearSetupCompleted = "WorkBear.Setup.Completed";
+    public const string WorkBearHudFunEnabled = "WorkBear.HudFun.Enabled";
+    public const string WorkBearGestureXpBonusEnabled = "WorkBear.GestureXpBonus.Enabled";
     public const string WorkerLevelTotalXp = "WorkerLevel.TotalXp";
     public const string WorkerLevelCurrentLevel = "WorkerLevel.CurrentLevel";
     public const string WorkerLevelTotalActionCount = "WorkerLevel.TotalActionCount";

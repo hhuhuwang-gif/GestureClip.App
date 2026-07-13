@@ -75,7 +75,7 @@ public sealed class WorkstationHudServiceTests
         Assert.Equal("经验 +3", snapshot.GainedXpText);
     }
     [Fact]
-    public async Task BuildSnapshotAsync_uses_multiple_local_fun_reports_for_same_action()
+    public async Task BuildSnapshotAsync_uses_stage_aware_fun_text_for_action()
     {
         var service = CreateService();
         var hudInfo = new GestureHudInfo("↓", "D", "粘贴", "Ctrl + V", "自定义模式")
@@ -83,15 +83,13 @@ public sealed class WorkstationHudServiceTests
             Action = BuiltInGestureAction.Paste
         };
 
-        var reports = new HashSet<string>(StringComparer.Ordinal);
-        for (var i = 0; i < 12; i++)
-        {
-            var snapshot = await service.BuildSnapshotAsync(hudInfo, gainedXp: 3, DateTimeOffset.Now.AddSeconds(i), CancellationToken.None);
-            reports.Add(snapshot.FunText);
-        }
+        var morning = await service.BuildSnapshotAsync(hudInfo, gainedXp: 3, DateTimeOffset.Parse("2026-07-06T10:15:00+08:00"), CancellationToken.None);
+        var afternoon = await service.BuildSnapshotAsync(hudInfo, gainedXp: 3, DateTimeOffset.Parse("2026-07-06T15:15:00+08:00"), CancellationToken.None);
 
-        Assert.True(reports.Count >= 2, string.Join(" | ", reports));
-        Assert.All(reports, report => Assert.False(string.IsNullOrWhiteSpace(report)));
+        Assert.False(string.IsNullOrWhiteSpace(morning.FunText));
+        Assert.False(string.IsNullOrWhiteSpace(afternoon.FunText));
+        Assert.Contains("粘贴成功", morning.FunText);
+        Assert.Contains("粘贴成功", afternoon.FunText);
     }
 
     [Fact]
@@ -188,6 +186,11 @@ public sealed class WorkstationHudServiceTests
         }
 
         public Task<WorkerLevelSnapshot> RecordActionAsync(BuiltInGestureAction action, bool isGestureSuccess, DateTimeOffset now, CancellationToken cancellationToken)
+        {
+            return GetSnapshotAsync(cancellationToken);
+        }
+
+        public Task<WorkerLevelSnapshot> RecordBonusXpAsync(int xp, DateTimeOffset now, CancellationToken cancellationToken)
         {
             return GetSnapshotAsync(cancellationToken);
         }

@@ -244,7 +244,7 @@ public sealed class MouseGestureServiceTests
     }
 
     [Fact]
-    public async Task Right_button_drag_then_left_click_confirms_current_gesture_without_left_trigger_enabled()
+    public async Task Right_button_drag_then_left_click_marks_left_modifier_and_executes_enhanced_action()
     {
         var hook = new FakeLowLevelMouseHook();
         var executor = new FakeMouseGestureActionExecutor();
@@ -264,12 +264,55 @@ public sealed class MouseGestureServiceTests
         Assert.True(leftDown.Suppress);
         Assert.True(leftUp.Suppress);
         Assert.True(rightUp.Suppress);
-        Assert.Equal(BuiltInGestureAction.Copy, executor.Actions.Single());
+        Assert.Equal(BuiltInGestureAction.SelectAll, executor.Actions.Single());
+        Assert.True(executor.Contexts.Single().IsLeftButtonModified);
         Assert.Equal("U", service.Diagnostics.LastPattern);
         Assert.Empty(synthesizer.MouseClicks);
         Assert.Contains("complete:U", overlay.Events);
+        Assert.Contains(overlay.HudInfos, info => info.DirectionText == "↑ + 左键" && info.ActionName == "全选");
         Assert.Contains("hide", overlay.Events);
         Assert.Equal(GestureRuntimeState.Idle, service.Diagnostics.State);
+    }
+
+    [Fact]
+    public async Task Right_button_gesture_without_left_click_passes_modifier_false()
+    {
+        var hook = new FakeLowLevelMouseHook();
+        var executor = new FakeMouseGestureActionExecutor();
+        var service = CreateService(hook, executor, showOverlay: false);
+        await service.StartAsync(CancellationToken.None);
+
+        hook.Raise(MouseHookEventType.RightButtonDown, 0, 0);
+        hook.Raise(MouseHookEventType.Move, 0, -30);
+        hook.Raise(MouseHookEventType.RightButtonUp, 0, -50);
+        await WaitForAsync(() => executor.Actions.Count == 1);
+
+        Assert.Equal(BuiltInGestureAction.Copy, executor.Actions.Single());
+        Assert.False(executor.Contexts.Single().IsLeftButtonModified);
+    }
+
+    [Fact]
+    public async Task Left_modifier_resets_after_current_gesture()
+    {
+        var hook = new FakeLowLevelMouseHook();
+        var executor = new FakeMouseGestureActionExecutor();
+        var service = CreateService(hook, executor, showOverlay: false);
+        await service.StartAsync(CancellationToken.None);
+
+        hook.Raise(MouseHookEventType.RightButtonDown, 0, 0);
+        hook.Raise(MouseHookEventType.Move, 0, -30);
+        hook.Raise(MouseHookEventType.LeftButtonDown, 0, -30);
+        hook.Raise(MouseHookEventType.LeftButtonUp, 0, -30);
+        hook.Raise(MouseHookEventType.RightButtonUp, 0, -30);
+        await WaitForAsync(() => executor.Actions.Count == 1);
+
+        hook.Raise(MouseHookEventType.RightButtonDown, 20, 20);
+        hook.Raise(MouseHookEventType.Move, 20, -10);
+        hook.Raise(MouseHookEventType.RightButtonUp, 20, -30);
+        await WaitForAsync(() => executor.Actions.Count == 2);
+
+        Assert.Equal([BuiltInGestureAction.SelectAll, BuiltInGestureAction.Copy], executor.Actions.ToArray());
+        Assert.Equal([true, false], executor.Contexts.Select(context => context.IsLeftButtonModified).ToArray());
     }
 
     [Fact]
@@ -904,10 +947,18 @@ public sealed class MouseGestureServiceTests
     private sealed class FakeMouseGestureActionExecutor : IMouseGestureActionExecutor
     {
         public ConcurrentQueue<BuiltInGestureAction> Actions { get; } = [];
+        public ConcurrentQueue<GestureExecutionContext> Contexts { get; } = [];
 
         public Task ExecuteAsync(BuiltInGestureAction action, CancellationToken cancellationToken)
         {
             Actions.Enqueue(action);
+            return Task.CompletedTask;
+        }
+
+        public Task ExecuteAsync(BuiltInGestureAction action, GestureExecutionContext context, CancellationToken cancellationToken)
+        {
+            Actions.Enqueue(action);
+            Contexts.Enqueue(context);
             return Task.CompletedTask;
         }
     }
@@ -1029,6 +1080,13 @@ public sealed class MouseGestureServiceTests
         public void UpdateCustomBindings(IReadOnlyDictionary<string, BuiltInGestureAction> bindings)
         {
         }
+
+        public IReadOnlyDictionary<string, BuiltInGestureAction> GetLeftButtonEnhancedBindings() =>
+            new Dictionary<string, BuiltInGestureAction>(StringComparer.Ordinal);
+
+        public void UpdateLeftButtonEnhancedBindings(IReadOnlyDictionary<string, BuiltInGestureAction> bindings)
+        {
+        }
     }
 
     private sealed class FakeForegroundAppService : IForegroundAppService
@@ -1128,6 +1186,11 @@ public sealed class MouseGestureServiceTests
                 LeveledUp,
                 1,
                 null));
+        }
+
+        public Task<Core.WorkerLevel.WorkerLevelSnapshot> RecordBonusXpAsync(int xp, DateTimeOffset now, CancellationToken cancellationToken)
+        {
+            return GetSnapshotAsync(cancellationToken);
         }
 
         public Task<Core.WorkerLevel.WorkerLevelSnapshot> RecordActionAsync(BuiltInGestureAction action, bool isGestureSuccess, DateTimeOffset now, CancellationToken cancellationToken)

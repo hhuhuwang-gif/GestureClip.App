@@ -14,6 +14,7 @@ public sealed class TrayIconService : IDisposable
 {
     private readonly IAppLifecycleService _appLifecycleService;
     private readonly ClipboardOverlayService _clipboardOverlayService;
+    private readonly IQuickActionCenterService _quickActionCenterService;
     private readonly IFeatureToggleService _featureToggleService;
     private readonly ISettingsService _settingsService;
     private readonly IWorkstationDashboardService _workstationDashboardService;
@@ -28,6 +29,7 @@ public sealed class TrayIconService : IDisposable
     public TrayIconService(
         IAppLifecycleService appLifecycleService,
         ClipboardOverlayService clipboardOverlayService,
+        IQuickActionCenterService quickActionCenterService,
         IFeatureToggleService featureToggleService,
         ISettingsService settingsService,
         IWorkstationDashboardService workstationDashboardService,
@@ -38,6 +40,7 @@ public sealed class TrayIconService : IDisposable
     {
         _appLifecycleService = appLifecycleService;
         _clipboardOverlayService = clipboardOverlayService;
+        _quickActionCenterService = quickActionCenterService;
         _featureToggleService = featureToggleService;
         _settingsService = settingsService;
         _workstationDashboardService = workstationDashboardService;
@@ -106,6 +109,11 @@ public sealed class TrayIconService : IDisposable
         var snapshot = _featureToggleService.GetSnapshot();
 
         _menu.Items.Add("打开剪贴板历史", null, async (_, _) => await _clipboardOverlayService.ShowAsync());
+        if (_settingsService.Get(SettingKeys.AssistantEnabled, true))
+        {
+            _menu.Items.Add("打开快捷动作 (Ctrl+Shift+Q)", null, async (_, _) => await _quickActionCenterService.ShowAsync());
+        }
+
         _menu.Items.Add("打开设置", null, (_, _) => _appLifecycleService.ShowSettingsWindow());
         if (_settingsService.Get(SettingKeys.WorkstationEnabled, true))
         {
@@ -160,6 +168,22 @@ public sealed class TrayIconService : IDisposable
         var snapshot = _lastWorkBearSnapshot;
 
         root.DropDownItems.Add("打开工位小熊 Hub", null, (_, _) => _appLifecycleService.ShowWorkstationDashboardWindow());
+        root.DropDownItems.Add("今日已赚摘要", null, async (_, _) =>
+        {
+            var latest = await GetWorkBearSnapshotSafeAsync();
+            if (latest is null)
+            {
+                ShowWorkBearBalloon("工位小熊", "暂时读不到状态，请稍后重试。");
+                return;
+            }
+
+            var off = latest.TimeUntilOffWork <= TimeSpan.Zero
+                ? "已下班"
+                : $"{(int)latest.TimeUntilOffWork.TotalHours:D2}:{latest.TimeUntilOffWork.Minutes:D2}";
+            ShowWorkBearBalloon(
+                "工位小熊 · 今日摘要",
+                $"今日已赚 ￥{latest.TodayEarned:F2}\n距离下班 {off}\n{latest.BearStatusText} · {latest.BearLineText}");
+        });
         var fishingItem = root.DropDownItems.Add(snapshot?.IsFishing == true ? "结束摸鱼" : "开始摸鱼", null, async (_, _) =>
         {
             var latest = await GetWorkBearSnapshotSafeAsync();
@@ -174,15 +198,29 @@ public sealed class TrayIconService : IDisposable
 
             _lastWorkBearSnapshot = await GetWorkBearSnapshotSafeAsync();
         });
+        var sprintItem = root.DropDownItems.Add(snapshot?.SprintActive == true ? "关闭下班冲刺" : "开启下班冲刺", null, async (_, _) =>
+        {
+            var latest = await GetWorkBearSnapshotSafeAsync();
+            var enable = latest?.SprintActive != true;
+            await _workstationDashboardService.SetSprintModeAsync(enable, CancellationToken.None);
+            _lastWorkBearSnapshot = await GetWorkBearSnapshotSafeAsync();
+            ShowWorkBearBalloon("工位小熊", enable ? "下班冲刺已开启。" : "下班冲刺已关闭。");
+        });
         root.DropDownItems.Add("查看今日生存报告", null, async (_, _) =>
         {
             var report = await _workstationDashboardService.GenerateDailyReportAsync(DateTimeOffset.Now, CancellationToken.None);
             Forms.MessageBox.Show(report.ReportText, "工位小熊今日报告", Forms.MessageBoxButtons.OK, Forms.MessageBoxIcon.Information);
         });
+        root.DropDownItems.Add("生成本周总结", null, async (_, _) =>
+        {
+            var text = await _workstationDashboardService.GeneratePeriodReportAsync(DateTimeOffset.Now, 7, CancellationToken.None);
+            Forms.MessageBox.Show(text, "工位小熊 · 本周总结", Forms.MessageBoxButtons.OK, Forms.MessageBoxIcon.Information);
+        });
         root.DropDownItems.Add("生成分享卡片", null, async (_, _) =>
         {
             var path = await _workBearShareCardService.GenerateTodayCardAsync(CancellationToken.None);
-            _notifyIcon?.ShowBalloonTip(3000, "工位小熊", $"今日生存报告已生成，里面不包含剪贴板内容：{path}", Forms.ToolTipIcon.Info);
+            _notifyIcon?.ShowBalloonTip(4000, "工位小熊", $"卡片已生成（不含剪贴板内容）：{path}", Forms.ToolTipIcon.Info);
+            _workBearShareCardService.OpenCardFolder(path);
         });
         var restItem = root.DropDownItems.Add(snapshot?.RestReminderEnabled != false ? "关闭休息提醒" : "开启休息提醒", null, async (_, _) =>
         {
@@ -200,6 +238,7 @@ public sealed class TrayIconService : IDisposable
             }
 
             fishingItem.Text = latest.IsFishing ? "结束摸鱼" : "开始摸鱼";
+            sprintItem.Text = latest.SprintActive ? "关闭下班冲刺" : "开启下班冲刺";
             restItem.Text = latest.RestReminderEnabled ? "关闭休息提醒" : "开启休息提醒";
         };
 

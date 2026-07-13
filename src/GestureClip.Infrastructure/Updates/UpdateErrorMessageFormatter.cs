@@ -19,6 +19,16 @@ public static class UpdateErrorMessageFormatter
             return "无法连接 GitHub。请检查网络连接后重试；也可以打开 GitHub Release 页面手动下载最新 zip。";
         }
 
+        if (exception is TaskCanceledException)
+        {
+            return "连接 GitHub 超时。请检查网络或代理后重试。";
+        }
+
+        if (exception is InvalidOperationException && !string.IsNullOrWhiteSpace(exception.Message))
+        {
+            return exception.Message;
+        }
+
         return "检查更新失败。请稍后再试，或打开 GitHub Release 页面手动查看。";
     }
 }

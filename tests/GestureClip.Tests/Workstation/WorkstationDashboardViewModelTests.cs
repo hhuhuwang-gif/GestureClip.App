@@ -107,6 +107,53 @@ public sealed class WorkstationDashboardViewModelTests
         Assert.False(string.IsNullOrWhiteSpace(viewModel.WorkTipText));
     }
 
+    [Fact]
+    public void NeedsSetup_is_true_when_salary_missing_and_setup_not_completed()
+    {
+        var settings = new FakeSettingsService();
+        settings.Values[SettingKeys.WorkstationMonthlySalary] = 0m;
+        settings.Values[SettingKeys.WorkBearSetupCompleted] = false;
+        var viewModel = new WorkstationDashboardViewModel(new FakeWorkstationDashboardService(), settings);
+
+        Assert.True(viewModel.NeedsSetup);
+    }
+
+    [Fact]
+    public async Task CompleteSetupAsync_saves_salary_hours_and_clears_setup_banner()
+    {
+        var settings = new FakeSettingsService();
+        settings.Values[SettingKeys.WorkstationMonthlySalary] = 0m;
+        settings.Values[SettingKeys.WorkBearSetupCompleted] = false;
+        var viewModel = new WorkstationDashboardViewModel(new FakeWorkstationDashboardService(), settings)
+        {
+            SetupSalaryText = "12000",
+            SetupStartTime = "09:30",
+            SetupEndTime = "18:30"
+        };
+
+        await viewModel.CompleteSetupAsync();
+
+        Assert.Equal(12000m, settings.Values[SettingKeys.WorkstationMonthlySalary]);
+        Assert.Equal("09:30", settings.Values[SettingKeys.WorkstationWorkStartTime]);
+        Assert.Equal("18:30", settings.Values[SettingKeys.WorkstationWorkEndTime]);
+        Assert.Equal(true, settings.Values[SettingKeys.WorkBearSetupCompleted]);
+        Assert.False(viewModel.NeedsSetup);
+        Assert.Contains("配置完成", viewModel.LastMessage);
+    }
+
+    [Fact]
+    public async Task DismissSetupAsync_marks_setup_completed_without_salary()
+    {
+        var settings = new FakeSettingsService();
+        settings.Values[SettingKeys.WorkBearSetupCompleted] = false;
+        var viewModel = new WorkstationDashboardViewModel(new FakeWorkstationDashboardService(), settings);
+
+        await viewModel.DismissSetupAsync();
+
+        Assert.Equal(true, settings.Values[SettingKeys.WorkBearSetupCompleted]);
+        Assert.False(viewModel.NeedsSetup);
+    }
+
     private static readonly WorkstationDashboardSnapshot Snapshot = new(
         "工位小熊",
         "今天也在低功耗运行",
@@ -171,6 +218,10 @@ public sealed class WorkstationDashboardViewModelTests
 
         public T Get<T>(string key, T defaultValue) => Values.TryGetValue(key, out var value) ? (T)value! : defaultValue;
 
-        public Task SetAsync<T>(string key, T value, CancellationToken cancellationToken) => Task.CompletedTask;
+        public Task SetAsync<T>(string key, T value, CancellationToken cancellationToken)
+        {
+            Values[key] = value;
+            return Task.CompletedTask;
+        }
     }
 }

@@ -53,9 +53,27 @@ public sealed class WorkerLevelService : IWorkerLevelService
         }
     }
 
-    public async Task<WorkerLevelSnapshot> RecordActionAsync(
+    public Task<WorkerLevelSnapshot> RecordActionAsync(
         BuiltInGestureAction action,
         bool isGestureSuccess,
+        DateTimeOffset now,
+        CancellationToken cancellationToken)
+    {
+        var gained = GetActionXp(action) + (isGestureSuccess ? 2 : 0);
+        return ApplyXpAsync(gained, countAsAction: true, now, cancellationToken);
+    }
+
+    public Task<WorkerLevelSnapshot> RecordBonusXpAsync(
+        int xp,
+        DateTimeOffset now,
+        CancellationToken cancellationToken)
+    {
+        return ApplyXpAsync(Math.Max(0, xp), countAsAction: true, now, cancellationToken);
+    }
+
+    private async Task<WorkerLevelSnapshot> ApplyXpAsync(
+        int gained,
+        bool countAsAction,
         DateTimeOffset now,
         CancellationToken cancellationToken)
     {
@@ -65,14 +83,16 @@ public sealed class WorkerLevelService : IWorkerLevelService
             var state = GetState();
             var oldXp = state.TotalXp;
             var oldLevel = GetLevelForXp(oldXp).Level;
-            var gained = GetActionXp(action) + (isGestureSuccess ? 2 : 0);
             var newXp = Math.Max(0, oldXp + gained);
             var newLevel = GetLevelForXp(newXp).Level;
-            var newCount = state.ActionCount + 1;
+            var newCount = countAsAction ? state.ActionCount + 1 : state.ActionCount;
             var leveledUp = newLevel > oldLevel;
             var lastLevelUpAt = leveledUp ? now : state.LastLevelUpAt;
             _cachedState = new WorkerLevelState(newXp, newCount, lastLevelUpAt);
-            _actionsSincePersist++;
+            if (countAsAction)
+            {
+                _actionsSincePersist++;
+            }
 
             if (leveledUp || _actionsSincePersist >= PersistEveryActionCount)
             {

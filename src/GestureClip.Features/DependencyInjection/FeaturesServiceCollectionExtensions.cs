@@ -1,4 +1,5 @@
 using GestureClip.Core.Abstractions;
+using GestureClip.Features.Assistant;
 using GestureClip.Features.Clipboard;
 using GestureClip.Features.Diagnostics;
 using GestureClip.Features.Gestures;
@@ -32,6 +33,8 @@ public static class FeaturesServiceCollectionExtensions
         services.AddSingleton<IFeatureToggleService, FeatureToggleService>();
         services.AddSingleton<IFirstRunOnboardingService, FirstRunOnboardingService>();
         services.AddSingleton<IDiagnosticsService, DiagnosticsService>();
+        services.AddSingleton<IAssistantActionCatalog, BuiltInAssistantActionCatalog>();
+        services.AddSingleton<IAssistantActionExecutor, AssistantActionExecutor>();
         services.AddSingleton<IWorkstationStatsRepository, WorkstationStatsRepository>();
         services.AddSingleton<IWorkstationDashboardService, WorkstationDashboardService>();
         services.AddSingleton<IWorkTimeStageService, WorkTimeStageService>();

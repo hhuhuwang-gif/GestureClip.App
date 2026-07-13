@@ -91,6 +91,13 @@ public partial class SettingsWindow : Window
         WindowState = WindowState.Minimized;
     }
 
+    private void MaximizeButton_Click(object sender, RoutedEventArgs e)
+    {
+        WindowState = WindowState == WindowState.Maximized
+            ? WindowState.Normal
+            : WindowState.Maximized;
+    }
+
     private void CloseButton_Click(object sender, RoutedEventArgs e)
     {
         Close();
@@ -104,6 +111,11 @@ public partial class SettingsWindow : Window
     private async void CheckUpdateButton_Click(object sender, RoutedEventArgs e)
     {
         await _appLifecycleService.CheckForUpdatesAsync();
+    }
+
+    private void OpenReleaseButton_Click(object sender, RoutedEventArgs e)
+    {
+        _appLifecycleService.OpenLatestReleasePage();
     }
 
     private void ScrollToCustomGestureDesigner_Click(object sender, RoutedEventArgs e)

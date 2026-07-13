@@ -8,6 +8,7 @@ namespace GestureClip.App.ViewModels;
 public sealed class GestureBindingCardViewModel : INotifyPropertyChanged
 {
     private readonly Func<GestureBindingCardViewModel, Task> _saveAsync;
+    private readonly Func<string, BuiltInGestureAction> _leftButtonActionResolver;
     private BuiltInGestureAction _selectedAction;
     private bool _isSelected;
 
@@ -19,7 +20,8 @@ public sealed class GestureBindingCardViewModel : INotifyPropertyChanged
         BuiltInGestureAction selectedAction,
         IReadOnlyList<GestureActionOptionViewModel> actionOptions,
         Func<GestureBindingCardViewModel, Task> saveAsync,
-        Func<GestureBindingCardViewModel, Task> deleteAsync)
+        Func<GestureBindingCardViewModel, Task> deleteAsync,
+        Func<string, BuiltInGestureAction>? leftButtonActionResolver = null)
     {
         Pattern = pattern;
         DirectionText = directionText;
@@ -28,6 +30,7 @@ public sealed class GestureBindingCardViewModel : INotifyPropertyChanged
         _selectedAction = selectedAction;
         ActionOptions = actionOptions;
         _saveAsync = saveAsync;
+        _leftButtonActionResolver = leftButtonActionResolver ?? (_ => BuiltInGestureAction.None);
         DeleteCommand = new AsyncRelayCommand(_ => deleteAsync(this));
     }
 
@@ -55,9 +58,40 @@ public sealed class GestureBindingCardViewModel : INotifyPropertyChanged
 
     public string ActionSummaryText => $"{PatternText}  →  {ActionName}";
 
+    public string PrimaryActionLabel => "普通动作";
+
+    public string PrimaryActionValueText => ActionName;
+
+    public string LeftButtonModifierLabel => "点左键增强";
+
+    public string LeftButtonModifierValueText => GetLeftButtonModifierValueText();
+
+    public bool HasLeftButtonModifierAction => !string.Equals(LeftButtonModifierValueText, "暂无增强动作", StringComparison.Ordinal);
+
+    public string LeftButtonModifierBadgeText => $"{LeftButtonModifierLabel}：{LeftButtonModifierValueText}";
+
     public string InstructionText => IsBound
-        ? "按住右键画这个手势后，会执行这个动作。"
-        : "按住右键画这个手势后，当前不会执行动作。";
+        ? $"按住右键画这个手势后，会执行普通动作。画手势时再点一下左键，会执行增强动作。{LeftButtonModifierHintText}"
+        : "按住右键画这个手势后，当前不会执行普通动作。可在下方“左键增强动作”区域配置增强版。";
+
+    public string LeftButtonModifierHintText
+    {
+        get
+        {
+            var left = ResolveLeftButtonAction();
+            if (left == BuiltInGestureAction.None)
+            {
+                return "左键增强：暂无。可在上方“左键增强动作”区添加。";
+            }
+
+            if (left == BuiltInGestureAction.SmartPaste)
+            {
+                return "左键增强：智能粘贴（会尽量走干净/纯文本粘贴）。";
+            }
+
+            return $"左键增强：{GestureActionText.Name(left)}。";
+        }
+    }
 
     public bool IsSelected
     {
@@ -96,6 +130,15 @@ public sealed class GestureBindingCardViewModel : INotifyPropertyChanged
         SetSelectedAction(action, save: false);
     }
 
+    public void RefreshLeftButtonModifierDisplay()
+    {
+        OnPropertyChanged(nameof(LeftButtonModifierValueText));
+        OnPropertyChanged(nameof(HasLeftButtonModifierAction));
+        OnPropertyChanged(nameof(LeftButtonModifierBadgeText));
+        OnPropertyChanged(nameof(InstructionText));
+        OnPropertyChanged(nameof(LeftButtonModifierHintText));
+    }
+
     private void SetSelectedAction(BuiltInGestureAction action, bool save)
     {
         if (_selectedAction == action)
@@ -111,11 +154,40 @@ public sealed class GestureBindingCardViewModel : INotifyPropertyChanged
         OnPropertyChanged(nameof(BindingStatusText));
         OnPropertyChanged(nameof(DisplayText));
         OnPropertyChanged(nameof(ActionSummaryText));
-        OnPropertyChanged(nameof(InstructionText));
+        OnPropertyChanged(nameof(PrimaryActionValueText));
+        RefreshLeftButtonModifierDisplay();
         if (save)
         {
             _ = _saveAsync(this);
         }
+    }
+
+    private BuiltInGestureAction ResolveLeftButtonAction()
+    {
+        try
+        {
+            return _leftButtonActionResolver(Pattern);
+        }
+        catch
+        {
+            return BuiltInGestureAction.None;
+        }
+    }
+
+    private string GetLeftButtonModifierValueText()
+    {
+        var left = ResolveLeftButtonAction();
+        if (left == BuiltInGestureAction.None)
+        {
+            return "暂无增强动作";
+        }
+
+        if (left == BuiltInGestureAction.SmartPaste)
+        {
+            return "智能粘贴 / 干净粘贴";
+        }
+
+        return GestureActionText.Name(left);
     }
 
     private void OnPropertyChanged([CallerMemberName] string? propertyName = null)

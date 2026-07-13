@@ -11,7 +11,7 @@ public sealed class GesturePresetProvider : IGesturePresetProvider
         new Dictionary<string, BuiltInGestureAction>(StringComparer.Ordinal)
         {
             ["U"] = BuiltInGestureAction.Copy,
-            ["D"] = BuiltInGestureAction.Paste,
+            ["D"] = BuiltInGestureAction.SmartPaste,
             ["UD"] = BuiltInGestureAction.Enter,
             ["DU"] = BuiltInGestureAction.Escape,
             ["L"] = BuiltInGestureAction.SendAltLeft,
@@ -43,8 +43,16 @@ public sealed class GesturePresetProvider : IGesturePresetProvider
             ["UL"] = BuiltInGestureAction.SearchSelectedTextWithBaidu
         };
 
+    public static readonly IReadOnlyDictionary<string, BuiltInGestureAction> DefaultLeftButtonEnhanced =
+        new Dictionary<string, BuiltInGestureAction>(StringComparer.Ordinal)
+        {
+            ["D"] = BuiltInGestureAction.SmartPaste,
+            ["U"] = BuiltInGestureAction.SelectAll
+        };
+
     private readonly object _syncRoot = new();
     private IReadOnlyDictionary<string, BuiltInGestureAction> _customBindings = EditEnhanced;
+    private IReadOnlyDictionary<string, BuiltInGestureAction> _leftButtonEnhanced = DefaultLeftButtonEnhanced;
 
     public GesturePresetProvider()
     {
@@ -53,13 +61,28 @@ public sealed class GesturePresetProvider : IGesturePresetProvider
     public GesturePresetProvider(ISettingsService settingsService)
     {
         _customBindings = ParseCustomBindings(settingsService.Get(SettingKeys.GestureCustomBindingsJson, ""));
+        _leftButtonEnhanced = ParseLeftButtonEnhanced(settingsService.Get(SettingKeys.GestureLeftButtonEnhancedJson, ""));
     }
 
     public BuiltInGestureAction GetAction(GesturePreset preset, string pattern)
     {
         var map = GetBindings(preset);
-
         return map.TryGetValue(pattern, out var action) ? action : BuiltInGestureAction.None;
+    }
+
+    public BuiltInGestureAction GetAction(GesturePreset preset, GestureExecutionContext context)
+    {
+        if (context.IsLeftButtonModified)
+        {
+            var leftMap = GetLeftButtonEnhancedBindings();
+            if (leftMap.TryGetValue(context.Pattern, out var enhancedAction) &&
+                enhancedAction != BuiltInGestureAction.None)
+            {
+                return enhancedAction;
+            }
+        }
+
+        return GetAction(preset, context.Pattern);
     }
 
     public IReadOnlyDictionary<string, BuiltInGestureAction> GetBindings(GesturePreset preset)
@@ -80,6 +103,22 @@ public sealed class GesturePresetProvider : IGesturePresetProvider
         lock (_syncRoot)
         {
             _customBindings = new Dictionary<string, BuiltInGestureAction>(bindings, StringComparer.Ordinal);
+        }
+    }
+
+    public IReadOnlyDictionary<string, BuiltInGestureAction> GetLeftButtonEnhancedBindings()
+    {
+        lock (_syncRoot)
+        {
+            return _leftButtonEnhanced;
+        }
+    }
+
+    public void UpdateLeftButtonEnhancedBindings(IReadOnlyDictionary<string, BuiltInGestureAction> bindings)
+    {
+        lock (_syncRoot)
+        {
+            _leftButtonEnhanced = new Dictionary<string, BuiltInGestureAction>(bindings, StringComparer.Ordinal);
         }
     }
 
@@ -105,6 +144,31 @@ public sealed class GesturePresetProvider : IGesturePresetProvider
         catch
         {
             return EditEnhanced;
+        }
+    }
+
+    private static IReadOnlyDictionary<string, BuiltInGestureAction> ParseLeftButtonEnhanced(string json)
+    {
+        if (string.IsNullOrWhiteSpace(json))
+        {
+            return DefaultLeftButtonEnhanced;
+        }
+
+        try
+        {
+            var map = JsonSerializer.Deserialize<Dictionary<string, BuiltInGestureAction>>(json);
+            if (map is null || map.Count == 0)
+            {
+                return DefaultLeftButtonEnhanced;
+            }
+
+            return map
+                .Where(pair => !string.IsNullOrWhiteSpace(pair.Key) && pair.Value != BuiltInGestureAction.None)
+                .ToDictionary(pair => pair.Key.Trim().ToUpperInvariant(), pair => pair.Value, StringComparer.Ordinal);
+        }
+        catch
+        {
+            return DefaultLeftButtonEnhanced;
         }
     }
 

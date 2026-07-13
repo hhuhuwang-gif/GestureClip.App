@@ -58,7 +58,7 @@ public sealed class WorkstationDashboardService : IWorkstationDashboardService
             stats,
             overtime,
             rating,
-            WorkBearTextProvider.BearLine(stageSnapshot.Stage, textStyle, stats.FishingStartedAt is not null, untilOffWork));
+            WorkBearTextProvider.BearLine(stageSnapshot.Stage, textStyle, stats.FishingStartedAt is not null, untilOffWork, now));
 
         return new WorkstationDashboardSnapshot(
             "工位小熊",
@@ -79,7 +79,7 @@ public sealed class WorkstationDashboardService : IWorkstationDashboardService
             stageSnapshot.Stage,
             WorkBearTextProvider.StageText(stageSnapshot.Stage),
             WorkBearTextProvider.BearStatus(stageSnapshot.Stage, stats.FishingStartedAt is not null),
-            WorkBearTextProvider.BearLine(stageSnapshot.Stage, textStyle, stats.FishingStartedAt is not null, untilOffWork),
+            WorkBearTextProvider.BearLine(stageSnapshot.Stage, textStyle, stats.FishingStartedAt is not null, untilOffWork, now),
             minuteWage,
             TimeSpan.FromMinutes(totalFishingMinutes),
             stats.OpenClipboardCount,
@@ -209,7 +209,74 @@ public sealed class WorkstationDashboardService : IWorkstationDashboardService
             stats,
             overtime,
             rating,
-            WorkBearTextProvider.BearLine(stage, GetTextStyle(), stats.FishingStartedAt is not null, GetTimeUntilOffWork(now, settings)));
+            WorkBearTextProvider.BearLine(stage, GetTextStyle(), stats.FishingStartedAt is not null, GetTimeUntilOffWork(now, settings), now));
+    }
+
+    public async Task<string> GeneratePeriodReportAsync(DateTimeOffset now, int dayCount, CancellationToken cancellationToken)
+    {
+        dayCount = Math.Clamp(dayCount, 1, 31);
+        var end = DateOnly.FromDateTime(now.Date);
+        var start = end.AddDays(1 - dayCount);
+        var settings = GetSettings();
+        var minuteWage = GetMinuteWage(settings);
+        var totalEarned = 0m;
+        var totalFishingMinutes = 0;
+        var totalCopy = 0;
+        var totalPaste = 0;
+        var totalGesture = 0;
+        var totalSaved = 0;
+        var totalReminders = 0;
+        var daysWithData = 0;
+
+        for (var date = start; date <= end; date = date.AddDays(1))
+        {
+            var stats = await _statsRepository.GetOrCreateAsync(date, cancellationToken);
+            var hasActivity = stats.CopyCount > 0 || stats.PasteCount > 0 || stats.GestureCount > 0 ||
+                              stats.FishingMinutes > 0 || stats.EstimatedSavedClicks > 0;
+            if (!hasActivity)
+            {
+                continue;
+            }
+
+            daysWithData++;
+            // Approximate earned for historical days using settings; today uses live minutes.
+            var earnedMinutes = date == end
+                ? GetEffectiveWorkedMinutes(now, settings)
+                : EstimateWorkdayMinutes(settings);
+            totalEarned += earnedMinutes * minuteWage;
+            totalFishingMinutes += stats.FishingMinutes;
+            totalCopy += stats.CopyCount;
+            totalPaste += stats.PasteCount;
+            totalGesture += stats.GestureCount;
+            totalSaved += stats.EstimatedSavedClicks;
+            totalReminders += stats.OverworkReminderCount;
+        }
+
+        var label = dayCount <= 7 ? "本周" : "本月";
+        return
+            $"{label}本地总结（{start:MM/dd}–{end:MM/dd}）\n" +
+            $"活跃天数：{daysWithData}\n" +
+            $"估算收益：￥{totalEarned:F2}\n" +
+            $"摸鱼：{totalFishingMinutes} 分钟（约 ￥{totalFishingMinutes * minuteWage:F2}）\n" +
+            $"复制 {totalCopy} · 粘贴 {totalPaste} · 手势 {totalGesture}\n" +
+            $"少点 {totalSaved} 次 · 休息提醒 {totalReminders} 次\n" +
+            "仅本地统计，不上传，不包含剪贴板正文。";
+    }
+
+    private static decimal EstimateWorkdayMinutes(WorkstationSettings settings)
+    {
+        if (settings.WorkEndTime <= settings.WorkStartTime)
+        {
+            return 8 * 60m;
+        }
+
+        var gross = (decimal)(settings.WorkEndTime - settings.WorkStartTime).TotalMinutes;
+        if (settings.LunchEndTime > settings.LunchStartTime)
+        {
+            gross -= (decimal)(settings.LunchEndTime - settings.LunchStartTime).TotalMinutes;
+        }
+
+        return Math.Max(0m, gross);
     }
 
     private bool IsEnabled()

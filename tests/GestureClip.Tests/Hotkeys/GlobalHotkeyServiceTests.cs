@@ -21,7 +21,9 @@ public sealed class GlobalHotkeyServiceTests
         service.Stop();
 
         Assert.Equal(1, registrar.RegisterCount);
+        Assert.Equal(1, registrar.QuickActionRegisterCount);
         Assert.Equal(1, registrar.UnregisterCount);
+        Assert.Equal(1, registrar.QuickActionUnregisterCount);
     }
 
     [Fact]
@@ -34,6 +36,17 @@ public sealed class GlobalHotkeyServiceTests
 
         Assert.Equal("Ctrl + `", registrar.LastHotkeyText);
         Assert.Equal("Ctrl + ` 已注册", service.Status.DisplayText);
+    }
+
+    [Fact]
+    public void Start_registers_default_quick_action_hotkey()
+    {
+        var registrar = new FakeHotkeyRegistrar();
+        var service = CreateService(registrar);
+
+        service.Start();
+
+        Assert.Equal("Ctrl + Shift + Q", registrar.LastQuickActionHotkeyText);
     }
 
     [Fact]
@@ -109,14 +122,32 @@ public sealed class GlobalHotkeyServiceTests
         Assert.Equal(0, overlay.ShowCount);
     }
 
+    [Fact]
+    public async Task Quick_action_hotkey_trigger_toggles_quick_action_center()
+    {
+        var registrar = new FakeHotkeyRegistrar();
+        var quickAction = new FakeQuickActionCenterService();
+        var service = CreateService(registrar, quickAction: quickAction);
+        service.Start();
+
+        registrar.RaiseQuickActionHotkeyPressed();
+        await WaitForAsync(() => quickAction.ToggleCount == 1);
+        registrar.RaiseQuickActionHotkeyPressed();
+        await WaitForAsync(() => quickAction.ToggleCount == 2);
+
+        Assert.Equal(2, quickAction.ToggleCount);
+    }
+
     private static GlobalHotkeyService CreateService(
         FakeHotkeyRegistrar registrar,
         FakeClipboardOverlayService? overlay = null,
-        FakeSettingsService? settings = null)
+        FakeSettingsService? settings = null,
+        FakeQuickActionCenterService? quickAction = null)
     {
         return new GlobalHotkeyService(
             registrar,
             overlay ?? new FakeClipboardOverlayService(),
+            quickAction ?? new FakeQuickActionCenterService(),
             settings ?? new FakeSettingsService(),
             NullLogger<GlobalHotkeyService>.Instance);
     }
@@ -140,11 +171,15 @@ public sealed class GlobalHotkeyServiceTests
     private sealed class FakeHotkeyRegistrar : IHotkeyRegistrar
     {
         public event EventHandler? HotkeyPressed;
+        public event EventHandler? QuickActionHotkeyPressed;
         public bool RegisterResult { get; set; } = true;
         public int LastError { get; set; }
         public int RegisterCount { get; private set; }
         public int UnregisterCount { get; private set; }
+        public int QuickActionRegisterCount { get; private set; }
+        public int QuickActionUnregisterCount { get; private set; }
         public string? LastHotkeyText { get; private set; }
+        public string? LastQuickActionHotkeyText { get; private set; }
         public List<string> FailedHotkeys { get; } = [];
         public List<string> RegisteredHotkeys { get; } = [];
 
@@ -167,9 +202,23 @@ public sealed class GlobalHotkeyServiceTests
             UnregisterCount++;
         }
 
+        public bool RegisterOpenQuickActionHotkey(HotkeyDefinition hotkey)
+        {
+            QuickActionRegisterCount++;
+            LastQuickActionHotkeyText = hotkey.DisplayText;
+            return true;
+        }
+
+        public void UnregisterOpenQuickActionHotkey()
+        {
+            QuickActionUnregisterCount++;
+        }
+
         public int GetLastError() => LastError;
 
         public void RaiseHotkeyPressed() => HotkeyPressed?.Invoke(this, EventArgs.Empty);
+
+        public void RaiseQuickActionHotkeyPressed() => QuickActionHotkeyPressed?.Invoke(this, EventArgs.Empty);
     }
 
     private sealed class FakeSettingsService : ISettingsService
@@ -208,5 +257,20 @@ public sealed class GlobalHotkeyServiceTests
             RefreshCount++;
             return Task.CompletedTask;
         }
+    }
+
+    private sealed class FakeQuickActionCenterService : IQuickActionCenterService
+    {
+        public int ToggleCount { get; private set; }
+
+        public Task ShowAsync() => Task.CompletedTask;
+
+        public Task ToggleAsync()
+        {
+            ToggleCount++;
+            return Task.CompletedTask;
+        }
+
+        public Task HideAsync() => Task.CompletedTask;
     }
 }
