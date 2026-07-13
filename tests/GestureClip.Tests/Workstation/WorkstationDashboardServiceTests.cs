@@ -29,8 +29,8 @@ public sealed class WorkstationDashboardServiceTests
         Assert.Equal(4, snapshot.GestureCount);
         Assert.Equal(12, snapshot.EstimatedSavedClicks);
         Assert.Equal("开工状态", snapshot.WorkStatusText);
-        Assert.Equal("上午开工", snapshot.WorkStageText);
-        Assert.Equal("晨间小熊", snapshot.BearStatusText);
+        Assert.Equal("🌅 上午开工", snapshot.WorkStageText);
+        Assert.Equal("🌻 晨间小熊", snapshot.BearStatusText);
         Assert.DoesNotContain("secret clipboard text", snapshot.DailyReportText);
     }
 
@@ -97,8 +97,8 @@ public sealed class WorkstationDashboardServiceTests
         var snapshot = await service.GetSnapshotAsync(now, CancellationToken.None);
 
         Assert.True(snapshot.SprintActive);
-        Assert.Equal("即将下班", snapshot.WorkStageText);
-        Assert.Equal("收尾小熊", snapshot.BearStatusText);
+        Assert.Equal("🏔 即将下班", snapshot.WorkStageText);
+        Assert.Equal("🏁 收尾小熊", snapshot.BearStatusText);
         Assert.Equal("建议活动", snapshot.RestRiskText);
         Assert.Equal(3, snapshot.OpenClipboardCount);
         Assert.Equal(2, snapshot.RestReminderCount);

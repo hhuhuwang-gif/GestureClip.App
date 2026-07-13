@@ -246,8 +246,8 @@ public partial class ClipboardOverlayWindow : Window
         Topmost = enabled;
         if (AlwaysVisibleButton is not null)
         {
-            AlwaysVisibleButton.Content = enabled ? "常显中" : "常显";
-            AlwaysVisibleButton.ToolTip = enabled ? "点击关闭常显；当前点击外部不会关闭" : "点击开启常显；默认点击外部自动关闭";
+            AlwaysVisibleButton.Content = enabled ? "📍" : "📌";
+            AlwaysVisibleButton.ToolTip = enabled ? "常显中：点击关闭（点外部不关）" : "点击开启常显";
             AlwaysVisibleButton.FontWeight = enabled ? FontWeights.SemiBold : FontWeights.Normal;
         }
     }

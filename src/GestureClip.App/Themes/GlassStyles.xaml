@@ -54,9 +54,146 @@
 
     <Style x:Key="SectionTitleStyle" TargetType="TextBlock">
         <Setter Property="Foreground" Value="{DynamicResource BrushTextPrimary}" />
-        <Setter Property="FontSize" Value="20" />
+        <Setter Property="FontSize" Value="22" />
         <Setter Property="FontWeight" Value="SemiBold" />
         <Setter Property="Margin" Value="0,0,0,10" />
+    </Style>
+
+    <!-- Typography rhythm: 22 / 17 / 13 / 11 -->
+    <Style x:Key="Title22Style" TargetType="TextBlock">
+        <Setter Property="Foreground" Value="{DynamicResource BrushTextPrimary}" />
+        <Setter Property="FontSize" Value="22" />
+        <Setter Property="FontWeight" Value="SemiBold" />
+    </Style>
+    <Style x:Key="Title17Style" TargetType="TextBlock">
+        <Setter Property="Foreground" Value="{DynamicResource BrushTextPrimary}" />
+        <Setter Property="FontSize" Value="17" />
+        <Setter Property="FontWeight" Value="SemiBold" />
+    </Style>
+    <Style x:Key="Body13Style" TargetType="TextBlock">
+        <Setter Property="Foreground" Value="{DynamicResource BrushTextPrimary}" />
+        <Setter Property="FontSize" Value="13" />
+    </Style>
+    <Style x:Key="Caption11Style" TargetType="TextBlock">
+        <Setter Property="Foreground" Value="{DynamicResource BrushTextSecondary}" />
+        <Setter Property="FontSize" Value="11" />
+    </Style>
+
+    <!-- Circular icon toolbar button (standalone; Controls.xaml loads after this file) -->
+    <Style x:Key="IconToolbarButtonStyle" TargetType="Button">
+        <Setter Property="Width" Value="32" />
+        <Setter Property="Height" Value="32" />
+        <Setter Property="MinWidth" Value="0" />
+        <Setter Property="Padding" Value="0" />
+        <Setter Property="FontSize" Value="14" />
+        <Setter Property="FontWeight" Value="SemiBold" />
+        <Setter Property="Foreground" Value="{DynamicResource BrushTextPrimary}" />
+        <Setter Property="Background" Value="{DynamicResource BrushFillTertiary}" />
+        <Setter Property="BorderBrush" Value="#12000000" />
+        <Setter Property="Margin" Value="0,0,8,0" />
+        <Setter Property="Cursor" Value="Hand" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="Button">
+                    <Border x:Name="Root"
+                            CornerRadius="999"
+                            Background="{TemplateBinding Background}"
+                            BorderBrush="{TemplateBinding BorderBrush}"
+                            BorderThickness="1"
+                            Width="{TemplateBinding Width}"
+                            Height="{TemplateBinding Height}">
+                        <ContentPresenter HorizontalAlignment="Center"
+                                          VerticalAlignment="Center"
+                                          TextElement.Foreground="{TemplateBinding Foreground}" />
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="Root" Property="Background" Value="{DynamicResource BrushControlHover}" />
+                        </Trigger>
+                        <Trigger Property="IsPressed" Value="True">
+                            <Setter TargetName="Root" Property="Opacity" Value="0.9" />
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <!-- Segmented filter radio (pill group) -->
+    <Style x:Key="SegmentedFilterRadioStyle" TargetType="RadioButton">
+        <Setter Property="MinWidth" Value="56" />
+        <Setter Property="Height" Value="30" />
+        <Setter Property="Padding" Value="12,0" />
+        <Setter Property="Margin" Value="0" />
+        <Setter Property="FontSize" Value="12" />
+        <Setter Property="FontWeight" Value="SemiBold" />
+        <Setter Property="Foreground" Value="{DynamicResource BrushTextSecondary}" />
+        <Setter Property="Cursor" Value="Hand" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="RadioButton">
+                    <Border x:Name="Root"
+                            CornerRadius="8"
+                            Background="Transparent"
+                            Padding="{TemplateBinding Padding}"
+                            Margin="2">
+                        <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="Root" Property="Background" Value="{DynamicResource BrushControlHover}" />
+                        </Trigger>
+                        <Trigger Property="IsChecked" Value="True">
+                            <Setter TargetName="Root" Property="Background" Value="{DynamicResource BrushSurface}" />
+                            <Setter Property="Foreground" Value="{DynamicResource BrushTextPrimary}" />
+                            <Setter TargetName="Root" Property="Effect">
+                                <Setter.Value>
+                                    <DropShadowEffect Color="#000000" BlurRadius="8" ShadowDepth="1" Opacity="0.08" Direction="270" />
+                                </Setter.Value>
+                            </Setter>
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <Style x:Key="SegmentedFilterBarStyle" TargetType="Border">
+        <Setter Property="CornerRadius" Value="12" />
+        <Setter Property="Padding" Value="3" />
+        <Setter Property="Background" Value="{DynamicResource BrushFillTertiary}" />
+        <Setter Property="BorderBrush" Value="#0D000000" />
+        <Setter Property="BorderThickness" Value="1" />
+    </Style>
+
+    <Style x:Key="EmptyStatePanelStyle" TargetType="Border">
+        <Setter Property="CornerRadius" Value="16" />
+        <Setter Property="Padding" Value="28,36" />
+        <Setter Property="Background" Value="{DynamicResource BrushFillTertiary}" />
+        <Setter Property="BorderBrush" Value="#0D000000" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="HorizontalAlignment" Value="Stretch" />
+        <Setter Property="VerticalAlignment" Value="Center" />
+        <Setter Property="Margin" Value="24" />
+    </Style>
+
+    <Style x:Key="TypeAccentBarTextStyle" TargetType="Border">
+        <Setter Property="Width" Value="3" />
+        <Setter Property="CornerRadius" Value="2" />
+        <Setter Property="Background" Value="{DynamicResource BrushPrimaryBright}" />
+        <Setter Property="Margin" Value="0,2,10,2" />
+        <Setter Property="VerticalAlignment" Value="Stretch" />
+    </Style>
+
+    <Style x:Key="TypeAccentBarImageStyle" TargetType="Border" BasedOn="{StaticResource TypeAccentBarTextStyle}">
+        <Setter Property="Background" Value="#AF52DE" />
+    </Style>
+
+    <Style x:Key="PillBadgeStyle" TargetType="Border">
+        <Setter Property="CornerRadius" Value="999" />
+        <Setter Property="Padding" Value="7,2" />
+        <Setter Property="Margin" Value="0,0,6,0" />
+        <Setter Property="Background" Value="{DynamicResource BrushAccentSoft}" />
     </Style>
 
     <Style x:Key="BodyTextStyle" TargetType="TextBlock">
@@ -87,15 +224,16 @@
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="GroupBox">
-                    <Border Style="{StaticResource GlassCardStyle}"
+                    <!-- Large settings card: soft surface, no heavy chrome -->
+                    <Border CornerRadius="16"
                             Padding="18"
-                            Effect="{x:Null}"
-                            Background="#FBFBFD"
-                            BorderBrush="#0F000000">
+                            Background="{DynamicResource BrushSurface}"
+                            BorderBrush="{DynamicResource BrushBorder}"
+                            BorderThickness="1">
                         <StackPanel>
                             <ContentPresenter ContentSource="Header"
-                                              TextElement.Foreground="{DynamicResource BrushTextPrimary}"
-                                              TextElement.FontSize="15"
+                                              TextElement.Foreground="{DynamicResource BrushTextSecondary}"
+                                              TextElement.FontSize="13"
                                               TextElement.FontWeight="SemiBold"
                                               Margin="0,0,0,14" />
                             <ContentPresenter />
@@ -113,8 +251,8 @@
         <Setter Property="CornerRadius" Value="12" />
         <Setter Property="Padding" Value="14,12" />
         <Setter Property="Margin" Value="0,0,0,8" />
-        <Setter Property="Background" Value="#FBFBFD" />
-        <Setter Property="BorderBrush" Value="#0D000000" />
+        <Setter Property="Background" Value="{DynamicResource BrushFillTertiary}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource BrushBorder}" />
         <Setter Property="BorderThickness" Value="1" />
     </Style>
 

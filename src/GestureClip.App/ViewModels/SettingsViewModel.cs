@@ -15,6 +15,7 @@ using GestureClip.Core.Hotkeys;
 using GestureClip.Core.Workstation;
 using GestureClip.Features.Gestures;
 using GestureClip.Features.Workstation;
+using GestureClip.App.Services;
 using GestureClip.Infrastructure.Paths;
 using System.Windows.Data;
 using System.Windows.Threading;
@@ -24,6 +25,7 @@ namespace GestureClip.App.ViewModels;
 public sealed class SettingsViewModel : INotifyPropertyChanged
 {
     private readonly ISettingsService _settingsService;
+    private readonly AppThemeService? _themeService;
     private readonly IMouseGestureService _mouseGestureService;
     private readonly IGestureSettingsProvider _gestureSettingsProvider;
     private readonly IFeatureToggleService _featureToggleService;
@@ -39,6 +41,7 @@ public sealed class SettingsViewModel : INotifyPropertyChanged
     private readonly IGesturePresetProvider _gesturePresetProvider;
     private readonly IEdgeTriggerService _edgeTriggerService;
     private readonly IWorkerLevelService _workerLevelService;
+    private bool _isDarkTheme;
     private bool _clipboardCaptureEnabled;
     private bool _gestureEnabled;
     private bool _gestureShowOverlay;
@@ -148,9 +151,11 @@ public sealed class SettingsViewModel : INotifyPropertyChanged
         IConfirmationService confirmationService,
         IGesturePresetProvider gesturePresetProvider,
         IEdgeTriggerService edgeTriggerService,
-        IWorkerLevelService workerLevelService)
+        IWorkerLevelService workerLevelService,
+        AppThemeService? themeService = null)
     {
         _settingsService = settingsService;
+        _themeService = themeService;
         _mouseGestureService = mouseGestureService;
         _gestureSettingsProvider = gestureSettingsProvider;
         _featureToggleService = featureToggleService;
@@ -262,6 +267,10 @@ public sealed class SettingsViewModel : INotifyPropertyChanged
         _gestureStrokeColor = _settingsService.Get(SettingKeys.GestureStrokeColor, "#8CC8FF");
         _gestureDiagnostics = _mouseGestureService.Diagnostics;
         _startWithWindows = _startupService.IsEnabled();
+        _isDarkTheme = string.Equals(
+            _settingsService.Get(SettingKeys.UiThemeMode, "Light"),
+            "Dark",
+            StringComparison.OrdinalIgnoreCase);
         StartupModeWarning = _startupService.IsDevelopmentRunMode()
             ? "当前看起来是开发运行路径，开机自启建议在发布版中开启。"
             : "";
@@ -379,6 +388,22 @@ public sealed class SettingsViewModel : INotifyPropertyChanged
             _pastePlainTextHotkeyText = hotkey.DisplayText;
             OnPropertyChanged();
             _ = ApplyPastePlainTextHotkeyAsync(hotkey.DisplayText);
+        }
+    }
+
+    public bool IsDarkTheme
+    {
+        get => _isDarkTheme;
+        set
+        {
+            if (_isDarkTheme == value)
+            {
+                return;
+            }
+
+            _isDarkTheme = value;
+            OnPropertyChanged();
+            _ = ApplyThemeAsync(value);
         }
     }
 
@@ -1973,6 +1998,18 @@ public sealed class SettingsViewModel : INotifyPropertyChanged
     {
         await _settingsService.SetAsync(SettingKeys.HotkeyPastePlainTextKey, hotkeyText, CancellationToken.None);
         RestartGlobalHotkeys();
+    }
+
+    private async Task ApplyThemeAsync(bool dark)
+    {
+        var mode = dark ? AppUiThemeMode.Dark : AppUiThemeMode.Light;
+        if (_themeService is not null)
+        {
+            await _themeService.SetModeAsync(mode);
+            return;
+        }
+
+        await _settingsService.SetAsync(SettingKeys.UiThemeMode, dark ? "Dark" : "Light", CancellationToken.None);
     }
 
     private void RestartGlobalHotkeys()

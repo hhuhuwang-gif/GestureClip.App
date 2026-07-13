@@ -16,28 +16,43 @@ public static class WorkBearTextProvider
 
     public static string StageText(WorkTimeStage stage) => stage switch
     {
-        WorkTimeStage.BeforeWork => "未上班",
-        WorkTimeStage.EarlyWork => "上午开工",
-        WorkTimeStage.MidWork => "午后稳住",
-        WorkTimeStage.LateWork => "即将下班",
-        WorkTimeStage.LunchBreak => "午休中",
-        WorkTimeStage.Overtime => "加班中",
-        WorkTimeStage.RestDay => "休息日",
-        _ => "已下班"
+        WorkTimeStage.BeforeWork => "☕ 未上班",
+        WorkTimeStage.EarlyWork => "🌅 上午开工",
+        WorkTimeStage.MidWork => "🛠 午后稳住",
+        WorkTimeStage.LateWork => "🏔 即将下班",
+        WorkTimeStage.LunchBreak => "🍱 午休中",
+        WorkTimeStage.Overtime => "🌙 加班中",
+        WorkTimeStage.RestDay => "🌿 休息日",
+        _ => "🏠 已下班"
     };
 
     public static string BearStatus(WorkTimeStage stage, bool isFishing) => isFishing
-        ? "摸鱼小熊"
+        ? "🐟 摸鱼小熊"
         : stage switch
         {
-            WorkTimeStage.BeforeWork => "活力小熊",
-            WorkTimeStage.EarlyWork => "晨间小熊",
-            WorkTimeStage.MidWork => "专注小熊",
-            WorkTimeStage.LateWork => "收尾小熊",
-            WorkTimeStage.LunchBreak => "午休小熊",
-            WorkTimeStage.Overtime => "加班小熊",
-            WorkTimeStage.RestDay => "休息日小熊",
-            _ => "低功耗小熊"
+            WorkTimeStage.BeforeWork => "⚡ 活力小熊",
+            WorkTimeStage.EarlyWork => "🌻 晨间小熊",
+            WorkTimeStage.MidWork => "🎯 专注小熊",
+            WorkTimeStage.LateWork => "🏁 收尾小熊",
+            WorkTimeStage.LunchBreak => "😴 午休小熊",
+            WorkTimeStage.Overtime => "🔥 加班小熊",
+            WorkTimeStage.RestDay => "🌴 休息日小熊",
+            _ => "🔋 低功耗小熊"
+        };
+
+    /// <summary>Compact emoji used by HUD / cards as WorkBear IP mark.</summary>
+    public static string BearEmoji(WorkTimeStage stage, bool isFishing) => isFishing
+        ? "🐟"
+        : stage switch
+        {
+            WorkTimeStage.BeforeWork => "⚡",
+            WorkTimeStage.EarlyWork => "🌻",
+            WorkTimeStage.MidWork => "🎯",
+            WorkTimeStage.LateWork => "🏁",
+            WorkTimeStage.LunchBreak => "😴",
+            WorkTimeStage.Overtime => "🔥",
+            WorkTimeStage.RestDay => "🌴",
+            _ => "🐻"
         };
 
     public static string BearLine(

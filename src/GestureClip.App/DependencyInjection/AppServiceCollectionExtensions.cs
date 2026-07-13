@@ -17,6 +17,7 @@ public static class AppServiceCollectionExtensions
         services.AddGestureClipInfrastructure(paths);
         services.AddGestureClipFeatures();
 
+        services.AddSingleton<AppThemeService>();
         services.AddSingleton<AppLifecycleService>();
         services.AddSingleton<IAppLifecycleService>(provider => provider.GetRequiredService<AppLifecycleService>());
         services.AddSingleton<TrayIconService>();

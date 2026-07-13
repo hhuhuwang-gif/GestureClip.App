@@ -229,9 +229,9 @@ public sealed class ThemeResourceTests
         var xaml = File.ReadAllText(path);
 
         Assert.Contains("ShortcutHintText", xaml);
-        Assert.Contains("↑ 顶部", xaml);
-        Assert.Contains("Ctrl+Enter", xaml);
-        Assert.Contains("Ctrl+Shift+C", xaml);
+        Assert.Contains("IconToolbarButtonStyle", xaml);
+        Assert.Contains("SegmentedFilter", xaml);
+        Assert.Contains("EmptyStatePanelStyle", xaml);
         Assert.Contains("ShortcutHelpText", xaml);
     }
 
@@ -365,7 +365,7 @@ public sealed class ThemeResourceTests
         Assert.Contains("<UniformGrid Columns=\"2\" />", xaml);
         Assert.Contains("MinHeight=\"138\"", xaml);
         Assert.Contains("Focusable=\"False\"", xaml);
-        Assert.Contains("ShortDirectionText", xaml);
+        Assert.Contains("TrajectoryGlyphs", xaml);
         Assert.Contains("InstructionText", xaml);
         Assert.DoesNotContain("<ListBox ItemsSource=\"{Binding PrimaryGestureBindingCards}\"", xaml);
         Assert.DoesNotContain("<ListBox ItemsSource=\"{Binding AdvancedGestureBindingCards}\"", xaml);

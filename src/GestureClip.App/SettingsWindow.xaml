@@ -377,6 +377,24 @@
                                             <ColumnDefinition Width="132" />
                                             <ColumnDefinition Width="*" />
                                         </Grid.ColumnDefinitions>
+                                        <TextBlock Text="外观" FontWeight="SemiBold" VerticalAlignment="Center" />
+                                        <StackPanel Grid.Column="1" Orientation="Horizontal">
+                                            <CheckBox Content="深色模式"
+                                                      IsChecked="{Binding IsDarkTheme, Mode=TwoWay}"
+                                                      VerticalAlignment="Center" />
+                                            <TextBlock Text="跟随本机偏好可后续扩展"
+                                                       Style="{StaticResource Caption11Style}"
+                                                       Margin="14,0,0,0"
+                                                       VerticalAlignment="Center" />
+                                        </StackPanel>
+                                    </Grid>
+                                </Border>
+                                <Border Style="{StaticResource SettingsFormRowStyle}">
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="132" />
+                                            <ColumnDefinition Width="*" />
+                                        </Grid.ColumnDefinitions>
                                         <TextBlock Text="权限状态" FontWeight="SemiBold" VerticalAlignment="Center" />
                                         <Border Grid.Column="1" Style="{StaticResource StatusBadgeStyle}" HorizontalAlignment="Left">
                                             <TextBlock Text="{Binding PermissionStatusText}" Foreground="{DynamicResource BrushPrimary}" FontWeight="SemiBold" />
@@ -1084,10 +1102,11 @@
                                                                     Padding="10"
                                                                     Margin="4">
                                                                 <StackPanel>
-                                                                    <TextBlock Text="{Binding ShortDirectionText}"
-                                                                               FontSize="18"
+                                                                    <TextBlock Text="{Binding TrajectoryGlyphs}"
+                                                                               FontSize="20"
                                                                                FontWeight="SemiBold"
-                                                                               Foreground="{DynamicResource BrushPrimaryBright}" />
+                                                                               Foreground="{DynamicResource BrushPrimaryBright}"
+                                                                               Margin="0,0,0,2" />
                                                                     <TextBlock Text="{Binding GestureName}"
                                                                                FontWeight="SemiBold"
                                                                                Margin="0,4,0,0" />
@@ -1163,7 +1182,7 @@
                                                                         Background="#EAF1FF"
                                                                         VerticalAlignment="Center"
                                                                         HorizontalAlignment="Left">
-                                                                    <TextBlock Text="{Binding ShortDirectionText}"
+                                                                    <TextBlock Text="{Binding TrajectoryGlyphs}"
                                                                                FontSize="16"
                                                                                FontWeight="SemiBold"
                                                                                Foreground="{DynamicResource BrushPrimaryBright}"
@@ -1321,8 +1340,8 @@
                                                                             Background="#EAF1FF"
                                                                             HorizontalAlignment="Left"
                                                                             VerticalAlignment="Center">
-                                                                        <TextBlock Text="{Binding ShortDirectionText}"
-                                                                                   FontSize="13"
+                                                                        <TextBlock Text="{Binding TrajectoryGlyphs}"
+                                                                                   FontSize="14"
                                                                                    FontWeight="SemiBold"
                                                                                    Foreground="{DynamicResource BrushPrimaryBright}"
                                                                                    HorizontalAlignment="Center"

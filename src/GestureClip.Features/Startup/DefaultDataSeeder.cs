@@ -23,6 +23,7 @@ public sealed class DefaultDataSeeder
         var now = DateTimeOffset.UtcNow.ToString("O");
 
         await SeedSettingAsync(connection, SettingKeys.AppStartWithWindows, "false", "bool", now);
+        await SeedSettingAsync(connection, SettingKeys.UiThemeMode, "\"Light\"", "string", now);
         await SeedSettingAsync(connection, SettingKeys.ClipboardCaptureEnabled, "true", "bool", now);
         await SeedSettingAsync(connection, SettingKeys.ClipboardMaxItems, "1000", "int", now);
         await SeedSettingAsync(connection, SettingKeys.ClipboardRetentionDays, "30", "int", now);

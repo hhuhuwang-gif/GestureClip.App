@@ -64,6 +64,7 @@ public partial class App : System.Windows.Application
             }
 
             await _serviceProvider.GetRequiredService<IAppBlacklistService>().RefreshAsync(CancellationToken.None);
+            _serviceProvider.GetRequiredService<AppThemeService>().InitializeFromSettings();
 
             MainWindow = _serviceProvider.GetRequiredService<MainWindow>();
             _trayIconService = _serviceProvider.GetRequiredService<TrayIconService>();

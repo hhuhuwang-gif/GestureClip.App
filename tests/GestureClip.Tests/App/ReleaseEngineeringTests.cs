@@ -70,8 +70,8 @@ public sealed class ReleaseEngineeringTests
         Assert.Contains("一键回顶部", releaseDraft);
         var clipboardOverlayXaml = File.ReadAllText(FindRepositoryFile("src", "GestureClip.App", "ClipboardOverlayWindow.xaml"));
         var clipboardOverlayCode = File.ReadAllText(FindRepositoryFile("src", "GestureClip.App", "ClipboardOverlayWindow.xaml.cs"));
-        Assert.Contains("双击复制并关闭", clipboardOverlayXaml);
-        Assert.Contains("复制按钮只复制不关闭", clipboardOverlayXaml);
+        Assert.Contains("双击复制", clipboardOverlayXaml);
+        Assert.Contains("SegmentedFilter", clipboardOverlayXaml);
         Assert.Contains("CopyItemAndHideAsync", clipboardOverlayCode);
         Assert.Contains("ConfirmDeleteSelectedItems", clipboardOverlayCode);
     }

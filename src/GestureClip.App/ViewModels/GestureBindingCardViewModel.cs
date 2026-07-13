@@ -44,6 +44,38 @@ public sealed class GestureBindingCardViewModel : INotifyPropertyChanged
         ? "R+L"
         : DirectionText;
 
+    /// <summary>Mini trajectory glyphs for binding cards (e.g. ↑ → ↓).</summary>
+    public string TrajectoryGlyphs
+    {
+        get
+        {
+            if (string.Equals(Pattern, "R+L", StringComparison.OrdinalIgnoreCase))
+            {
+                return "R+L";
+            }
+
+            if (string.IsNullOrWhiteSpace(Pattern))
+            {
+                return "·";
+            }
+
+            var map = new System.Text.StringBuilder();
+            foreach (var ch in Pattern.ToUpperInvariant())
+            {
+                map.Append(ch switch
+                {
+                    'U' => '↑',
+                    'D' => '↓',
+                    'L' => '←',
+                    'R' => '→',
+                    _ => ch
+                });
+            }
+
+            return map.ToString();
+        }
+    }
+
     public string GestureName { get; }
 
     public bool IsCommon { get; }

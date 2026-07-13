@@ -142,6 +142,10 @@ public sealed class ClipboardOverlayViewModel : INotifyPropertyChanged
 
     public string SummaryText => $"共 {Items.Count} 条 · 已选 {_selectedCount} 条";
 
+    public bool HasItems => Items.Count > 0;
+
+    public bool IsEmpty => Items.Count == 0 && !IsLoading;
+
     public string ShortcutHintText { get; private set; } =
         "Home 回顶 · End 到底 · Ctrl+Enter 粘贴不关 · Ctrl+Shift+C 纯文本 · ? 快捷键 · Esc 清搜索/关闭";
 
@@ -465,6 +469,8 @@ public sealed class ClipboardOverlayViewModel : INotifyPropertyChanged
         UpdateSelectedCount(SelectedItem is null ? 0 : 1);
         EmptyStateText = Items.Count == 0 ? "没有匹配的剪贴板记录" : "";
         OnPropertyChanged(nameof(SummaryText));
+        OnPropertyChanged(nameof(HasItems));
+        OnPropertyChanged(nameof(IsEmpty));
         refreshWatch.Stop();
         Trace.WriteLine($"ClipboardPerf UiRefreshDurationMs ElapsedMs={refreshWatch.ElapsedMilliseconds} ItemCount={Items.Count} Filter={SelectedFilter}");
     }
@@ -980,6 +986,8 @@ public sealed class ClipboardOverlayViewModel : INotifyPropertyChanged
 
         EmptyStateText = Items.Count == 0 ? "没有匹配的剪贴板记录" : "";
         OnPropertyChanged(nameof(SummaryText));
+        OnPropertyChanged(nameof(HasItems));
+        OnPropertyChanged(nameof(IsEmpty));
     }
 
     private void OnPropertyChanged([CallerMemberName] string? propertyName = null)
