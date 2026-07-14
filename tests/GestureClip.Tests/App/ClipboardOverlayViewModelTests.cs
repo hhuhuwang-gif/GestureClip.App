@@ -431,7 +431,26 @@ public sealed class ClipboardOverlayViewModelTests
         Assert.True(copied);
         Assert.Empty(service.SearchKeywords);
         Assert.Equal(before, viewModel.Items.Select(item => item.Id).ToArray());
-        Assert.Contains("文字已复制到系统剪贴板", viewModel.StatusText);
+        Assert.True(viewModel.Items.Single(item => item.Id == first.Id).IsSessionCopied);
+        Assert.False(viewModel.Items.Single(item => item.Id == second.Id).IsSessionCopied);
+        Assert.Contains("已复制", viewModel.StatusText);
+    }
+
+    [Fact]
+    public async Task CopySelectedAsync_marks_only_copied_items_as_session_copied_for_multi_select()
+    {
+        var first = TextItem("first");
+        var second = TextItem("second");
+        var third = TextItem("third");
+        var service = new FakeClipboardService([first, second, third]);
+        var viewModel = new ClipboardOverlayViewModel(service, TimeSpan.Zero);
+        await viewModel.LoadAsync();
+
+        Assert.True(await viewModel.CopySelectedAsync([first, third]));
+
+        Assert.True(viewModel.Items.Single(item => item.Id == first.Id).IsSessionCopied);
+        Assert.False(viewModel.Items.Single(item => item.Id == second.Id).IsSessionCopied);
+        Assert.True(viewModel.Items.Single(item => item.Id == third.Id).IsSessionCopied);
     }
 
     [Fact]
@@ -450,7 +469,8 @@ public sealed class ClipboardOverlayViewModelTests
 
         Assert.Empty(service.SearchKeywords);
         Assert.Equal(20, service.CopyCount);
-        Assert.Contains("文字已复制到系统剪贴板", viewModel.StatusText);
+        Assert.Equal(20, viewModel.Items.Count(item => item.IsSessionCopied));
+        Assert.Contains("已复制", viewModel.StatusText);
     }
 
     [Fact]
@@ -488,7 +508,8 @@ public sealed class ClipboardOverlayViewModelTests
         Assert.Empty(service.SearchKeywords);
         Assert.Single(viewModel.Items);
         Assert.Equal(100, viewModel.Items[0].UseCount);
-        Assert.Contains("文字已复制到系统剪贴板", viewModel.StatusText);
+        Assert.True(viewModel.Items[0].IsSessionCopied);
+        Assert.Contains("已复制", viewModel.StatusText);
     }
 
     [Fact]
@@ -707,7 +728,8 @@ public sealed class ClipboardOverlayViewModelTests
         var copied = await viewModel.CopySelectedAsync([image]);
 
         Assert.True(copied);
-        Assert.Contains("图片已复制到系统剪贴板", viewModel.StatusText);
+        Assert.Contains("图片已复制", viewModel.StatusText);
+        Assert.True(viewModel.Items.Single().IsSessionCopied);
     }
 
     [Fact]

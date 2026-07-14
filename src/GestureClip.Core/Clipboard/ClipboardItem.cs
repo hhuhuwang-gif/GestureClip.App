@@ -16,7 +16,12 @@ public sealed record ClipboardItem(
     DateTimeOffset CreatedAt,
     DateTimeOffset UpdatedAt,
     DateTimeOffset? LastUsedAt,
-    string? ThumbnailContent = null)
+    string? ThumbnailContent = null,
+    /// <summary>
+    /// UI-only: marked when user copied this item from the overlay this session.
+    /// Not persisted; used so multi-select copy can show which rows were already handled.
+    /// </summary>
+    bool IsSessionCopied = false)
 {
     public bool IsText => string.Equals(ContentType, "text", StringComparison.OrdinalIgnoreCase);
 

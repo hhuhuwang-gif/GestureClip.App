@@ -31,6 +31,8 @@ public sealed class ClipboardOverlayViewModel : INotifyPropertyChanged
     private string? _errorMessage;
     private bool _isShortcutHelpVisible;
     private IReadOnlyList<ClipboardItem> _undoDeleteItems = [];
+    /// <summary>Ids copied (or pasted) from the overlay in this process session.</summary>
+    private readonly HashSet<Guid> _sessionCopiedIds = [];
 
     public ClipboardOverlayViewModel(IClipboardService clipboardService, TimeSpan? searchDebounceDelay = null)
     {
@@ -397,7 +399,7 @@ public sealed class ClipboardOverlayViewModel : INotifyPropertyChanged
             return;
         }
 
-        _lastSearchResults = results;
+        _lastSearchResults = results.Select(WithSessionCopiedFlag).ToArray();
         HasMoreItems = results.Count == PageSize;
         ApplyFilter();
         StatusText = "";
@@ -429,7 +431,7 @@ public sealed class ClipboardOverlayViewModel : INotifyPropertyChanged
 
             var existingIds = _lastSearchResults.Select(item => item.Id).ToHashSet();
             _lastSearchResults = _lastSearchResults
-                .Concat(nextPage.Where(item => existingIds.Add(item.Id)))
+                .Concat(nextPage.Where(item => existingIds.Add(item.Id)).Select(WithSessionCopiedFlag))
                 .ToArray();
             HasMoreItems = nextPage.Count == PageSize;
             ApplyFilter(keepSelection: true);
@@ -561,6 +563,7 @@ public sealed class ClipboardOverlayViewModel : INotifyPropertyChanged
         {
             ErrorMessage = null;
             await _clipboardService.PasteAsync(item, new PasteOptions(false), CancellationToken.None);
+            MarkItemsUsed([item.Id]);
             return true;
         }
         catch (Exception ex)
@@ -584,10 +587,10 @@ public sealed class ClipboardOverlayViewModel : INotifyPropertyChanged
             await _clipboardService.CopyItemsAsync(selectedItems, CancellationToken.None);
             MarkItemsUsed(selectedItems.Select(item => item.Id).ToArray());
             StatusText = selectedItems.Count == 1 && selectedItems[0].IsImage
-                ? "图片已复制到系统剪贴板 · 面板未关闭"
+                ? "图片已复制 · 色条变绿 · 面板未关闭"
                 : selectedItems.Count == 1
-                    ? "文字已复制到系统剪贴板 · 面板未关闭"
-                    : $"已合并复制 {selectedItems.Count} 条 · 面板未关闭";
+                    ? "文字已复制 · 色条变绿 · 面板未关闭"
+                    : $"已合并复制 {selectedItems.Count} 条 · 已复制项色条变绿";
             return true;
         }
         catch (NotSupportedException ex)
@@ -814,13 +817,21 @@ public sealed class ClipboardOverlayViewModel : INotifyPropertyChanged
         var now = DateTimeOffset.UtcNow;
         foreach (var id in ids)
         {
+            _sessionCopiedIds.Add(id);
             UpdateItem(id, item => item with
             {
                 UseCount = item.UseCount + 1,
                 LastUsedAt = now,
-                UpdatedAt = now
+                UpdatedAt = now,
+                IsSessionCopied = true
             });
         }
+    }
+
+    private ClipboardItem WithSessionCopiedFlag(ClipboardItem item)
+    {
+        var copied = _sessionCopiedIds.Contains(item.Id);
+        return item.IsSessionCopied == copied ? item : item with { IsSessionCopied = copied };
     }
 
     private void UpdateItem(Guid id, Func<ClipboardItem, ClipboardItem> update)

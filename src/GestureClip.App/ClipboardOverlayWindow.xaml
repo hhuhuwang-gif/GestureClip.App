@@ -177,22 +177,29 @@
                                     <ColumnDefinition Width="32" />
                                     <ColumnDefinition Width="*" />
                                 </Grid.ColumnDefinitions>
-                                <!-- Type accent bar -->
+                                <!-- Type accent bar: blue/text · purple/image · orange/pin · green = 本会话已复制 -->
                                 <Border x:Name="TypeAccentBar"
                                         Width="3"
                                         CornerRadius="2"
                                         Background="{DynamicResource BrushPrimaryBright}"
                                         Margin="0,2,10,2"
-                                        VerticalAlignment="Stretch">
+                                        VerticalAlignment="Stretch"
+                                        ToolTip="左侧色条：蓝=文本 紫=图片 橙=置顶 绿=本会话已从历史复制">
                                     <Border.Style>
                                         <Style TargetType="Border">
                                             <Setter Property="Background" Value="{DynamicResource BrushPrimaryBright}" />
+                                            <Setter Property="Width" Value="3" />
                                             <Style.Triggers>
                                                 <DataTrigger Binding="{Binding IsImage}" Value="True">
                                                     <Setter Property="Background" Value="#AF52DE" />
                                                 </DataTrigger>
                                                 <DataTrigger Binding="{Binding IsPinned}" Value="True">
                                                     <Setter Property="Background" Value="#FF9F0A" />
+                                                </DataTrigger>
+                                                <!-- Last wins: multi-select copy progress is most actionable -->
+                                                <DataTrigger Binding="{Binding IsSessionCopied}" Value="True">
+                                                    <Setter Property="Background" Value="{DynamicResource BrushSuccess}" />
+                                                    <Setter Property="Width" Value="4" />
                                                 </DataTrigger>
                                             </Style.Triggers>
                                         </Style>
@@ -364,6 +371,21 @@
                                                 </Border.Style>
                                                 <TextBlock Text="片段" FontSize="10" FontWeight="SemiBold"
                                                            Foreground="#2563EB" />
+                                            </Border>
+                                            <Border>
+                                                <Border.Style>
+                                                    <Style TargetType="Border" BasedOn="{StaticResource PillBadgeStyle}">
+                                                        <Setter Property="Visibility" Value="Collapsed" />
+                                                        <Setter Property="Background" Value="#1A34C759" />
+                                                        <Style.Triggers>
+                                                            <DataTrigger Binding="{Binding IsSessionCopied}" Value="True">
+                                                                <Setter Property="Visibility" Value="Visible" />
+                                                            </DataTrigger>
+                                                        </Style.Triggers>
+                                                    </Style>
+                                                </Border.Style>
+                                                <TextBlock Text="已复制" FontSize="10" FontWeight="SemiBold"
+                                                           Foreground="{DynamicResource BrushSuccess}" />
                                             </Border>
                                         </StackPanel>
                                         <WrapPanel Margin="0,4,0,0">
