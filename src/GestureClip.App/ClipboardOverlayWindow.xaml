@@ -69,9 +69,10 @@
                 <StackPanel>
                     <TextBlock Text="剪贴板历史"
                                Style="{StaticResource Title22Style}" />
-                    <TextBlock Text="双击复制 · Enter 粘贴 · Ctrl+Enter 不关窗"
+                    <TextBlock Text="双击复制 · Enter 粘贴 · 绿条=本会话已复制"
                                Style="{StaticResource Caption11Style}"
-                               Margin="0,4,0,0" />
+                               Margin="0,4,0,0"
+                               ToolTip="左侧色条：蓝=文本 · 紫=图片 · 橙=置顶 · 绿=本会话已从历史复制。多选时绿条可区分进度。" />
                 </StackPanel>
             </DockPanel>
 

@@ -333,7 +333,8 @@ public sealed class ClipboardService : IClipboardService
         var hasImage = items.Any(item => item.IsImage);
         if (hasText && hasImage)
         {
-            throw new NotSupportedException("混合内容暂不支持批量复制。");
+            throw new NotSupportedException(
+                "不能同时选文字和图片一起复制。请只选文本（可多条合并），或只选一张图片。");
         }
 
         SuppressCaptureFor(TimeSpan.FromMilliseconds(1000));
@@ -341,7 +342,8 @@ public sealed class ClipboardService : IClipboardService
         {
             if (items.Count > 1)
             {
-                throw new NotSupportedException("暂不支持批量复制多张图片。");
+                throw new NotSupportedException(
+                    "一次只能复制一张图片。请取消多余选中，只保留一张再复制。");
             }
 
             var image = await EnsureFullContentAsync(items[0], cancellationToken);

@@ -231,11 +231,11 @@
                                                            FontWeight="SemiBold" />
                                             </Border>
                                         </StackPanel>
-                                        <TextBlock Text="下划手势自动聪明粘贴"
+                                        <TextBlock Text="只净化剪贴板，粘贴方式与关闭时相同"
                                                    FontSize="14"
                                                    FontWeight="SemiBold"
                                                    Foreground="{DynamicResource BrushPrimaryBright}" />
-                                        <TextBlock Text="用下划手势粘贴时，GestureClip 会看你正在用的软件，自动选择普通粘贴、纯文本粘贴或干净粘贴。"
+                                        <TextBlock Text="开启后：按当前软件尽力改写成纯文本/干净文本，再统一发 Ctrl+V。关闭后：不改写，直接 Ctrl+V。微信/代码编辑器默认去格式，Word 尽量保留原样。"
                                                    Style="{StaticResource MutedTextStyle}"
                                                    Margin="0,8,24,0"
                                                    TextWrapping="Wrap" />
@@ -627,7 +627,7 @@
                                                            TextWrapping="Wrap" />
                                             </StackPanel>
                                             <StackPanel Grid.Column="1">
-                                                <TextBlock Text="同一个下划手势会根据当前软件自动选择普通粘贴、纯文本粘贴或干净粘贴；打开设置就能在首页看到推荐卡。"
+                                                <TextBlock Text="智能粘贴只做剪贴板改写（内容不变则跳过），注入始终走可靠 Ctrl+V。与首页推荐卡是同一开关。"
                                                             TextWrapping="Wrap" />
                                             </StackPanel>
                                         </Grid>

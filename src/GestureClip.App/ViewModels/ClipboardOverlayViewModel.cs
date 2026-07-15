@@ -142,7 +142,24 @@ public sealed class ClipboardOverlayViewModel : INotifyPropertyChanged
 
     public string SelectedFavoriteActionText => SelectedItem?.IsFavorite == true ? "取消片段" : "保存为片段";
 
-    public string SummaryText => $"共 {Items.Count} 条 · 已选 {_selectedCount} 条";
+    public string SummaryText
+    {
+        get
+        {
+            var copiedOnScreen = 0;
+            foreach (var item in Items)
+            {
+                if (item.IsSessionCopied)
+                {
+                    copiedOnScreen++;
+                }
+            }
+
+            return copiedOnScreen > 0
+                ? $"共 {Items.Count} 条 · 已选 {_selectedCount} 条 · 已复制 {copiedOnScreen} 条"
+                : $"共 {Items.Count} 条 · 已选 {_selectedCount} 条";
+        }
+    }
 
     public bool HasItems => Items.Count > 0;
 
@@ -183,6 +200,9 @@ public sealed class ClipboardOverlayViewModel : INotifyPropertyChanged
         回顶 / 到底      Home / End
         重置视图         Esc（有搜索时）或「清空」
         快捷键速查       ? 或 F1
+
+        左侧色条：蓝=文本 紫=图片 橙=置顶 绿=本会话已从历史复制
+        多选复制时，绿条可区分哪些已复制、哪些还没动。
         """;
 
     public string EmptyStateText

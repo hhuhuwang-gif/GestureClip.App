@@ -27,10 +27,9 @@ public sealed class SmartPasteSourceContractTests
         Assert.Contains("根据当前软件", catalog);
         Assert.Contains("智能粘贴", xaml);
         Assert.Contains("推荐开启", xaml);
-        Assert.Contains("下划手势自动聪明粘贴", xaml);
+        Assert.Contains("只净化剪贴板，粘贴方式与关闭时相同", xaml);
         Assert.Contains("开启智能粘贴（推荐）", xaml);
-        Assert.Contains("GestureClip 会看你正在用的软件", xaml);
-        Assert.Contains("根据当前软件自动选择", xaml);
+        Assert.Contains("统一发 Ctrl+V", xaml);
         Assert.Contains("IsSmartPasteEnabled", xaml);
         Assert.Contains("SelectedBadgeText", xaml);
         Assert.Contains("DeleteCommand", xaml);

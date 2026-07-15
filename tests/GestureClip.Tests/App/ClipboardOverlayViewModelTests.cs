@@ -673,10 +673,25 @@ public sealed class ClipboardOverlayViewModelTests
         await viewModel.LoadAsync();
 
         Assert.Equal("共 2 条 · 已选 1 条", viewModel.SummaryText);
+        Assert.DoesNotContain("已复制", viewModel.SummaryText);
 
         viewModel.UpdateSelectedCount(2);
 
         Assert.Equal("共 2 条 · 已选 2 条", viewModel.SummaryText);
+    }
+
+    [Fact]
+    public async Task SummaryText_includes_session_copied_count_after_copy()
+    {
+        var first = TextItem("first");
+        var second = TextItem("second");
+        var service = new FakeClipboardService([first, second]);
+        var viewModel = new ClipboardOverlayViewModel(service, TimeSpan.Zero);
+        await viewModel.LoadAsync();
+
+        Assert.True(await viewModel.CopySelectedAsync([first]));
+
+        Assert.Equal("共 2 条 · 已选 1 条 · 已复制 1 条", viewModel.SummaryText);
     }
 
     [Fact]
