@@ -358,10 +358,10 @@ public sealed class ThemeResourceTests
         Assert.Contains("Click=\"ScrollToCustomGestureDesigner_Click\"", xaml);
         Assert.Contains("MinHeight=\"168\"", xaml);
         Assert.Contains("删除这个手势绑定", xaml);
-        Assert.Contains("先看卡片", xaml);
+        Assert.Contains("点「更换动作」会选中该手势", xaml);
         Assert.Contains("常用手势一览", xaml);
-        Assert.Contains("SelectGestureBindingCommand", xaml);
-        Assert.Contains("CommandParameter=\"{Binding Pattern}\"", xaml);
+        Assert.Contains("ChangeGestureAction_Click", xaml);
+        Assert.Contains("Tag=\"{Binding Pattern}\"", xaml);
         Assert.Contains("<UniformGrid Columns=\"2\" />", xaml);
         Assert.Contains("MinHeight=\"138\"", xaml);
         Assert.Contains("Focusable=\"False\"", xaml);
@@ -445,7 +445,7 @@ public sealed class ThemeResourceTests
         Assert.Contains("AboutPageIntro", xaml);
         Assert.Contains("先确认权限、数据位置和运行状态", xaml);
         Assert.Contains("控制是否记录剪贴板历史", xaml);
-        Assert.Contains("新手建议保留鼠标右键", xaml);
+        Assert.Contains("去设计 / 更换动作", xaml);
         Assert.Contains("规则只在本机生效", xaml);
         Assert.Contains("关闭窗口仍会隐藏到托盘", xaml);
         Assert.Contains("所有统计仍然只在本地计算", xaml);
@@ -489,8 +489,9 @@ public sealed class ThemeResourceTests
         var xaml = File.ReadAllText(path);
 
         Assert.Contains("按住右键，往一个方向划一下，松开右键就会执行动作。", xaml);
-        Assert.Contains("Header=\"高级设置\"", xaml);
-        Assert.Contains("IsExpanded=\"True\"", xaml);
+        Assert.Contains("GestureAdvancedSettingsExpander", xaml);
+        Assert.Contains("EdgeEnhancementPromoCard", xaml);
+        Assert.Contains("启用屏幕角落 / 边缘触发", xaml);
         Assert.DoesNotContain("启用左键拖动画手势", xaml);
         Assert.Contains("左键点击可以作为执行动作，但不是手势触发键", xaml);
         Assert.DoesNotContain("左边缘 + 鼠标左键", xaml);
@@ -676,7 +677,7 @@ public sealed class ThemeResourceTests
         var path = FindRepositoryFile("src", "GestureClip.App", "SettingsWindow.xaml");
         var xaml = File.ReadAllText(path);
 
-        Assert.Contains("R+L 组合手势", xaml);
+        Assert.Contains("R+L = 按住右键再点左键", xaml);
         Assert.Contains("CommandParameter=\"R+L|PasteAndEnter\"", xaml);
         Assert.DoesNotContain("CommandParameter=\"LeftMouseClick\"", xaml);
         Assert.DoesNotContain("CommandParameter=\"RightMouseClick\"", xaml);

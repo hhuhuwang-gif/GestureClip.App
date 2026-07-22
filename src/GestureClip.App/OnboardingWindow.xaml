@@ -36,7 +36,14 @@
                     <ColumnDefinition Width="*" />
                 </Grid.ColumnDefinitions>
 
-                <Border Grid.Column="0" Style="{StaticResource GlassCardStyle}" Padding="18" Margin="0,0,10,0">
+                <Border Grid.Column="0"
+                        Style="{StaticResource GlassCardStyle}"
+                        Padding="18"
+                        Margin="0,0,10,0"
+                        Cursor="Hand"
+                        Tag="clipboard"
+                        MouseLeftButtonUp="FeatureCard_MouseLeftButtonUp"
+                        ToolTip="点击打开剪贴板设置">
                     <StackPanel>
                         <TextBlock Text="1" FontSize="26" FontWeight="Bold" Foreground="{DynamicResource BrushPrimary}" />
                         <TextBlock Text="剪贴板历史" Margin="0,12,0,0" FontSize="18" FontWeight="SemiBold" />
@@ -44,21 +51,43 @@
                                    Margin="0,10,0,0"
                                    TextWrapping="Wrap"
                                    Style="{StaticResource MutedTextStyle}" />
+                        <TextBlock Text="点击开始设置 →"
+                                   Margin="0,14,0,0"
+                                   FontWeight="SemiBold"
+                                   Foreground="{DynamicResource BrushPrimaryBright}" />
                     </StackPanel>
                 </Border>
 
-                <Border Grid.Column="1" Style="{StaticResource GlassCardStyle}" Padding="18" Margin="5,0,5,0">
+                <Border Grid.Column="1"
+                        Style="{StaticResource GlassCardStyle}"
+                        Padding="18"
+                        Margin="5,0,5,0"
+                        Cursor="Hand"
+                        Tag="bindings"
+                        MouseLeftButtonUp="FeatureCard_MouseLeftButtonUp"
+                        ToolTip="点击打开动作绑定 / 设计手势">
                     <StackPanel>
                         <TextBlock Text="2" FontSize="26" FontWeight="Bold" Foreground="{DynamicResource BrushPrimary}" />
                         <TextBlock Text="鼠标手势" Margin="0,12,0,0" FontSize="18" FontWeight="SemiBold" />
-                        <TextBlock Text="按住右键划一下即可复制、粘贴、后退、前进，也可以自定义动作。"
+                        <TextBlock Text="按住右键划一下即可复制、粘贴、后退、前进；可在动作绑定里更换动作。"
                                    Margin="0,10,0,0"
                                    TextWrapping="Wrap"
                                    Style="{StaticResource MutedTextStyle}" />
+                        <TextBlock Text="点击去设计动作 →"
+                                   Margin="0,14,0,0"
+                                   FontWeight="SemiBold"
+                                   Foreground="{DynamicResource BrushPrimaryBright}" />
                     </StackPanel>
                 </Border>
 
-                <Border Grid.Column="2" Style="{StaticResource GlassCardStyle}" Padding="18" Margin="10,0,0,0">
+                <Border Grid.Column="2"
+                        Style="{StaticResource GlassCardStyle}"
+                        Padding="18"
+                        Margin="10,0,0,0"
+                        Cursor="Hand"
+                        Tag="workbear"
+                        MouseLeftButtonUp="FeatureCard_MouseLeftButtonUp"
+                        ToolTip="点击打开工位小熊设置">
                     <StackPanel>
                         <TextBlock Text="3" FontSize="26" FontWeight="Bold" Foreground="{DynamicResource BrushPrimary}" />
                         <TextBlock Text="工位小熊" Margin="0,12,0,0" FontSize="18" FontWeight="SemiBold" />
@@ -66,6 +95,10 @@
                                    Margin="0,10,0,0"
                                    TextWrapping="Wrap"
                                    Style="{StaticResource MutedTextStyle}" />
+                        <TextBlock Text="点击打开小熊 →"
+                                   Margin="0,14,0,0"
+                                   FontWeight="SemiBold"
+                                   Foreground="{DynamicResource BrushPrimaryBright}" />
                     </StackPanel>
                 </Border>
             </Grid>
@@ -84,10 +117,10 @@
                                    Style="{StaticResource MutedTextStyle}" />
                     </StackPanel>
                     <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center" Margin="18,0,0,0">
-                        <Button Content="跳过"
+                        <Button Content="稍后再说"
                                 Style="{StaticResource SecondaryButtonStyle}"
                                 Click="SkipButton_Click" />
-                        <Button Content="开始设置"
+                        <Button Content="打开设置首页"
                                 Style="{StaticResource PrimaryButtonStyle}"
                                 Margin="10,0,0,0"
                                 Click="StartButton_Click" />

@@ -182,7 +182,8 @@
                     </Grid.ColumnDefinitions>
                     <Border Background="{DynamicResource BrushSidebarBackground}"
                             CornerRadius="18,0,0,18" />
-                    <TabControl Grid.Column="0"
+                    <TabControl x:Name="MainSettingsTabControl"
+                            Grid.Column="0"
                                 Grid.ColumnSpan="2"
                                 TabStripPlacement="Left"
                                 Background="Transparent"
@@ -264,7 +265,11 @@
                                                Margin="0,6,0,16"
                                                TextWrapping="Wrap" />
                                     <UniformGrid Columns="2" Margin="0,0,-12,-12">
-                                        <Border Style="{StaticResource FeatureMapItemCardStyle}">
+                                        <Border Style="{StaticResource FeatureMapItemCardStyle}"
+                                                Cursor="Hand"
+                                                Tag="clipboard"
+                                                MouseLeftButtonUp="FeatureMapCard_MouseLeftButtonUp"
+                                                ToolTip="点击前往：剪贴板设置 · 也可下划手势 D">
                                             <StackPanel>
                                                 <TextBlock Text="智能粘贴"
                                                            FontSize="17"
@@ -274,14 +279,18 @@
                                                            Style="{StaticResource MutedTextStyle}"
                                                            Margin="0,8,0,0"
                                                            TextWrapping="Wrap" />
-                                                <TextBlock Text="用法：下划手势 D；首页可开关“开启智能粘贴（推荐）”。"
+                                                <TextBlock Text="点击打开剪贴板页；也可用下划手势 D + 智能粘贴开关。"
                                                            Foreground="{DynamicResource BrushPrimaryBright}"
                                                            FontWeight="SemiBold"
                                                            Margin="0,10,0,0"
                                                            TextWrapping="Wrap" />
                                             </StackPanel>
                                         </Border>
-                                        <Border Style="{StaticResource FeatureMapItemCardStyle}">
+                                        <Border Style="{StaticResource FeatureMapItemCardStyle}"
+                                                Cursor="Hand"
+                                                Tag="gestures"
+                                                MouseLeftButtonUp="FeatureMapCard_MouseLeftButtonUp"
+                                                ToolTip="点击前往：手势开关 · 边缘增强 · 高级设置">
                                             <StackPanel>
                                                 <TextBlock Text="鼠标手势"
                                                            FontSize="17"
@@ -291,16 +300,20 @@
                                                            Style="{StaticResource MutedTextStyle}"
                                                            Margin="0,8,0,0"
                                                            TextWrapping="Wrap" />
-                                                <TextBlock Text="入口：设置 → 手势，可改上划复制、下划粘贴、左划后退、右划前进。"
+                                                <TextBlock Text="点击打开手势页，可改开关、边缘增强与高级设置。"
                                                            Foreground="{DynamicResource BrushPrimaryBright}"
                                                            FontWeight="SemiBold"
                                                            Margin="0,10,0,0"
                                                            TextWrapping="Wrap" />
                                             </StackPanel>
                                         </Border>
-                                        <Border Style="{StaticResource FeatureMapItemCardStyle}">
+                                        <Border Style="{StaticResource FeatureMapItemCardStyle}"
+                                                Cursor="Hand"
+                                                Tag="bindings"
+                                                MouseLeftButtonUp="FeatureMapCard_MouseLeftButtonUp"
+                                                ToolTip="点击前往：动作绑定（更换 / 设计）">
                                             <StackPanel>
-                                                <TextBlock Text="左键增强动作"
+                                                <TextBlock Text="左键增强 / 设计动作"
                                                            FontSize="17"
                                                            FontWeight="SemiBold"
                                                            Foreground="{DynamicResource BrushTextPrimary}" />
@@ -308,14 +321,18 @@
                                                            Style="{StaticResource MutedTextStyle}"
                                                            Margin="0,8,0,0"
                                                            TextWrapping="Wrap" />
-                                                <TextBlock Text="入口：设置 → 动作绑定 → 左键增强动作（可设置）。"
+                                                <TextBlock Text="点击打开动作绑定，直接更换动作或设计新手势。"
                                                            Foreground="{DynamicResource BrushPrimaryBright}"
                                                            FontWeight="SemiBold"
                                                            Margin="0,10,0,0"
                                                            TextWrapping="Wrap" />
                                             </StackPanel>
                                         </Border>
-                                        <Border Style="{StaticResource FeatureMapItemCardStyle}">
+                                        <Border Style="{StaticResource FeatureMapItemCardStyle}"
+                                                Cursor="Hand"
+                                                Tag="clipboard"
+                                                MouseLeftButtonUp="FeatureMapCard_MouseLeftButtonUp"
+                                                ToolTip="点击前往：剪贴板设置（Ctrl + `）">
                                             <StackPanel>
                                                 <TextBlock Text="剪贴板历史"
                                                            FontSize="17"
@@ -325,7 +342,7 @@
                                                            Style="{StaticResource MutedTextStyle}"
                                                            Margin="0,8,0,0"
                                                            TextWrapping="Wrap" />
-                                                <TextBlock Text="入口：设置 → 剪贴板，开启历史和快捷入口。"
+                                                <TextBlock Text="点击打开剪贴板页，开启历史与快捷键。"
                                                            Foreground="{DynamicResource BrushPrimaryBright}"
                                                            FontWeight="SemiBold"
                                                            Margin="0,10,0,0"
@@ -349,7 +366,11 @@
                                                            TextWrapping="Wrap" />
                                             </StackPanel>
                                         </Border>
-                                        <Border Style="{StaticResource FeatureMapItemCardStyle}">
+                                        <Border Style="{StaticResource FeatureMapItemCardStyle}"
+                                                Cursor="Hand"
+                                                Tag="privacy"
+                                                MouseLeftButtonUp="FeatureMapCard_MouseLeftButtonUp"
+                                                ToolTip="点击前往：隐私与数据">
                                             <StackPanel>
                                                 <TextBlock Text="本地安全"
                                                            FontSize="17"
@@ -359,7 +380,7 @@
                                                            Style="{StaticResource MutedTextStyle}"
                                                            Margin="0,8,0,0"
                                                            TextWrapping="Wrap" />
-                                                <TextBlock Text="入口：设置 → 数据，可查看数据位置和清理方式。"
+                                                <TextBlock Text="点击打开隐私页，查看数据位置与清理。"
                                                            Foreground="{DynamicResource BrushPrimaryBright}"
                                                            FontWeight="SemiBold"
                                                            Margin="0,10,0,0"
@@ -594,8 +615,32 @@
                             <Border x:Name="GesturePageIntro" Style="{StaticResource SettingsCompactIntroCardStyle}">
                                 <StackPanel>
                                     <TextBlock Text="鼠标手势设置" Style="{StaticResource SettingsIntroTitleStyle}" />
-                                    <TextBlock Text="先开关手势，再选择触发方式。新手建议保留鼠标右键，其他触发方式需要时再开。"
-                                               Style="{StaticResource MutedTextStyle}" />
+                                    <TextBlock Text="先开关手势。默认右键就够用。改「每个手势做什么」去动作绑定；屏幕边缘增强在下方；更多项在高级设置。"
+                                               Style="{StaticResource MutedTextStyle}"
+                                               TextWrapping="Wrap" />
+                                    <WrapPanel Margin="0,12,0,0">
+                                        <Button Content="去设计 / 更换动作"
+                                                Style="{StaticResource PrimaryButtonStyle}"
+                                                MinWidth="0"
+                                                Width="160"
+                                                Height="34"
+                                                Margin="0,0,8,8"
+                                                Click="NavigateToBindings_Click" />
+                                        <Button Content="查看边缘增强"
+                                                Style="{StaticResource SecondaryButtonStyle}"
+                                                MinWidth="0"
+                                                Width="140"
+                                                Height="34"
+                                                Margin="0,0,8,8"
+                                                Click="NavigateToEdgeEnhancement_Click" />
+                                        <Button Content="展开高级设置"
+                                                Style="{StaticResource SecondaryButtonStyle}"
+                                                MinWidth="0"
+                                                Width="140"
+                                                Height="34"
+                                                Margin="0,0,8,8"
+                                                Click="ExpandGestureAdvanced_Click" />
+                                    </WrapPanel>
                                 </StackPanel>
                             </Border>
                             <GroupBox Header="手势" Padding="10">
@@ -707,7 +752,46 @@
                                 </StackPanel>
                             </GroupBox>
 
-                            <Expander Header="高级设置"
+                            <Border x:Name="EdgeEnhancementPromoCard"
+                                    Style="{StaticResource GlassCardStyle}"
+                                    Padding="16"
+                                    Margin="0,10,0,0"
+                                    Background="{DynamicResource BrushAccentSoft}">
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
+                                    <StackPanel>
+                                        <TextBlock Text="屏幕边缘增强（可选，以前藏在高级设置里）"
+                                                   FontSize="16"
+                                                   FontWeight="SemiBold" />
+                                        <TextBlock Text="鼠标移到屏幕四角或边缘可触发动作（开始菜单、切换窗口、剪贴板等）。默认关闭；打开后可用右侧预设一键配置。"
+                                                   Style="{StaticResource MutedTextStyle}"
+                                                   Margin="0,6,0,10"
+                                                   TextWrapping="Wrap" />
+                                        <CheckBox Content="启用屏幕角落 / 边缘触发"
+                                                  IsChecked="{Binding EdgeTriggerEnabled, Mode=TwoWay}"
+                                                  FontWeight="SemiBold" />
+                                    </StackPanel>
+                                    <StackPanel Grid.Column="1" VerticalAlignment="Center" Margin="16,0,0,0">
+                                        <Button Content="完整边缘设置"
+                                                Style="{StaticResource SecondaryButtonStyle}"
+                                                MinWidth="0"
+                                                Width="128"
+                                                Height="34"
+                                                Margin="0,0,0,8"
+                                                Click="NavigateToEdgeEnhancement_Click" />
+                                        <Button Content="浏览器预设"
+                                                Style="{StaticResource SettingsSecondaryActionButtonStyle}"
+                                                Width="128"
+                                                Command="{Binding ApplyBrowserEdgePresetCommand}" />
+                                    </StackPanel>
+                                </Grid>
+                            </Border>
+
+                            <Expander x:Name="GestureAdvancedSettingsExpander"
+                                      Header="高级设置 · 触发键 / 边缘详细项（点此展开）"
                                       Margin="0,10,0,0"
                                       IsExpanded="False">
                                 <StackPanel Margin="0,8,0,0">
@@ -762,7 +846,10 @@
                                         </StackPanel>
                                     </GroupBox>
 
-                                    <GroupBox Header="屏幕角落和边缘" Padding="10" Margin="0,10,0,0">
+                                    <GroupBox x:Name="EdgeTriggerSettingsGroup"
+                                              Header="屏幕角落和边缘（完整设置）"
+                                              Padding="10"
+                                              Margin="0,10,0,0">
                                         <StackPanel>
                                             <CheckBox Content="启用屏幕角落触发"
                                                       IsChecked="{Binding EdgeTriggerEnabled, Mode=TwoWay}" />
@@ -972,13 +1059,24 @@
                                         Style="{StaticResource GlassCardStyle}"
                                         Padding="20">
                                     <StackPanel>
-                                        <TextBlock Text="动作绑定"
-                                                   FontSize="18"
-                                                   FontWeight="SemiBold" />
-                                        <TextBlock Text="先看卡片：手势怎么画、现在绑定什么动作、按住右键画完会发生什么。要修改就点卡片里的“更换动作”，要移除就点同一张卡片里的“删除”。R+L 组合手势表示按住右键时点击左键。"
+                                        <DockPanel Margin="0,0,0,6">
+                                            <Button DockPanel.Dock="Right"
+                                                    Content="设计新手势"
+                                                    Style="{StaticResource PrimaryButtonStyle}"
+                                                    MinWidth="0"
+                                                    Width="120"
+                                                    Height="34"
+                                                    Focusable="False"
+                                                    Click="ScrollToCustomGestureDesigner_Click" />
+                                            <TextBlock Text="动作绑定"
+                                                       FontSize="18"
+                                                       FontWeight="SemiBold"
+                                                       VerticalAlignment="Center" />
+                                        </DockPanel>
+                                        <TextBlock Text="点「更换动作」会选中该手势并滚到下方修改区。删除只影响绑定。R+L = 按住右键再点左键（左键增强）。"
                                                    Style="{StaticResource MutedTextStyle}"
                                                    TextWrapping="Wrap"
-                                                   Margin="0,6,0,14" />
+                                                   Margin="0,0,0,14" />
 
                                         <Border Background="#FFF7ED"
                                                 BorderBrush="#FED7AA"
@@ -1283,8 +1381,9 @@
                                                                         Height="30"
                                                                         Margin="0,0,8,0"
                                                                         Focusable="False"
-                                                                        Command="{Binding DataContext.SelectGestureBindingCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
-                                                                        CommandParameter="{Binding Pattern}" />
+                                                                        ToolTip="选中此手势并跳到下方修改动作"
+                                                                        Tag="{Binding Pattern}"
+                                                                        Click="ChangeGestureAction_Click" />
                                                                 <Button Content="删除"
                                                                         MinWidth="0"
                                                                         Width="68"
@@ -1420,13 +1519,14 @@
                                                                 </StackPanel>
                                                                 <WrapPanel Margin="0,10,0,0">
                                                                     <Button Content="更换动作"
-                                                                            MinWidth="0"
-                                                                            Width="88"
-                                                                            Height="30"
-                                                                            Margin="0,0,8,0"
-                                                                            Focusable="False"
-                                                                            Command="{Binding DataContext.SelectGestureBindingCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
-                                                                            CommandParameter="{Binding Pattern}" />
+                                                                        MinWidth="0"
+                                                                        Width="88"
+                                                                        Height="30"
+                                                                        Margin="0,0,8,0"
+                                                                        Focusable="False"
+                                                                        ToolTip="选中此手势并跳到下方修改动作"
+                                                                        Tag="{Binding Pattern}"
+                                                                        Click="ChangeGestureAction_Click" />
                                                                     <Button Content="删除"
                                                                             MinWidth="0"
                                                                             Width="68"
@@ -1501,7 +1601,10 @@
                                                                TextWrapping="Wrap"
                                                                Margin="0,0,0,14" />
 
-                                                    <TextBlock Text="修改动作" FontWeight="SemiBold" Margin="0,0,0,8" />
+                                                    <TextBlock x:Name="GestureActionEditorTitle"
+                                                               Text="在此选择新动作（点「更换动作」会滚到这里）"
+                                                               FontWeight="SemiBold"
+                                                               Margin="0,0,0,8" />
                                                     <ComboBox Height="40"
                                                               ItemsSource="{Binding GestureActionOptions}"
                                                               DisplayMemberPath="DisplayName"

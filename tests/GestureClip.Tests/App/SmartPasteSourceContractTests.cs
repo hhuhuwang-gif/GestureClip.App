@@ -69,14 +69,15 @@ public sealed class SmartPasteSourceContractTests
         Assert.Contains("先看这 6 个入口", xaml);
         Assert.Contains("智能粘贴", xaml);
         Assert.Contains("鼠标手势", xaml);
-        Assert.Contains("左键增强动作", xaml);
+        Assert.Contains("左键增强 / 设计动作", xaml);
         Assert.Contains("剪贴板历史", xaml);
         Assert.Contains("快捷入口", xaml);
         Assert.Contains("本地安全", xaml);
         Assert.Contains("下划手势 D", xaml);
-        Assert.Contains("设置 → 手势", xaml);
-        Assert.Contains("设置 → 剪贴板", xaml);
-        Assert.Contains("设置 → 数据", xaml);
+        Assert.Contains("FeatureMapCard_MouseLeftButtonUp", xaml);
+        Assert.Contains("点击打开手势页", xaml);
+        Assert.Contains("点击打开剪贴板页", xaml);
+        Assert.Contains("点击打开隐私页", xaml);
         Assert.Contains("<UniformGrid Columns=\"2\"", xaml);
     }
 

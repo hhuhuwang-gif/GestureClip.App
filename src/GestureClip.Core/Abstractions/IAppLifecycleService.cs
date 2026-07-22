@@ -4,7 +4,7 @@ public interface IAppLifecycleService
 {
     bool IsExplicitExit { get; }
 
-    void ShowSettingsWindow();
+    void ShowSettingsWindow(string? page = null);
 
     void ToggleSettingsWindow();
 

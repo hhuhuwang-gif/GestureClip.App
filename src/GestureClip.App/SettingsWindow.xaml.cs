@@ -120,16 +120,124 @@ public partial class SettingsWindow : Window
 
     private void ScrollToCustomGestureDesigner_Click(object sender, RoutedEventArgs e)
     {
-        try
+        NavigateToPage("bindings");
+        Dispatcher.BeginInvoke(new Action(() =>
         {
-            var target = GestureDesignerPanel.TransformToAncestor(GestureBindingPageScrollViewer)
-                .Transform(new System.Windows.Point(0, 0));
-            GestureBindingPageScrollViewer.ScrollToVerticalOffset(
-                Math.Max(0, GestureBindingPageScrollViewer.VerticalOffset + target.Y - 24));
+            try
+            {
+                var target = GestureDesignerPanel.TransformToAncestor(GestureBindingPageScrollViewer)
+                    .Transform(new System.Windows.Point(0, 0));
+                GestureBindingPageScrollViewer.ScrollToVerticalOffset(
+                    Math.Max(0, GestureBindingPageScrollViewer.VerticalOffset + target.Y - 24));
+            }
+            catch (InvalidOperationException)
+            {
+                GestureBindingPageScrollViewer.ScrollToEnd();
+            }
+        }), System.Windows.Threading.DispatcherPriority.Loaded);
+    }
+
+    private void NavigateToBindings_Click(object sender, RoutedEventArgs e) => NavigateToPage("bindings");
+
+    private void NavigateToEdgeEnhancement_Click(object sender, RoutedEventArgs e)
+    {
+        NavigateToPage("gestures");
+        Dispatcher.BeginInvoke(new Action(() =>
+        {
+            GestureAdvancedSettingsExpander.IsExpanded = true;
+            try
+            {
+                EdgeTriggerSettingsGroup.BringIntoView();
+            }
+            catch (InvalidOperationException)
+            {
+                EdgeEnhancementPromoCard.BringIntoView();
+            }
+        }), System.Windows.Threading.DispatcherPriority.Loaded);
+    }
+
+    private void ExpandGestureAdvanced_Click(object sender, RoutedEventArgs e)
+    {
+        NavigateToPage("gestures");
+        Dispatcher.BeginInvoke(new Action(() =>
+        {
+            GestureAdvancedSettingsExpander.IsExpanded = true;
+            GestureAdvancedSettingsExpander.BringIntoView();
+        }), System.Windows.Threading.DispatcherPriority.Loaded);
+    }
+
+    private void FeatureMapCard_MouseLeftButtonUp(object sender, MouseButtonEventArgs e)
+    {
+        if (sender is FrameworkElement { Tag: string tag })
+        {
+            NavigateToPage(tag);
+            e.Handled = true;
         }
-        catch (InvalidOperationException)
+    }
+
+    private void ChangeGestureAction_Click(object sender, RoutedEventArgs e)
+    {
+        if (DataContext is not SettingsViewModel viewModel)
         {
-            GestureBindingPageScrollViewer.ScrollToEnd();
+            return;
+        }
+
+        var pattern = (sender as FrameworkElement)?.Tag as string;
+        if (string.IsNullOrWhiteSpace(pattern))
+        {
+            return;
+        }
+
+        viewModel.SelectedGestureBindingSelectionKey = pattern;
+        NavigateToPage("bindings");
+        Dispatcher.BeginInvoke(new Action(() =>
+        {
+            try
+            {
+                GestureBindingDetailPanel.BringIntoView();
+                GestureActionEditorTitle.BringIntoView();
+            }
+            catch (InvalidOperationException)
+            {
+                GestureBindingPageScrollViewer.ScrollToVerticalOffset(
+                    Math.Max(0, GestureBindingPageScrollViewer.ScrollableHeight * 0.45));
+            }
+        }), System.Windows.Threading.DispatcherPriority.Loaded);
+        e.Handled = true;
+    }
+
+    /// <summary>
+    /// Open a settings tab by header keyword / alias. Safe to call after show.
+    /// </summary>
+    public void NavigateToPage(string page)
+    {
+        if (MainSettingsTabControl is null)
+        {
+            return;
+        }
+
+        var key = (page ?? "").Trim().ToLowerInvariant();
+        var header = key switch
+        {
+            "home" or "首页" or "" => "首页",
+            "clipboard" or "剪贴板" or "smartpaste" or "智能粘贴" => "剪贴板",
+            "gestures" or "手势" or "edge" or "边缘" => "手势",
+            "bindings" or "动作" or "动作绑定" or "设计" or "designer" => "动作绑定",
+            "privacy" or "隐私" or "数据" => "隐私",
+            "startup" or "自启" => "自启",
+            "workbear" or "小熊" or "工位" => "小熊",
+            "diagnostics" or "诊断" => "诊断",
+            "about" or "关于" => "关于",
+            _ => "首页"
+        };
+
+        foreach (var item in MainSettingsTabControl.Items)
+        {
+            if (item is TabItem tab && string.Equals(tab.Header?.ToString(), header, StringComparison.Ordinal))
+            {
+                MainSettingsTabControl.SelectedItem = tab;
+                break;
+            }
         }
     }
 

@@ -27,7 +27,7 @@ public sealed class AppLifecycleService : IAppLifecycleService
 
     public bool RuntimeStopped { get; private set; }
 
-    public void ShowSettingsWindow()
+    public void ShowSettingsWindow(string? page = null)
     {
         if (_settingsWindow is null)
         {
@@ -42,7 +42,12 @@ public sealed class AppLifecycleService : IAppLifecycleService
         }
 
         _settingsWindow.Activate();
-        _logger.LogInformation("Settings window shown.");
+        if (!string.IsNullOrWhiteSpace(page))
+        {
+            _settingsWindow.NavigateToPage(page);
+        }
+
+        _logger.LogInformation("Settings window shown. Page={Page}", page ?? "default");
     }
 
     public void ToggleSettingsWindow()
