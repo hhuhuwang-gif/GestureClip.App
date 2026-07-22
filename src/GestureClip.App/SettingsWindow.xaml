@@ -22,7 +22,7 @@
             <Setter Property="Effect" Value="{x:Null}" />
         </Style>
         <Style x:Key="SettingsIntroTitleStyle" TargetType="TextBlock" BasedOn="{StaticResource SectionTitleStyle}">
-            <Setter Property="FontSize" Value="22" />
+            <Setter Property="FontSize" Value="20" />
             <Setter Property="Margin" Value="0,0,0,6" />
         </Style>
         <Style x:Key="SettingsFormRowStyle" TargetType="Border" BasedOn="{StaticResource SettingRowStyle}">
@@ -103,14 +103,14 @@
             <Setter Property="Margin" Value="0,0,0,8" />
         </Style>
     </Window.Resources>
-    <Border CornerRadius="22"
+    <Border CornerRadius="18"
             Background="{DynamicResource BrushAppBackground}"
             BorderBrush="{DynamicResource BrushBorder}"
             BorderThickness="1"
             ClipToBounds="True"
             MouseLeftButtonDown="WindowBackground_MouseLeftButtonDown">
         <Border.Effect>
-            <DropShadowEffect Color="#000000" BlurRadius="52" ShadowDepth="10" Opacity="0.18" Direction="270" />
+            <DropShadowEffect Color="#000000" BlurRadius="28" ShadowDepth="4" Opacity="0.10" Direction="270" />
         </Border.Effect>
     <Grid Margin="16">
         <Grid.RowDefinitions>
@@ -144,7 +144,7 @@
                 </Grid.ColumnDefinitions>
                 <StackPanel VerticalAlignment="Center">
                     <TextBlock Text="GestureClip"
-                               FontSize="22"
+                               FontSize="20"
                                FontWeight="SemiBold"
                                Foreground="{DynamicResource BrushTextPrimary}" />
                     <TextBlock Text="剪贴板 · 手势 · 本地办公加速"
@@ -221,7 +221,7 @@
                                     <StackPanel>
                                         <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
                                             <TextBlock Text="智能粘贴"
-                                                       FontSize="22"
+                                                       FontSize="20"
                                                        FontWeight="SemiBold"
                                                        Foreground="{DynamicResource BrushTextPrimary}" />
                                             <Border Style="{StaticResource StatusBadgeStyle}"
@@ -257,7 +257,7 @@
                                     CornerRadius="20">
                                 <StackPanel>
                                     <TextBlock Text="我能帮你做什么"
-                                               FontSize="22"
+                                               FontSize="20"
                                                FontWeight="SemiBold"
                                                Foreground="{DynamicResource BrushTextPrimary}" />
                                     <TextBlock Text="先看这 6 个入口，不用猜功能藏在哪里。"
@@ -756,7 +756,7 @@
                                     Style="{StaticResource GlassCardStyle}"
                                     Padding="16"
                                     Margin="0,10,0,0"
-                                    Background="{DynamicResource BrushAccentSoft}">
+                                    Background="{DynamicResource BrushFillTertiary}">
                                 <Grid>
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="*" />
@@ -1078,8 +1078,8 @@
                                                    TextWrapping="Wrap"
                                                    Margin="0,0,0,14" />
 
-                                        <Border Background="#FFF7ED"
-                                                BorderBrush="#FED7AA"
+                                        <Border Background="{DynamicResource BrushFillTertiary}"
+                                                BorderBrush="{DynamicResource BrushBorder}"
                                                 BorderThickness="1"
                                                 CornerRadius="18"
                                                 Padding="14"
@@ -1153,8 +1153,8 @@
                                         </Border>
 
                                         <Border x:Name="RecommendedGesturePanel"
-                                                Background="#FFF7ED"
-                                                BorderBrush="#FED7AA"
+                                                Background="{DynamicResource BrushFillTertiary}"
+                                                BorderBrush="{DynamicResource BrushBorder}"
                                                 BorderThickness="1"
                                                 CornerRadius="18"
                                                 Padding="14"
@@ -1194,7 +1194,7 @@
                                                     <ItemsControl.ItemTemplate>
                                                         <DataTemplate>
                                                             <Border Background="#FFFFFFFF"
-                                                                    BorderBrush="#FED7AA"
+                                                                    BorderBrush="{DynamicResource BrushBorder}"
                                                                     BorderThickness="1"
                                                                     CornerRadius="14"
                                                                     Padding="10"
@@ -1227,7 +1227,7 @@
                                                            Margin="4,8,0,0" />
                                             </StackPanel>
                                         </Border>
-                                        <Border Background="#F8FAFD"
+                                        <Border Background="{DynamicResource BrushCardElevated}"
                                                 BorderBrush="{DynamicResource BrushBorder}"
                                                 BorderThickness="1"
                                                 CornerRadius="14"
@@ -1344,8 +1344,8 @@
                                                                                    Margin="10,0,0,0" />
                                                                     </Grid>
                                                                 </Border>
-                                                                <Border Background="#FFF7ED"
-                                                                        BorderBrush="#FED7AA"
+                                                                <Border Background="{DynamicResource BrushFillTertiary}"
+                                                                        BorderBrush="{DynamicResource BrushBorder}"
                                                                         BorderThickness="1"
                                                                         CornerRadius="12"
                                                                         Padding="10,7"
@@ -1492,8 +1492,8 @@
                                                                                        Margin="8,0,0,0" />
                                                                         </Grid>
                                                                     </Border>
-                                                                    <Border Background="#FFF7ED"
-                                                                            BorderBrush="#FED7AA"
+                                                                    <Border Background="{DynamicResource BrushFillTertiary}"
+                                                                            BorderBrush="{DynamicResource BrushBorder}"
                                                                             BorderThickness="1"
                                                                             CornerRadius="12"
                                                                             Padding="9,6"
@@ -1552,7 +1552,7 @@
                                             </ItemsControl>
                                         </Expander>
                                         <Border x:Name="GestureBindingDetailPanel"
-                                                Background="#F8FAFD"
+                                                Background="{DynamicResource BrushCardElevated}"
                                                 BorderBrush="{DynamicResource BrushBorder}"
                                                 BorderThickness="1"
                                                 CornerRadius="18"
@@ -1566,7 +1566,7 @@
 
                                                 <StackPanel>
                                                     <Border Background="#FFFFFFFF"
-                                                            BorderBrush="#26768AA8"
+                                                            BorderBrush="{DynamicResource BrushBorder}"
                                                             BorderThickness="1"
                                                             CornerRadius="16"
                                                             Padding="10">
@@ -1656,7 +1656,7 @@
                                                        Style="{StaticResource MutedTextStyle}"
                                                        Margin="0,0,0,10" />
                                             <Border x:Name="GestureDesignerPanel"
-                                                    Background="#F8FAFD"
+                                                    Background="{DynamicResource BrushCardElevated}"
                                                     BorderBrush="{DynamicResource BrushBorder}"
                                                     BorderThickness="1"
                                                     CornerRadius="18"
@@ -1668,7 +1668,7 @@
                                                                 HorizontalAlignment="Stretch"
                                                                 CornerRadius="18"
                                                                 Background="#FFFFFFFF"
-                                                                BorderBrush="#26768AA8"
+                                                                BorderBrush="{DynamicResource BrushBorder}"
                                                                 BorderThickness="1"
                                                                 ClipToBounds="True"
                                                                 MouseLeftButtonDown="RecordGesturePad_MouseLeftButtonDown"
@@ -1727,7 +1727,7 @@
                                                 </StackPanel>
                                             </Border>
                                             <Border x:Name="NewGestureFormPanel"
-                                                    Background="#F8FAFD"
+                                                    Background="{DynamicResource BrushCardElevated}"
                                                     BorderBrush="{DynamicResource BrushBorder}"
                                                     BorderThickness="1"
                                                     CornerRadius="18"
@@ -1906,7 +1906,7 @@
                                             <TextBlock Text="实时预览" FontWeight="SemiBold" VerticalAlignment="Top" />
                                             <StackPanel Grid.Column="1">
                                                 <TextBlock Text="右键手势 HUD 会大概这样显示：" Style="{StaticResource MutedTextStyle}" />
-                                                <Border Background="#F8FAFD"
+                                                <Border Background="{DynamicResource BrushCardElevated}"
                                                         BorderBrush="{DynamicResource BrushBorder}"
                                                         BorderThickness="1"
                                                         CornerRadius="16"
@@ -2253,8 +2253,8 @@
             <Border Grid.Column="1"
                     Margin="12,0,0,0"
                     CornerRadius="18"
-                    Background="#FBFBFD"
-                    BorderBrush="#0F000000"
+                    Background="{DynamicResource BrushCardElevated}"
+                    BorderBrush="{DynamicResource BrushBorder}"
                     BorderThickness="1"
                     Padding="18">
                 <ScrollViewer VerticalScrollBarVisibility="Auto"
@@ -2267,7 +2267,7 @@
                             Background="{DynamicResource BrushCoralGradient}">
                         <TextBlock Text="GC"
                                    Foreground="White"
-                                   FontSize="22"
+                                   FontSize="20"
                                    FontWeight="SemiBold"
                                    HorizontalAlignment="Center"
                                    VerticalAlignment="Center" />

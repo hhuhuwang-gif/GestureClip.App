@@ -30,7 +30,7 @@ public sealed class GestureOverlayWindowTests
         Assert.Contains("Width=\"860\"", xaml);
         Assert.Contains("Height=\"210\"", xaml);
         Assert.Contains("BorderThickness=\"1\"", xaml);
-        Assert.Contains("CornerRadius=\"26\"", xaml);
+        Assert.Contains("CornerRadius=\"18\"", xaml);
         Assert.DoesNotContain("Canvas.Left=\"24\"", xaml);
         Assert.DoesNotContain("Canvas.Top=\"24\"", xaml);
     }

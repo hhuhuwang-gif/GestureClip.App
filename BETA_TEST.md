@@ -1,10 +1,10 @@
 # BETA_TEST
 
-GestureClip v0.6.23 Beta 公测检查清单。
+GestureClip v0.6.24 Beta 公测检查清单。
 
 ## 1. 安装测试
 
-- [ ] 下载 `GestureClip-v0.6.23-beta-win-x64.zip`
+- [ ] 下载 `GestureClip-v0.6.24-beta-win-x64.zip`
 - [ ] 解压到新目录
 - [ ] 双击 `GestureClip.exe`
 - [ ] 托盘图标出现

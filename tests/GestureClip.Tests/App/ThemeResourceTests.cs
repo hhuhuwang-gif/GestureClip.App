@@ -68,12 +68,14 @@ public sealed class ThemeResourceTests
         var colors = File.ReadAllText(colorsPath);
         var brushes = File.ReadAllText(brushesPath);
 
-        Assert.Contains("#F5F5F7", colors);
+        Assert.Contains("#F6F6F8", colors);
         Assert.Contains("#FFFFFFFF", colors);
-        Assert.Contains("#1D1D1F", colors);
-        Assert.Contains("#6E6E73", colors);
-        Assert.Contains("#0071E3", colors);
+        Assert.Contains("#111113", colors);
+        Assert.Contains("#6B6B73", colors);
+        Assert.Contains("#0B6BCB", colors);
         Assert.Contains("#FF6B5A", colors);
+        Assert.Contains("ColorAppBg0", colors);
+        Assert.Contains("ColorCardElevated", colors);
         Assert.Contains("ColorTabSelected", colors);
         Assert.Contains("BrushOverlayPanel", brushes);
         Assert.Contains("BrushAccentSoft", brushes);
@@ -120,7 +122,7 @@ public sealed class ThemeResourceTests
         Assert.Contains("Width=\"860\"", xaml);
         Assert.Contains("Height=\"760\"", xaml);
         Assert.Contains("AllowsTransparency=\"True\"", xaml);
-        Assert.Contains("CornerRadius=\"20\"", xaml);
+        Assert.Contains("CornerRadius=\"18\"", xaml);
         Assert.Contains("Background=\"{DynamicResource BrushOverlayPanel}\"", xaml);
         Assert.Contains("IsSelected", xaml);
         Assert.Contains("ShortcutNumberConverter", xaml);
@@ -283,8 +285,9 @@ public sealed class ThemeResourceTests
 
         Assert.Contains("WindowStyle=\"None\"", xaml);
         Assert.Contains("AllowsTransparency=\"True\"", xaml);
-        Assert.Contains("CornerRadius=\"20\"", xaml);
-        Assert.Contains("Background=\"#FBFBFD\"", xaml);
+        Assert.Contains("CornerRadius=\"18\"", xaml);
+        Assert.Contains("BrushCardElevated", xaml);
+        Assert.Contains("BrushAppBackground", xaml);
         Assert.Contains("TrafficLightButtonStyle", xaml);
         Assert.Contains("搜索设置稍后开放", xaml);
         Assert.Contains("GestureStrokeColorOptions", xaml);

@@ -17,14 +17,14 @@
     <Window.Resources>
         <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter" />
     </Window.Resources>
-    <Border CornerRadius="22"
+    <Border CornerRadius="18"
             Margin="16"
             Padding="20"
             Background="{DynamicResource BrushOverlayPanel}"
             BorderBrush="{DynamicResource BrushBorder}"
             BorderThickness="1">
         <Border.Effect>
-            <DropShadowEffect Color="#000000" BlurRadius="48" ShadowDepth="8" Opacity="0.16" Direction="270" />
+            <DropShadowEffect Color="#000000" BlurRadius="28" ShadowDepth="4" Opacity="0.10" Direction="270" />
         </Border.Effect>
         <Grid>
             <Grid.RowDefinitions>

@@ -35,7 +35,7 @@
                 Margin="0,0,0,70"
                 Width="860"
                 Height="210"
-                CornerRadius="26"
+                CornerRadius="18"
                 Padding="14"
                 Background="{Binding HudBackgroundBrush}"
                 BorderBrush="#48FFFFFF"
@@ -43,7 +43,7 @@
                 x:Name="CompactGameHud"
                 SnapsToDevicePixels="True">
             <Border.Effect>
-                <DropShadowEffect Color="#101827" BlurRadius="28" ShadowDepth="8" Opacity="0.30" />
+                <DropShadowEffect Color="#101827" BlurRadius="22" ShadowDepth="5" Opacity="0.22" />
             </Border.Effect>
             <Grid x:Name="GestureActionStrip" SnapsToDevicePixels="True">
                 <Grid.ColumnDefinitions>

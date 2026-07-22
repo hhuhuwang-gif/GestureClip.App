@@ -61,13 +61,13 @@
     </LinearGradientBrush>
 
     <LinearGradientBrush x:Key="BrushPrimaryGradient" StartPoint="0,0" EndPoint="0,1">
-        <GradientStop Color="#0A84FF" Offset="0" />
-        <GradientStop Color="#0071E3" Offset="0.55" />
-        <GradientStop Color="#0060C0" Offset="1" />
+        <GradientStop Color="#2F8FE0" Offset="0" />
+        <GradientStop Color="#0B6BCB" Offset="0.6" />
+        <GradientStop Color="#095AAF" Offset="1" />
     </LinearGradientBrush>
     <SolidColorBrush x:Key="BrushPrimarySolid" Color="{StaticResource ColorPrimaryBright}" />
-    <SolidColorBrush x:Key="BrushPrimarySolidHover" Color="#0066CC" />
-    <SolidColorBrush x:Key="BrushPrimarySolidPressed" Color="#0055AA" />
+    <SolidColorBrush x:Key="BrushPrimarySolidHover" Color="#095EBA" />
+    <SolidColorBrush x:Key="BrushPrimarySolidPressed" Color="#084E9A" />
 
     <LinearGradientBrush x:Key="BrushCoralGradient" StartPoint="0,0" EndPoint="1,1">
         <GradientStop Color="#FF8A7A" Offset="0" />

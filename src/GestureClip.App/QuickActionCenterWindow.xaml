@@ -14,14 +14,14 @@
         WindowStartupLocation="CenterScreen"
         KeyDown="Window_KeyDown"
         Deactivated="Window_Deactivated">
-    <Border CornerRadius="24"
+    <Border CornerRadius="18"
             Margin="20"
             Padding="0"
             Background="{DynamicResource BrushOverlayPanel}"
             BorderBrush="{DynamicResource BrushBorder}"
             BorderThickness="1">
         <Border.Effect>
-            <DropShadowEffect Color="#000000" BlurRadius="52" ShadowDepth="10" Opacity="0.20" Direction="270" />
+            <DropShadowEffect Color="#000000" BlurRadius="28" ShadowDepth="4" Opacity="0.10" Direction="270" />
         </Border.Effect>
         <Grid Margin="18">
             <Grid.RowDefinitions>

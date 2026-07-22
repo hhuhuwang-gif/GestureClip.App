@@ -14,9 +14,9 @@
     </Style>
 
     <Style x:Key="BaseButtonStyle" TargetType="Button">
-        <Setter Property="Height" Value="34" />
-        <Setter Property="MinWidth" Value="88" />
-        <Setter Property="Padding" Value="16,0" />
+        <Setter Property="Height" Value="32" />
+        <Setter Property="MinWidth" Value="84" />
+        <Setter Property="Padding" Value="14,0" />
         <Setter Property="FontWeight" Value="SemiBold" />
         <Setter Property="Foreground" Value="{DynamicResource BrushTextPrimary}" />
         <Setter Property="Background" Value="{DynamicResource BrushButtonFill}" />
@@ -27,7 +27,7 @@
             <Setter.Value>
                 <ControlTemplate TargetType="Button">
                     <Border x:Name="Root"
-                            CornerRadius="12"
+                            CornerRadius="10"
                             Background="{TemplateBinding Background}"
                             BorderBrush="{TemplateBinding BorderBrush}"
                             BorderThickness="{TemplateBinding BorderThickness}"
@@ -74,7 +74,7 @@
             <Setter.Value>
                 <ControlTemplate TargetType="Button">
                     <Border x:Name="Root"
-                            CornerRadius="12"
+                            CornerRadius="10"
                             Background="{TemplateBinding Background}"
                             BorderBrush="{TemplateBinding BorderBrush}"
                             BorderThickness="{TemplateBinding BorderThickness}"
@@ -113,14 +113,14 @@
     <Style x:Key="SecondaryButtonStyle" TargetType="Button" BasedOn="{StaticResource BaseButtonStyle}" />
 
     <Style x:Key="DangerButtonStyle" TargetType="Button" BasedOn="{StaticResource BaseButtonStyle}">
-        <Setter Property="Background" Value="#FFEBEA" />
-        <Setter Property="Foreground" Value="#B00014" />
-        <Setter Property="BorderBrush" Value="#33FF3B30" />
+        <Setter Property="Background" Value="{DynamicResource BrushDangerSoft}" />
+        <Setter Property="Foreground" Value="{DynamicResource BrushDanger}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource BrushDangerSoft}" />
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="Button">
                     <Border x:Name="Root"
-                            CornerRadius="12"
+                            CornerRadius="10"
                             Background="{TemplateBinding Background}"
                             BorderBrush="{TemplateBinding BorderBrush}"
                             BorderThickness="{TemplateBinding BorderThickness}"
@@ -168,7 +168,7 @@
             <Setter.Value>
                 <ControlTemplate TargetType="TextBox">
                     <Border x:Name="Root"
-                            CornerRadius="12"
+                            CornerRadius="10"
                             Background="{TemplateBinding Background}"
                             BorderBrush="{TemplateBinding BorderBrush}"
                             BorderThickness="{TemplateBinding BorderThickness}">
@@ -203,7 +203,7 @@
             <Setter.Value>
                 <ControlTemplate TargetType="ListBoxItem">
                     <Border x:Name="Root"
-                            CornerRadius="12"
+                            CornerRadius="10"
                             Background="{TemplateBinding Background}"
                             BorderBrush="#00000000"
                             BorderThickness="1"
@@ -250,7 +250,7 @@
                             <ToggleButton.Template>
                                 <ControlTemplate TargetType="ToggleButton">
                                     <Border x:Name="Root"
-                                            CornerRadius="12"
+                                            CornerRadius="10"
                                             Background="{Binding Background, RelativeSource={RelativeSource AncestorType=ComboBox}}"
                                             BorderBrush="#18000000"
                                             BorderThickness="1">
@@ -301,7 +301,7 @@
                                     Background="{DynamicResource BrushComboBoxDropDown}"
                                     BorderBrush="#14000000"
                                     BorderThickness="1"
-                                    CornerRadius="12"
+                                    CornerRadius="10"
                                     Padding="4"
                                     Margin="0,4,0,0">
                                 <Border.Effect>
@@ -364,35 +364,35 @@
     <!-- macOS Settings sidebar row -->
     <Style x:Key="GlassTabItemStyle" TargetType="TabItem">
         <Setter Property="Foreground" Value="{DynamicResource BrushTextPrimary}" />
-        <Setter Property="Padding" Value="14,0" />
-        <Setter Property="Margin" Value="0,0,0,3" />
-        <Setter Property="MinWidth" Value="168" />
-        <Setter Property="Height" Value="36" />
+        <Setter Property="Padding" Value="12,0" />
+        <Setter Property="Margin" Value="0,0,0,2" />
+        <Setter Property="MinWidth" Value="156" />
+        <Setter Property="Height" Value="34" />
         <Setter Property="FontWeight" Value="Normal" />
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="TabItem">
                     <Border x:Name="Root"
-                            CornerRadius="12"
+                            CornerRadius="10"
                             Background="{DynamicResource BrushTabIdle}"
                             BorderBrush="Transparent"
                             BorderThickness="0"
                             Padding="{TemplateBinding Padding}"
-                            Margin="8,0,10,0">
+                            Margin="6,0,8,0">
                         <TextBlock Text="{TemplateBinding Header}"
                                    HorizontalAlignment="Left"
                                    VerticalAlignment="Center"
                                    Foreground="{TemplateBinding Foreground}"
                                    FontWeight="{TemplateBinding FontWeight}"
-                                   FontSize="13.5" />
+                                   FontSize="13" />
                     </Border>
                     <ControlTemplate.Triggers>
                         <Trigger Property="IsMouseOver" Value="True">
-                            <Setter TargetName="Root" Property="Background" Value="#E8E8ED" />
+                            <Setter TargetName="Root" Property="Background" Value="{DynamicResource BrushControlHover}" />
                             <Setter Property="Foreground" Value="{DynamicResource BrushTextPrimary}" />
                         </Trigger>
                         <Trigger Property="IsSelected" Value="True">
-                            <Setter TargetName="Root" Property="Background" Value="{DynamicResource BrushTabSelectedGradient}" />
+                            <Setter TargetName="Root" Property="Background" Value="{DynamicResource BrushTabSelected}" />
                             <Setter Property="Foreground" Value="{DynamicResource BrushTabSelectedText}" />
                             <Setter Property="FontWeight" Value="SemiBold" />
                         </Trigger>
