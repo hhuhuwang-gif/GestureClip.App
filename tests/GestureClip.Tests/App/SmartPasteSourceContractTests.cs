@@ -8,11 +8,10 @@ public sealed class SmartPasteSourceContractTests
     public void Settings_source_contract_exposes_smart_paste_in_action_list_and_recommendations()
     {
         var xamlPath = FindRepositoryFile("src", "GestureClip.App", "SettingsWindow.xaml");
-        var viewModelPath = FindRepositoryFile("src", "GestureClip.App", "ViewModels", "SettingsViewModel.cs");
         var actionTextPath = FindRepositoryFile("src", "GestureClip.App", "ViewModels", "GestureActionText.cs");
         var catalogPath = FindRepositoryFile("src", "GestureClip.App", "ViewModels", "GestureActionCatalog.cs");
         var xaml = File.ReadAllText(xamlPath);
-        var viewModel = File.ReadAllText(viewModelPath);
+        var viewModel = ReadAllViewModelPartials();
         var actionText = File.ReadAllText(actionTextPath);
         var catalog = File.ReadAllText(catalogPath);
 
@@ -78,6 +77,16 @@ public sealed class SmartPasteSourceContractTests
         Assert.Contains("打开剪贴板页", xaml);
         Assert.Contains("打开隐私页", xaml);
         Assert.Contains("<UniformGrid Columns=\"2\"", xaml);
+    }
+
+
+    private static string ReadAllViewModelPartials()
+    {
+        var main = FindRepositoryFile("src", "GestureClip.App", "ViewModels", "SettingsViewModel.cs");
+        var dir = Path.GetDirectoryName(main)!;
+        var files = Directory.GetFiles(dir, "SettingsViewModel*.cs")
+            .OrderBy(f => f, StringComparer.OrdinalIgnoreCase);
+        return string.Join(Environment.NewLine, files.Select(File.ReadAllText));
     }
 
     private static string FindRepositoryFile(params string[] segments)

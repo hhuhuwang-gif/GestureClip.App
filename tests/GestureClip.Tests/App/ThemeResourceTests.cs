@@ -2,6 +2,9 @@ using Xunit;
 
 namespace GestureClip.Tests.App;
 
+// Theme/UI contract tests: keep structural keys (names, commands, version tokens).
+// Prefer behavior tests for business logic; avoid asserting full Chinese copy when possible.
+
 public sealed class ThemeResourceTests
 {
     [Fact]
@@ -427,7 +430,7 @@ public sealed class ThemeResourceTests
         Assert.Contains("按住右键画这个手势后", File.ReadAllText(FindRepositoryFile("src", "GestureClip.App", "ViewModels", "GestureBindingCardViewModel.cs")));
         Assert.Contains("CustomGestureEmptyStateText", xaml);
         Assert.Contains("GestureBindingEmptyStateText", xaml);
-        Assert.Contains("还没有自定义手势", File.ReadAllText(FindRepositoryFile("src", "GestureClip.App", "ViewModels", "SettingsViewModel.cs")));
+        Assert.Contains("还没有自定义手势", ReadAllSettingsViewModelSources());
         if (xaml.Contains("TargetType=\"{x:Type ListBoxItem}\"", StringComparison.Ordinal))
         {
             Assert.Contains("BasedOn=\"{StaticResource {x:Type ListBoxItem}}\"", xaml);
@@ -439,7 +442,7 @@ public sealed class ThemeResourceTests
     {
         var path = FindRepositoryFile("src", "GestureClip.App", "SettingsWindow.xaml");
         var xaml = File.ReadAllText(path);
-        var viewModelSource = File.ReadAllText(FindRepositoryFile("src", "GestureClip.App", "ViewModels", "SettingsViewModel.cs"));
+        var viewModelSource = ReadAllSettingsViewModelSources();
 
         Assert.Contains("RecommendedGesturePanel", xaml);
         Assert.Contains("推荐给新手的 3 个手势", xaml);
@@ -611,11 +614,10 @@ public sealed class ThemeResourceTests
         var lifecyclePath = FindRepositoryFile("src", "GestureClip.App", "Services", "AppLifecycleService.cs");
         var trayPath = FindRepositoryFile("src", "GestureClip.App", "Services", "TrayIconService.cs");
         var settingsXamlPath = FindRepositoryFile("src", "GestureClip.App", "SettingsWindow.xaml");
-        var settingsSourcePath = FindRepositoryFile("src", "GestureClip.App", "SettingsWindow.xaml.cs");
         var lifecycle = File.ReadAllText(lifecyclePath);
         var tray = File.ReadAllText(trayPath);
         var settingsXaml = File.ReadAllText(settingsXamlPath);
-        var settingsSource = File.ReadAllText(settingsSourcePath);
+        var settingsSource = ReadAllSettingsWindowSources();
 
         Assert.Contains("CheckForUpdatesAsync", lifecycle);
         Assert.Contains("StartCoverUpdateAsync", lifecycle);
@@ -630,6 +632,25 @@ public sealed class ThemeResourceTests
         Assert.Contains("UpdateButton_Click", settingsXaml);
         Assert.Contains("CheckForUpdatesAsync", settingsSource);
         Assert.Contains("StartCoverUpdateAsync", settingsSource);
+    }
+
+
+    private static string ReadAllSettingsViewModelSources()
+    {
+        var main = FindRepositoryFile("src", "GestureClip.App", "ViewModels", "SettingsViewModel.cs");
+        var dir = Path.GetDirectoryName(main)!;
+        var files = Directory.GetFiles(dir, "SettingsViewModel*.cs")
+            .OrderBy(f => f, StringComparer.OrdinalIgnoreCase);
+        return string.Join(Environment.NewLine, files.Select(File.ReadAllText));
+    }
+
+    private static string ReadAllSettingsWindowSources()
+    {
+        var main = FindRepositoryFile("src", "GestureClip.App", "SettingsWindow.xaml.cs");
+        var dir = Path.GetDirectoryName(main)!;
+        var files = Directory.GetFiles(dir, "SettingsWindow*.cs")
+            .OrderBy(f => f, StringComparer.OrdinalIgnoreCase);
+        return string.Join(Environment.NewLine, files.Select(File.ReadAllText));
     }
 
     private static string FindRepositoryFile(params string[] segments)
@@ -667,7 +688,7 @@ public sealed class ThemeResourceTests
         Assert.Contains("MouseClick", tray);
         Assert.Contains("ActivationRequested", app);
         Assert.Contains("SignalExistingInstance", single);
-        var settingsWindowSource = File.ReadAllText(FindRepositoryFile("src", "GestureClip.App", "SettingsWindow.xaml.cs"));
+        var settingsWindowSource = ReadAllSettingsWindowSources();
         Assert.Contains("EnableTaskbarMinimizeBehavior", settingsWindowSource);
         Assert.Contains("WsMinimizebox", settingsWindowSource);
     }

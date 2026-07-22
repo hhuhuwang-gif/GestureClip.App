@@ -8,7 +8,7 @@ public sealed class SettingsGestureUxContractTests
     public void SettingsWindow_wires_change_action_to_editor_and_navigation_hooks()
     {
         var xaml = File.ReadAllText(Find("src", "GestureClip.App", "SettingsWindow.xaml"));
-        var code = File.ReadAllText(Find("src", "GestureClip.App", "SettingsWindow.xaml.cs"));
+        var code = ReadAllMatching("src", "GestureClip.App", "SettingsWindow*.cs");
 
         Assert.Contains("MainSettingsTabControl", xaml);
         Assert.Contains("Click=\"ChangeGestureAction_Click\"", xaml);
@@ -51,6 +51,39 @@ public sealed class SettingsGestureUxContractTests
         Assert.Contains("ShowSettingsWindow(string? page = null)", life);
         Assert.Contains("NavigateToPage(page)", life);
         Assert.Contains("ShowSettingsWindow(string? page = null)", iface);
+    }
+
+
+    private static string ReadAllMatching(params string[] pathAndGlob)
+    {
+        if (pathAndGlob.Length < 1)
+        {
+            throw new ArgumentException("Need at least a relative path segment.");
+        }
+
+        var glob = pathAndGlob[^1];
+        var dirSegments = pathAndGlob[..^1];
+        var directory = new DirectoryInfo(AppContext.BaseDirectory);
+        while (directory is not null)
+        {
+            var candidateDir = Path.Combine(new[] { directory.FullName }.Concat(dirSegments).ToArray());
+            if (Directory.Exists(candidateDir))
+            {
+                var files = Directory.GetFiles(candidateDir, glob)
+                    .OrderBy(f => f, StringComparer.OrdinalIgnoreCase)
+                    .ToArray();
+                if (files.Length == 0)
+                {
+                    throw new FileNotFoundException("No files matched.", Path.Combine(candidateDir, glob));
+                }
+
+                return string.Join(Environment.NewLine, files.Select(File.ReadAllText));
+            }
+
+            directory = directory.Parent;
+        }
+
+        throw new DirectoryNotFoundException(string.Join("/", dirSegments));
     }
 
     private static string Find(params string[] segments)
