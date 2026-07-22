@@ -252,6 +252,26 @@ public sealed class SmartPasteTests
         Assert.Equal(["Ctrl+V"], keyboard.Sent);
     }
 
+
+    [Fact]
+    public async Task SmartPaste_forwards_target_window_to_paste_injector()
+    {
+        var keyboard = new FakeKeyboardInputSender();
+        var executor = CreateExecutor(
+            keyboard,
+            new FakeClipboardService(),
+            new FakeClipboardTextReader { Text = "hello" },
+            new FakeClipboardWriter(),
+            new FakeForegroundAppService("WINWORD.EXE", "文档"));
+
+        await executor.ExecuteAsync(
+            BuiltInGestureAction.SmartPaste,
+            new GestureExecutionContext("D", false, TargetWindowHandle: 0x1234),
+            CancellationToken.None);
+
+        Assert.Equal(["Ctrl+V"], keyboard.Sent);
+        Assert.Equal((nint)0x1234, Assert.Single(keyboard.PasteTargets));
+    }
     private static GestureBuiltInActionExecutor CreateExecutor(
         FakeKeyboardInputSender keyboard,
         FakeClipboardService clipboardService,
@@ -286,9 +306,16 @@ public sealed class SmartPasteTests
     private sealed class FakeKeyboardInputSender : IKeyboardInputSender
     {
         public List<string> Sent { get; } = [];
+        public List<nint> PasteTargets { get; } = [];
         public string? LastStatus => Sent.LastOrDefault();
         public void SendShortcut(params ushort[] keys) => Sent.Add(KeyName(keys));
         public void SendKey(ushort key) => Sent.Add(KeyName([key]));
+        public Task<bool> SendPasteAsync(nint preferredTargetWindow = 0, CancellationToken cancellationToken = default)
+        {
+            PasteTargets.Add(preferredTargetWindow);
+            Sent.Add("Ctrl+V");
+            return Task.FromResult(true);
+        }
 
         private static string KeyName(IReadOnlyList<ushort> keys)
         {

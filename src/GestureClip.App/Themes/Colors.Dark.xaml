@@ -38,4 +38,23 @@
     <Color x:Key="ColorTrafficGreen">#28C840</Color>
     <Color x:Key="ColorTrafficMinimize">#FEBC2E</Color>
     <Color x:Key="ColorTrafficMaximize">#28C840</Color>
+    <Color x:Key="ColorAppBg0">#141416</Color>
+    <Color x:Key="ColorAppBg1">#1C1C1E</Color>
+    <Color x:Key="ColorAppBg2">#232328</Color>
+    <Color x:Key="ColorAppBg3">#1A1A1C</Color>
+    <Color x:Key="ColorOverlayTop">#2E2E32</Color>
+    <Color x:Key="ColorOverlayBottom">#252528</Color>
+    <Color x:Key="ColorGlassTop">#3A3A3E</Color>
+    <Color x:Key="ColorGlassMid">#2F2F33</Color>
+    <Color x:Key="ColorGlassBottom">#28282C</Color>
+    <Color x:Key="ColorSidebarTop">#242426</Color>
+    <Color x:Key="ColorSidebarBottom">#1C1C1E</Color>
+    <Color x:Key="ColorCardElevated">#2C2C2E</Color>
+    <Color x:Key="ColorShadow">#000000</Color>
+    <Color x:Key="ColorFocusRing">#660A84FF</Color>
+    <Color x:Key="ColorSegmentSelected">#3A3A3C</Color>
+    <Color x:Key="ColorListHover">#343438</Color>
+    <Color x:Key="ColorListSelectedHover">#254A72</Color>
+    <Color x:Key="ColorButtonFill">#3A3A3C</Color>
+    <Color x:Key="ColorButtonHover">#48484A</Color>
 </ResourceDictionary>

@@ -17,8 +17,8 @@ public sealed class GestureSettingsProvider : IGestureSettingsProvider
             settingsService.Get(SettingKeys.GestureDebugEnabled, false),
             settingsService.Get(SettingKeys.GesturePreset, GesturePreset.EditEnhanced),
             new GestureOptions(
-                settingsService.Get(SettingKeys.GestureTriggerThreshold, 20),
-                settingsService.Get(SettingKeys.GestureSegmentThreshold, 16),
+                settingsService.Get(SettingKeys.GestureTriggerThreshold, 28),
+                settingsService.Get(SettingKeys.GestureSegmentThreshold, 22),
                 settingsService.Get(SettingKeys.GestureMaxDurationMs, 2000),
                 2),
             settingsService.Get(SettingKeys.GestureTriggerLeftButtonEnabled, false),

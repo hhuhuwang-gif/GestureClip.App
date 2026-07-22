@@ -502,40 +502,20 @@ public sealed class GestureBuiltInActionExecutor : IMouseGestureActionExecutor
 
     private async Task SendNormalPasteAsync(GestureExecutionContext context, CancellationToken cancellationToken)
     {
-        TryRestoreGestureTarget(context);
-        // Production KeyboardInputSender routes Ctrl+V through hardened injector.
-        // This is the ONLY injection path for gesture paste (smart or not).
-        _keyboardInputSender.SendShortcut(KeyboardInputNativeMethods.VkControl, KeyboardInputNativeMethods.VkV);
+        // Pass the gesture-start HWND into the hardened injector so focus restore
+        // and WM_PASTE fall back to the same target. Do not call SetForegroundWindow
+        // when already foreground (caret steal).
+        var ok = await _keyboardInputSender.SendPasteAsync(context.TargetWindowHandle, cancellationToken);
+        if (!ok)
+        {
+            var hint = _keyboardInputSender.TryGetLastPasteFailureHint();
+            if (!string.IsNullOrWhiteSpace(hint))
+            {
+                _logger.LogWarning("Gesture paste injection failed: {Hint}", hint);
+            }
+        }
+
         await RecordPasteAsync(cancellationToken);
-    }
-
-    private void TryRestoreGestureTarget(GestureExecutionContext context)
-    {
-        if (context.TargetWindowHandle == 0)
-        {
-            return;
-        }
-
-        var hwnd = (IntPtr)context.TargetWindowHandle;
-        if (!WindowNativeMethods.IsWindow(hwnd))
-        {
-            return;
-        }
-
-        // If target is already foreground, do NOT re-activate — SetForegroundWindow on the
-        // top-level window can steal focus from the caret/edit child and make Ctrl+V a no-op.
-        var foreground = WindowNativeMethods.GetForegroundWindow();
-        if (foreground == hwnd)
-        {
-            _logger.LogDebug("Gesture paste target already foreground hwnd={Hwnd}", context.TargetWindowHandle);
-            return;
-        }
-
-        var ok = WindowNativeMethods.TryActivateWindow(hwnd);
-        _logger.LogDebug(
-            "Gesture paste focus restore hwnd={Hwnd} ok={Ok}",
-            context.TargetWindowHandle,
-            ok);
     }
 
     private async Task SearchSelectedTextAsync(string urlFormat, CancellationToken cancellationToken)

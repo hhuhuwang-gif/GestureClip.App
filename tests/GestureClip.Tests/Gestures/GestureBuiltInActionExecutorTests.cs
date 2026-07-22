@@ -218,6 +218,11 @@ public sealed class GestureBuiltInActionExecutorTests
         public string? LastStatus => Sent.LastOrDefault();
         public void SendShortcut(params ushort[] keys) => Sent.Add(KeyName(keys));
         public void SendKey(ushort key) => Sent.Add(KeyName([key]));
+        public Task<bool> SendPasteAsync(nint preferredTargetWindow = 0, CancellationToken cancellationToken = default)
+        {
+            Sent.Add("Ctrl+V");
+            return Task.FromResult(true);
+        }
 
         private static string KeyName(IReadOnlyList<ushort> keys)
         {
@@ -398,6 +403,3 @@ public sealed class GestureBuiltInActionExecutorTests
         public Task HideAsync() => Task.CompletedTask;
     }
 }
-
-
-

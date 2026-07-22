@@ -366,7 +366,14 @@ public sealed class ClipboardService : IClipboardService
             textItems.Add(await EnsureFullContentAsync(item, cancellationToken));
         }
 
-        var text = string.Join("\r\n", textItems.Select(item => item.TextContent).Where(text => !string.IsNullOrEmpty(text)));
+        // History re-copy always writes Unicode plain text so target apps (chat/IDE)
+        // never receive leftover HTML/Markdown fragments as the only useful payload.
+        var text = string.Join(
+            "\r\n",
+            textItems
+                .Select(item => item.TextContent)
+                .Where(text => !string.IsNullOrEmpty(text))
+                .Select(text => LocalTextTransforms.ToPlainText(text!)));
         if (string.IsNullOrEmpty(text))
         {
             return;

@@ -17,16 +17,16 @@
         <Canvas IsHitTestVisible="False">
             <Polyline Points="{Binding Points}"
                       Stroke="{Binding StrokeBrush}"
-                      StrokeThickness="2.2"
+                      StrokeThickness="2.6"
                       StrokeStartLineCap="Round"
                       StrokeEndLineCap="Round"
                       StrokeLineJoin="Round"
-                      Opacity="0.95">
+                      Opacity="0.97">
                 <Polyline.Effect>
                     <DropShadowEffect Color="#AA2563EB"
-                                      BlurRadius="10"
+                                      BlurRadius="14"
                                       ShadowDepth="0"
-                                      Opacity="0.28" />
+                                      Opacity="0.34" />
                 </Polyline.Effect>
             </Polyline>
         </Canvas>
@@ -35,15 +35,15 @@
                 Margin="0,0,0,70"
                 Width="860"
                 Height="210"
-                CornerRadius="24"
-                Padding="12"
+                CornerRadius="26"
+                Padding="14"
                 Background="{Binding HudBackgroundBrush}"
-                BorderBrush="#38FFFFFF"
+                BorderBrush="#48FFFFFF"
                 BorderThickness="1"
                 x:Name="CompactGameHud"
                 SnapsToDevicePixels="True">
             <Border.Effect>
-                <DropShadowEffect Color="#101827" BlurRadius="22" ShadowDepth="7" Opacity="0.26" />
+                <DropShadowEffect Color="#101827" BlurRadius="28" ShadowDepth="8" Opacity="0.30" />
             </Border.Effect>
             <Grid x:Name="GestureActionStrip" SnapsToDevicePixels="True">
                 <Grid.ColumnDefinitions>

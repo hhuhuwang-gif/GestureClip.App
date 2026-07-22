@@ -519,6 +519,37 @@ public sealed class ClipboardServiceTests
         Assert.Contains("HudUpdateDurationMs", source);
     }
 
+
+    [Fact]
+    public async Task CopyItemsAsync_strips_html_tags_when_rewriting_system_clipboard()
+    {
+        var repository = new FakeClipboardRepository();
+        var writer = new FakeClipboardWriter();
+        var service = CreateService(repository, writer: writer);
+        var item = Item("<p>Hello <b>world</b></p>");
+
+        await service.CopyItemsAsync([item], CancellationToken.None);
+
+        Assert.NotNull(writer.Text);
+        Assert.DoesNotContain("<p>", writer.Text, StringComparison.Ordinal);
+        Assert.DoesNotContain("<b>", writer.Text, StringComparison.Ordinal);
+        Assert.Contains("Hello", writer.Text, StringComparison.Ordinal);
+        Assert.Contains("world", writer.Text, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task CopyItemsAsync_keeps_plain_code_newlines_intact_when_no_html()
+    {
+        var repository = new FakeClipboardRepository();
+        var writer = new FakeClipboardWriter();
+        var service = CreateService(repository, writer: writer);
+        var code = "public void M()\r\n{\r\n    Console.WriteLine(\"x\");\r\n}";
+        var item = Item(code);
+
+        await service.CopyItemsAsync([item], CancellationToken.None);
+
+        Assert.Equal(code, writer.Text);
+    }
     private static ClipboardService CreateService(
         FakeClipboardRepository repository,
         FakeClipboardWriter? writer = null,

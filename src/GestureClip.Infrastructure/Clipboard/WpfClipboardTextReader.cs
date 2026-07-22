@@ -27,15 +27,7 @@ public sealed class WpfClipboardTextReader : IClipboardTextReader, IDisposable
     {
         try
         {
-            return _clipboardStaThread.Invoke(() =>
-            {
-                if (!System.Windows.Clipboard.ContainsText())
-                {
-                    return null;
-                }
-
-                return System.Windows.Clipboard.GetText();
-            });
+            return _clipboardStaThread.Invoke(ReadBestEffortText);
         }
         catch (Exception ex)
         {
@@ -44,6 +36,63 @@ public sealed class WpfClipboardTextReader : IClipboardTextReader, IDisposable
         }
     }
 
+    /// <summary>
+    /// Prefer Unicode text, then any text format, then HTML→plain for browsers that only expose CF_HTML.
+    /// Must stay on the clipboard STA thread.
+    /// </summary>
+    private string? ReadBestEffortText()
+    {
+        try
+        {
+            if (System.Windows.Clipboard.ContainsText(System.Windows.TextDataFormat.UnicodeText))
+            {
+                var unicode = System.Windows.Clipboard.GetText(System.Windows.TextDataFormat.UnicodeText);
+                if (!string.IsNullOrEmpty(unicode))
+                {
+                    return unicode;
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogDebug(ex, "UnicodeText clipboard read failed; trying fallbacks.");
+        }
+
+        try
+        {
+            if (System.Windows.Clipboard.ContainsText())
+            {
+                var text = System.Windows.Clipboard.GetText();
+                if (!string.IsNullOrEmpty(text))
+                {
+                    return text;
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogDebug(ex, "Generic text clipboard read failed; trying HTML.");
+        }
+
+        try
+        {
+            if (System.Windows.Clipboard.ContainsText(System.Windows.TextDataFormat.Html))
+            {
+                var html = System.Windows.Clipboard.GetText(System.Windows.TextDataFormat.Html);
+                var plain = ClipboardHtmlText.ExtractPlain(html);
+                if (!string.IsNullOrEmpty(plain))
+                {
+                    return plain;
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogDebug(ex, "HTML clipboard read failed.");
+        }
+
+        return null;
+    }
     public string? TryReadImagePngBase64()
     {
         try

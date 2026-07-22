@@ -5,15 +5,15 @@
         <Setter Property="CornerRadius" Value="18" />
         <Setter Property="Padding" Value="18" />
         <Setter Property="Background" Value="{DynamicResource BrushGlassHighlight}" />
-        <Setter Property="BorderBrush" Value="#0F000000" />
+        <Setter Property="BorderBrush" Value="{DynamicResource BrushBorder}" />
         <Setter Property="BorderThickness" Value="1" />
         <Setter Property="SnapsToDevicePixels" Value="True" />
         <Setter Property="Effect">
             <Setter.Value>
                 <DropShadowEffect Color="#000000"
-                                  BlurRadius="28"
-                                  ShadowDepth="2"
-                                  Opacity="0.08"
+                                  BlurRadius="32"
+                                  ShadowDepth="3"
+                                  Opacity="0.10"
                                   Direction="270" />
             </Setter.Value>
         </Setter>
@@ -23,7 +23,7 @@
         <Setter Property="CornerRadius" Value="22" />
         <Setter Property="Padding" Value="20" />
         <Setter Property="Background" Value="{DynamicResource BrushOverlayPanel}" />
-        <Setter Property="BorderBrush" Value="#12000000" />
+        <Setter Property="BorderBrush" Value="{DynamicResource BrushBorder}" />
         <Setter Property="Effect">
             <Setter.Value>
                 <DropShadowEffect Color="#000000"
@@ -39,7 +39,7 @@
         <Setter Property="CornerRadius" Value="14" />
         <Setter Property="Padding" Value="14" />
         <Setter Property="Background" Value="{DynamicResource BrushFillTertiary}" />
-        <Setter Property="BorderBrush" Value="#0A000000" />
+        <Setter Property="BorderBrush" Value="{DynamicResource BrushBorder}" />
         <Setter Property="BorderThickness" Value="1" />
     </Style>
 
@@ -47,7 +47,7 @@
         <Setter Property="CornerRadius" Value="999" />
         <Setter Property="Padding" Value="11,5" />
         <Setter Property="Background" Value="{DynamicResource BrushAccentSoft}" />
-        <Setter Property="BorderBrush" Value="#1A007AFF" />
+        <Setter Property="BorderBrush" Value="{DynamicResource BrushPrimarySoft}" />
         <Setter Property="BorderThickness" Value="1" />
         <Setter Property="VerticalAlignment" Value="Center" />
     </Style>
@@ -89,7 +89,7 @@
         <Setter Property="FontWeight" Value="SemiBold" />
         <Setter Property="Foreground" Value="{DynamicResource BrushTextPrimary}" />
         <Setter Property="Background" Value="{DynamicResource BrushFillTertiary}" />
-        <Setter Property="BorderBrush" Value="#12000000" />
+        <Setter Property="BorderBrush" Value="{DynamicResource BrushBorder}" />
         <Setter Property="Margin" Value="0,0,8,0" />
         <Setter Property="Cursor" Value="Hand" />
         <Setter Property="Template">
@@ -133,8 +133,10 @@
             <Setter.Value>
                 <ControlTemplate TargetType="RadioButton">
                     <Border x:Name="Root"
-                            CornerRadius="8"
+                            CornerRadius="9"
                             Background="Transparent"
+                            BorderBrush="Transparent"
+                            BorderThickness="1"
                             Padding="{TemplateBinding Padding}"
                             Margin="2">
                         <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
@@ -144,11 +146,13 @@
                             <Setter TargetName="Root" Property="Background" Value="{DynamicResource BrushControlHover}" />
                         </Trigger>
                         <Trigger Property="IsChecked" Value="True">
-                            <Setter TargetName="Root" Property="Background" Value="{DynamicResource BrushSurface}" />
+                            <Setter TargetName="Root" Property="Background" Value="{DynamicResource BrushSegmentSelected}" />
                             <Setter Property="Foreground" Value="{DynamicResource BrushTextPrimary}" />
+                            <Setter TargetName="Root" Property="BorderBrush" Value="{DynamicResource BrushBorder}" />
+                            <Setter TargetName="Root" Property="BorderThickness" Value="1" />
                             <Setter TargetName="Root" Property="Effect">
                                 <Setter.Value>
-                                    <DropShadowEffect Color="#000000" BlurRadius="8" ShadowDepth="1" Opacity="0.08" Direction="270" />
+                                    <DropShadowEffect Color="#000000" BlurRadius="10" ShadowDepth="1" Opacity="0.10" Direction="270" />
                                 </Setter.Value>
                             </Setter>
                         </Trigger>
@@ -162,15 +166,15 @@
         <Setter Property="CornerRadius" Value="12" />
         <Setter Property="Padding" Value="3" />
         <Setter Property="Background" Value="{DynamicResource BrushFillTertiary}" />
-        <Setter Property="BorderBrush" Value="#0D000000" />
+        <Setter Property="BorderBrush" Value="{DynamicResource BrushBorder}" />
         <Setter Property="BorderThickness" Value="1" />
     </Style>
 
     <Style x:Key="EmptyStatePanelStyle" TargetType="Border">
-        <Setter Property="CornerRadius" Value="16" />
-        <Setter Property="Padding" Value="28,36" />
+        <Setter Property="CornerRadius" Value="18" />
+        <Setter Property="Padding" Value="32,40" />
         <Setter Property="Background" Value="{DynamicResource BrushFillTertiary}" />
-        <Setter Property="BorderBrush" Value="#0D000000" />
+        <Setter Property="BorderBrush" Value="{DynamicResource BrushBorder}" />
         <Setter Property="BorderThickness" Value="1" />
         <Setter Property="HorizontalAlignment" Value="Stretch" />
         <Setter Property="VerticalAlignment" Value="Center" />

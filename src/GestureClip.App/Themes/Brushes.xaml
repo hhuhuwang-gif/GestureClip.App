@@ -33,35 +33,39 @@
     <SolidColorBrush x:Key="BrushTrafficGreen" Color="{StaticResource ColorTrafficGreen}" />
     <SolidColorBrush x:Key="BrushTrafficMinimize" Color="{StaticResource ColorTrafficYellow}" />
     <SolidColorBrush x:Key="BrushTrafficMaximize" Color="{StaticResource ColorTrafficGreen}" />
+    <SolidColorBrush x:Key="BrushCardElevated" Color="{StaticResource ColorCardElevated}" />
+    <SolidColorBrush x:Key="BrushFocusRing" Color="{StaticResource ColorFocusRing}" />
+    <SolidColorBrush x:Key="BrushSegmentSelected" Color="{StaticResource ColorSegmentSelected}" />
+    <SolidColorBrush x:Key="BrushListHover" Color="{StaticResource ColorListHover}" />
+    <SolidColorBrush x:Key="BrushListSelectedHover" Color="{StaticResource ColorListSelectedHover}" />
+    <SolidColorBrush x:Key="BrushButtonFill" Color="{StaticResource ColorButtonFill}" />
+    <SolidColorBrush x:Key="BrushButtonHover" Color="{StaticResource ColorButtonHover}" />
 
-    <!-- Soft daylight wash, not loud blue -->
+    <!-- Soft ambient wash — themeable via Colors*.xaml -->
     <LinearGradientBrush x:Key="BrushAppBackground" StartPoint="0,0" EndPoint="1,1">
-        <GradientStop Color="#FBFBFD" Offset="0" />
-        <GradientStop Color="#F5F5F7" Offset="0.45" />
-        <GradientStop Color="#EEF1F6" Offset="0.82" />
-        <GradientStop Color="#F7F8FA" Offset="1" />
+        <GradientStop Color="{StaticResource ColorAppBg0}" Offset="0" />
+        <GradientStop Color="{StaticResource ColorAppBg1}" Offset="0.42" />
+        <GradientStop Color="{StaticResource ColorAppBg2}" Offset="0.78" />
+        <GradientStop Color="{StaticResource ColorAppBg3}" Offset="1" />
     </LinearGradientBrush>
 
     <LinearGradientBrush x:Key="BrushGlassHighlight" StartPoint="0,0" EndPoint="0,1">
-        <GradientStop Color="#FFFFFFFF" Offset="0" />
-        <GradientStop Color="#FBFCFF" Offset="0.55" />
-        <GradientStop Color="#F7F8FA" Offset="1" />
+        <GradientStop Color="{StaticResource ColorGlassTop}" Offset="0" />
+        <GradientStop Color="{StaticResource ColorGlassMid}" Offset="0.55" />
+        <GradientStop Color="{StaticResource ColorGlassBottom}" Offset="1" />
     </LinearGradientBrush>
 
-    <!-- Sidebar selected pill -->
     <LinearGradientBrush x:Key="BrushTabSelectedGradient" StartPoint="0,0" EndPoint="0,1">
-        <GradientStop Color="#EEEEF2" Offset="0" />
-        <GradientStop Color="#E5E5EA" Offset="1" />
+        <GradientStop Color="{StaticResource ColorTabSelected}" Offset="0" />
+        <GradientStop Color="{StaticResource ColorControlHover}" Offset="1" />
     </LinearGradientBrush>
 
-    <!-- Apple blue primary CTA (gradient kept for non-text accents) -->
     <LinearGradientBrush x:Key="BrushPrimaryGradient" StartPoint="0,0" EndPoint="0,1">
         <GradientStop Color="#0A84FF" Offset="0" />
         <GradientStop Color="#0071E3" Offset="0.55" />
         <GradientStop Color="#0060C0" Offset="1" />
     </LinearGradientBrush>
-    <!-- Solid blue for primary buttons: better white-text contrast than light gradient -->
-    <SolidColorBrush x:Key="BrushPrimarySolid" Color="#0071E3" />
+    <SolidColorBrush x:Key="BrushPrimarySolid" Color="{StaticResource ColorPrimaryBright}" />
     <SolidColorBrush x:Key="BrushPrimarySolidHover" Color="#0066CC" />
     <SolidColorBrush x:Key="BrushPrimarySolidPressed" Color="#0055AA" />
 
@@ -71,12 +75,12 @@
     </LinearGradientBrush>
 
     <LinearGradientBrush x:Key="BrushOverlayPanel" StartPoint="0,0" EndPoint="0,1">
-        <GradientStop Color="#FCFCFF" Offset="0" />
-        <GradientStop Color="#F7F8FA" Offset="1" />
+        <GradientStop Color="{StaticResource ColorOverlayTop}" Offset="0" />
+        <GradientStop Color="{StaticResource ColorOverlayBottom}" Offset="1" />
     </LinearGradientBrush>
 
     <LinearGradientBrush x:Key="BrushSidebarBackground" StartPoint="0,0" EndPoint="0,1">
-        <GradientStop Color="#F2F2F7" Offset="0" />
-        <GradientStop Color="#ECECF0" Offset="1" />
+        <GradientStop Color="{StaticResource ColorSidebarTop}" Offset="0" />
+        <GradientStop Color="{StaticResource ColorSidebarBottom}" Offset="1" />
     </LinearGradientBrush>
 </ResourceDictionary>

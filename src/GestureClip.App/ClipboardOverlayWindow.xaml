@@ -17,14 +17,14 @@
     <Window.Resources>
         <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter" />
     </Window.Resources>
-    <Border CornerRadius="20"
+    <Border CornerRadius="22"
             Margin="16"
             Padding="20"
             Background="{DynamicResource BrushOverlayPanel}"
-            BorderBrush="#14000000"
+            BorderBrush="{DynamicResource BrushBorder}"
             BorderThickness="1">
         <Border.Effect>
-            <DropShadowEffect Color="#000000" BlurRadius="40" ShadowDepth="6" Opacity="0.14" Direction="270" />
+            <DropShadowEffect Color="#000000" BlurRadius="48" ShadowDepth="8" Opacity="0.16" Direction="270" />
         </Border.Effect>
         <Grid>
             <Grid.RowDefinitions>
@@ -165,13 +165,13 @@
                 <ListBox.ItemTemplate>
                     <DataTemplate>
                         <Border x:Name="ItemCard"
-                                Background="{DynamicResource BrushSurface}"
+                                Background="{DynamicResource BrushCardElevated}"
                                 BorderBrush="{DynamicResource BrushBorder}"
                                 BorderThickness="1"
-                                CornerRadius="14"
-                                Padding="10,8"
-                                MinHeight="56"
-                                Margin="0,0,0,6">
+                                CornerRadius="16"
+                                Padding="12,10"
+                                MinHeight="58"
+                                Margin="0,0,0,7">
                             <Grid>
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="Auto" />
@@ -680,8 +680,8 @@
                         Margin="0,16,0,0"
                         Padding="14,8"
                         CornerRadius="14"
-                        Background="#EEFFFFFF"
-                        BorderBrush="#22111827"
+                        Background="{DynamicResource BrushGlassStrong}"
+                        BorderBrush="{DynamicResource BrushBorder}"
                         BorderThickness="1"
                         IsHitTestVisible="False">
                     <Border.Style>
@@ -758,9 +758,9 @@
                         MaxHeight="520"
                         Margin="24"
                         Padding="20"
-                        CornerRadius="16"
+                        CornerRadius="18"
                         Background="{DynamicResource BrushOverlayPanel}"
-                        BorderBrush="#22111827"
+                        BorderBrush="{DynamicResource BrushBorder}"
                         BorderThickness="1"
                         HorizontalAlignment="Center"
                         VerticalAlignment="Center"
