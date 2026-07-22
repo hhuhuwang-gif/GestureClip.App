@@ -64,24 +64,44 @@ public sealed class ThemeResourceTests
     public void Theme_uses_readable_soft_macos_inspired_palette()
     {
         var colorsPath = FindRepositoryFile("src", "GestureClip.App", "Themes", "Colors.xaml");
+        var darkPath = FindRepositoryFile("src", "GestureClip.App", "Themes", "Colors.Dark.xaml");
         var brushesPath = FindRepositoryFile("src", "GestureClip.App", "Themes", "Brushes.xaml");
         var colors = File.ReadAllText(colorsPath);
+        var dark = File.ReadAllText(darkPath);
         var brushes = File.ReadAllText(brushesPath);
 
-        Assert.Contains("#F6F6F8", colors);
-        Assert.Contains("#FFFFFFFF", colors);
-        Assert.Contains("#111113", colors);
-        Assert.Contains("#6B6B73", colors);
-        Assert.Contains("#0B6BCB", colors);
-        Assert.Contains("#FF6B5A", colors);
+        // Light glass: snow / cloud / slate / sky-blue
+        Assert.Contains("#F4F7FB", colors);
+        Assert.Contains("#E8ECF1", colors);
+        Assert.Contains("#94A3B8", colors);
+        Assert.Contains("#3B82F6", colors);
+        Assert.Contains("#0F172A", colors);
+        Assert.Contains("ColorBrandSnow", colors);
+        Assert.Contains("ColorBrandCloud", colors);
+        Assert.Contains("ColorBrandSlate", colors);
+        Assert.Contains("ColorBrandSky", colors);
+        Assert.Contains("ColorGlassLight", colors);
+        Assert.Contains("ColorContentBackground", colors);
+        // Dark banker palette
+        Assert.Contains("#0A1733", dark);
+        Assert.Contains("#15294D", dark);
+        Assert.Contains("#B8862F", dark);
+        Assert.Contains("#E8E1D0", dark);
         Assert.Contains("ColorAppBg0", colors);
         Assert.Contains("ColorCardElevated", colors);
         Assert.Contains("ColorTabSelected", colors);
+        Assert.Contains("ColorRailBackground", colors);
+        Assert.Contains("ColorContentBackground", colors);
         Assert.Contains("BrushOverlayPanel", brushes);
         Assert.Contains("BrushAccentSoft", brushes);
         Assert.Contains("BrushSidebarBackground", brushes);
+        Assert.Contains("BrushRailBackground", brushes);
+        Assert.Contains("BrushGlassPanel", brushes);
+        Assert.Contains("BrushGlassCard", brushes);
         Assert.Contains("BrushPrimarySolid", brushes);
         Assert.Contains("TrafficLightButtonStyle", File.ReadAllText(
+            FindRepositoryFile("src", "GestureClip.App", "Themes", "GlassStyles.xaml")));
+        Assert.Contains("SettingsListContainerStyle", File.ReadAllText(
             FindRepositoryFile("src", "GestureClip.App", "Themes", "GlassStyles.xaml")));
 
         var controls = File.ReadAllText(FindRepositoryFile("src", "GestureClip.App", "Themes", "Controls.xaml"));
@@ -285,11 +305,15 @@ public sealed class ThemeResourceTests
 
         Assert.Contains("WindowStyle=\"None\"", xaml);
         Assert.Contains("AllowsTransparency=\"True\"", xaml);
-        Assert.Contains("CornerRadius=\"18\"", xaml);
-        Assert.Contains("BrushCardElevated", xaml);
+        Assert.Contains("CornerRadius=\"14\"", xaml);
         Assert.Contains("BrushAppBackground", xaml);
         Assert.Contains("TrafficLightButtonStyle", xaml);
-        Assert.Contains("搜索设置稍后开放", xaml);
+        Assert.Contains("SettingsSearchBox", xaml);
+        Assert.Contains("搜索设置", xaml);
+        Assert.Contains("NavHome", xaml);
+        Assert.Contains("常用", xaml);
+        Assert.Contains("ToggleRailButton", xaml);
+        Assert.Contains("RightRailBorder", xaml);
         Assert.Contains("GestureStrokeColorOptions", xaml);
         Assert.Contains("NewGesturePattern", xaml);
         Assert.Contains("AddCustomGestureBindingCommand", xaml);
@@ -319,9 +343,10 @@ public sealed class ThemeResourceTests
         Assert.Contains("BrushTrafficGreen", workstation);
         Assert.Contains("MaximizeButton_Click", workstation);
         Assert.Contains("GlassScrollBarStyle", controls);
+        Assert.Contains("GlassScrollViewerStyle", controls);
         Assert.Contains("ScrollBarThumb", controls);
-        Assert.Contains("CornerRadius=\"6\"", controls);
-        Assert.Contains("Opacity=\"0.38\"", controls);
+        Assert.Contains("CornerRadius=\"4\"", controls);
+        Assert.Contains("Value=\"6\"", controls);
     }
 
     [Fact]
@@ -446,8 +471,8 @@ public sealed class ThemeResourceTests
         Assert.Contains("WorkstationPageIntro", xaml);
         Assert.Contains("DiagnosticsPageIntro", xaml);
         Assert.Contains("AboutPageIntro", xaml);
-        Assert.Contains("先确认权限、数据位置和运行状态", xaml);
-        Assert.Contains("控制是否记录剪贴板历史", xaml);
+        Assert.Contains("确认权限、数据位置与运行状态", xaml);
+        Assert.Contains("控制是否记录历史", xaml);
         Assert.Contains("去设计 / 更换动作", xaml);
         Assert.Contains("规则只在本机生效", xaml);
         Assert.Contains("关闭窗口仍会隐藏到托盘", xaml);
@@ -464,22 +489,26 @@ public sealed class ThemeResourceTests
 
         Assert.Contains("SettingsFormRowStyle", xaml);
         Assert.Contains("BasedOn=\"{StaticResource SettingRowStyle}\"", xaml);
-        Assert.Contains("<Setter Property=\"Margin\" Value=\"0,0,0,8\" />", xaml);
+        Assert.Contains("SettingsListContainerStyle", xaml);
         Assert.Contains("SettingsSecondaryActionButtonStyle", xaml);
         Assert.Contains("SettingsPrimaryActionButtonStyle", xaml);
         Assert.Contains("SettingsDangerActionButtonStyle", xaml);
+        Assert.Contains("SettingsDangerTextButtonStyle", xaml);
         Assert.Contains("SettingsCompactActionButtonStyle", xaml);
         Assert.Contains("SettingsGestureTemplateButtonStyle", xaml);
-        Assert.Contains("SettingsDangerZoneStyle", xaml);
-        Assert.Contains("Background\" Value=\"#FFF2F2\"", xaml);
-        Assert.Contains("BorderBrush\" Value=\"#22FF3B30\"", xaml);
+        Assert.Contains("SettingsHotkeyBoxStyle", xaml);
         Assert.Contains("Text=\"危险操作\"", xaml);
         Assert.Contains("会影响剪贴板历史，执行前请确认。", xaml);
         Assert.Contains("Command=\"{Binding ClearAllClipboardItemsCommand}\"", xaml);
-        Assert.Contains("Style=\"{StaticResource SettingsDangerActionButtonStyle}\"", xaml);
+        Assert.Contains("Style=\"{StaticResource SettingsDangerTextButtonStyle}\"", xaml);
         Assert.Contains("Style=\"{StaticResource SettingsSecondaryActionButtonStyle}\"", xaml);
         Assert.Contains("Style=\"{StaticResource SettingsCompactActionButtonStyle}\"", xaml);
         Assert.Contains("Style=\"{StaticResource SettingsGestureTemplateButtonStyle}\"", xaml);
+        Assert.Contains("Width=\"200\"", xaml);
+        Assert.Contains("Width=\"240\"", xaml);
+        Assert.Contains("NavColumn", xaml);
+        Assert.Contains("RailColumn", xaml);
+        Assert.Contains("SettingsSearchBox", xaml);
         Assert.DoesNotContain("Content=\"复制\" MinWidth=\"0\" Width=\"76\"", xaml);
         Assert.DoesNotContain("Content=\"右键+左键  粘贴并回车\" MinWidth=\"0\" Width=\"190\"", xaml);
         Assert.DoesNotContain("Content=\"打开日志目录\" Command=\"{Binding OpenLogDirectoryCommand}\"", xaml);
@@ -649,7 +678,7 @@ public sealed class ThemeResourceTests
         var path = FindRepositoryFile("src", "GestureClip.App", "SettingsWindow.xaml");
         var xaml = File.ReadAllText(path);
 
-        Assert.Contains("+ 添加自己的手势", xaml);
+        Assert.Contains("添加自己的手势", xaml);
         Assert.Contains("添加自己的手势", xaml);
         Assert.Contains("先选择这个手势要执行的动作", xaml);
         Assert.Contains("确认添加到手势列表", xaml);

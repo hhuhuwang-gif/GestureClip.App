@@ -153,6 +153,20 @@ public sealed class GestureBindingCardViewModel : INotifyPropertyChanged
         set => SetSelectedAction(value, save: true);
     }
 
+    public GestureActionOptionViewModel? SelectedActionOption
+    {
+        get => ActionOptions.FirstOrDefault(o => o.Action == SelectedAction);
+        set
+        {
+            if (value is null || value.Action == SelectedAction)
+            {
+                return;
+            }
+
+            SelectedAction = value.Action;
+        }
+    }
+
     public string ActionName => GestureActionText.Name(SelectedAction);
 
     public string ShortcutText => GestureActionText.Shortcut(SelectedAction);
@@ -181,6 +195,7 @@ public sealed class GestureBindingCardViewModel : INotifyPropertyChanged
         _selectedAction = action;
         OnPropertyChanged(nameof(SelectedAction));
         OnPropertyChanged(nameof(ActionName));
+        OnPropertyChanged(nameof(SelectedActionOption));
         OnPropertyChanged(nameof(ShortcutText));
         OnPropertyChanged(nameof(IsBound));
         OnPropertyChanged(nameof(BindingStatusText));

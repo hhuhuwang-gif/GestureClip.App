@@ -2,45 +2,39 @@
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
     <!-- Elevated card: soft shadow, hairline border (Apple sheet style) -->
     <Style x:Key="GlassCardStyle" TargetType="Border">
-        <Setter Property="CornerRadius" Value="16" />
-        <Setter Property="Padding" Value="16" />
-        <Setter Property="Background" Value="{DynamicResource BrushGlassHighlight}" />
+        <Setter Property="CornerRadius" Value="14" />
+        <Setter Property="Padding" Value="20" />
+        <Setter Property="Background" Value="{DynamicResource BrushGlassCard}" />
         <Setter Property="BorderBrush" Value="{DynamicResource BrushBorder}" />
         <Setter Property="BorderThickness" Value="1" />
         <Setter Property="SnapsToDevicePixels" Value="True" />
         <Setter Property="Effect">
             <Setter.Value>
-                <DropShadowEffect Color="#000000"
-                                  BlurRadius="24"
-                                  ShadowDepth="2"
-                                  Opacity="0.06"
-                                  Direction="270" />
+                <DropShadowEffect Color="#000000" BlurRadius="18" ShadowDepth="1" Opacity="0.06" Direction="270" RenderingBias="Performance" />
             </Setter.Value>
         </Setter>
     </Style>
 
     <Style x:Key="GlassPanelStyle" TargetType="Border" BasedOn="{StaticResource GlassCardStyle}">
-        <Setter Property="CornerRadius" Value="20" />
-        <Setter Property="Padding" Value="18" />
-        <Setter Property="Background" Value="{DynamicResource BrushOverlayPanel}" />
+        <Setter Property="CornerRadius" Value="14" />
+        <Setter Property="Padding" Value="0" />
+        <Setter Property="Background" Value="{DynamicResource BrushGlassPanel}" />
         <Setter Property="BorderBrush" Value="{DynamicResource BrushBorder}" />
-        <Setter Property="Effect">
-            <Setter.Value>
-                <DropShadowEffect Color="#000000"
-                                  BlurRadius="28"
-                                  ShadowDepth="3"
-                                  Opacity="0.08"
-                                  Direction="270" />
-            </Setter.Value>
-        </Setter>
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="ClipToBounds" Value="True" />
+        <Setter Property="Effect" Value="{x:Null}" />
     </Style>
 
     <Style x:Key="SoftStatusCardStyle" TargetType="Border">
-        <Setter Property="CornerRadius" Value="12" />
-        <Setter Property="Padding" Value="12" />
-        <Setter Property="Background" Value="{DynamicResource BrushFillTertiary}" />
-        <Setter Property="BorderBrush" Value="{DynamicResource BrushBorder}" />
-        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="CornerRadius" Value="0" />
+        <Setter Property="Padding" Value="0,10" />
+        <Setter Property="MinHeight" Value="44" />
+        <Setter Property="Background" Value="Transparent" />
+        <Setter Property="BorderBrush" Value="Transparent" />
+        <Setter Property="BorderThickness" Value="0" />
+        <Setter Property="VerticalAlignment" Value="Stretch" />
+        <Setter Property="Focusable" Value="False" />
+        <Setter Property="SnapsToDevicePixels" Value="True" />
     </Style>
 
     <Style x:Key="AccentChipStyle" TargetType="Border">
@@ -54,7 +48,7 @@
 
     <Style x:Key="SectionTitleStyle" TargetType="TextBlock">
         <Setter Property="Foreground" Value="{DynamicResource BrushTextPrimary}" />
-        <Setter Property="FontSize" Value="20" />
+        <Setter Property="FontSize" Value="24" />
         <Setter Property="FontWeight" Value="SemiBold" />
         <Setter Property="Margin" Value="0,0,0,8" />
     </Style>
@@ -209,8 +203,10 @@
     <Style x:Key="MutedTextStyle" TargetType="TextBlock">
         <Setter Property="Foreground" Value="{DynamicResource BrushTextMuted}" />
         <Setter Property="FontSize" Value="13" />
-        <Setter Property="LineHeight" Value="19" />
+        <Setter Property="LineHeight" Value="20" />
+        <Setter Property="LineStackingStrategy" Value="BlockLineHeight" />
         <Setter Property="TextWrapping" Value="Wrap" />
+        <Setter Property="VerticalAlignment" Value="Center" />
     </Style>
 
     <Style x:Key="CaptionTextStyle" TargetType="TextBlock">
@@ -221,28 +217,31 @@
 
     <Style x:Key="GlassGroupBoxStyle" TargetType="GroupBox">
         <Setter Property="Foreground" Value="{DynamicResource BrushTextPrimary}" />
-        <Setter Property="FontSize" Value="13" />
+        <Setter Property="FontSize" Value="15" />
         <Setter Property="FontWeight" Value="SemiBold" />
         <Setter Property="Padding" Value="0" />
-        <Setter Property="Margin" Value="0,0,0,16" />
+        <Setter Property="Margin" Value="0,0,0,28" />
+        
+        <Setter Property="HorizontalAlignment" Value="Stretch" />
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="GroupBox">
-                    <!-- Large settings card: soft surface, no heavy chrome -->
-                    <Border CornerRadius="16"
-                            Padding="18"
-                            Background="{DynamicResource BrushSurface}"
-                            BorderBrush="{DynamicResource BrushBorder}"
-                            BorderThickness="1">
-                        <StackPanel>
-                            <ContentPresenter ContentSource="Header"
-                                              TextElement.Foreground="{DynamicResource BrushTextSecondary}"
-                                              TextElement.FontSize="13"
-                                              TextElement.FontWeight="SemiBold"
-                                              Margin="0,0,0,14" />
-                            <ContentPresenter />
-                        </StackPanel>
-                    </Border>
+                    <StackPanel>
+                        <ContentPresenter ContentSource="Header"
+                                          TextElement.Foreground="{DynamicResource BrushTextPrimary}"
+                                          TextElement.FontSize="15"
+                                          TextElement.FontWeight="SemiBold"
+                                          Margin="2,0,0,12" />
+                        <Border CornerRadius="14"
+                                Padding="4,6"
+                                Background="{DynamicResource BrushGlassCard}"
+                                BorderBrush="{DynamicResource BrushBorder}"
+                                BorderThickness="1"
+                                ClipToBounds="True"
+                                SnapsToDevicePixels="True">
+                            <ContentPresenter Margin="0" />
+                        </Border>
+                    </StackPanel>
                 </ControlTemplate>
             </Setter.Value>
         </Setter>
@@ -252,29 +251,81 @@
 
     <!-- Grouped list row (Settings.app style) -->
     <Style x:Key="SettingRowStyle" TargetType="Border">
-        <Setter Property="CornerRadius" Value="12" />
-        <Setter Property="Padding" Value="14,12" />
-        <Setter Property="Margin" Value="0,0,0,8" />
-        <Setter Property="Background" Value="{DynamicResource BrushFillTertiary}" />
+        <Setter Property="CornerRadius" Value="0" />
+        <Setter Property="Padding" Value="20,16" />
+        <Setter Property="Margin" Value="0" />
+        <Setter Property="Background" Value="Transparent" />
+        <Setter Property="BorderBrush" Value="{DynamicResource BrushSeparator}" />
+        <Setter Property="BorderThickness" Value="0,0,0,1" />
+        <Setter Property="MinHeight" Value="64" />
+        <Setter Property="HorizontalAlignment" Value="Stretch" />
+        <Setter Property="SnapsToDevicePixels" Value="True" />
+    </Style>
+
+    <Style x:Key="SettingsListContainerStyle" TargetType="Border">
+        <Setter Property="CornerRadius" Value="14" />
+        <Setter Property="Background" Value="{DynamicResource BrushGlassCard}" />
         <Setter Property="BorderBrush" Value="{DynamicResource BrushBorder}" />
         <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="Padding" Value="4,6" />
+        <Setter Property="ClipToBounds" Value="True" />
+        
+        <Setter Property="HorizontalAlignment" Value="Stretch" />
+        <Setter Property="SnapsToDevicePixels" Value="True" />
+    </Style>
+
+    <Style x:Key="SettingsPageTitleStyle" TargetType="TextBlock">
+        <Setter Property="FontSize" Value="26" />
+        <Setter Property="FontWeight" Value="SemiBold" />
+        <Setter Property="Foreground" Value="{DynamicResource BrushTextPrimary}" />
+        <Setter Property="Margin" Value="0,0,0,8" />
+        <Setter Property="LineHeight" Value="34" />
+        <Setter Property="LineStackingStrategy" Value="BlockLineHeight" />
+        <Setter Property="VerticalAlignment" Value="Center" />
+    </Style>
+
+    <Style x:Key="SettingsPageSubtitleStyle" TargetType="TextBlock">
+        <Setter Property="FontSize" Value="13" />
+        <Setter Property="Foreground" Value="{DynamicResource BrushTextSecondary}" />
+        <Setter Property="TextWrapping" Value="Wrap" />
+        <Setter Property="LineHeight" Value="20" />
+        <Setter Property="LineStackingStrategy" Value="BlockLineHeight" />
+        <Setter Property="Margin" Value="0,0,0,28" />
+        
+        <Setter Property="HorizontalAlignment" Value="Stretch" />
+    </Style>
+
+    <Style x:Key="SettingsGroupTitleStyle" TargetType="TextBlock">
+        <Setter Property="FontSize" Value="15" />
+        <Setter Property="FontWeight" Value="SemiBold" />
+        <Setter Property="Foreground" Value="{DynamicResource BrushTextPrimary}" />
+        <Setter Property="Margin" Value="2,0,0,12" />
+        <Setter Property="LineHeight" Value="22" />
+        <Setter Property="VerticalAlignment" Value="Center" />
     </Style>
 
     <Style x:Key="StatusBadgeStyle" TargetType="Border">
-        <Setter Property="CornerRadius" Value="999" />
-        <Setter Property="Padding" Value="10,4" />
+        <Setter Property="CornerRadius" Value="7" />
+        <Setter Property="Padding" Value="9,4" />
+        <Setter Property="MinHeight" Value="24" />
         <Setter Property="Background" Value="{DynamicResource BrushAccentSoft}" />
-        <Setter Property="BorderBrush" Value="#14007AFF" />
+        <Setter Property="BorderBrush" Value="{DynamicResource BrushPrimarySoft}" />
         <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="VerticalAlignment" Value="Center" />
+        <Setter Property="SnapsToDevicePixels" Value="True" />
     </Style>
 
     <Style x:Key="KeyboardKeyStyle" TargetType="Border">
-        <Setter Property="CornerRadius" Value="8" />
-        <Setter Property="Padding" Value="9,4" />
-        <Setter Property="Background" Value="#F2F2F7" />
-        <Setter Property="BorderBrush" Value="#14000000" />
+        <Setter Property="CornerRadius" Value="7" />
+        <Setter Property="Padding" Value="8,4" />
+        <Setter Property="MinHeight" Value="24" />
+        <Setter Property="Background" Value="{DynamicResource BrushGlassCard}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource BrushBorder}" />
         <Setter Property="BorderThickness" Value="1" />
-        <Setter Property="Margin" Value="0,0,6,0" />
+        <Setter Property="Margin" Value="0" />
+        <Setter Property="VerticalAlignment" Value="Center" />
+        <Setter Property="HorizontalAlignment" Value="Right" />
+        <Setter Property="SnapsToDevicePixels" Value="True" />
     </Style>
 
     <!-- Window chrome traffic lights -->

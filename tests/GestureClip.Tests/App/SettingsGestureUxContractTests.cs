@@ -23,8 +23,9 @@ public sealed class SettingsGestureUxContractTests
         Assert.Contains("在此选择新动作", xaml);
 
         Assert.Contains("void ChangeGestureAction_Click", code);
-        Assert.Contains("void NavigateToPage(string page)", code);
-        Assert.Contains("GestureBindingDetailPanel.BringIntoView", code);
+        Assert.Contains("void NavigateToPage(string page", code);
+        Assert.Contains("ScrollToNamedElement", code);
+        Assert.Contains("SectionGestureEditor", code);
     }
 
     [Fact]

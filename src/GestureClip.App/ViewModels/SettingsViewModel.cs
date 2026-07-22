@@ -1885,6 +1885,20 @@ public sealed class SettingsViewModel : INotifyPropertyChanged
         }
     }
 
+    public GestureActionOptionViewModel? NewGestureActionOption
+    {
+        get => GestureActionOptions.FirstOrDefault(o => o.Action == NewGestureAction);
+        set
+        {
+            if (value is null || value.Action == NewGestureAction)
+            {
+                return;
+            }
+
+            NewGestureAction = value.Action;
+        }
+    }
+
     private async Task ApplyGestureEnabledAsync(bool enabled)
     {
         await _featureToggleService.SetGestureEnabledAsync(enabled, CancellationToken.None);

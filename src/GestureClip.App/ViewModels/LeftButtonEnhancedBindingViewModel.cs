@@ -7,6 +7,14 @@ namespace GestureClip.App.ViewModels;
 
 public sealed class LeftButtonEnhancedBindingViewModel : INotifyPropertyChanged
 {
+    public static IReadOnlyList<string> PatternOptions { get; } =
+    [
+        "U", "D", "L", "R",
+        "UD", "DU", "LR", "RL",
+        "UL", "UR", "DL", "DR",
+        "R+L"
+    ];
+
     private string _pattern;
     private BuiltInGestureAction _action;
     private readonly Func<Task> _saveAsync;
@@ -29,6 +37,9 @@ public sealed class LeftButtonEnhancedBindingViewModel : INotifyPropertyChanged
 
     public IReadOnlyList<GestureActionOptionViewModel> ActionOptions { get; }
 
+    /// <summary>Instance alias so WPF binding can resolve the static pattern list.</summary>
+    public IReadOnlyList<string> AvailablePatterns => PatternOptions;
+
     public ICommand DeleteCommand { get; }
 
     public string Pattern
@@ -45,6 +56,7 @@ public sealed class LeftButtonEnhancedBindingViewModel : INotifyPropertyChanged
             _pattern = normalized;
             OnPropertyChanged();
             OnPropertyChanged(nameof(DirectionText));
+            OnPropertyChanged(nameof(SummaryText));
             _ = _saveAsync();
         }
     }
@@ -62,7 +74,26 @@ public sealed class LeftButtonEnhancedBindingViewModel : INotifyPropertyChanged
             _action = value;
             OnPropertyChanged();
             OnPropertyChanged(nameof(ActionName));
+            OnPropertyChanged(nameof(SummaryText));
+            OnPropertyChanged(nameof(SelectedActionOption));
             _ = _saveAsync();
+        }
+    }
+
+    /// <summary>
+    /// SelectedItem binding for ComboBox (more reliable than SelectedValue + enum under custom templates).
+    /// </summary>
+    public GestureActionOptionViewModel? SelectedActionOption
+    {
+        get => ActionOptions.FirstOrDefault(o => o.Action == _action);
+        set
+        {
+            if (value is null || value.Action == _action)
+            {
+                return;
+            }
+
+            Action = value.Action;
         }
     }
 
@@ -83,11 +114,11 @@ public sealed class LeftButtonEnhancedBindingViewModel : INotifyPropertyChanged
         "UL" => "上左",
         "UR" => "上右",
         "R+L" => "右键+左键",
-        _ => string.IsNullOrWhiteSpace(Pattern) ? "未设置手势" : Pattern
+        _ => string.IsNullOrWhiteSpace(Pattern) ? "未识别方向" : Pattern
     };
 
     public string SummaryText =>
-        $"手势 {DirectionText}（{Pattern}）+ 点左键 → {ActionName}";
+        $"手势 {DirectionText}（{Pattern}）+ 左键 → {ActionName}";
 
     private Task DeleteAsync()
     {

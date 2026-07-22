@@ -13,6 +13,7 @@
             <converters:ShortcutNumberConverter x:Key="ShortcutNumberConverter" />
             <converters:ImageBase64ToSourceConverter x:Key="ImageBase64ToSourceConverter" />
             <converters:RelativeTimeConverter x:Key="RelativeTimeConverter" />
+            <converters:GestureActionOptionConverter x:Key="GestureActionOptionConverter" />
             <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter" />
         </ResourceDictionary>
     </Application.Resources>
