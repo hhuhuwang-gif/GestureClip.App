@@ -93,6 +93,7 @@ public sealed partial class SettingsViewModel
     {
         await _settingsService.SetAsync(SettingKeys.HotkeyOpenClipboardOverlayKey, hotkeyText, CancellationToken.None);
         RestartGlobalHotkeys();
+        HotkeyCaptureStatusText = $"已保存「打开历史」：{hotkeyText}（{HotkeyStatusText}）";
     }
 
 
@@ -100,6 +101,7 @@ public sealed partial class SettingsViewModel
     {
         await _settingsService.SetAsync(SettingKeys.HotkeyOpenQuickActionCenterKey, hotkeyText, CancellationToken.None);
         RestartGlobalHotkeys();
+        HotkeyCaptureStatusText = $"已保存「快捷动作」：{hotkeyText}（{HotkeyStatusText}）";
     }
 
 
@@ -107,6 +109,7 @@ public sealed partial class SettingsViewModel
     {
         await _settingsService.SetAsync(SettingKeys.HotkeyPastePlainTextKey, hotkeyText, CancellationToken.None);
         RestartGlobalHotkeys();
+        HotkeyCaptureStatusText = $"已保存「纯文本粘贴」：{hotkeyText}（{HotkeyStatusText}）";
     }
 
 

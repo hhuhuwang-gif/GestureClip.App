@@ -98,6 +98,7 @@ public sealed partial class SettingsViewModel : INotifyPropertyChanged
     private string _openClipboardHotkeyText = HotkeyDefinition.DefaultOpenClipboardOverlay;
     private string _openQuickActionHotkeyText = HotkeyDefinition.DefaultOpenQuickActionCenter;
     private string _pastePlainTextHotkeyText = HotkeyDefinition.DefaultPastePlainText;
+    private string _hotkeyCaptureStatusText = "点击右侧框，然后按下 Ctrl/Alt/Shift + 键 进行录制。Esc 取消，Backspace 恢复默认。";
     private string _gestureStrokeColor;
     private string _snippet1Text = "好的，收到。";
     private string _snippet2Text = "请查收，谢谢。";
@@ -358,6 +359,22 @@ public sealed partial class SettingsViewModel : INotifyPropertyChanged
     public string StartupStatus => "托盘常驻已启用，关闭窗口将隐藏到托盘。";
 
     public string HotkeyStatusText => _globalHotkeyService.Status.DisplayText;
+
+    public string HotkeyCaptureStatusText
+    {
+        get => _hotkeyCaptureStatusText;
+        set
+        {
+            if (_hotkeyCaptureStatusText == value)
+            {
+                return;
+            }
+
+            _hotkeyCaptureStatusText = value;
+            OnPropertyChanged();
+        }
+    }
+
 
     public string OpenClipboardHotkeyText
     {

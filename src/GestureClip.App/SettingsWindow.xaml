@@ -715,15 +715,27 @@
                                                 <TextBlock Text="{Binding HotkeyStatusText}"
                                                            Style="{StaticResource MutedTextStyle}" FontSize="12" Margin="0,4,0,0" />
                                             </StackPanel>
-                                            <TextBox Grid.Column="1" Style="{StaticResource SettingsHotkeyBoxStyle}"
+                                            <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                                            <TextBox Style="{StaticResource SettingsHotkeyBoxStyle}"
                                                      Tag="OpenClipboard"
                                                      Text="{Binding OpenClipboardHotkeyText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                                                      IsReadOnly="True"
+                                                     Focusable="True"
                                                      Cursor="Hand"
-                                                     ToolTip="点击后按下新快捷键（Esc 取消，Backspace 恢复默认）"
+                                                     ToolTip="点击此框后按下新快捷键；或点右侧「录制」"
                                                      PreviewKeyDown="HotkeyBox_PreviewKeyDown"
                                                      GotKeyboardFocus="HotkeyBox_GotKeyboardFocus"
                                                      LostKeyboardFocus="HotkeyBox_LostKeyboardFocus" />
+                                            <Button Content="录制"
+                                                    Tag="OpenClipboard"
+                                                    Style="{StaticResource SettingsSecondaryActionButtonStyle}"
+                                                    Width="64"
+                                                    Height="36"
+                                                    Margin="8,0,0,0"
+                                                    VerticalAlignment="Center"
+                                                    Click="HotkeyRecordButton_Click"
+                                                    ToolTip="点击后开始录制快捷键" />
+                                        </StackPanel>
                                         </Grid>
                                     </Border>
                                     <Border Style="{StaticResource SettingsFormRowStyle}">
@@ -734,18 +746,30 @@
                                             </Grid.ColumnDefinitions>
                                             <StackPanel Margin="0,0,16,0">
                                                 <TextBlock Text="快捷动作" FontSize="14" FontWeight="Medium" />
-                                                <TextBlock Text="默认 Ctrl + Shift + Q。支持 Ctrl/Alt/Shift + 字母或数字，失焦后生效。"
+                                                <TextBlock Text="默认 Ctrl + Shift + Q。点「录制」或点右侧框，再按组合键。"
                                                            Style="{StaticResource MutedTextStyle}" FontSize="12" Margin="0,4,0,0" />
                                             </StackPanel>
-                                            <TextBox Grid.Column="1" Style="{StaticResource SettingsHotkeyBoxStyle}"
+                                            <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                                            <TextBox Style="{StaticResource SettingsHotkeyBoxStyle}"
                                                      Tag="OpenQuickAction"
                                                      Text="{Binding OpenQuickActionHotkeyText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                                                      IsReadOnly="True"
+                                                     Focusable="True"
                                                      Cursor="Hand"
-                                                     ToolTip="点击后按下新快捷键（Esc 取消，Backspace 恢复默认）"
+                                                     ToolTip="点击此框后按下新快捷键；或点右侧「录制」"
                                                      PreviewKeyDown="HotkeyBox_PreviewKeyDown"
                                                      GotKeyboardFocus="HotkeyBox_GotKeyboardFocus"
                                                      LostKeyboardFocus="HotkeyBox_LostKeyboardFocus" />
+                                            <Button Content="录制"
+                                                    Tag="OpenQuickAction"
+                                                    Style="{StaticResource SettingsSecondaryActionButtonStyle}"
+                                                    Width="64"
+                                                    Height="36"
+                                                    Margin="8,0,0,0"
+                                                    VerticalAlignment="Center"
+                                                    Click="HotkeyRecordButton_Click"
+                                                    ToolTip="点击后开始录制快捷键" />
+                                        </StackPanel>
                                         </Grid>
                                     </Border>
                                     <Border Style="{StaticResource SettingsFormRowStyle}" BorderThickness="0">
@@ -756,22 +780,40 @@
                                             </Grid.ColumnDefinitions>
                                             <StackPanel Margin="0,0,16,0">
                                                 <TextBlock Text="纯文本粘贴" FontSize="14" FontWeight="Medium" />
-                                                <TextBlock Text="默认 Ctrl + Shift + V。网页复制后进微信/文档一键去格式。"
+                                                <TextBlock Text="默认 Ctrl + Shift + V。点「录制」设置；Esc 取消，Backspace 恢复默认。"
                                                            Style="{StaticResource MutedTextStyle}" FontSize="12" Margin="0,4,0,0" />
                                             </StackPanel>
-                                            <TextBox Grid.Column="1" Style="{StaticResource SettingsHotkeyBoxStyle}"
+                                            <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                                            <TextBox Style="{StaticResource SettingsHotkeyBoxStyle}"
                                                      Tag="PastePlainText"
                                                      Text="{Binding PastePlainTextHotkeyText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                                                      IsReadOnly="True"
+                                                     Focusable="True"
                                                      Cursor="Hand"
-                                                     ToolTip="点击后按下新快捷键（Esc 取消，Backspace 恢复默认）"
+                                                     ToolTip="点击此框后按下新快捷键；或点右侧「录制」"
                                                      PreviewKeyDown="HotkeyBox_PreviewKeyDown"
                                                      GotKeyboardFocus="HotkeyBox_GotKeyboardFocus"
                                                      LostKeyboardFocus="HotkeyBox_LostKeyboardFocus" />
+                                            <Button Content="录制"
+                                                    Tag="PastePlainText"
+                                                    Style="{StaticResource SettingsSecondaryActionButtonStyle}"
+                                                    Width="64"
+                                                    Height="36"
+                                                    Margin="8,0,0,0"
+                                                    VerticalAlignment="Center"
+                                                    Click="HotkeyRecordButton_Click"
+                                                    ToolTip="点击后开始录制快捷键" />
+                                        </StackPanel>
                                         </Grid>
                                     </Border>
                                 </StackPanel>
                             </Border>
+                            <TextBlock Text="{Binding HotkeyCaptureStatusText}"
+                                       Style="{StaticResource MutedTextStyle}"
+                                       FontSize="12"
+                                       Margin="4,10,0,0"
+                                       TextWrapping="Wrap" />
+
 
                             <TextBlock x:Name="SectionClipboardCleanup" Text="历史数据与清理" Style="{StaticResource SettingsGroupTitleStyle}" Margin="4,28,0,10" />
                             <Border Style="{StaticResource SettingsListContainerStyle}">

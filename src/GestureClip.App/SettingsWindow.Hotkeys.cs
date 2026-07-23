@@ -1,18 +1,19 @@
+using System.Windows;
 using System.Windows.Input;
-using System.Windows.Media;
 using GestureClip.App.ViewModels;
 using GestureClip.Core.Hotkeys;
 using WpfKey = System.Windows.Input.Key;
 using WpfKeyEventArgs = System.Windows.Input.KeyEventArgs;
 using WpfModifierKeys = System.Windows.Input.ModifierKeys;
 using WpfTextBox = System.Windows.Controls.TextBox;
-using WpfBrushes = System.Windows.Media.Brushes;
+using WpfButton = System.Windows.Controls.Button;
 
 namespace GestureClip.App;
 
 public partial class SettingsWindow
 {
     private readonly Dictionary<WpfTextBox, string> _hotkeyCaptureBaseline = new();
+    private WpfTextBox? _activeHotkeyBox;
 
     private void HotkeyBox_GotKeyboardFocus(object sender, KeyboardFocusChangedEventArgs e)
     {
@@ -21,9 +22,9 @@ public partial class SettingsWindow
             return;
         }
 
-        // Keep bound text visible; only remember baseline for Esc restore.
-        // Do NOT replace Text with a placeholder — that blanked the field (binding fight + clip).
+        _activeHotkeyBox = box;
         _hotkeyCaptureBaseline[box] = GetBoundHotkeyText(box);
+        SetCaptureStatus("正在录制… 请按下 Ctrl/Alt/Shift/Win + 主键（Esc 取消）");
         box.SelectAll();
     }
 
@@ -34,8 +35,13 @@ public partial class SettingsWindow
             return;
         }
 
-        // Restore from ViewModel in case capture left a transient value.
+        // Keep whatever is bound; don't blank.
         SyncBoxFromViewModel(box);
+        if (ReferenceEquals(_activeHotkeyBox, box))
+        {
+            _activeHotkeyBox = null;
+        }
+
         _hotkeyCaptureBaseline.Remove(box);
     }
 
@@ -47,7 +53,31 @@ public partial class SettingsWindow
         }
 
         e.Handled = true;
+        CaptureHotkeyFromKeyEvent(box, e);
+    }
 
+    /// <summary>Record button next to each hotkey field.</summary>
+    private void HotkeyRecordButton_Click(object sender, RoutedEventArgs e)
+    {
+        if (sender is not FrameworkElement { Tag: string tag })
+        {
+            return;
+        }
+
+        var box = FindHotkeyBoxByTag(tag);
+        if (box is null)
+        {
+            SetCaptureStatus("找不到热键输入框。");
+            return;
+        }
+
+        box.Focus();
+        Keyboard.Focus(box);
+        SetCaptureStatus($"正在录制「{DescribeTag(tag)}」… 请按下组合键");
+    }
+
+    private void CaptureHotkeyFromKeyEvent(WpfTextBox box, WpfKeyEventArgs e)
+    {
         if (e.Key is WpfKey.Escape)
         {
             if (_hotkeyCaptureBaseline.TryGetValue(box, out var baseline))
@@ -59,6 +89,7 @@ public partial class SettingsWindow
                 SyncBoxFromViewModel(box);
             }
 
+            SetCaptureStatus("已取消录制。");
             Keyboard.ClearFocus();
             return;
         }
@@ -66,6 +97,7 @@ public partial class SettingsWindow
         if (e.Key is WpfKey.Back or WpfKey.Delete)
         {
             ApplyHotkeyText(box, GetDefaultHotkeyFor(box));
+            SetCaptureStatus($"已恢复默认：{GetBoundHotkeyText(box)}");
             Keyboard.ClearFocus();
             return;
         }
@@ -74,8 +106,10 @@ public partial class SettingsWindow
         if (key is WpfKey.LeftCtrl or WpfKey.RightCtrl or WpfKey.LeftAlt or WpfKey.RightAlt
             or WpfKey.LeftShift or WpfKey.RightShift or WpfKey.LWin or WpfKey.RWin
             or WpfKey.None or WpfKey.DeadCharProcessed or WpfKey.ImeProcessed
-            or WpfKey.Tab or WpfKey.Enter)
+            or WpfKey.Tab)
         {
+            // Wait for a non-modifier key.
+            SetCaptureStatus("请继续按主键（需配合 Ctrl/Alt/Shift/Win）…");
             return;
         }
 
@@ -101,18 +135,79 @@ public partial class SettingsWindow
             modifiers |= HotkeyModifier.Win;
         }
 
-        var vk = (uint)KeyInterop.VirtualKeyFromKey(key);
-        if (!HotkeyDefinition.TryFromVirtualKey(modifiers, vk, out var hotkey))
+        if (modifiers == 0)
         {
-            // Invalid combo: keep showing current bound value.
+            SetCaptureStatus("无效：必须包含 Ctrl / Alt / Shift / Win 至少一个修饰键。");
             SyncBoxFromViewModel(box);
             return;
         }
 
-        ApplyHotkeyText(box, hotkey.DisplayText);
-        _hotkeyCaptureBaseline[box] = hotkey.DisplayText;
+        var vk = (uint)KeyInterop.VirtualKeyFromKey(key);
+        // Oem3 / tilde: some keyboards report as Oem3 via Key.Oem3
+        if (key == WpfKey.Oem3)
+        {
+            vk = HotkeyVirtualKey.Oem3;
+        }
+
+        if (!HotkeyDefinition.TryFromVirtualKey(modifiers, vk, out var hotkey))
+        {
+            SetCaptureStatus($"无法识别该主键（VK=0x{vk:X2}）。可试字母/数字/F1–F12/空格/方向键。");
+            SyncBoxFromViewModel(box);
+            return;
+        }
+
+        // Round-trip parse to ensure it will save correctly
+        if (!HotkeyDefinition.TryParse(hotkey.DisplayText, out var parsed) ||
+            parsed.VirtualKey != hotkey.VirtualKey)
+        {
+            SetCaptureStatus($"组合键解析失败：{hotkey.DisplayText}");
+            SyncBoxFromViewModel(box);
+            return;
+        }
+
+        ApplyHotkeyText(box, parsed.DisplayText);
+        _hotkeyCaptureBaseline[box] = parsed.DisplayText;
+        SetCaptureStatus($"已设置：{parsed.DisplayText}");
         Keyboard.ClearFocus();
     }
+
+    private WpfTextBox? FindHotkeyBoxByTag(string tag)
+    {
+        return FindVisualChildren<WpfTextBox>(this)
+            .FirstOrDefault(b => string.Equals(b.Tag as string, tag, StringComparison.Ordinal));
+    }
+
+    private static IEnumerable<T> FindVisualChildren<T>(DependencyObject parent)
+        where T : DependencyObject
+    {
+        if (parent is null)
+        {
+            yield break;
+        }
+
+        var count = System.Windows.Media.VisualTreeHelper.GetChildrenCount(parent);
+        for (var i = 0; i < count; i++)
+        {
+            var child = System.Windows.Media.VisualTreeHelper.GetChild(parent, i);
+            if (child is T match)
+            {
+                yield return match;
+            }
+
+            foreach (var nested in FindVisualChildren<T>(child))
+            {
+                yield return nested;
+            }
+        }
+    }
+
+    private static string DescribeTag(string tag) => tag switch
+    {
+        "OpenClipboard" => "打开历史",
+        "OpenQuickAction" => "快捷动作",
+        "PastePlainText" => "纯文本粘贴",
+        _ => tag
+    };
 
     private static string GetDefaultHotkeyFor(WpfTextBox box) =>
         (box.Tag as string) switch
@@ -173,6 +268,14 @@ public partial class SettingsWindow
             default:
                 box.Text = text;
                 break;
+        }
+    }
+
+    private void SetCaptureStatus(string message)
+    {
+        if (DataContext is SettingsViewModel vm)
+        {
+            vm.HotkeyCaptureStatusText = message;
         }
     }
 }

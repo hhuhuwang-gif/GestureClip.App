@@ -1,5 +1,18 @@
 # CHANGELOG
 
+## GestureClip v0.6.30 Beta
+
+### 快捷键可自定义（修复）
+
+- 支持更多主键：字母/数字、F1–F24、空格、方向键、Home/End、符号键等
+- 每项增加「录制」按钮；点击框或录制后按组合键即可
+- 录制状态提示：无效组合/保存成功/恢复默认
+- Esc 取消，Backspace 恢复默认
+
+### 验证
+
+- `dotnet test ./GestureClip.sln`
+
 ## GestureClip v0.6.29 Beta
 
 ### 安装器

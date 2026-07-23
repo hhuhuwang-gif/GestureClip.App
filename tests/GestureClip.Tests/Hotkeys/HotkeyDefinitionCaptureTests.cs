@@ -32,4 +32,32 @@ public sealed class HotkeyDefinitionCaptureTests
         Assert.True(HotkeyDefinition.TryParse("Ctrl + F2", out var hotkey));
         Assert.Equal("Ctrl + F2", hotkey.DisplayText);
     }
+
+    [Theory]
+    [InlineData("Ctrl + Space")]
+    [InlineData("Alt + F4")]
+    [InlineData("Ctrl + Shift + `")]
+    [InlineData("Ctrl + -")]
+    [InlineData("Win + Shift + S")]
+    public void TryParse_accepts_common_office_combos(string text)
+    {
+        Assert.True(HotkeyDefinition.TryParse(text, out var hotkey));
+        // Display order is normalized to Ctrl, Alt, Shift, Win + key.
+        Assert.True(HotkeyDefinition.TryFromVirtualKey(hotkey.Modifiers, hotkey.VirtualKey, out var again));
+        Assert.Equal(hotkey.Modifiers, again.Modifiers);
+        Assert.Equal(hotkey.VirtualKey, again.VirtualKey);
+        Assert.True(HotkeyDefinition.TryParse(again.DisplayText, out var third));
+        Assert.Equal(hotkey.Modifiers, third.Modifiers);
+        Assert.Equal(hotkey.VirtualKey, third.VirtualKey);
+    }
+
+    [Fact]
+    public void TryFromVirtualKey_space_and_arrows()
+    {
+        Assert.True(HotkeyDefinition.TryFromVirtualKey(HotkeyModifier.Control, 0x20, out var space));
+        Assert.Equal("Ctrl + Space", space.DisplayText);
+
+        Assert.True(HotkeyDefinition.TryFromVirtualKey(HotkeyModifier.Alt, 0x26, out var up));
+        Assert.Equal("Alt + Up", up.DisplayText);
+    }
 }
