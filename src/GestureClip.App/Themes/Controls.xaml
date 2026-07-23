@@ -278,21 +278,23 @@
                                     <Border x:Name="Root"
                                             CornerRadius="8"
                                             Background="{Binding Background, RelativeSource={RelativeSource AncestorType=ComboBox}}"
-                                            BorderBrush="#18000000"
+                                            BorderBrush="{DynamicResource BrushBorder}"
                                             BorderThickness="1">
                                         <Grid>
                                             <Grid.ColumnDefinitions>
                                                 <ColumnDefinition Width="*" />
                                                 <ColumnDefinition Width="30" />
                                             </Grid.ColumnDefinitions>
-                                            <ContentPresenter Grid.Column="0"
+                                            <ContentPresenter x:Name="ContentSite"
+                                                              Grid.Column="0"
                                                               Margin="12,0,4,0"
                                                               HorizontalAlignment="Left"
                                                               VerticalAlignment="Center"
-                                                              TextElement.FontSize="13"
+                                                              IsHitTestVisible="False"
                                                               Content="{Binding SelectionBoxItem, RelativeSource={RelativeSource AncestorType=ComboBox}}"
-                                                              ContentStringFormat="{Binding SelectionBoxItemStringFormat, RelativeSource={RelativeSource AncestorType=ComboBox}}"
                                                               ContentTemplate="{Binding SelectionBoxItemTemplate, RelativeSource={RelativeSource AncestorType=ComboBox}}"
+                                                              ContentStringFormat="{Binding SelectionBoxItemStringFormat, RelativeSource={RelativeSource AncestorType=ComboBox}}"
+                                                              TextElement.FontSize="13"
                                                               TextElement.Foreground="{DynamicResource BrushTextPrimary}" />
                                             <TextBlock Grid.Column="1"
                                                        Text="⌄"

@@ -12,6 +12,7 @@ using GestureClip.App.Controls;
 using GestureClip.Core.Gestures;
 using GestureClip.App.Services;
 using GestureClip.App.ViewModels;
+using GestureClip.Core.Abstractions;
 using WpfButtonBase = System.Windows.Controls.Primitives.ButtonBase;
 using WpfScrollBar = System.Windows.Controls.Primitives.ScrollBar;
 using WpfSelector = System.Windows.Controls.Primitives.Selector;
@@ -55,11 +56,21 @@ public partial class SettingsWindow : Window
     private bool _suppressNavSync;
     private GridLength _savedRailWidth = new(240);
 
-    public SettingsWindow(SettingsViewModel viewModel, AppLifecycleService appLifecycleService)
+    public SettingsWindow(
+        SettingsViewModel viewModel,
+        AppLifecycleService appLifecycleService,
+        ISettingsService settingsService)
     {
         _appLifecycleService = appLifecycleService;
+        _settingsService = settingsService;
         InitializeComponent();
         DataContext = viewModel;
+        RestoreWindowPlacement();
+        Loaded += (_, _) => _windowPlacementReady = true;
+        LocationChanged += (_, _) => SaveWindowPlacement();
+        SizeChanged += (_, _) => SaveWindowPlacement();
+        StateChanged += (_, _) => SaveWindowPlacement();
+        Closed += (_, _) => SaveWindowPlacement();
     }
 
     protected override void OnSourceInitialized(EventArgs e)

@@ -1,5 +1,19 @@
 # CHANGELOG
 
+## GestureClip v0.6.25 Beta (UI fix)
+
+### 设置显示与深色 / 热键
+
+- 修复下拉框显示 `GesturePresetOption { ... }` 类型名：选项实现可读 `ToString`
+- 热键框改为**点击录制**（Esc 取消，Backspace 恢复默认），字体与对比度修正
+- 动作绑定卡片加大字号与内边距，硬编码浅色背景改为主题资源（深色可读）
+- 深色色板重做：高对比 slate + 亮蓝强调，正文/次要文字更清晰
+- 设置窗口记住位置/大小/最大化状态
+
+### 验证
+
+- `dotnet test ./GestureClip.sln`
+
 ## GestureClip v0.6.25 Beta (engineering follow-up)
 
 ### 安装器与签名流水线

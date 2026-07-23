@@ -54,17 +54,22 @@
             <Setter Property="Focusable" Value="False" />
         </Style>
         <Style x:Key="SettingsHotkeyBoxStyle" TargetType="TextBox" BasedOn="{StaticResource GlassTextBoxStyle}">
-            <Setter Property="Width" Value="210" />
-            <Setter Property="Height" Value="34" />
+            <Setter Property="Width" Value="220" />
+            <Setter Property="MinWidth" Value="200" />
+            <Setter Property="Height" Value="36" />
             <Setter Property="HorizontalAlignment" Value="Right" />
             <Setter Property="VerticalAlignment" Value="Center" />
             <Setter Property="TextAlignment" Value="Center" />
             <Setter Property="HorizontalContentAlignment" Value="Center" />
             <Setter Property="VerticalContentAlignment" Value="Center" />
-            <Setter Property="Padding" Value="12,7" />
-            <Setter Property="FontSize" Value="12" />
-            <Setter Property="FontFamily" Value="Cascadia Mono, Consolas, Segoe UI" />
-            <Setter Property="Background" Value="{DynamicResource BrushGlassCard}" />
+            <Setter Property="Padding" Value="12,8" />
+            <Setter Property="FontSize" Value="13" />
+            <Setter Property="FontFamily" Value="Segoe UI, Microsoft YaHei UI" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="Foreground" Value="{DynamicResource BrushTextPrimary}" />
+            <Setter Property="CaretBrush" Value="{DynamicResource BrushPrimaryBright}" />
+            <Setter Property="Background" Value="{DynamicResource BrushFillTertiary}" />
+            <Setter Property="BorderBrush" Value="{DynamicResource BrushBorder}" />
         </Style>
         <Style x:Key="SettingsControlHostStyle" TargetType="StackPanel">
             <Setter Property="HorizontalAlignment" Value="Right" />
@@ -688,7 +693,14 @@
                                                            Style="{StaticResource MutedTextStyle}" FontSize="12" Margin="0,4,0,0" />
                                             </StackPanel>
                                             <TextBox Grid.Column="1" Style="{StaticResource SettingsHotkeyBoxStyle}"
-                                                     Text="{Binding OpenClipboardHotkeyText, Mode=TwoWay, UpdateSourceTrigger=LostFocus}" />
+                                                     Tag="OpenClipboard"
+                                                     Text="{Binding OpenClipboardHotkeyText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                                     IsReadOnly="True"
+                                                     Cursor="Hand"
+                                                     ToolTip="点击后按下新快捷键（Esc 取消，Backspace 恢复默认）"
+                                                     PreviewKeyDown="HotkeyBox_PreviewKeyDown"
+                                                     GotKeyboardFocus="HotkeyBox_GotKeyboardFocus"
+                                                     LostKeyboardFocus="HotkeyBox_LostKeyboardFocus" />
                                         </Grid>
                                     </Border>
                                     <Border Style="{StaticResource SettingsFormRowStyle}">
@@ -703,7 +715,14 @@
                                                            Style="{StaticResource MutedTextStyle}" FontSize="12" Margin="0,4,0,0" />
                                             </StackPanel>
                                             <TextBox Grid.Column="1" Style="{StaticResource SettingsHotkeyBoxStyle}"
-                                                     Text="{Binding OpenQuickActionHotkeyText, Mode=TwoWay, UpdateSourceTrigger=LostFocus}" />
+                                                     Tag="OpenQuickAction"
+                                                     Text="{Binding OpenQuickActionHotkeyText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                                     IsReadOnly="True"
+                                                     Cursor="Hand"
+                                                     ToolTip="点击后按下新快捷键（Esc 取消，Backspace 恢复默认）"
+                                                     PreviewKeyDown="HotkeyBox_PreviewKeyDown"
+                                                     GotKeyboardFocus="HotkeyBox_GotKeyboardFocus"
+                                                     LostKeyboardFocus="HotkeyBox_LostKeyboardFocus" />
                                         </Grid>
                                     </Border>
                                     <Border Style="{StaticResource SettingsFormRowStyle}" BorderThickness="0">
@@ -718,7 +737,14 @@
                                                            Style="{StaticResource MutedTextStyle}" FontSize="12" Margin="0,4,0,0" />
                                             </StackPanel>
                                             <TextBox Grid.Column="1" Style="{StaticResource SettingsHotkeyBoxStyle}"
-                                                     Text="{Binding PastePlainTextHotkeyText, Mode=TwoWay, UpdateSourceTrigger=LostFocus}" />
+                                                     Tag="PastePlainText"
+                                                     Text="{Binding PastePlainTextHotkeyText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                                     IsReadOnly="True"
+                                                     Cursor="Hand"
+                                                     ToolTip="点击后按下新快捷键（Esc 取消，Backspace 恢复默认）"
+                                                     PreviewKeyDown="HotkeyBox_PreviewKeyDown"
+                                                     GotKeyboardFocus="HotkeyBox_GotKeyboardFocus"
+                                                     LostKeyboardFocus="HotkeyBox_LostKeyboardFocus" />
                                         </Grid>
                                     </Border>
                                 </StackPanel>
@@ -1412,7 +1438,7 @@
                                                     </ItemsControl.ItemsPanel>
                                                     <ItemsControl.ItemTemplate>
                                                         <DataTemplate>
-                                                            <Border Background="#FFFFFFFF"
+                                                            <Border Background="{DynamicResource BrushGlassCard}"
                                                                     BorderBrush="{DynamicResource BrushBorder}"
                                                                     BorderThickness="1"
                                                                     CornerRadius="14"
@@ -1473,13 +1499,14 @@
                                             <ItemsControl.ItemTemplate>
                                                 <DataTemplate>
                                                     <Border x:Name="GestureCard"
-                                                            MinHeight="168"
-                                                            Margin="6"
-                                                            Padding="14"
-                                                            Background="#FFFFFFFF"
+                                                            MinHeight="210"
+                                                            Margin="8"
+                                                            Padding="18"
+                                                            Background="{DynamicResource BrushGlassCard}"
                                                             BorderBrush="{DynamicResource BrushBorder}"
                                                             BorderThickness="1"
-                                                            CornerRadius="18">
+                                                            CornerRadius="16"
+                                                            SnapsToDevicePixels="True">
                                                         <StackPanel>
                                                             <Grid>
                                                                 <Grid.ColumnDefinitions>
@@ -1493,14 +1520,14 @@
                                                                         CornerRadius="4"
                                                                         Background="#00000000" />
                                                                 <Border Grid.Column="1"
-                                                                        Width="44"
-                                                                        Height="44"
-                                                                        CornerRadius="14"
-                                                                        Background="#EAF1FF"
+                                                                        Width="52"
+                                                                        Height="52"
+                                                                        CornerRadius="16"
+                                                                        Background="{DynamicResource BrushPrimarySoft}"
                                                                         VerticalAlignment="Center"
                                                                         HorizontalAlignment="Left">
                                                                     <TextBlock Text="{Binding TrajectoryGlyphs}"
-                                                                               FontSize="16"
+                                                                               FontSize="18"
                                                                                FontWeight="SemiBold"
                                                                                Foreground="{DynamicResource BrushPrimaryBright}"
                                                                                TextAlignment="Center"
@@ -1509,7 +1536,7 @@
                                                                 </Border>
                                                                 <StackPanel Grid.Column="2" VerticalAlignment="Center">
                                                                     <TextBlock Text="{Binding GestureName}"
-                                                                               FontSize="15"
+                                                                               FontSize="16"
                                                                                FontWeight="SemiBold"
                                                                                Foreground="{DynamicResource BrushTextPrimary}"
                                                                                TextTrimming="CharacterEllipsis" />
@@ -1521,7 +1548,7 @@
                                                                 <Border Grid.Column="3"
                                                                         Padding="8,3"
                                                                         CornerRadius="12"
-                                                                        Background="#DBEAFE"
+                                                                        Background="{DynamicResource BrushPrimarySoft}"
                                                                         VerticalAlignment="Top">
                                                                     <TextBlock Text="{Binding SelectedBadgeText}"
                                                                                FontSize="11"
@@ -1534,12 +1561,12 @@
                                                                        FontSize="12"
                                                                        Margin="0,12,0,2" />
                                                             <TextBlock Text="{Binding ActionName}"
-                                                                       FontSize="15"
+                                                                       FontSize="17"
                                                                        FontWeight="SemiBold"
                                                                        Foreground="{DynamicResource BrushTextPrimary}"
                                                                        TextTrimming="CharacterEllipsis" />
                                                             <StackPanel Margin="0,10,0,0">
-                                                                <Border Background="#F8FAFC"
+                                                                <Border Background="{DynamicResource BrushFillTertiary}"
                                                                         BorderBrush="{DynamicResource BrushBorder}"
                                                                         BorderThickness="1"
                                                                         CornerRadius="12"
@@ -1609,7 +1636,7 @@
                                                                         Height="30"
                                                                         Focusable="False"
                                                                         ToolTip="删除这个手势绑定"
-                                                                        Background="#FFF5F5"
+                                                                        Background="{DynamicResource BrushDangerSoft}"
                                                                         Foreground="#B42318"
                                                                         BorderBrush="#FECACA"
                                                                         Command="{Binding DeleteCommand}" />
@@ -1638,10 +1665,10 @@
                                                 <ItemsControl.ItemTemplate>
                                                     <DataTemplate>
                                                         <Border x:Name="GestureCard"
-                                                                MinHeight="138"
+                                                                MinHeight="180"
                                                                 Margin="6"
                                                                 Padding="12"
-                                                                Background="#FFFFFFFF"
+                                                                Background="{DynamicResource BrushGlassCard}"
                                                                 BorderBrush="{DynamicResource BrushBorder}"
                                                                 BorderThickness="1"
                                                                 CornerRadius="16">
@@ -1655,7 +1682,7 @@
                                                                     <Border Width="34"
                                                                             Height="34"
                                                                             CornerRadius="11"
-                                                                            Background="#EAF1FF"
+                                                                            Background="{DynamicResource BrushPrimarySoft}"
                                                                             HorizontalAlignment="Left"
                                                                             VerticalAlignment="Center">
                                                                         <TextBlock Text="{Binding TrajectoryGlyphs}"
@@ -1687,7 +1714,7 @@
                                                                            FontSize="12"
                                                                            Margin="0,8,0,0" />
                                                                 <StackPanel Margin="0,10,0,0">
-                                                                    <Border Background="#F8FAFC"
+                                                                    <Border Background="{DynamicResource BrushFillTertiary}"
                                                                             BorderBrush="{DynamicResource BrushBorder}"
                                                                             BorderThickness="1"
                                                                             CornerRadius="12"
@@ -1752,7 +1779,7 @@
                                                                             Height="30"
                                                                             Focusable="False"
                                                                             ToolTip="删除这个手势绑定"
-                                                                            Background="#FFF5F5"
+                                                                            Background="{DynamicResource BrushDangerSoft}"
                                                                             Foreground="#B42318"
                                                                             BorderBrush="#FECACA"
                                                                             Command="{Binding DeleteCommand}" />
@@ -1788,7 +1815,7 @@
                                                 </Grid.ColumnDefinitions>
 
                                                 <StackPanel>
-                                                    <Border Background="#FFFFFFFF"
+                                                    <Border Background="{DynamicResource BrushGlassCard}"
                                                             BorderBrush="{DynamicResource BrushBorder}"
                                                             BorderThickness="1"
                                                             CornerRadius="16"
@@ -1893,7 +1920,7 @@
                                                         <Border MinHeight="240"
                                                                 HorizontalAlignment="Stretch"
                                                                 CornerRadius="18"
-                                                                Background="#FFFFFFFF"
+                                                                Background="{DynamicResource BrushGlassCard}"
                                                                 BorderBrush="{DynamicResource BrushBorder}"
                                                                 BorderThickness="1"
                                                                 ClipToBounds="True"
@@ -2285,7 +2312,7 @@
                                                              Text="{Binding WorkstationOverworkSnoozeMinutes, Mode=TwoWay, UpdateSourceTrigger=LostFocus}" />
                                                     <TextBlock Text="分钟（5-60）" Style="{StaticResource MutedTextStyle}" VerticalAlignment="Center" Margin="8,0,0,0" />
                                                 </WrapPanel>
-                                                <Border Background="#EEF2F7"
+                                                <Border Background="{DynamicResource BrushFillTertiary}"
                                                         BorderBrush="{DynamicResource BrushBorder}"
                                                         BorderThickness="1"
                                                         CornerRadius="14"

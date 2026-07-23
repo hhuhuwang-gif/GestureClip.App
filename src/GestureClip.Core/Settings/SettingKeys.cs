@@ -5,6 +5,11 @@ public static class SettingKeys
     public const string AppStartWithWindows = "App.StartWithWindows";
     public const string AppOnboardingCompleted = "App.Onboarding.Completed";
     public const string UiThemeMode = "Ui.ThemeMode";
+    public const string UiSettingsWindowLeft = "Ui.SettingsWindow.Left";
+    public const string UiSettingsWindowTop = "Ui.SettingsWindow.Top";
+    public const string UiSettingsWindowWidth = "Ui.SettingsWindow.Width";
+    public const string UiSettingsWindowHeight = "Ui.SettingsWindow.Height";
+    public const string UiSettingsWindowState = "Ui.SettingsWindow.State";
     public const string ClipboardCaptureEnabled = "Clipboard.CaptureEnabled";
     public const string ClipboardMaxItems = "Clipboard.MaxItems";
     public const string ClipboardRetentionDays = "Clipboard.RetentionDays";

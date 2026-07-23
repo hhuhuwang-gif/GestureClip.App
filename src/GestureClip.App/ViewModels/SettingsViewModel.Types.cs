@@ -25,9 +25,15 @@ namespace GestureClip.App.ViewModels;
 public sealed partial class SettingsViewModel
 {
 
-    public sealed record GesturePresetOption(GesturePreset Value, string DisplayName);
+    public sealed record GesturePresetOption(GesturePreset Value, string DisplayName)
+    {
+        public override string ToString() => DisplayName;
+    }
 
-    public sealed record RetentionOption(string Label, int Days);
+    public sealed record RetentionOption(string Label, int Days)
+    {
+        public override string ToString() => Label;
+    }
 
     public sealed record WorkstationTemplateOption(
         string Name,
@@ -40,6 +46,8 @@ public sealed partial class SettingsViewModel
     public sealed record GestureStrokeColorOption(string Name, string Color)
     {
         public string DisplayName => $"{Name}  {Color}";
+
+        public override string ToString() => DisplayName;
     }
 
     public sealed record GestureTriggerModeViewModel(string Name, string Status, bool IsEnabled);

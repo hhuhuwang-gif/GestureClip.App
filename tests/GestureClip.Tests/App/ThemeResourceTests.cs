@@ -85,11 +85,11 @@ public sealed class ThemeResourceTests
         Assert.Contains("ColorBrandSky", colors);
         Assert.Contains("ColorGlassLight", colors);
         Assert.Contains("ColorContentBackground", colors);
-        // Dark banker palette
-        Assert.Contains("#0A1733", dark);
-        Assert.Contains("#15294D", dark);
-        Assert.Contains("#B8862F", dark);
-        Assert.Contains("#E8E1D0", dark);
+        // Dark high-contrast slate palette (readable body text)
+        Assert.Contains("#0B1220", dark);
+        Assert.Contains("#151C2C", dark);
+        Assert.Contains("#60A5FA", dark);
+        Assert.Contains("#F3F6FC", dark);
         Assert.Contains("ColorAppBg0", colors);
         Assert.Contains("ColorCardElevated", colors);
         Assert.Contains("ColorTabSelected", colors);
@@ -387,14 +387,14 @@ public sealed class ThemeResourceTests
         Assert.Contains("GestureBindingPageScrollViewer", xaml);
         Assert.Contains("WindowBackground_MouseLeftButtonDown", xaml);
         Assert.Contains("Click=\"ScrollToCustomGestureDesigner_Click\"", xaml);
-        Assert.Contains("MinHeight=\"168\"", xaml);
+        Assert.Contains("MinHeight=\"210\"", xaml);
         Assert.Contains("删除这个手势绑定", xaml);
         Assert.Contains("点「更换动作」会选中该手势", xaml);
         Assert.Contains("常用手势一览", xaml);
         Assert.Contains("ChangeGestureAction_Click", xaml);
         Assert.Contains("Tag=\"{Binding Pattern}\"", xaml);
         Assert.Contains("<UniformGrid Columns=\"2\" />", xaml);
-        Assert.Contains("MinHeight=\"138\"", xaml);
+        Assert.Contains("MinHeight=\"180\"", xaml);
         Assert.Contains("Focusable=\"False\"", xaml);
         Assert.Contains("TrajectoryGlyphs", xaml);
         Assert.Contains("InstructionText", xaml);
