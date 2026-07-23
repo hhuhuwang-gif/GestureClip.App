@@ -2,6 +2,7 @@ using GestureClip.Core.Abstractions;
 using GestureClip.Core.Assistant;
 using GestureClip.Core.Clipboard;
 using GestureClip.Core.Gestures;
+using GestureClip.Core.Privacy;
 using GestureClip.Core.Settings;
 using GestureClip.Core.SystemInfo;
 using GestureClip.Features.Assistant;
@@ -204,7 +205,25 @@ public sealed class GestureBuiltInActionExecutorTests
             assistant ?? new FakeAssistantActionExecutor(),
             quickAction ?? new FakeQuickActionCenterService(),
             new FakePlainTextPasteService(),
+            new FakeAppSmartPasteRuleService(),
             NullLogger<GestureBuiltInActionExecutor>.Instance);
+    }
+
+
+    private sealed class FakeAppSmartPasteRuleService : IAppSmartPasteRuleService
+    {
+        public Task<IReadOnlyList<AppSmartPasteRule>> GetAllAsync(CancellationToken cancellationToken = default) =>
+            Task.FromResult<IReadOnlyList<AppSmartPasteRule>>([]);
+
+        public Task SetAsync(string processName, string strategy, string? note = null, CancellationToken cancellationToken = default) =>
+            Task.CompletedTask;
+
+        public Task DeleteAsync(string processName, CancellationToken cancellationToken = default) =>
+            Task.CompletedTask;
+
+        public string? TryGetStrategy(string? processName) => null;
+
+        public Task RefreshAsync(CancellationToken cancellationToken = default) => Task.CompletedTask;
     }
 
     private sealed class FakePlainTextPasteService : IPlainTextPasteService

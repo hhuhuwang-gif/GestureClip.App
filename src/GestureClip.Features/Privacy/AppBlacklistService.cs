@@ -15,11 +15,20 @@ public sealed class AppBlacklistService : IAppBlacklistService
         new("keepass.exe", "默认隐私保护：密码管理器", true, false),
         new("keepassxc.exe", "默认隐私保护：密码管理器", true, false),
         new("lastpass.exe", "默认隐私保护：密码管理器", true, false),
+        new("enpass.exe", "默认隐私保护：密码管理器", true, false),
+        new("dashlane.exe", "默认隐私保护：密码管理器", true, false),
+        new("nordpass.exe", "默认隐私保护：密码管理器", true, false),
+        new("protonpass.exe", "默认隐私保护：密码管理器", true, false),
+        new("roboform.exe", "默认隐私保护：密码管理器", true, false),
+        new("authenticator.exe", "默认隐私保护：双因素验证工具", true, false),
+        new("authy desktop.exe", "默认隐私保护：双因素验证工具", true, false),
         new("authy.exe", "默认隐私保护：双因素验证工具", true, false),
         new("msrdc.exe", "默认隐私保护：远程桌面", true, true),
         new("mstsc.exe", "默认隐私保护：远程桌面", true, true),
         new("anydesk.exe", "默认隐私保护：远程控制", true, true),
-        new("teamviewer.exe", "默认隐私保护：远程控制", true, true)
+        new("teamviewer.exe", "默认隐私保护：远程控制", true, true),
+        new("toodesk.exe", "默认隐私保护：远程控制", true, true),
+        new("sunloginclient.exe", "默认隐私保护：远程控制", true, true)
     ];
 
     private readonly ISqliteConnectionFactory _connectionFactory;

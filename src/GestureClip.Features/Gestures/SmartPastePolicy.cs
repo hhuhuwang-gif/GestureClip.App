@@ -86,8 +86,13 @@ public static class SmartPastePolicy
         };
     }
 
-    public static SmartPasteStrategy Select(ForegroundAppInfo app)
+    public static SmartPasteStrategy Select(ForegroundAppInfo app, string? strategyOverride = null)
     {
+        if (TryParseStrategy(strategyOverride, out var overrideStrategy))
+        {
+            return overrideStrategy;
+        }
+
         var processName = NormalizeProcessName(app.ProcessName);
         var windowTitle = app.WindowTitle ?? "";
 
@@ -153,6 +158,35 @@ public static class SmartPastePolicy
         }
 
         return string.Join("\r\n", result);
+    }
+
+    public static bool TryParseStrategy(string? strategy, out SmartPasteStrategy result)
+    {
+        result = SmartPasteStrategy.NormalPaste;
+        if (string.IsNullOrWhiteSpace(strategy))
+        {
+            return false;
+        }
+
+        switch (strategy.Trim().ToLowerInvariant())
+        {
+            case "plain":
+            case "plaintext":
+            case "plaintextpaste":
+                result = SmartPasteStrategy.PlainTextPaste;
+                return true;
+            case "clean":
+            case "cleantext":
+            case "cleantextpaste":
+                result = SmartPasteStrategy.CleanTextPaste;
+                return true;
+            case "normal":
+            case "normalpaste":
+                result = SmartPasteStrategy.NormalPaste;
+                return true;
+            default:
+                return Enum.TryParse(strategy, ignoreCase: true, out result);
+        }
     }
 
     private static string NormalizeProcessName(string? processName)

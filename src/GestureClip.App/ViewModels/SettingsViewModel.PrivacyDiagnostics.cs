@@ -130,4 +130,79 @@ public sealed partial class SettingsViewModel
         }
     }
 
+
+    private async Task LoadSmartPasteRulesAsync()
+    {
+        var items = await _appSmartPasteRuleService.GetAllAsync(CancellationToken.None);
+        AppSmartPasteRules.Clear();
+        foreach (var item in items)
+        {
+            AppSmartPasteRules.Add(new AppSmartPasteRuleViewModel(item, UpdateSmartPasteRuleAsync, DeleteSmartPasteRuleAsync));
+        }
+    }
+
+    private async Task AddSmartPasteRuleAsync()
+    {
+        try
+        {
+            if (string.IsNullOrWhiteSpace(NewSmartPasteProcessName))
+            {
+                SmartPasteRulesStatusText = "请先填写进程名，例如 notepad.exe。";
+                return;
+            }
+
+            await _appSmartPasteRuleService.SetAsync(
+                NewSmartPasteProcessName,
+                NewSmartPasteStrategy,
+                note: null,
+                CancellationToken.None);
+            var name = NewSmartPasteProcessName;
+            NewSmartPasteProcessName = "";
+            await LoadSmartPasteRulesAsync();
+            SmartPasteRulesStatusText = $"已添加规则：{name} → {NewSmartPasteStrategy}。";
+        }
+        catch (Exception ex)
+        {
+            SmartPasteRulesStatusText = $"添加失败：{ex.Message}";
+        }
+    }
+
+    private async Task AddForegroundSmartPasteRuleAsync()
+    {
+        try
+        {
+            var processName = _foregroundAppService.GetCurrent().ProcessName;
+            if (string.IsNullOrWhiteSpace(processName))
+            {
+                SmartPasteRulesStatusText = "无法获取当前前台进程。请切换到目标窗口后再点一次。";
+                return;
+            }
+
+            NewSmartPasteProcessName = processName;
+            await _appSmartPasteRuleService.SetAsync(
+                processName,
+                NewSmartPasteStrategy,
+                note: "前台窗口一键添加",
+                CancellationToken.None);
+            await LoadSmartPasteRulesAsync();
+            SmartPasteRulesStatusText = $"已为前台进程 {processName} 设置 {NewSmartPasteStrategy}。";
+        }
+        catch (Exception ex)
+        {
+            SmartPasteRulesStatusText = $"添加前台规则失败：{ex.Message}";
+        }
+    }
+
+    private async Task UpdateSmartPasteRuleAsync(AppSmartPasteRuleViewModel item)
+    {
+        await _appSmartPasteRuleService.SetAsync(item.ProcessName, item.Strategy, item.Note, CancellationToken.None);
+        SmartPasteRulesStatusText = $"已更新 {item.ProcessName}。";
+    }
+
+    private async Task DeleteSmartPasteRuleAsync(AppSmartPasteRuleViewModel item)
+    {
+        await _appSmartPasteRuleService.DeleteAsync(item.ProcessName, CancellationToken.None);
+        AppSmartPasteRules.Remove(item);
+        SmartPasteRulesStatusText = $"已删除 {item.ProcessName}。";
+    }
 }

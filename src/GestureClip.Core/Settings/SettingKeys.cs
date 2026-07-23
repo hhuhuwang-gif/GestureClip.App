@@ -38,6 +38,7 @@ public static class SettingKeys
     public const string GestureSnippet1Text = "Gesture.Snippet1.Text";
     public const string GestureSnippet2Text = "Gesture.Snippet2.Text";
     public const string GestureSnippet3Text = "Gesture.Snippet3.Text";
+    public const string AppSmartPasteRulesJson = "App.SmartPasteRulesJson";
     public const string GestureTriggerRightButtonEnabled = "Gesture.Trigger.RightButton.Enabled";
     public const string GestureTriggerLeftButtonEnabled = "Gesture.Trigger.LeftButton.Enabled";
     public const string GestureTriggerMiddleButtonEnabled = "Gesture.Trigger.MiddleButton.Enabled";

@@ -24,6 +24,7 @@ public static class FeaturesServiceCollectionExtensions
         services.AddSingleton<IPlainTextPasteService, PlainTextPasteService>();
         services.AddSingleton<IClipboardService, ClipboardService>();
         services.AddSingleton<IAppBlacklistService, AppBlacklistService>();
+        services.AddSingleton<IAppSmartPasteRuleService, AppSmartPasteRuleService>();
         services.AddSingleton<IMouseGestureRecognizer, DirectionGestureRecognizer>();
         services.AddSingleton<IGestureSettingsProvider, GestureSettingsProvider>();
         services.AddSingleton<IGesturePresetProvider, GesturePresetProvider>();

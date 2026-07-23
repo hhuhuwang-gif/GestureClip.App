@@ -31,6 +31,8 @@ public sealed partial class SettingsViewModel : INotifyPropertyChanged
     private readonly IFeatureToggleService _featureToggleService;
     private readonly IGlobalHotkeyService _globalHotkeyService;
     private readonly IAppBlacklistService _appBlacklistService;
+    private readonly IAppSmartPasteRuleService _appSmartPasteRuleService;
+    private readonly IForegroundAppService _foregroundAppService;
     private readonly IStartupService _startupService;
     private readonly IDiagnosticsService _diagnosticsService;
     private readonly IClipboardService _clipboardService;
@@ -86,6 +88,9 @@ public sealed partial class SettingsViewModel : INotifyPropertyChanged
     private GestureDiagnosticsSnapshot _gestureDiagnostics;
     private DiagnosticsSnapshot? _diagnostics;
     private string _newBlacklistProcessName = "";
+    private string _newSmartPasteProcessName = "";
+    private string _newSmartPasteStrategy = "PlainTextPaste";
+    private string _smartPasteRulesStatusText = "为指定进程覆盖智能粘贴策略（优先于内置聊天/浏览器/Office 规则）。";
     private bool _startWithWindows;
     private int _clipboardItemCount;
     private int _clipboardMaxItems;
@@ -147,6 +152,8 @@ public sealed partial class SettingsViewModel : INotifyPropertyChanged
         IFeatureToggleService featureToggleService,
         IGlobalHotkeyService globalHotkeyService,
         IAppBlacklistService appBlacklistService,
+        IAppSmartPasteRuleService appSmartPasteRuleService,
+        IForegroundAppService foregroundAppService,
         IStartupService startupService,
         IDiagnosticsService diagnosticsService,
         IClipboardService clipboardService,
@@ -167,6 +174,8 @@ public sealed partial class SettingsViewModel : INotifyPropertyChanged
         _featureToggleService = featureToggleService;
         _globalHotkeyService = globalHotkeyService;
         _appBlacklistService = appBlacklistService;
+        _appSmartPasteRuleService = appSmartPasteRuleService;
+        _foregroundAppService = foregroundAppService;
         _startupService = startupService;
         _diagnosticsService = diagnosticsService;
         _clipboardService = clipboardService;
@@ -286,6 +295,8 @@ public sealed partial class SettingsViewModel : INotifyPropertyChanged
             ? "当前看起来是开发运行路径，开机自启建议在发布版中开启。"
             : "";
         AddBlacklistItemCommand = new AsyncRelayCommand(_ => AddBlacklistItemAsync());
+        AddSmartPasteRuleCommand = new AsyncRelayCommand(_ => AddSmartPasteRuleAsync());
+        AddForegroundSmartPasteRuleCommand = new AsyncRelayCommand(_ => AddForegroundSmartPasteRuleAsync());
         RefreshDiagnosticsCommand = new AsyncRelayCommand(_ => RefreshDiagnosticsAsync());
         CopyDiagnosticsCommand = new AsyncRelayCommand(_ => CopyDiagnosticsAsync());
         ExportDiagnosticsCommand = new AsyncRelayCommand(_ => ExportDiagnosticsAsync());
@@ -321,6 +332,7 @@ public sealed partial class SettingsViewModel : INotifyPropertyChanged
         _diagnosticsTimer.Tick += (_, _) => RefreshGestureDiagnostics();
         _diagnosticsTimer.Start();
         _ = LoadBlacklistAsync();
+        _ = LoadSmartPasteRulesAsync();
         _ = RefreshDiagnosticsAsync();
         _ = RefreshClipboardStatsAsync();
         RefreshGestureBindingCards();
@@ -518,6 +530,15 @@ public sealed partial class SettingsViewModel : INotifyPropertyChanged
     }
 
     public ObservableCollection<AppBlacklistItemViewModel> AppBlacklistItems { get; } = [];
+    public ObservableCollection<AppSmartPasteRuleViewModel> AppSmartPasteRules { get; } = [];
+    public IReadOnlyList<string> SmartPasteStrategyOptions { get; } =
+    [
+        "PlainTextPaste",
+        "CleanTextPaste",
+        "NormalPaste"
+    ];
+    public ICommand AddSmartPasteRuleCommand { get; }
+    public ICommand AddForegroundSmartPasteRuleCommand { get; }
 
     public ObservableCollection<GestureBindingCardViewModel> GestureBindingCards { get; } = [];
 
@@ -631,6 +652,52 @@ public sealed partial class SettingsViewModel : INotifyPropertyChanged
     ];
 
     public ICommand AddBlacklistItemCommand { get; }
+
+    public string NewSmartPasteProcessName
+    {
+        get => _newSmartPasteProcessName;
+        set
+        {
+            if (_newSmartPasteProcessName == value)
+            {
+                return;
+            }
+
+            _newSmartPasteProcessName = value;
+            OnPropertyChanged();
+        }
+    }
+
+    public string NewSmartPasteStrategy
+    {
+        get => _newSmartPasteStrategy;
+        set
+        {
+            if (_newSmartPasteStrategy == value)
+            {
+                return;
+            }
+
+            _newSmartPasteStrategy = value;
+            OnPropertyChanged();
+        }
+    }
+
+    public string SmartPasteRulesStatusText
+    {
+        get => _smartPasteRulesStatusText;
+        set
+        {
+            if (_smartPasteRulesStatusText == value)
+            {
+                return;
+            }
+
+            _smartPasteRulesStatusText = value;
+            OnPropertyChanged();
+        }
+    }
+
 
     public ICommand RefreshDiagnosticsCommand { get; }
 

@@ -847,6 +847,8 @@ public sealed class SettingsViewModelTests
             new FakeFeatureToggleService(),
             hotkey ?? new FakeGlobalHotkeyService(),
             new FakeAppBlacklistService(),
+            new FakeAppSmartPasteRuleService(),
+            new FakeForegroundAppService(),
             new FakeStartupService(),
             new FakeDiagnosticsService(),
             new FakeClipboardService(),
@@ -1037,6 +1039,28 @@ public sealed class SettingsViewModelTests
         public int StopCount { get; private set; }
         public void Start() => StartCount++;
         public void Stop() => StopCount++;
+    }
+
+
+    private sealed class FakeAppSmartPasteRuleService : IAppSmartPasteRuleService
+    {
+        public Task<IReadOnlyList<AppSmartPasteRule>> GetAllAsync(CancellationToken cancellationToken = default) =>
+            Task.FromResult<IReadOnlyList<AppSmartPasteRule>>([]);
+
+        public Task SetAsync(string processName, string strategy, string? note = null, CancellationToken cancellationToken = default) =>
+            Task.CompletedTask;
+
+        public Task DeleteAsync(string processName, CancellationToken cancellationToken = default) =>
+            Task.CompletedTask;
+
+        public string? TryGetStrategy(string? processName) => null;
+
+        public Task RefreshAsync(CancellationToken cancellationToken = default) => Task.CompletedTask;
+    }
+
+    private sealed class FakeForegroundAppService : IForegroundAppService
+    {
+        public ForegroundAppInfo GetCurrent() => new("notepad.exe", "Untitled");
     }
 
     private sealed class FakeAppBlacklistService : IAppBlacklistService

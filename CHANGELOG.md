@@ -1,5 +1,18 @@
 # CHANGELOG
 
+## GestureClip v0.6.27 Beta（工程预览）
+
+### 应用级规则 / 签名 / 演示
+
+- **智能粘贴应用规则**：设置 → 隐私，可为进程覆盖 Plain/Clean/Normal 策略，支持「用前台窗口」一键添加
+- **屏蔽名单增强**：勾选文案改为「不记剪贴板 / 禁用手势」；默认名单补充更多密码管理器与远程控制
+- **代码签名**：`docs/CODE_SIGNING.md` + Release workflow 可选 secrets 签名 + 自动打 Setup 包
+- **30 秒演示导览**：`docs/DEMO_30S.md`（现有截图串联；可自行替换为 GIF）
+
+### 验证
+
+- `dotnet test ./GestureClip.sln`
+
 ## GestureClip v0.6.26 Beta（0.7 首体验预览）
 
 

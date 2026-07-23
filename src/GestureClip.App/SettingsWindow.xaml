@@ -2192,11 +2192,95 @@
                                         </Grid>
                                     </Border>
                                     <Border Padding="20,12" BorderThickness="0">
-                                        <TextBlock Text="添加进程名后，会按进程阻止剪贴板记录和鼠标手势。"
+                                        <TextBlock Text="添加进程名（如 keepass.exe）。可在名单里分别勾选「不记剪贴板 / 禁用手势」。密码管理器与远程桌面默认已预置。"
                                                    Style="{StaticResource MutedTextStyle}"
                                                    FontSize="12"
                                                    TextWrapping="Wrap" />
                                     </Border>
+                                </StackPanel>
+                            </Border>
+
+                            <TextBlock x:Name="SectionSmartPasteRules"
+                                       Text="智能粘贴 · 应用规则"
+                                       Style="{StaticResource SettingsGroupTitleStyle}"
+                                       Margin="2,28,0,12" />
+                            <Border Style="{StaticResource SettingsListContainerStyle}" HorizontalAlignment="Stretch" Margin="0,0,0,8">
+                                <StackPanel>
+                                    <Border Style="{StaticResource SettingsFormRowStyle}">
+                                        <StackPanel>
+                                            <TextBlock Text="为指定进程覆盖智能粘贴策略（优先于内置聊天/浏览器/Office/代码规则）。"
+                                                       TextWrapping="Wrap"
+                                                       Style="{StaticResource MutedTextStyle}" />
+                                            <Grid Margin="0,12,0,0">
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="*" />
+                                                    <ColumnDefinition Width="160" />
+                                                    <ColumnDefinition Width="Auto" />
+                                                </Grid.ColumnDefinitions>
+                                                <TextBox Text="{Binding NewSmartPasteProcessName, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                                         MinHeight="36"
+                                                         VerticalContentAlignment="Center"
+                                                         Margin="0,0,10,0"
+                                                         ToolTip="例如 WeChat.exe / Code.exe" />
+                                                <ComboBox Grid.Column="1"
+                                                          ItemsSource="{Binding SmartPasteStrategyOptions}"
+                                                          SelectedItem="{Binding NewSmartPasteStrategy, Mode=TwoWay}"
+                                                          Height="36"
+                                                          Margin="0,0,10,0"
+                                                          VerticalContentAlignment="Center" />
+                                                <StackPanel Grid.Column="2" Orientation="Horizontal">
+                                                    <Button Content="添加规则"
+                                                            Style="{StaticResource SettingsPrimaryActionButtonStyle}"
+                                                            Width="100"
+                                                            Height="36"
+                                                            Margin="0,0,8,0"
+                                                            Command="{Binding AddSmartPasteRuleCommand}" />
+                                                    <Button Content="用前台窗口"
+                                                            Style="{StaticResource SettingsSecondaryActionButtonStyle}"
+                                                            Width="108"
+                                                            Height="36"
+                                                            Margin="0"
+                                                            ToolTip="读取当前前台进程并添加规则"
+                                                            Command="{Binding AddForegroundSmartPasteRuleCommand}" />
+                                                </StackPanel>
+                                            </Grid>
+                                            <TextBlock Text="{Binding SmartPasteRulesStatusText}"
+                                                       Style="{StaticResource MutedTextStyle}"
+                                                       Margin="0,10,0,0"
+                                                       TextWrapping="Wrap" />
+                                            <TextBlock Margin="0,8,0,0" FontSize="12" Style="{StaticResource MutedTextStyle}"
+                                                       Text="策略说明：PlainTextPaste=纯文本 · CleanTextPaste=去多余空行 · NormalPaste=原样 Ctrl+V" />
+                                        </StackPanel>
+                                    </Border>
+                                    <ItemsControl ItemsSource="{Binding AppSmartPasteRules}" HorizontalContentAlignment="Stretch">
+                                        <ItemsControl.ItemTemplate>
+                                            <DataTemplate>
+                                                <Border Style="{StaticResource SettingsFormRowStyle}" Padding="20,12" MinHeight="52">
+                                                    <Grid>
+                                                        <Grid.ColumnDefinitions>
+                                                            <ColumnDefinition Width="*" />
+                                                            <ColumnDefinition Width="160" />
+                                                            <ColumnDefinition Width="Auto" />
+                                                        </Grid.ColumnDefinitions>
+                                                        <StackPanel VerticalAlignment="Center">
+                                                            <TextBlock Text="{Binding ProcessName}" FontWeight="Medium" />
+                                                            <TextBlock Text="{Binding Note}" Style="{StaticResource MutedTextStyle}" FontSize="12" />
+                                                        </StackPanel>
+                                                        <ComboBox Grid.Column="1"
+                                                                  ItemsSource="{Binding DataContext.SmartPasteStrategyOptions, RelativeSource={RelativeSource AncestorType=Window}}"
+                                                                  SelectedItem="{Binding Strategy, Mode=TwoWay}"
+                                                                  Height="32"
+                                                                  Margin="0,0,10,0"
+                                                                  VerticalContentAlignment="Center" />
+                                                        <Button Grid.Column="2"
+                                                                Content="删除"
+                                                                Style="{StaticResource SettingsDangerTextButtonStyle}"
+                                                                Command="{Binding DeleteCommand}" />
+                                                    </Grid>
+                                                </Border>
+                                            </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                    </ItemsControl>
                                 </StackPanel>
                             </Border>
 
@@ -2230,12 +2314,12 @@
                                                                TextWrapping="NoWrap"
                                                                Margin="0,0,16,0" />
                                                     <CheckBox Grid.Column="1"
-                                                              Content="剪贴板"
+                                                              Content="不记剪贴板"
                                                               Margin="0,0,20,0"
                                                               VerticalAlignment="Center"
                                                               IsChecked="{Binding BlockClipboard, Mode=TwoWay}" />
                                                     <CheckBox Grid.Column="2"
-                                                              Content="手势"
+                                                              Content="禁用手势"
                                                               Margin="0,0,20,0"
                                                               VerticalAlignment="Center"
                                                               IsChecked="{Binding BlockGesture, Mode=TwoWay}" />

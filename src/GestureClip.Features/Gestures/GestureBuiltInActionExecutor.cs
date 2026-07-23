@@ -26,6 +26,7 @@ public sealed class GestureBuiltInActionExecutor : IMouseGestureActionExecutor
     private readonly IAssistantActionExecutor _assistantActionExecutor;
     private readonly IQuickActionCenterService _quickActionCenterService;
     private readonly IPlainTextPasteService _plainTextPasteService;
+    private readonly IAppSmartPasteRuleService _appSmartPasteRuleService;
     private readonly ILogger<GestureBuiltInActionExecutor> _logger;
 
     public GestureBuiltInActionExecutor(
@@ -43,6 +44,7 @@ public sealed class GestureBuiltInActionExecutor : IMouseGestureActionExecutor
         IAssistantActionExecutor assistantActionExecutor,
         IQuickActionCenterService quickActionCenterService,
         IPlainTextPasteService plainTextPasteService,
+        IAppSmartPasteRuleService appSmartPasteRuleService,
         ILogger<GestureBuiltInActionExecutor> logger)
     {
         _clipboardOverlayService = clipboardOverlayService;
@@ -59,6 +61,7 @@ public sealed class GestureBuiltInActionExecutor : IMouseGestureActionExecutor
         _assistantActionExecutor = assistantActionExecutor;
         _quickActionCenterService = quickActionCenterService;
         _plainTextPasteService = plainTextPasteService;
+        _appSmartPasteRuleService = appSmartPasteRuleService;
         _logger = logger;
     }
 
@@ -477,7 +480,7 @@ public sealed class GestureBuiltInActionExecutor : IMouseGestureActionExecutor
             var app = _foregroundAppService.GetCurrent();
             var strategy = forceCleanWhenLeftModified && context.IsLeftButtonModified
                 ? SmartPasteStrategy.CleanTextPaste
-                : SmartPastePolicy.Select(app);
+                : SmartPastePolicy.Select(app, _appSmartPasteRuleService.TryGetStrategy(app.ProcessName));
 
             if (strategy is not (SmartPasteStrategy.PlainTextPaste or SmartPasteStrategy.CleanTextPaste))
             {
