@@ -81,8 +81,16 @@ Compress-Archive -Path (Join-Path $output "*") -DestinationPath $fullZipPath -Fo
 
 $publishedExe = Join-Path $output "GestureClip.exe"
 if (Test-Path -LiteralPath $publishedExe) {
-    Copy-Item -LiteralPath $publishedExe -Destination $rootExe -Force
-    Copy-Item -LiteralPath $publishedExe -Destination $latestExe -Force
+    try {
+        Copy-Item -LiteralPath $publishedExe -Destination $rootExe -Force
+    } catch {
+        Write-Warning "Could not update root GestureClip.exe (file in use): $_"
+    }
+    try {
+        Copy-Item -LiteralPath $publishedExe -Destination $latestExe -Force
+    } catch {
+        Write-Warning "Could not update GestureClip-latest.exe (file in use): $_"
+    }
 }
 
 if (Get-Command Get-FileHash -ErrorAction SilentlyContinue) {

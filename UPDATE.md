@@ -8,7 +8,7 @@ GestureClip 支持两种分发方式：
 ## 首次安装（推荐 Setup）
 
 1. 下载 `GestureClip-Setup-v*-win-x64.zip`（若有 `Setup.exe` 也可）
-2. 解压后双击 **Setup.cmd**（无需管理员）
+2. 解压后双击 **Setup.cmd**（无需管理员；不要双击 .txt）
 3. 默认安装目录：`%LOCALAPPDATA%\Programs\GestureClip`
 4. 开始菜单会出现 GestureClip
 

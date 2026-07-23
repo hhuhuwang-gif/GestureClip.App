@@ -63,32 +63,7 @@ Copy-Item (Join-Path $PublishDir "*") $payload -Recurse -Force
 Copy-Item (Join-Path $repoRoot "scripts\install\install.ps1") (Join-Path $setupRoot "install.ps1") -Force
 Copy-Item (Join-Path $repoRoot "scripts\install\Setup.cmd") (Join-Path $setupRoot "Setup.cmd") -Force
 
-# Friendly README for end users
-@"
-# GestureClip 安装说明
-
-## 一键安装（推荐）
-1. 解压本 zip
-2. 双击 **Setup.cmd**
-3. 默认安装到：`%LOCALAPPDATA%\Programs\GestureClip`
-4. 开始菜单会出现 GestureClip
-
-## 静默安装 / 覆盖升级
-```bat
-Setup.cmd /S
-```
-
-## 卸载
-- 设置 → 应用 → GestureClip → 卸载
-- 或运行安装目录下的 uninstall.ps1
-
-## 数据不会丢
-剪贴板历史、设置、工位小熊数据在：
-`%LOCALAPPDATA%\GestureClip\`
-安装/升级/卸载程序文件都不会删除这里。
-
-版本：$version
-"@ | Set-Content -LiteralPath (Join-Path $setupRoot "安装说明.txt") -Encoding UTF8
+# Install instructions are shown by install.ps1 / Setup.cmd console only (no popup .txt).
 
 $setupZip = Join-Path $releaseRoot "GestureClip-Setup-v$packageVersion-win-x64.zip"
 Remove-Item $setupZip -Force -ErrorAction SilentlyContinue
@@ -201,6 +176,6 @@ Write-Host "=== Setup package ready ==="
 Write-Host "Install zip : $setupZip"
 if ($setupExe) { Write-Host "Install exe : $setupExe" }
 Write-Host "Inno script : $issPath"
-Write-Host "End users: unzip Setup zip -> double-click Setup.cmd"
+Write-Host "End users: unzip Setup zip -> double-click Setup.cmd (do not open .txt files)"
 Write-Host "Silent   : Setup.cmd /S"
 Write-Host "Data dir : %LOCALAPPDATA%\GestureClip\ (preserved)"

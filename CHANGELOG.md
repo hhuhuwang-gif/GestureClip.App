@@ -1,5 +1,17 @@
 # CHANGELOG
 
+## GestureClip v0.6.29 Beta
+
+### 安装器
+
+- **不再打包 `安装说明.txt`**，避免解压后误点弹出记事本
+- Setup.cmd / install.ps1 仅在控制台显示安装进度，安装后自动启动
+- 正确安装入口仍是：解压后双击 **Setup.cmd**
+
+### 验证
+
+- `dotnet test ./GestureClip.sln`
+
 ## GestureClip v0.6.28 Beta
 
 ### UI 可见性修复

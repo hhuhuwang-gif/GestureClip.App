@@ -213,12 +213,20 @@ Copy-Item -LiteralPath $PSCommandPath -Destination $uninstallPs1 -Force
 $uninstallCmd = "powershell.exe -NoProfile -ExecutionPolicy Bypass -File `"$uninstallPs1`" -Uninstall"
 Register-UninstallEntry -InstallRoot $InstallDir -Version $version -UninstallCommand $uninstallCmd
 
-Write-Info "Install complete."
+Write-Info ""
+Write-Info "安装完成。"
+Write-Info "程序: $exePath"
+Write-Info "数据仍在: $env:LOCALAPPDATA\GestureClip\ （不会被安装覆盖）"
+Write-Info "开始菜单已添加快捷方式。"
+Write-Info ""
+
 if (-not $Silent) {
-    $launch = Read-Host "Launch GestureClip now? [Y/n]"
-    if ([string]::IsNullOrWhiteSpace($launch) -or $launch -match '^[Yy]') {
-        Start-Process -FilePath $exePath -WorkingDirectory $InstallDir
-    }
+    Write-Info "正在启动 GestureClip ..."
+    Start-Process -FilePath $exePath -WorkingDirectory $InstallDir
+    Write-Info "若未自动启动，请从开始菜单打开 GestureClip。"
+    Write-Info ""
+    Write-Info "（安装过程不会打开任何 .txt 说明文件；本窗口仅作进度显示。）"
+    Start-Sleep -Seconds 2
 } else {
     # Silent upgrade path used by in-app updater: restart app
     Start-Process -FilePath $exePath -WorkingDirectory $InstallDir
