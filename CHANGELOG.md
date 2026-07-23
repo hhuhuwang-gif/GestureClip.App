@@ -1,5 +1,19 @@
 # CHANGELOG
 
+## GestureClip v0.6.25 Beta (engineering follow-up)
+
+### 安装器与签名流水线
+
+- 恢复 **Setup 安装包**：`scripts/build-setup.ps1` + `scripts/install/Setup.cmd` / `install.ps1`
+- 默认装到 `%LOCALAPPDATA%\Programs\GestureClip`，开始菜单快捷方式，可卸载；**不碰**用户数据目录
+- 应用内更新优先 Setup.exe / Setup zip，没有时回退 portable zip 覆盖
+- 新增 `scripts/sign-release.ps1`：配置证书则签 exe/dll，未配置则跳过
+- `publish-win-x64.ps1` 发布后可选调用签名
+
+### 验证
+
+- `dotnet test ./GestureClip.sln`
+
 ## GestureClip v0.6.25 Beta
 
 ### 设置界面高保真重设计

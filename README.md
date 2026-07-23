@@ -57,7 +57,7 @@
 | 本地文本处理 | `Ctrl + Shift + Q` 打开快捷动作 |
 | 工位小熊（可选） | 托盘 → 工位小熊 → 填月薪与上下班时间 |
 
-解压 zip 后双击 `GestureClip.exe` 即可（Windows x64 self-contained，一般**无需**安装 .NET）。
+推荐下载 **Setup zip**，解压后双击 `Setup.cmd` 安装到当前用户目录；也可解压便携 zip 后直接双击 `GestureClip.exe`（Windows x64 self-contained，一般**无需**安装 .NET）。
 
 ---
 

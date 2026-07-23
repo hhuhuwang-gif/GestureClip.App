@@ -105,6 +105,13 @@ else {
 "$hashValue  $([System.IO.Path]::GetFileName($fullZipPath))" | Set-Content -LiteralPath $hashPath -Encoding UTF8
 Copy-Item -LiteralPath $hashPath -Destination (Join-Path $output "SHA256SUMS.txt") -Force
 
+
+# Optional Authenticode signing (no-op without cert env).
+$signScript = Join-Path $repoRoot "scripts\sign-release.ps1"
+if (Test-Path -LiteralPath $signScript) {
+    & powershell -NoProfile -ExecutionPolicy Bypass -File $signScript -Path $output
+}
+
 Write-Host "Release package created:" $output
 Write-Host "Release zip created:" $fullZipPath
 Write-Host "SHA256 file created:" $hashPath

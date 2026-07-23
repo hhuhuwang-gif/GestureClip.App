@@ -4,7 +4,7 @@ GestureClip v0.6.25 Beta 当前已知问题。
 
 ## 已知问题
 
-1. 当前 Beta 包未签名，Windows SmartScreen 可能提示未知发布者。
+1. 当前 Beta 默认仍可能未签名（需配置 GESTURECLIP_SIGN_* 证书后才会签名）；Windows SmartScreen 可能提示未知发布者。
 2. 管理员权限窗口中，普通权限运行的 GestureClip 可能无法稳定执行输入模拟（可尝试以管理员身份运行）。
 3. 图片历史数量很大时，首次缩略图加载仍可能需要一点时间。
 4. 覆盖更新前必须先退出程序，否则 `GestureClip.exe` 可能被占用。

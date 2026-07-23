@@ -53,4 +53,31 @@ Write-Host ""
 Write-Host "SHA256SUMS:"
 Get-Content -LiteralPath $hashPath
 Write-Host ""
+
+$setupZip = Join-Path $repoRoot "artifacts\release\GestureClip-Setup-v$packageVersion-win-x64.zip"
+$installScript = Join-Path $repoRoot "scripts\install\install.ps1"
+$setupCmd = Join-Path $repoRoot "scripts\install\Setup.cmd"
+$buildSetup = Join-Path $repoRoot "scripts\build-setup.ps1"
+$signScript = Join-Path $repoRoot "scripts\sign-release.ps1"
+
+if (-not (Test-Path -LiteralPath $installScript)) {
+    throw "Installer script missing: $installScript"
+}
+if (-not (Test-Path -LiteralPath $setupCmd)) {
+    throw "Setup.cmd missing: $setupCmd"
+}
+if (-not (Test-Path -LiteralPath $buildSetup)) {
+    throw "build-setup.ps1 missing: $buildSetup"
+}
+if (-not (Test-Path -LiteralPath $signScript)) {
+    throw "sign-release.ps1 missing: $signScript"
+}
+
+if (Test-Path -LiteralPath $setupZip) {
+    Write-Host "Setup zip:" $setupZip
+} else {
+    Write-Host "Setup zip not built yet (optional until scripts/build-setup.ps1 is run)."
+}
+
+
 Write-Host "Manual verification: run docs/regression-checklist.md before sharing the build."
