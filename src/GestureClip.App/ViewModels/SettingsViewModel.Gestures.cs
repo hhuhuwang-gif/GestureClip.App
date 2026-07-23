@@ -799,4 +799,219 @@ public sealed partial class SettingsViewModel
         }
     }
 
+
+    private async Task ExportGestureConfigAsync()
+    {
+        try
+        {
+            var bindings = GestureBindingCards
+                .Where(card => card.IsBound)
+                .ToDictionary(card => card.Pattern, card => card.SelectedAction, StringComparer.Ordinal);
+            if (bindings.Count == 0)
+            {
+                // fall back to current provider map
+                bindings = _gesturePresetProvider.GetBindings(_selectedGesturePreset)
+                    .Where(pair => pair.Value != BuiltInGestureAction.None)
+                    .ToDictionary(pair => pair.Key, pair => pair.Value, StringComparer.Ordinal);
+            }
+
+            var left = _gesturePresetProvider.GetLeftButtonEnhancedBindings()
+                .Where(pair => pair.Value != BuiltInGestureAction.None)
+                .ToDictionary(pair => pair.Key, pair => pair.Value, StringComparer.Ordinal);
+
+            var json = _gestureConfigTransferService.ExportToJson(_selectedGesturePreset, bindings, left);
+            var dialog = new Microsoft.Win32.SaveFileDialog
+            {
+                Title = "导出手势配置",
+                Filter = "GestureClip 手势配置 (*.json)|*.json|所有文件 (*.*)|*.*",
+                FileName = $"GestureClip-gestures-{DateTime.Now:yyyyMMdd-HHmm}.json",
+                DefaultExt = ".json",
+                AddExtension = true
+            };
+
+            if (dialog.ShowDialog() != true)
+            {
+                GestureConfigStatusText = "已取消导出。";
+                return;
+            }
+
+            await File.WriteAllTextAsync(dialog.FileName, json, CancellationToken.None);
+            GestureConfigStatusText = $"已导出到：{dialog.FileName}";
+        }
+        catch (Exception ex)
+        {
+            GestureConfigStatusText = $"导出失败：{ex.Message}";
+        }
+    }
+
+    private async Task ImportGestureConfigAsync()
+    {
+        try
+        {
+            var dialog = new Microsoft.Win32.OpenFileDialog
+            {
+                Title = "导入手势配置",
+                Filter = "GestureClip 手势配置 (*.json)|*.json|所有文件 (*.*)|*.*",
+                CheckFileExists = true,
+                Multiselect = false
+            };
+
+            if (dialog.ShowDialog() != true)
+            {
+                GestureConfigStatusText = "已取消导入。";
+                return;
+            }
+
+            var json = await File.ReadAllTextAsync(dialog.FileName, CancellationToken.None);
+            var result = _gestureConfigTransferService.ImportFromJson(json);
+            if (!result.Success)
+            {
+                GestureConfigStatusText = result.Message;
+                return;
+            }
+
+            if (!_confirmationService.Confirm(
+                    "导入手势配置",
+                    $"将导入 {result.Bindings.Count} 个手势绑定，并切换为「自定义」预设。{Environment.NewLine}{Environment.NewLine}" +
+                    "当前自定义绑定会被覆盖（可先导出备份）。是否继续？"))
+            {
+                GestureConfigStatusText = "已取消导入，现有配置未改动。";
+                return;
+            }
+
+            await ApplyImportedGestureConfigAsync(result);
+            GestureConfigStatusText = result.Message;
+        }
+        catch (Exception ex)
+        {
+            GestureConfigStatusText = $"导入失败：{ex.Message}";
+        }
+    }
+
+    private async Task ApplyImportedGestureConfigAsync(GestureConfigImportResult result)
+    {
+        _gesturePresetProvider.UpdateCustomBindings(result.Bindings);
+        _gesturePresetProvider.UpdateLeftButtonEnhancedBindings(result.LeftButtonEnhanced);
+        _selectedGesturePreset = GesturePreset.Custom;
+        OnPropertyChanged(nameof(SelectedGesturePresetOption));
+
+        var json = JsonSerializer.Serialize(result.Bindings.ToDictionary(
+            pair => pair.Key,
+            pair => new CustomBindingDto(pair.Value, ShortcutText(pair.Value), true),
+            StringComparer.Ordinal));
+        await _settingsService.SetAsync(SettingKeys.GestureCustomBindingsJson, json, CancellationToken.None);
+        await _settingsService.SetAsync(SettingKeys.GesturePreset, GesturePreset.Custom, CancellationToken.None);
+        await _settingsService.SetAsync(
+            SettingKeys.GestureLeftButtonEnhancedJson,
+            JsonSerializer.Serialize(result.LeftButtonEnhanced),
+            CancellationToken.None);
+
+        UpdateGestureSettingsSnapshot();
+        RefreshGestureBindingCards();
+        RefreshLeftButtonEnhancedBindings();
+        NotifyGestureBindingEmptyStatesChanged();
+    }
+
+    private async Task ApplyGestureTemplateAsync(string templateId)
+    {
+        var (title, map, left) = templateId switch
+        {
+            "office" => (
+                "办公模板",
+                new Dictionary<string, BuiltInGestureAction>(StringComparer.Ordinal)
+                {
+                    ["U"] = BuiltInGestureAction.Copy,
+                    ["D"] = BuiltInGestureAction.PastePlainText,
+                    ["UD"] = BuiltInGestureAction.Enter,
+                    ["DU"] = BuiltInGestureAction.Escape,
+                    ["L"] = BuiltInGestureAction.Undo,
+                    ["R"] = BuiltInGestureAction.Redo,
+                    ["LR"] = BuiltInGestureAction.SelectAll,
+                    ["RL"] = BuiltInGestureAction.Cut,
+                    ["DL"] = BuiltInGestureAction.PasteAndEnter,
+                    ["DR"] = BuiltInGestureAction.OpenQuickActionCenter,
+                    ["UR"] = BuiltInGestureAction.SearchSelectedTextWithGoogle,
+                    ["UL"] = BuiltInGestureAction.SearchSelectedTextWithBaidu,
+                    ["R+L"] = BuiltInGestureAction.PasteAndEnter
+                },
+                new Dictionary<string, BuiltInGestureAction>(StringComparer.Ordinal)
+                {
+                    ["D"] = BuiltInGestureAction.PastePlainText,
+                    ["U"] = BuiltInGestureAction.SelectAll
+                }),
+            "browser" => (
+                "浏览模板",
+                new Dictionary<string, BuiltInGestureAction>(StringComparer.Ordinal)
+                {
+                    ["U"] = BuiltInGestureAction.OpenClipboardOverlay,
+                    ["D"] = BuiltInGestureAction.SmartPaste,
+                    ["L"] = BuiltInGestureAction.SendAltLeft,
+                    ["R"] = BuiltInGestureAction.SendAltRight,
+                    ["UD"] = BuiltInGestureAction.Refresh,
+                    ["DU"] = BuiltInGestureAction.CloseTab,
+                    ["LR"] = BuiltInGestureAction.NextTab,
+                    ["RL"] = BuiltInGestureAction.PreviousTab,
+                    ["DR"] = BuiltInGestureAction.NewTab,
+                    ["UR"] = BuiltInGestureAction.SearchSelectedTextWithGoogle,
+                    ["UL"] = BuiltInGestureAction.SearchSelectedTextWithBaidu,
+                    ["DL"] = BuiltInGestureAction.ReopenClosedTab,
+                    ["R+L"] = BuiltInGestureAction.PasteAndEnter
+                },
+                new Dictionary<string, BuiltInGestureAction>(StringComparer.Ordinal)
+                {
+                    ["D"] = BuiltInGestureAction.SmartPaste,
+                    ["U"] = BuiltInGestureAction.OpenClipboardOverlay
+                }),
+            "clipboard" => (
+                "剪贴板模板",
+                new Dictionary<string, BuiltInGestureAction>(StringComparer.Ordinal)
+                {
+                    ["U"] = BuiltInGestureAction.OpenClipboardOverlay,
+                    ["D"] = BuiltInGestureAction.PasteLatestClipboardItem,
+                    ["UD"] = BuiltInGestureAction.PastePlainText,
+                    ["DU"] = BuiltInGestureAction.OpenQuickActionCenter,
+                    ["L"] = BuiltInGestureAction.SendAltLeft,
+                    ["R"] = BuiltInGestureAction.SendAltRight,
+                    ["LR"] = BuiltInGestureAction.Copy,
+                    ["RL"] = BuiltInGestureAction.Paste,
+                    ["DL"] = BuiltInGestureAction.PasteAndEnter,
+                    ["DR"] = BuiltInGestureAction.SmartPaste,
+                    ["UR"] = BuiltInGestureAction.SearchSelectedTextWithBing,
+                    ["UL"] = BuiltInGestureAction.SearchSelectedTextWithBaidu,
+                    ["R+L"] = BuiltInGestureAction.PasteAndEnter
+                },
+                new Dictionary<string, BuiltInGestureAction>(StringComparer.Ordinal)
+                {
+                    ["D"] = BuiltInGestureAction.SmartPaste,
+                    ["U"] = BuiltInGestureAction.OpenClipboardOverlay
+                }),
+            _ => ("未知模板",
+                new Dictionary<string, BuiltInGestureAction>(StringComparer.Ordinal),
+                new Dictionary<string, BuiltInGestureAction>(StringComparer.Ordinal))
+        };
+
+        if (map.Count == 0)
+        {
+            GestureConfigStatusText = "未知模板。";
+            return;
+        }
+
+        if (!_confirmationService.Confirm(
+                $"套用{title}",
+                $"将用「{title}」覆盖当前自定义手势绑定（可先导出备份）。{Environment.NewLine}{Environment.NewLine}是否继续？"))
+        {
+            GestureConfigStatusText = "已取消套用模板。";
+            return;
+        }
+
+        await ApplyImportedGestureConfigAsync(new GestureConfigImportResult(
+            true,
+            $"已套用{title}（{map.Count} 个绑定）。",
+            GesturePreset.Custom,
+            map,
+            left));
+        GestureConfigStatusText = $"已套用{title}。";
+    }
+
+
 }

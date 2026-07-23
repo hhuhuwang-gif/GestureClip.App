@@ -21,7 +21,7 @@ public partial class OnboardingWindow : Window
 
     private async void StartButton_Click(object sender, RoutedEventArgs e)
     {
-        await CompleteAndOpenSettingsAsync("home");
+        await CompleteAndOpenSettingsAsync("clipboard");
     }
 
     private async void SkipButton_Click(object sender, RoutedEventArgs e)

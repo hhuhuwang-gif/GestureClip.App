@@ -855,6 +855,7 @@ public sealed class SettingsViewModelTests
             overlay ?? new FakeClipboardOverlayService(),
             confirmation ?? new FakeConfirmationService { Result = true },
             gesturePresetProvider ?? new GestureClip.Features.Gestures.GesturePresetProvider(),
+            new GestureClip.Features.Gestures.GestureConfigTransferService(),
             edgeTriggerService ?? new FakeEdgeTriggerService(),
             workerLevel ?? new FakeWorkerLevelService());
     }

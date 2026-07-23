@@ -23,7 +23,7 @@
                 <TextBlock Text="欢迎使用 GestureClip"
                            FontSize="30"
                            FontWeight="SemiBold" />
-                <TextBlock Text="三步开启本地优先的剪贴板历史、鼠标手势和可选工位小熊。"
+                <TextBlock Text="建议按 1→2→3 点开设置：剪贴板历史、鼠标手势、工位小熊。每张卡片会直接跳到对应设置页。"
                            Margin="0,8,0,0"
                            Style="{StaticResource MutedTextStyle}"
                            FontSize="15" />
@@ -117,10 +117,10 @@
                                    Style="{StaticResource MutedTextStyle}" />
                     </StackPanel>
                     <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center" Margin="18,0,0,0">
-                        <Button Content="稍后再说"
+                        <Button Content="跳过引导"
                                 Style="{StaticResource SecondaryButtonStyle}"
                                 Click="SkipButton_Click" />
-                        <Button Content="打开设置首页"
+                        <Button Content="从剪贴板开始"
                                 Style="{StaticResource PrimaryButtonStyle}"
                                 Margin="10,0,0,0"
                                 Click="StartButton_Click" />

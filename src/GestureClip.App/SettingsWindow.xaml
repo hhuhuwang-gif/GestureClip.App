@@ -1393,6 +1393,46 @@
                                             </StackPanel>
                                         </Border>
 
+                                        <TextBlock x:Name="SectionGestureConfigTransfer"
+                                                   Text="配置导入导出 / 模板"
+                                                   Style="{StaticResource SettingsGroupTitleStyle}"
+                                                   Margin="2,20,0,10" />
+                                        <Border Style="{StaticResource SettingsListContainerStyle}" Margin="0,0,0,14">
+                                            <StackPanel>
+                                                <Border Style="{StaticResource SettingsFormRowStyle}">
+                                                    <StackPanel>
+                                                        <TextBlock Text="备份或换机时，把手势绑定整包带走；也可一键套用常用场景模板。"
+                                                                   TextWrapping="Wrap"
+                                                                   Style="{StaticResource MutedTextStyle}" />
+                                                        <WrapPanel Margin="0,12,0,0">
+                                                            <Button Content="导出手势配置"
+                                                                    Style="{StaticResource SettingsSecondaryActionButtonStyle}"
+                                                                    Command="{Binding ExportGestureConfigCommand}" />
+                                                            <Button Content="导入手势配置"
+                                                                    Style="{StaticResource SettingsSecondaryActionButtonStyle}"
+                                                                    Command="{Binding ImportGestureConfigCommand}" />
+                                                            <Button Content="办公模板"
+                                                                    Style="{StaticResource SettingsSecondaryActionButtonStyle}"
+                                                                    Command="{Binding ApplyOfficeGestureTemplateCommand}"
+                                                                    ToolTip="纯文本粘贴、撤销重做、快捷动作、搜索选中文字" />
+                                                            <Button Content="浏览模板"
+                                                                    Style="{StaticResource SettingsSecondaryActionButtonStyle}"
+                                                                    Command="{Binding ApplyBrowserGestureTemplateCommand}"
+                                                                    ToolTip="前进后退、标签页、刷新关闭、智能粘贴" />
+                                                            <Button Content="剪贴板模板"
+                                                                    Style="{StaticResource SettingsSecondaryActionButtonStyle}"
+                                                                    Command="{Binding ApplyClipboardGestureTemplateCommand}"
+                                                                    ToolTip="打开历史、粘贴最近、纯文本粘贴、智能粘贴" />
+                                                        </WrapPanel>
+                                                        <TextBlock Text="{Binding GestureConfigStatusText}"
+                                                                   Style="{StaticResource MutedTextStyle}"
+                                                                   Margin="0,10,0,0"
+                                                                   TextWrapping="Wrap" />
+                                                    </StackPanel>
+                                                </Border>
+                                            </StackPanel>
+                                        </Border>
+
                                         <TextBlock x:Name="SectionRecommendedGestures"
                                                    Text="推荐手势"
                                                    Style="{StaticResource SettingsGroupTitleStyle}"

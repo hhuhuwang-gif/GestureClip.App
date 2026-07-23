@@ -27,6 +27,7 @@ public static class FeaturesServiceCollectionExtensions
         services.AddSingleton<IMouseGestureRecognizer, DirectionGestureRecognizer>();
         services.AddSingleton<IGestureSettingsProvider, GestureSettingsProvider>();
         services.AddSingleton<IGesturePresetProvider, GesturePresetProvider>();
+        services.AddSingleton<IGestureConfigTransferService, GestureConfigTransferService>();
         services.AddSingleton<IGestureHudInfoProvider, GestureHudInfoProvider>();
         services.AddSingleton<IMouseGestureActionExecutor, GestureBuiltInActionExecutor>();
         services.AddSingleton<IMouseGestureService, MouseGestureService>();

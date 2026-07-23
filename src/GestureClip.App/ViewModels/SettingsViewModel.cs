@@ -39,6 +39,7 @@ public sealed partial class SettingsViewModel : INotifyPropertyChanged
     private readonly IClipboardOverlayService _clipboardOverlayService;
     private readonly IConfirmationService _confirmationService;
     private readonly IGesturePresetProvider _gesturePresetProvider;
+    private readonly IGestureConfigTransferService _gestureConfigTransferService;
     private readonly IEdgeTriggerService _edgeTriggerService;
     private readonly IWorkerLevelService _workerLevelService;
     private bool _isDarkTheme;
@@ -122,6 +123,7 @@ public sealed partial class SettingsViewModel : INotifyPropertyChanged
     private BuiltInGestureAction _newGestureAction = BuiltInGestureAction.Copy;
     private bool _newGestureAddConfirmationPending;
     private string _recordGestureStatusText = "按住左键在方框里画一次。";
+    private string _gestureConfigStatusText = "可导出/导入手势配置，或一键套用办公/浏览/剪贴板模板。";
     private string _recommendedGestureStatusText = "已有的自定义手势不会被删除；已存在的手势会自动跳过。";
     private string _workerLevelText = "Lv.1 初入工位";
     private string _workerXpText = "XP 0 / 50";
@@ -150,6 +152,7 @@ public sealed partial class SettingsViewModel : INotifyPropertyChanged
         IClipboardOverlayService clipboardOverlayService,
         IConfirmationService confirmationService,
         IGesturePresetProvider gesturePresetProvider,
+        IGestureConfigTransferService gestureConfigTransferService,
         IEdgeTriggerService edgeTriggerService,
         IWorkerLevelService workerLevelService,
         AppThemeService? themeService = null)
@@ -169,6 +172,7 @@ public sealed partial class SettingsViewModel : INotifyPropertyChanged
         _clipboardOverlayService = clipboardOverlayService;
         _confirmationService = confirmationService;
         _gesturePresetProvider = gesturePresetProvider;
+        _gestureConfigTransferService = gestureConfigTransferService;
         _edgeTriggerService = edgeTriggerService;
         _workerLevelService = workerLevelService;
         GestureActionOptionsView = CollectionViewSource.GetDefaultView(GestureActionOptions);
@@ -283,6 +287,11 @@ public sealed partial class SettingsViewModel : INotifyPropertyChanged
         ClearUnpinnedClipboardItemsCommand = new AsyncRelayCommand(_ => ClearUnpinnedClipboardItemsAsync());
         ApplyClipboardCleanupCommand = new AsyncRelayCommand(_ => ApplyClipboardCleanupAsync());
         ApplyRecommendedGestureBindingsCommand = new AsyncRelayCommand(_ => ApplyRecommendedGestureBindingsAsync());
+        ExportGestureConfigCommand = new AsyncRelayCommand(_ => ExportGestureConfigAsync());
+        ImportGestureConfigCommand = new AsyncRelayCommand(_ => ImportGestureConfigAsync());
+        ApplyOfficeGestureTemplateCommand = new AsyncRelayCommand(_ => ApplyGestureTemplateAsync("office"));
+        ApplyBrowserGestureTemplateCommand = new AsyncRelayCommand(_ => ApplyGestureTemplateAsync("browser"));
+        ApplyClipboardGestureTemplateCommand = new AsyncRelayCommand(_ => ApplyGestureTemplateAsync("clipboard"));
         AddCustomGestureBindingCommand = new AsyncRelayCommand(_ => AddCustomGestureBindingAsync());
         DeleteSelectedGestureBindingCommand = new AsyncRelayCommand(_ => DeleteSelectedGestureBindingAsync());
         AddLeftButtonEnhancedBindingCommand = new RelayCommand(_ => AddLeftButtonEnhancedBinding());
@@ -634,7 +643,28 @@ public sealed partial class SettingsViewModel : INotifyPropertyChanged
 
     public ICommand ApplyClipboardCleanupCommand { get; }
 
+    
+    public string GestureConfigStatusText
+    {
+        get => _gestureConfigStatusText;
+        set
+        {
+            if (_gestureConfigStatusText == value)
+            {
+                return;
+            }
+
+            _gestureConfigStatusText = value;
+            OnPropertyChanged();
+        }
+    }
+
     public ICommand ApplyRecommendedGestureBindingsCommand { get; }
+    public ICommand ExportGestureConfigCommand { get; }
+    public ICommand ImportGestureConfigCommand { get; }
+    public ICommand ApplyOfficeGestureTemplateCommand { get; }
+    public ICommand ApplyBrowserGestureTemplateCommand { get; }
+    public ICommand ApplyClipboardGestureTemplateCommand { get; }
 
     public ICommand AddCustomGestureBindingCommand { get; }
 
