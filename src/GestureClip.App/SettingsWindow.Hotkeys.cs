@@ -1,10 +1,12 @@
 using System.Windows.Input;
+using System.Windows.Media;
 using GestureClip.App.ViewModels;
 using GestureClip.Core.Hotkeys;
 using WpfKey = System.Windows.Input.Key;
 using WpfKeyEventArgs = System.Windows.Input.KeyEventArgs;
 using WpfModifierKeys = System.Windows.Input.ModifierKeys;
 using WpfTextBox = System.Windows.Controls.TextBox;
+using WpfBrushes = System.Windows.Media.Brushes;
 
 namespace GestureClip.App;
 
@@ -19,8 +21,9 @@ public partial class SettingsWindow
             return;
         }
 
-        _hotkeyCaptureBaseline[box] = box.Text ?? string.Empty;
-        box.Text = "按下新快捷键…";
+        // Keep bound text visible; only remember baseline for Esc restore.
+        // Do NOT replace Text with a placeholder — that blanked the field (binding fight + clip).
+        _hotkeyCaptureBaseline[box] = GetBoundHotkeyText(box);
         box.SelectAll();
     }
 
@@ -31,17 +34,8 @@ public partial class SettingsWindow
             return;
         }
 
-        if (string.Equals(box.Text, "按下新快捷键…", StringComparison.Ordinal) &&
-            _hotkeyCaptureBaseline.TryGetValue(box, out var baseline))
-        {
-            ApplyHotkeyText(box, baseline);
-        }
-        else if (string.Equals(box.Text, "需含 Ctrl/Alt/Shift + 键", StringComparison.Ordinal) &&
-                 _hotkeyCaptureBaseline.TryGetValue(box, out var baseline2))
-        {
-            ApplyHotkeyText(box, baseline2);
-        }
-
+        // Restore from ViewModel in case capture left a transient value.
+        SyncBoxFromViewModel(box);
         _hotkeyCaptureBaseline.Remove(box);
     }
 
@@ -60,6 +54,10 @@ public partial class SettingsWindow
             {
                 ApplyHotkeyText(box, baseline);
             }
+            else
+            {
+                SyncBoxFromViewModel(box);
+            }
 
             Keyboard.ClearFocus();
             return;
@@ -75,7 +73,8 @@ public partial class SettingsWindow
         var key = e.Key == WpfKey.System ? e.SystemKey : e.Key;
         if (key is WpfKey.LeftCtrl or WpfKey.RightCtrl or WpfKey.LeftAlt or WpfKey.RightAlt
             or WpfKey.LeftShift or WpfKey.RightShift or WpfKey.LWin or WpfKey.RWin
-            or WpfKey.None or WpfKey.DeadCharProcessed or WpfKey.ImeProcessed)
+            or WpfKey.None or WpfKey.DeadCharProcessed or WpfKey.ImeProcessed
+            or WpfKey.Tab or WpfKey.Enter)
         {
             return;
         }
@@ -105,7 +104,8 @@ public partial class SettingsWindow
         var vk = (uint)KeyInterop.VirtualKeyFromKey(key);
         if (!HotkeyDefinition.TryFromVirtualKey(modifiers, vk, out var hotkey))
         {
-            box.Text = "需含 Ctrl/Alt/Shift + 键";
+            // Invalid combo: keep showing current bound value.
+            SyncBoxFromViewModel(box);
             return;
         }
 
@@ -122,6 +122,31 @@ public partial class SettingsWindow
             "PastePlainText" => HotkeyDefinition.DefaultPastePlainText,
             _ => HotkeyDefinition.DefaultOpenClipboardOverlay
         };
+
+    private string GetBoundHotkeyText(WpfTextBox box)
+    {
+        if (DataContext is not SettingsViewModel vm)
+        {
+            return box.Text ?? string.Empty;
+        }
+
+        return (box.Tag as string) switch
+        {
+            "OpenClipboard" => vm.OpenClipboardHotkeyText,
+            "OpenQuickAction" => vm.OpenQuickActionHotkeyText,
+            "PastePlainText" => vm.PastePlainTextHotkeyText,
+            _ => box.Text ?? string.Empty
+        };
+    }
+
+    private void SyncBoxFromViewModel(WpfTextBox box)
+    {
+        var text = GetBoundHotkeyText(box);
+        if (!string.Equals(box.Text, text, StringComparison.Ordinal))
+        {
+            box.Text = text;
+        }
+    }
 
     private void ApplyHotkeyText(WpfTextBox box, string text)
     {

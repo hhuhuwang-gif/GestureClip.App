@@ -167,7 +167,9 @@
     <Style TargetType="Button" BasedOn="{StaticResource SecondaryButtonStyle}" />
 
     <Style x:Key="GlassTextBoxStyle" TargetType="TextBox">
-        <Setter Property="Height" Value="34" />
+        <!-- MinHeight (not fixed Height) avoids clipping glyphs with padding. -->
+        <Setter Property="MinHeight" Value="36" />
+        <Setter Property="Height" Value="Auto" />
         <Setter Property="Padding" Value="12,8" />
         <Setter Property="VerticalContentAlignment" Value="Center" />
         <Setter Property="HorizontalContentAlignment" Value="Left" />
@@ -177,6 +179,7 @@
         <Setter Property="Background" Value="{DynamicResource BrushGlassCard}" />
         <Setter Property="BorderBrush" Value="{DynamicResource BrushBorder}" />
         <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="SnapsToDevicePixels" Value="True" />
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="TextBox">
@@ -185,14 +188,18 @@
                             Background="{TemplateBinding Background}"
                             BorderBrush="{TemplateBinding BorderBrush}"
                             BorderThickness="{TemplateBinding BorderThickness}"
-                            SnapsToDevicePixels="True">
+                            SnapsToDevicePixels="True"
+                            TextElement.Foreground="{TemplateBinding Foreground}"
+                            MinHeight="{TemplateBinding MinHeight}">
+                        <!-- PART_ContentHost must Stretch; Center V-align commonly clips text in custom TextBox templates. -->
                         <ScrollViewer x:Name="PART_ContentHost"
                                       Margin="{TemplateBinding Padding}"
-                                      VerticalAlignment="Center"
+                                      VerticalAlignment="Stretch"
                                       HorizontalAlignment="Stretch"
                                       Focusable="False"
-                                      VerticalScrollBarVisibility="Hidden"
-                                      HorizontalScrollBarVisibility="Hidden" />
+                                      VerticalScrollBarVisibility="Disabled"
+                                      HorizontalScrollBarVisibility="Disabled"
+                                      TextElement.Foreground="{TemplateBinding Foreground}" />
                     </Border>
                     <ControlTemplate.Triggers>
                         <Trigger Property="IsKeyboardFocusWithin" Value="True">
@@ -202,10 +209,11 @@
                         <Trigger Property="IsReadOnly" Value="True">
                             <Setter TargetName="Root" Property="Background" Value="{DynamicResource BrushFillTertiary}" />
                             <Setter TargetName="Root" Property="BorderBrush" Value="{DynamicResource BrushBorder}" />
+                            <Setter Property="Foreground" Value="{DynamicResource BrushTextPrimary}" />
                         </Trigger>
                         <Trigger Property="IsEnabled" Value="False">
                             <Setter TargetName="Root" Property="Background" Value="{DynamicResource BrushControlDisabled}" />
-                            <Setter TargetName="Root" Property="Opacity" Value="0.62" />
+                            <Setter TargetName="Root" Property="Opacity" Value="0.72" />
                         </Trigger>
                     </ControlTemplate.Triggers>
                 </ControlTemplate>

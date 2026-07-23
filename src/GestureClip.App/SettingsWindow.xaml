@@ -54,22 +54,25 @@
             <Setter Property="Focusable" Value="False" />
         </Style>
         <Style x:Key="SettingsHotkeyBoxStyle" TargetType="TextBox" BasedOn="{StaticResource GlassTextBoxStyle}">
-            <Setter Property="Width" Value="220" />
             <Setter Property="MinWidth" Value="200" />
-            <Setter Property="Height" Value="36" />
+            <Setter Property="Width" Value="240" />
+            <Setter Property="MinHeight" Value="38" />
+            <Setter Property="Height" Value="Auto" />
             <Setter Property="HorizontalAlignment" Value="Right" />
             <Setter Property="VerticalAlignment" Value="Center" />
             <Setter Property="TextAlignment" Value="Center" />
             <Setter Property="HorizontalContentAlignment" Value="Center" />
             <Setter Property="VerticalContentAlignment" Value="Center" />
-            <Setter Property="Padding" Value="12,8" />
-            <Setter Property="FontSize" Value="13" />
-            <Setter Property="FontFamily" Value="Segoe UI, Microsoft YaHei UI" />
+            <Setter Property="Padding" Value="14,9" />
+            <Setter Property="FontSize" Value="14" />
+            <Setter Property="FontFamily" Value="Consolas, Cascadia Mono, Segoe UI" />
             <Setter Property="FontWeight" Value="SemiBold" />
             <Setter Property="Foreground" Value="{DynamicResource BrushTextPrimary}" />
             <Setter Property="CaretBrush" Value="{DynamicResource BrushPrimaryBright}" />
-            <Setter Property="Background" Value="{DynamicResource BrushFillTertiary}" />
+            <Setter Property="Background" Value="{DynamicResource BrushSurface}" />
             <Setter Property="BorderBrush" Value="{DynamicResource BrushBorder}" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="ToolTip" Value="点击后按下新快捷键（Esc 取消，Backspace 恢复默认）" />
         </Style>
         <Style x:Key="SettingsControlHostStyle" TargetType="StackPanel">
             <Setter Property="HorizontalAlignment" Value="Right" />
@@ -612,7 +615,17 @@
                                                 <ColumnDefinition Width="*" />
                                             </Grid.ColumnDefinitions>
                                             <TextBlock Text="数据库路径" FontSize="14" FontWeight="Medium" VerticalAlignment="Center" />
-                                            <TextBox Grid.Column="1" Text="{Binding DatabasePath, Mode=OneWay}" IsReadOnly="True" FontSize="12" />
+                                            <TextBox Grid.Column="1"
+                                                     Text="{Binding DatabasePath, Mode=OneWay}"
+                                                     IsReadOnly="True"
+                                                     TextWrapping="Wrap"
+                                                     MinHeight="38"
+                                                     FontSize="12"
+                                                     FontFamily="Consolas, Cascadia Mono, Segoe UI"
+                                                     Foreground="{DynamicResource BrushTextPrimary}"
+                                                     Background="{DynamicResource BrushSurface}"
+                                                     VerticalContentAlignment="Center"
+                                                     ToolTip="{Binding DatabasePath}" />
                                         </Grid>
                                     </Border>
                                     <Border Style="{StaticResource SettingsFormRowStyle}">
@@ -622,7 +635,17 @@
                                                 <ColumnDefinition Width="*" />
                                             </Grid.ColumnDefinitions>
                                             <TextBlock Text="日志目录" FontSize="14" FontWeight="Medium" VerticalAlignment="Center" />
-                                            <TextBox Grid.Column="1" Text="{Binding LogDirectory, Mode=OneWay}" IsReadOnly="True" FontSize="12" />
+                                            <TextBox Grid.Column="1"
+                                                     Text="{Binding LogDirectory, Mode=OneWay}"
+                                                     IsReadOnly="True"
+                                                     TextWrapping="Wrap"
+                                                     MinHeight="38"
+                                                     FontSize="12"
+                                                     FontFamily="Consolas, Cascadia Mono, Segoe UI"
+                                                     Foreground="{DynamicResource BrushTextPrimary}"
+                                                     Background="{DynamicResource BrushSurface}"
+                                                     VerticalContentAlignment="Center"
+                                                     ToolTip="{Binding LogDirectory}" />
                                         </Grid>
                                     </Border>
                                     <Border Style="{StaticResource SettingsFormRowStyle}" BorderThickness="0">
@@ -2122,9 +2145,21 @@
                                                     <TextBlock Text="手势码"
                                                                FontWeight="SemiBold"
                                                                Margin="0,0,0,6" />
-                                                    <TextBox Height="40"
-                                                             HorizontalAlignment="Stretch"
-                                                             Text="{Binding NewGesturePattern, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                                                    <TextBox HorizontalAlignment="Stretch"
+                                                             MinHeight="44"
+                                                             Padding="14,10"
+                                                             FontSize="18"
+                                                             FontWeight="SemiBold"
+                                                             FontFamily="Consolas, Cascadia Mono, Segoe UI"
+                                                             Foreground="{DynamicResource BrushTextPrimary}"
+                                                             Background="{DynamicResource BrushSurface}"
+                                                             VerticalContentAlignment="Center"
+                                                             Text="{Binding NewGesturePattern, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                                             ToolTip="{Binding NewGestureDirectionPreview}" />
+                                                    <TextBlock Text="{Binding NewGestureDirectionPreview}"
+                                                               Style="{StaticResource MutedTextStyle}"
+                                                               FontSize="13"
+                                                               Margin="0,8,0,0" />
 
                                                     <TextBlock Text="执行动作"
                                                                FontWeight="SemiBold"
