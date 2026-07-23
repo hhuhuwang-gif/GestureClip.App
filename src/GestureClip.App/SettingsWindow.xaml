@@ -1433,6 +1433,76 @@
                                             </StackPanel>
                                         </Border>
 
+                                        <TextBlock x:Name="SectionGestureSnippets"
+                                                   Text="常用话术（插入到光标处）"
+                                                   Style="{StaticResource SettingsGroupTitleStyle}"
+                                                   Margin="2,8,0,10" />
+                                        <Border Style="{StaticResource SettingsListContainerStyle}" Margin="0,0,0,14">
+                                            <StackPanel>
+                                                <Border Style="{StaticResource SettingsFormRowStyle}">
+                                                    <Grid>
+                                                        <Grid.ColumnDefinitions>
+                                                            <ColumnDefinition Width="*" />
+                                                            <ColumnDefinition Width="2*" />
+                                                        </Grid.ColumnDefinitions>
+                                                        <StackPanel Margin="0,0,16,0">
+                                                            <TextBlock Text="话术 1" FontSize="14" FontWeight="Medium" />
+                                                            <TextBlock Text="绑定动作为「插入话术 1」时使用"
+                                                                       Style="{StaticResource MutedTextStyle}" FontSize="12" Margin="0,4,0,0" />
+                                                        </StackPanel>
+                                                        <TextBox Grid.Column="1"
+                                                                 Text="{Binding Snippet1Text, Mode=TwoWay, UpdateSourceTrigger=LostFocus}"
+                                                                 AcceptsReturn="True"
+                                                                 TextWrapping="Wrap"
+                                                                 MinHeight="52"
+                                                                 VerticalScrollBarVisibility="Auto" />
+                                                    </Grid>
+                                                </Border>
+                                                <Border Style="{StaticResource SettingsFormRowStyle}">
+                                                    <Grid>
+                                                        <Grid.ColumnDefinitions>
+                                                            <ColumnDefinition Width="*" />
+                                                            <ColumnDefinition Width="2*" />
+                                                        </Grid.ColumnDefinitions>
+                                                        <StackPanel Margin="0,0,16,0">
+                                                            <TextBlock Text="话术 2" FontSize="14" FontWeight="Medium" />
+                                                            <TextBlock Text="绑定动作为「插入话术 2」时使用"
+                                                                       Style="{StaticResource MutedTextStyle}" FontSize="12" Margin="0,4,0,0" />
+                                                        </StackPanel>
+                                                        <TextBox Grid.Column="1"
+                                                                 Text="{Binding Snippet2Text, Mode=TwoWay, UpdateSourceTrigger=LostFocus}"
+                                                                 AcceptsReturn="True"
+                                                                 TextWrapping="Wrap"
+                                                                 MinHeight="52"
+                                                                 VerticalScrollBarVisibility="Auto" />
+                                                    </Grid>
+                                                </Border>
+                                                <Border Style="{StaticResource SettingsFormRowStyle}">
+                                                    <Grid>
+                                                        <Grid.ColumnDefinitions>
+                                                            <ColumnDefinition Width="*" />
+                                                            <ColumnDefinition Width="2*" />
+                                                        </Grid.ColumnDefinitions>
+                                                        <StackPanel Margin="0,0,16,0">
+                                                            <TextBlock Text="话术 3" FontSize="14" FontWeight="Medium" />
+                                                            <TextBlock Text="绑定动作为「插入话术 3」时使用"
+                                                                       Style="{StaticResource MutedTextStyle}" FontSize="12" Margin="0,4,0,0" />
+                                                        </StackPanel>
+                                                        <TextBox Grid.Column="1"
+                                                                 Text="{Binding Snippet3Text, Mode=TwoWay, UpdateSourceTrigger=LostFocus}"
+                                                                 AcceptsReturn="True"
+                                                                 TextWrapping="Wrap"
+                                                                 MinHeight="52"
+                                                                 VerticalScrollBarVisibility="Auto" />
+                                                    </Grid>
+                                                </Border>
+                                                <Border Style="{StaticResource SettingsFormRowStyle}">
+                                                    <TextBlock TextWrapping="Wrap" Style="{StaticResource MutedTextStyle}"
+                                                               Text="日期/时间动作无需配置：在动作列表里选「插入今天日期 / 当前时间 / 日期时间」即可。插入方式为：写入剪贴板 → 发送粘贴（不污染历史）。" />
+                                                </Border>
+                                            </StackPanel>
+                                        </Border>
+
                                         <TextBlock x:Name="SectionRecommendedGestures"
                                                    Text="推荐手势"
                                                    Style="{StaticResource SettingsGroupTitleStyle}"

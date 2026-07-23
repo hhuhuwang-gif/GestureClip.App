@@ -80,5 +80,12 @@ public enum BuiltInGestureAction
     AssistantHtmlToText = 75,
     AssistantToMarkdown = 76,
     AssistantCleanUrl = 77,
-    PastePlainText = 78
+    PastePlainText = 78,
+    InsertDate = 79,
+    InsertTime = 80,
+    InsertDateTime = 81,
+    InsertSnippet1 = 82,
+    InsertSnippet2 = 83,
+    InsertSnippet3 = 84
 }
+

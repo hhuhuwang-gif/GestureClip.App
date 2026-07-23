@@ -94,6 +94,9 @@ public sealed partial class SettingsViewModel : INotifyPropertyChanged
     private string _openQuickActionHotkeyText = HotkeyDefinition.DefaultOpenQuickActionCenter;
     private string _pastePlainTextHotkeyText = HotkeyDefinition.DefaultPastePlainText;
     private string _gestureStrokeColor;
+    private string _snippet1Text = "好的，收到。";
+    private string _snippet2Text = "请查收，谢谢。";
+    private string _snippet3Text = "稍后回复您。";
     private bool _workstationEnabled;
     private decimal _workstationMonthlySalary;
     private string _workstationWorkStartTime = "09:00";
@@ -269,6 +272,10 @@ public sealed partial class SettingsViewModel : INotifyPropertyChanged
             ? pastePlainHotkey.DisplayText
             : HotkeyDefinition.DefaultPastePlainText;
         _gestureStrokeColor = _settingsService.Get(SettingKeys.GestureStrokeColor, "#8CC8FF");
+
+        _snippet1Text = _settingsService.Get(SettingKeys.GestureSnippet1Text, "好的，收到。");
+        _snippet2Text = _settingsService.Get(SettingKeys.GestureSnippet2Text, "请查收，谢谢。");
+        _snippet3Text = _settingsService.Get(SettingKeys.GestureSnippet3Text, "稍后回复您。");
         _gestureDiagnostics = _mouseGestureService.Diagnostics;
         _startWithWindows = _startupService.IsEnabled();
         _isDarkTheme = string.Equals(
@@ -660,6 +667,58 @@ public sealed partial class SettingsViewModel : INotifyPropertyChanged
     }
 
     public ICommand ApplyRecommendedGestureBindingsCommand { get; }
+    
+    public string Snippet1Text
+    {
+        get => _snippet1Text;
+        set
+        {
+            var next = value ?? "";
+            if (_snippet1Text == next)
+            {
+                return;
+            }
+
+            _snippet1Text = next;
+            OnPropertyChanged();
+            _ = _settingsService.SetAsync(SettingKeys.GestureSnippet1Text, _snippet1Text, CancellationToken.None);
+        }
+    }
+
+    public string Snippet2Text
+    {
+        get => _snippet2Text;
+        set
+        {
+            var next = value ?? "";
+            if (_snippet2Text == next)
+            {
+                return;
+            }
+
+            _snippet2Text = next;
+            OnPropertyChanged();
+            _ = _settingsService.SetAsync(SettingKeys.GestureSnippet2Text, _snippet2Text, CancellationToken.None);
+        }
+    }
+
+    public string Snippet3Text
+    {
+        get => _snippet3Text;
+        set
+        {
+            var next = value ?? "";
+            if (_snippet3Text == next)
+            {
+                return;
+            }
+
+            _snippet3Text = next;
+            OnPropertyChanged();
+            _ = _settingsService.SetAsync(SettingKeys.GestureSnippet3Text, _snippet3Text, CancellationToken.None);
+        }
+    }
+
     public ICommand ExportGestureConfigCommand { get; }
     public ICommand ImportGestureConfigCommand { get; }
     public ICommand ApplyOfficeGestureTemplateCommand { get; }

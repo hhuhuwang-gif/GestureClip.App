@@ -16,6 +16,12 @@ public static class GestureActionCatalog
         Option(BuiltInGestureAction.Paste),
         Option(BuiltInGestureAction.SmartPaste),
         Option(BuiltInGestureAction.PastePlainText),
+        Option(BuiltInGestureAction.InsertDate),
+        Option(BuiltInGestureAction.InsertTime),
+        Option(BuiltInGestureAction.InsertDateTime),
+        Option(BuiltInGestureAction.InsertSnippet1),
+        Option(BuiltInGestureAction.InsertSnippet2),
+        Option(BuiltInGestureAction.InsertSnippet3),
         Option(BuiltInGestureAction.Cut),
         Option(BuiltInGestureAction.SelectAll),
         Option(BuiltInGestureAction.Undo),
@@ -98,6 +104,12 @@ public static class GestureActionCatalog
     {
         BuiltInGestureAction.SmartPaste => "根据当前软件自动选择普通粘贴、纯文本粘贴或干净粘贴。",
         BuiltInGestureAction.PastePlainText => "强制纯文本粘贴（等同全局 Ctrl+Shift+V）。",
+        BuiltInGestureAction.InsertDate => "在当前光标处插入今天日期（yyyy-MM-dd）。",
+        BuiltInGestureAction.InsertTime => "在当前光标处插入当前时间（HH:mm）。",
+        BuiltInGestureAction.InsertDateTime => "在当前光标处插入日期时间（yyyy-MM-dd HH:mm）。",
+        BuiltInGestureAction.InsertSnippet1 => "插入自定义话术 1（可在设置里改文案）。",
+        BuiltInGestureAction.InsertSnippet2 => "插入自定义话术 2（可在设置里改文案）。",
+        BuiltInGestureAction.InsertSnippet3 => "插入自定义话术 3（可在设置里改文案）。",
         BuiltInGestureAction.OpenQuickActionCenter => "打开本地快捷动作面板，可搜索并执行文本处理。",
         BuiltInGestureAction.AssistantTrim => "去掉剪贴板文本首尾空白，并写回系统剪贴板。",
         BuiltInGestureAction.AssistantNormalizeWhitespace => "合并多余空格后写回剪贴板。",
@@ -121,6 +133,12 @@ public static class GestureActionCatalog
     public static string Category(BuiltInGestureAction action) => action switch
     {
         BuiltInGestureAction.OpenQuickActionCenter or
+        BuiltInGestureAction.InsertDate or
+        BuiltInGestureAction.InsertTime or
+        BuiltInGestureAction.InsertDateTime or
+        BuiltInGestureAction.InsertSnippet1 or
+        BuiltInGestureAction.InsertSnippet2 or
+        BuiltInGestureAction.InsertSnippet3 or
         BuiltInGestureAction.AssistantTrim or
         BuiltInGestureAction.AssistantNormalizeWhitespace or
         BuiltInGestureAction.AssistantCollapseBlankLines or

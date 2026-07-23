@@ -159,6 +159,36 @@ public sealed class GestureBuiltInActionExecutor : IMouseGestureActionExecutor
                 await RecordPasteAsync(cancellationToken);
                 break;
 
+            case BuiltInGestureAction.InsertDate:
+                await InsertTextAsync(DateTime.Now.ToString("yyyy-MM-dd"), cancellationToken);
+                break;
+
+            case BuiltInGestureAction.InsertTime:
+                await InsertTextAsync(DateTime.Now.ToString("HH:mm"), cancellationToken);
+                break;
+
+            case BuiltInGestureAction.InsertDateTime:
+                await InsertTextAsync(DateTime.Now.ToString("yyyy-MM-dd HH:mm"), cancellationToken);
+                break;
+
+            case BuiltInGestureAction.InsertSnippet1:
+                await InsertTextAsync(
+                    _settingsService.Get(SettingKeys.GestureSnippet1Text, "好的，收到。"),
+                    cancellationToken);
+                break;
+
+            case BuiltInGestureAction.InsertSnippet2:
+                await InsertTextAsync(
+                    _settingsService.Get(SettingKeys.GestureSnippet2Text, "请查收，谢谢。"),
+                    cancellationToken);
+                break;
+
+            case BuiltInGestureAction.InsertSnippet3:
+                await InsertTextAsync(
+                    _settingsService.Get(SettingKeys.GestureSnippet3Text, "稍后回复您。"),
+                    cancellationToken);
+                break;
+
             case BuiltInGestureAction.PasteLatestClipboardItem:
                 var latest = await _clipboardService.GetLatestAsync(cancellationToken);
                 if (latest is not null)
@@ -571,6 +601,29 @@ public sealed class GestureBuiltInActionExecutor : IMouseGestureActionExecutor
         catch (Exception ex)
         {
             _logger.LogWarning(ex, "Failed to start process for gesture action. FileName={FileName}", fileName);
+        }
+    }
+
+    private async Task InsertTextAsync(string text, CancellationToken cancellationToken)
+    {
+        if (string.IsNullOrEmpty(text))
+        {
+            _logger.LogInformation("Insert text skipped (empty).");
+            return;
+        }
+
+        try
+        {
+            _clipboardService.SuppressCaptureFor(TimeSpan.FromMilliseconds(1500));
+            await _clipboardWriter.SetTextAsync(text, cancellationToken);
+            await Task.Delay(70, cancellationToken);
+            await _clipboardWriter.SendPasteHotkeyAsync(cancellationToken);
+            await RecordPasteAsync(cancellationToken);
+            _logger.LogInformation("Inserted text via clipboard paste. Length={Length}", text.Length);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Insert text failed.");
         }
     }
 }
