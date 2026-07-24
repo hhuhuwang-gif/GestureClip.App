@@ -35,4 +35,9 @@ public sealed record WorkstationDashboardSnapshot(
     TimeSpan OvertimeDuration = default,
     string DailyRatingText = "稳定输出型",
     string DailyReportText = "",
-    string SalaryHintText = "仅供娱乐估算，不作财务依据。");
+    string SalaryHintText = "仅供娱乐估算，不作财务依据。",
+    string StageAccentColor = "#60A5FA",
+    string StageStartColor = "#1D4ED8",
+    string StageEndColor = "#111827",
+    double WorkdayProgress = 0d,
+    string RestRiskLevel = "normal");

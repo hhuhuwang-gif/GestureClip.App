@@ -31,9 +31,9 @@ public sealed class WorkstationDashboardViewModelTests
         Assert.Equal("02:05:00", viewModel.OffWorkCountdownText);
         Assert.Equal("￥128.35", viewModel.TodayEarnedText);
         Assert.Equal("￥3900.10", viewModel.MonthEarnedText);
-        Assert.Equal("6 天", viewModel.PaydayText);
-        Assert.Equal("复制 7 · 粘贴 4 · 手势 3 · 剪贴板 0", viewModel.ActionStatsText);
-        Assert.Equal("少点 9 次", viewModel.SavedClicksText);
+        Assert.Equal("还剩 6 天", viewModel.PaydayText);
+        Assert.Equal("复制 7 · 粘贴 4 · 手势 3 · 打开剪贴板 0", viewModel.ActionStatsText);
+        Assert.Equal("大约省了 9 次点击", viewModel.SavedClicksText);
         Assert.Equal("低功耗运行期", viewModel.WorkStatusText);
     }
 
@@ -154,6 +154,61 @@ public sealed class WorkstationDashboardViewModelTests
         Assert.False(viewModel.NeedsSetup);
     }
 
+
+    [Fact]
+    public async Task ResetTodayAsync_cancels_when_user_declines_confirmation()
+    {
+        var service = new FakeWorkstationDashboardService();
+        var confirm = new FakeConfirmationService { Result = false };
+        var viewModel = new WorkstationDashboardViewModel(service, confirmationService: confirm);
+
+        await viewModel.ResetTodayAsync();
+
+        Assert.Equal(0, service.ResetCount);
+        Assert.Equal(1, confirm.CallCount);
+        Assert.Contains("取消", viewModel.LastMessage);
+    }
+
+    [Fact]
+    public async Task ResetTodayAsync_resets_when_user_confirms()
+    {
+        var service = new FakeWorkstationDashboardService();
+        var confirm = new FakeConfirmationService { Result = true };
+        var viewModel = new WorkstationDashboardViewModel(service, confirmationService: confirm);
+
+        await viewModel.ResetTodayAsync();
+
+        Assert.Equal(1, service.ResetCount);
+        Assert.Equal(1, confirm.CallCount);
+        Assert.Contains("已重置", viewModel.LastMessage);
+    }
+
+    [Fact]
+    public void ShowEmptySalaryGuide_true_when_setup_done_but_salary_missing()
+    {
+        var settings = new FakeSettingsService();
+        settings.Values[SettingKeys.WorkstationMonthlySalary] = 0m;
+        settings.Values[SettingKeys.WorkBearSetupCompleted] = true;
+        var viewModel = new WorkstationDashboardViewModel(new FakeWorkstationDashboardService(), settings);
+
+        Assert.False(viewModel.NeedsSetup);
+        Assert.True(viewModel.ShowEmptySalaryGuide);
+    }
+
+    [Fact]
+    public void OpenWorkRules_expands_settings_section()
+    {
+        var settings = new FakeSettingsService();
+        settings.Values[SettingKeys.WorkstationMonthlySalary] = 0m;
+        settings.Values[SettingKeys.WorkBearSetupCompleted] = true;
+        var viewModel = new WorkstationDashboardViewModel(new FakeWorkstationDashboardService(), settings);
+
+        viewModel.OpenWorkRules();
+
+        Assert.True(viewModel.SettingsExpanded);
+        Assert.Contains("月薪", viewModel.LastMessage);
+    }
+
     private static readonly WorkstationDashboardSnapshot Snapshot = new(
         "工位小熊",
         "今天也在低功耗运行",
@@ -222,6 +277,22 @@ public sealed class WorkstationDashboardViewModelTests
         {
             Values[key] = value;
             return Task.CompletedTask;
+        }
+    }
+
+    private sealed class FakeConfirmationService : IConfirmationService
+    {
+        public bool Result { get; set; } = true;
+        public int CallCount { get; private set; }
+        public string? LastTitle { get; private set; }
+        public string? LastMessageText { get; private set; }
+
+        public bool Confirm(string title, string message)
+        {
+            CallCount++;
+            LastTitle = title;
+            LastMessageText = message;
+            return Result;
         }
     }
 }

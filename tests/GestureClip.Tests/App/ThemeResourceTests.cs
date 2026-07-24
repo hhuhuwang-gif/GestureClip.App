@@ -547,7 +547,37 @@ public sealed class ThemeResourceTests
         Assert.Contains("TodayEarnedText", xaml);
         Assert.Contains("TodayFishingValueText", xaml);
         Assert.Contains("ActionStatsText", xaml);
-        Assert.Contains("GlassCardStyle", xaml);
+        Assert.Contains("HubHeroCardStyle", xaml);
+        Assert.Contains("Segoe UI Emoji", xaml);
+        Assert.Contains("GreetingText", xaml);
+        Assert.Contains("StageAccentBrush", xaml);
+        Assert.Contains("WorkdayProgress", xaml);
+        Assert.Contains("HubThinProgressBarStyle", xaml);
+        Assert.Contains("HubFishingBannerStyle", xaml);
+        Assert.Contains("HubReportTextStyle", xaml);
+        Assert.Contains("ShowEmptySalaryGuide", xaml);
+        Assert.Contains("OpenWorkRulesCommand", xaml);
+        Assert.Contains("FishingStatusBanner", xaml);
+        Assert.Contains("Esc 关闭", xaml);
+        Assert.Contains("DailyReportDisplayText", xaml);
+        Assert.Contains("GlassScrollViewerStyle", xaml);
+        Assert.DoesNotContain("#FBFBFD", xaml);
+        Assert.DoesNotContain("#EAF3FF", xaml);
+    }
+
+    [Fact]
+    public void GlassStyles_define_hub_readable_text_styles()
+    {
+        var path = FindRepositoryFile("src", "GestureClip.App", "Themes", "GlassStyles.xaml");
+        var xaml = File.ReadAllText(path);
+
+        Assert.Contains("HubRootTextStyle", xaml);
+        Assert.Contains("HubSectionExpanderStyle", xaml);
+        Assert.Contains("HubThinProgressBarStyle", xaml);
+        Assert.Contains("HubFishingBannerStyle", xaml);
+        Assert.Contains("HubReportTextStyle", xaml);
+        Assert.Contains("ControlTemplate", xaml);
+        Assert.Contains("Segoe UI Emoji", xaml);
     }
 
     [Fact]

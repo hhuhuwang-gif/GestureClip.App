@@ -1,6 +1,6 @@
 # KNOWN_ISSUES
 
-GestureClip v0.6.31 Beta 当前已知问题。
+GestureClip v0.6.32 Beta 当前已知问题。
 
 ## 已知问题
 

@@ -1,6 +1,9 @@
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
+using System.Windows;
 using System.Windows.Input;
+using System.Windows.Media;
+using Media = System.Windows.Media;
 using GestureClip.Core.Abstractions;
 using GestureClip.Core.Settings;
 using GestureClip.Core.Workstation;
@@ -13,8 +16,9 @@ public sealed class WorkstationDashboardViewModel : INotifyPropertyChanged
     private readonly ISettingsService? _settingsService;
     private readonly IWorkBearShareCardService? _shareCardService;
     private readonly IOverworkReminderService? _overworkReminderService;
+    private readonly IConfirmationService? _confirmationService;
     private WorkstationDashboardSnapshot _snapshot = EmptySnapshot;
-    private string _lastMessage = "本地统计，不上传，不记录剪贴板正文。";
+    private string _lastMessage = "本地统计，不上传。小熊只陪你看看状态，不偷看剪贴板正文。";
     private bool _settingsExpanded;
     private bool _earningsExpanded = true;
     private bool _fishingExpanded = true;
@@ -24,19 +28,21 @@ public sealed class WorkstationDashboardViewModel : INotifyPropertyChanged
     private string _setupSalaryText = "";
     private string _setupStartTime = "09:00";
     private string _setupEndTime = "18:00";
-    private string _periodReportText = "点「生成本周总结」查看本地周报；也可生成近 30 天月报。";
+    private string _periodReportText = "点下面按钮生成本地周报或近 30 天总结，不上传。";
     private bool _periodExpanded;
 
     public WorkstationDashboardViewModel(
         IWorkstationDashboardService dashboardService,
         ISettingsService? settingsService = null,
         IWorkBearShareCardService? shareCardService = null,
-        IOverworkReminderService? overworkReminderService = null)
+        IOverworkReminderService? overworkReminderService = null,
+        IConfirmationService? confirmationService = null)
     {
         _dashboardService = dashboardService;
         _settingsService = settingsService;
         _shareCardService = shareCardService;
         _overworkReminderService = overworkReminderService;
+        _confirmationService = confirmationService;
         _setupSalaryText = WorkstationMonthlySalary > 0 ? WorkstationMonthlySalary.ToString("0") : "10000";
         _setupStartTime = WorkstationWorkStartTime;
         _setupEndTime = WorkstationWorkEndTime;
@@ -60,6 +66,7 @@ public sealed class WorkstationDashboardViewModel : INotifyPropertyChanged
         ToggleSettingsCommand = new RelayCommand(_ => SettingsExpanded = !SettingsExpanded);
         CompleteSetupCommand = new AsyncRelayCommand(_ => CompleteSetupAsync());
         DismissSetupCommand = new AsyncRelayCommand(_ => DismissSetupAsync());
+        OpenWorkRulesCommand = new RelayCommand(_ => OpenWorkRules());
         GenerateWeeklyReportCommand = new AsyncRelayCommand(_ => GeneratePeriodReportAsync(7));
         GenerateMonthlyReportCommand = new AsyncRelayCommand(_ => GeneratePeriodReportAsync(30));
         OpenLastShareCardFolderCommand = new AsyncRelayCommand(_ => OpenLastShareCardFolderAsync());
@@ -87,6 +94,7 @@ public sealed class WorkstationDashboardViewModel : INotifyPropertyChanged
     public ICommand ToggleSettingsCommand { get; }
     public ICommand CompleteSetupCommand { get; }
     public ICommand DismissSetupCommand { get; }
+    public ICommand OpenWorkRulesCommand { get; }
     public ICommand GenerateWeeklyReportCommand { get; }
     public ICommand GenerateMonthlyReportCommand { get; }
     public ICommand OpenLastShareCardFolderCommand { get; }
@@ -104,8 +112,21 @@ public sealed class WorkstationDashboardViewModel : INotifyPropertyChanged
     public string MonthEarnedText => FormatMoney(_snapshot.MonthEarned);
     public string MinuteValueText => FormatMoney(_snapshot.MinuteValue);
     public string BossPaidText => FormatMoney(_snapshot.TodayEarned);
-    public string PaydayText => $"{_snapshot.DaysUntilPayday} 天";
-    public string FishingButtonText => _snapshot.IsFishing ? "结束摸鱼" : "开始摸鱼";
+    public string PaydayText => _snapshot.DaysUntilPayday <= 0 ? "就是今天" : $"还剩 {_snapshot.DaysUntilPayday} 天";
+    public string FishingButtonText => _snapshot.IsFishing ? "结束本次摸鱼" : "开始摸鱼计时";
+    public bool IsFishing => _snapshot.IsFishing;
+    public string FishingStatusBanner => _snapshot.IsFishing
+        ? $"摸鱼计时中 · 已进行 {FormatDuration(_snapshot.CurrentFishingDuration)}"
+        : string.Empty;
+    public Media.Brush FishingBorderBrush => IsFishing
+        ? ParseBrush("#2DD4BF", "#2DD4BF")
+        : ParseBrush("#00000000", "#00000000");
+    public Thickness FishingBorderThickness => IsFishing ? new Thickness(1.5) : new Thickness(0);
+    public double HeroBorderOpacity => IsFishing ? 1d : 0d;
+
+    public bool HasDailyReport => !string.IsNullOrWhiteSpace(_snapshot.DailyReportText);
+    public string DailyReportPlaceholder => "点「生成今日报告」看看今天的工位小结（仅本地，可分享为 PNG）。";
+    public string DailyReportDisplayText => HasDailyReport ? _snapshot.DailyReportText : DailyReportPlaceholder;
     public string CurrentFishingText => FormatDuration(_snapshot.CurrentFishingDuration);
     public string CurrentFishingValueText => ShowFishingValue ? FormatMoney(_snapshot.CurrentFishingValue) : "已隐藏";
     public string TodayFishingDurationText => FormatDuration(_snapshot.TodayFishingDuration);
@@ -113,9 +134,9 @@ public sealed class WorkstationDashboardViewModel : INotifyPropertyChanged
     public string CopyCountText => _snapshot.CopyCount.ToString();
     public string PasteCountText => _snapshot.PasteCount.ToString();
     public string GestureCountText => _snapshot.GestureCount.ToString();
-    public string SavedClicksText => $"少点 {_snapshot.EstimatedSavedClicks} 次";
+    public string SavedClicksText => _snapshot.EstimatedSavedClicks <= 0 ? "今天还没省到点击" : $"大约省了 {_snapshot.EstimatedSavedClicks} 次点击";
     public string OpenClipboardCountText => _snapshot.OpenClipboardCount.ToString();
-    public string ActionStatsText => $"复制 {_snapshot.CopyCount} · 粘贴 {_snapshot.PasteCount} · 手势 {_snapshot.GestureCount} · 剪贴板 {_snapshot.OpenClipboardCount}";
+    public string ActionStatsText => $"复制 {_snapshot.CopyCount} · 粘贴 {_snapshot.PasteCount} · 手势 {_snapshot.GestureCount} · 打开剪贴板 {_snapshot.OpenClipboardCount}";
     public string ProtectionHintText => _snapshot.SprintActive ? "已进入下班冲刺，建议保存文件、整理明天待办、准备撤退。" : "当前未进入下班冲刺。";
     public string WorkTipText => _snapshot.BearLineText;
     public string ContinuousWorkText => FormatDuration(_snapshot.ContinuousWorkDuration);
@@ -129,6 +150,102 @@ public sealed class WorkstationDashboardViewModel : INotifyPropertyChanged
     public string DailyRatingText => _snapshot.DailyRatingText;
     public string DailyReportText => _snapshot.DailyReportText;
     public string SalaryHintText => _snapshot.SalaryHintText;
+    public string StageAccentColor => string.IsNullOrWhiteSpace(_snapshot.StageAccentColor) ? "#60A5FA" : _snapshot.StageAccentColor;
+    public string StageStartColor => string.IsNullOrWhiteSpace(_snapshot.StageStartColor) ? "#1D4ED8" : _snapshot.StageStartColor;
+    public Media.Brush StageAccentBrush => ParseBrush(StageAccentColor, "#60A5FA");
+    public Media.Brush StageStartBrush => ParseBrush(StageStartColor, "#1D4ED8");
+    public Media.Brush StageSoftBrush
+    {
+        get
+        {
+            var color = ParseColor(StageAccentColor, "#60A5FA");
+            color.A = 0x33;
+            return new Media.SolidColorBrush(color);
+        }
+    }
+    public Media.Brush RestRiskBrush => ParseBrush(RestRiskAccentColor, "#94A3B8");
+    public Media.Brush RestRiskSoftBrush
+    {
+        get
+        {
+            var color = ParseColor(RestRiskAccentColor, "#94A3B8");
+            color.A = 0x33;
+            return new Media.SolidColorBrush(color);
+        }
+    }
+    public string RestRiskAccentColor => _snapshot.RestRiskLevel switch
+    {
+        "critical" => "#F87171",
+        "high" => "#FB923C",
+        "caution" => "#FBBF24",
+        _ => "#94A3B8"
+    };
+    public string RestRiskLevel => string.IsNullOrWhiteSpace(_snapshot.RestRiskLevel) ? "normal" : _snapshot.RestRiskLevel;
+    public double WorkdayProgress => Math.Clamp(_snapshot.WorkdayProgress, 0d, 1d);
+    public double WorkdayProgressPercent => Math.Round(WorkdayProgress * 100d, 0);
+    public string WorkdayProgressText
+    {
+        get
+        {
+            if (_snapshot.WorkTimeStage == WorkTimeStage.RestDay)
+            {
+                return "今天是休息日";
+            }
+
+            if (_snapshot.WorkTimeStage == WorkTimeStage.BeforeWork)
+            {
+                return "还没到上班点";
+            }
+
+            if (_snapshot.WorkTimeStage == WorkTimeStage.Overtime)
+            {
+                return "已过下班线 · 注意收工";
+            }
+
+            if (_snapshot.WorkTimeStage == WorkTimeStage.OffWork)
+            {
+                return "今日工位已挂起";
+            }
+
+            return $"今日进度 {WorkdayProgressPercent:0}%";
+        }
+    }
+    public double OffWorkProgress
+    {
+        get
+        {
+            // Mirror workday progress for countdown bar: 0 just started, 1 near/after off-work.
+            if (_snapshot.WorkTimeStage is WorkTimeStage.Overtime or WorkTimeStage.OffWork)
+            {
+                return 1d;
+            }
+
+            if (_snapshot.WorkTimeStage is WorkTimeStage.BeforeWork or WorkTimeStage.RestDay)
+            {
+                return 0d;
+            }
+
+            return WorkdayProgress;
+        }
+    }
+    public string OffWorkProgressText
+    {
+        get
+        {
+            if (!ShowOffWorkCountdown)
+            {
+                return "倒计时已隐藏";
+            }
+
+            if (_snapshot.TimeUntilOffWork <= TimeSpan.Zero)
+            {
+                return _snapshot.WorkTimeStage == WorkTimeStage.Overtime ? "已过下班点" : "到点了";
+            }
+
+            return $"距离下班 {FormatDurationClock(_snapshot.TimeUntilOffWork)}";
+        }
+    }
+
     public bool AutoShowDailyReport => _settingsService?.Get(SettingKeys.AutoShowDailyWorkReport, true) ?? true;
     public string LastMessage
     {
@@ -172,6 +289,22 @@ public sealed class WorkstationDashboardViewModel : INotifyPropertyChanged
             return WorkstationMonthlySalary <= 0m;
         }
     }
+
+    /// <summary>
+    /// Setup dismissed or completed path, but salary still missing — soft guide instead of cold ¥0.
+    /// </summary>
+    public bool ShowEmptySalaryGuide =>
+        _settingsService is not null
+        && !NeedsSetup
+        && WorkstationMonthlySalary <= 0m;
+
+    public string EmptySalaryGuideTitle => "收益还是 ¥0.00？";
+
+    public string EmptySalaryGuideText =>
+        "还没填月薪时，今日已赚只能显示 0。补一下月薪和上下班时间，小熊就能本地估算（不上传）。";
+
+    public string EmptySalaryGuideActionText => "去填写月薪与工时";
+
 
     public string SetupSalaryText
     {
@@ -276,6 +409,48 @@ public sealed class WorkstationDashboardViewModel : INotifyPropertyChanged
 
     public string PrivacyHintText => "隐私：不记网页、不记剪贴板正文、不上传；摸鱼只记你手动开始/结束。";
 
+    public string GreetingText
+    {
+        get
+        {
+            var hour = DateTimeOffset.Now.Hour;
+            if (_snapshot.IsFishing)
+            {
+                return "摸鱼中 · 别慌";
+            }
+
+            if (_snapshot.WorkTimeStage == WorkTimeStage.Overtime)
+            {
+                return "加班区 · 记得存档";
+            }
+
+            if (_snapshot.WorkTimeStage == WorkTimeStage.LunchBreak)
+            {
+                return "午休 · 先充电";
+            }
+
+            if (_snapshot.WorkTimeStage == WorkTimeStage.RestDay)
+            {
+                return "休息日 · 慢一点";
+            }
+
+            if (_snapshot.WorkTimeStage is WorkTimeStage.OffWork or WorkTimeStage.BeforeWork)
+            {
+                return hour < 12 ? "早上好 · 未开工" : "已下班 · 低功耗";
+            }
+
+            return hour switch
+            {
+                < 11 => "上午好 · 稳住开局",
+                < 14 => "中午好 · 节奏别崩",
+                < 17 => "下午好 · 继续苟住",
+                < 19 => "傍晚 · 准备收尾",
+                _ => "晚上好 · 别硬撑"
+            };
+        }
+    }
+
+
     public string PeriodReportText
     {
         get => _periodReportText;
@@ -378,14 +553,14 @@ public sealed class WorkstationDashboardViewModel : INotifyPropertyChanged
     public async Task StartFishingAsync()
     {
         await _dashboardService.StartFishingAsync(DateTimeOffset.Now, CancellationToken.None);
-        LastMessage = "小熊已进入静默观察模式。";
+        LastMessage = "摸鱼计时开始了，记得回来点结束。";
         await RefreshAsync();
     }
 
     public async Task EndFishingAsync()
     {
         await _dashboardService.EndFishingAsync(DateTimeOffset.Now, CancellationToken.None);
-        LastMessage = "本次摸鱼已计入今日报告。";
+        LastMessage = "本次摸鱼已记下，不会上传。";
         await RefreshAsync();
     }
 
@@ -394,14 +569,26 @@ public sealed class WorkstationDashboardViewModel : INotifyPropertyChanged
     public async Task ClearFishingAsync()
     {
         await _dashboardService.ClearTodayFishingAsync(DateOnly.FromDateTime(DateTime.Today), CancellationToken.None);
-        LastMessage = "今日摸鱼记录已清除。";
+        LastMessage = "今日摸鱼记录已清空。";
         await RefreshAsync();
     }
 
     public async Task ResetTodayAsync()
     {
+        if (_confirmationService is not null)
+        {
+            var confirmed = _confirmationService.Confirm(
+                "重置今日统计",
+                "将清空今天的摸鱼计时、复制/粘贴/手势次数等本地统计。\n此操作不可撤销，确定继续？");
+            if (!confirmed)
+            {
+                LastMessage = "已取消重置。";
+                return;
+            }
+        }
+
         await _dashboardService.ResetTodayAsync(DateOnly.FromDateTime(DateTime.Today), CancellationToken.None);
-        LastMessage = "今日统计已重置。";
+        LastMessage = "今日统计已重置，可以从零开始。";
         await RefreshAsync();
     }
 
@@ -490,7 +677,7 @@ public sealed class WorkstationDashboardViewModel : INotifyPropertyChanged
             await _settingsService.SetAsync(SettingKeys.WorkBearRestReminderSnoozedUntil, DateTimeOffset.Now.AddMinutes(15).ToString("O"), CancellationToken.None);
         }
 
-        LastMessage = "已稍后提醒，小熊先退下。";
+        LastMessage = "好，稍后提醒。小熊先退下。";
         await RefreshAsync();
     }
 
@@ -506,7 +693,7 @@ public sealed class WorkstationDashboardViewModel : INotifyPropertyChanged
             await _settingsService.SetAsync(SettingKeys.WorkBearRestReminderMutedDate, DateOnly.FromDateTime(now.Date).ToString("yyyy-MM-dd"), CancellationToken.None);
         }
 
-        LastMessage = "今天不再提醒。";
+        LastMessage = "今天不再打扰你。";
         await RefreshAsync();
     }
 
@@ -518,7 +705,7 @@ public sealed class WorkstationDashboardViewModel : INotifyPropertyChanged
         }
 
         await _settingsService.SetAsync(SettingKeys.WorkstationEnableOverworkReminder, false, CancellationToken.None);
-        LastMessage = "休息提醒已关闭。";
+        LastMessage = "休息提醒已关闭，可随时再开。";
         await RefreshAsync();
     }
 
@@ -565,6 +752,14 @@ public sealed class WorkstationDashboardViewModel : INotifyPropertyChanged
         LastMessage = $"已应用工作制模板：{template.Name}";
     }
 
+
+    public void OpenWorkRules()
+    {
+        SettingsExpanded = true;
+        LastMessage = "在下方补月薪和上下班时间即可，数据只保存在本机。";
+        OnPropertyChanged(nameof(ShowEmptySalaryGuide));
+    }
+
     public async Task CompleteSetupAsync()
     {
         if (_settingsService is null)
@@ -594,6 +789,7 @@ public sealed class WorkstationDashboardViewModel : INotifyPropertyChanged
         OnPropertyChanged(nameof(WorkstationWorkStartTime));
         OnPropertyChanged(nameof(WorkstationWorkEndTime));
         OnPropertyChanged(nameof(NeedsSetup));
+        OnPropertyChanged(nameof(ShowEmptySalaryGuide));
         LastMessage = "30 秒配置完成。小熊已按你的月薪和工时估算今日状态。";
         await RefreshAsync();
     }
@@ -607,7 +803,8 @@ public sealed class WorkstationDashboardViewModel : INotifyPropertyChanged
 
         await _settingsService.SetAsync(SettingKeys.WorkBearSetupCompleted, true, CancellationToken.None);
         OnPropertyChanged(nameof(NeedsSetup));
-        LastMessage = "已跳过引导。可随时在下方「工作规则设置」里补月薪和上下班时间。";
+        OnPropertyChanged(nameof(ShowEmptySalaryGuide));
+        LastMessage = "已跳过引导。可随时在下方「工作规则设置」里补月薪和上下班时间，或点上方引导卡片。";
     }
 
     private async Task SetSettingAsync<T>(string key, T value)
@@ -646,13 +843,13 @@ public sealed class WorkstationDashboardViewModel : INotifyPropertyChanged
         {
             nameof(Title), nameof(Subtitle), nameof(CurrentStateText), nameof(WorkStatusText), nameof(BearStatusText), nameof(BearLineText),
             nameof(OffWorkCountdownText), nameof(TodayEarnedText), nameof(MonthEarnedText), nameof(MinuteValueText), nameof(BossPaidText), nameof(PaydayText),
-            nameof(FishingButtonText), nameof(CurrentFishingText), nameof(CurrentFishingValueText), nameof(TodayFishingDurationText), nameof(TodayFishingValueText),
+            nameof(FishingButtonText), nameof(IsFishing), nameof(FishingStatusBanner), nameof(FishingBorderBrush), nameof(FishingBorderThickness), nameof(HeroBorderOpacity), nameof(HasDailyReport), nameof(DailyReportDisplayText), nameof(CurrentFishingText), nameof(CurrentFishingValueText), nameof(TodayFishingDurationText), nameof(TodayFishingValueText),
             nameof(CopyCountText), nameof(PasteCountText), nameof(GestureCountText), nameof(SavedClicksText), nameof(OpenClipboardCountText), nameof(ActionStatsText),
             nameof(ProtectionHintText), nameof(WorkTipText), nameof(ContinuousWorkText), nameof(NextRestReminderText), nameof(RestReminderCountText), nameof(RestRiskText),
             nameof(RestReminderButtonText), nameof(SprintCountdownText), nameof(SprintSuggestionText), nameof(DailyRatingText), nameof(DailyReportText), nameof(SalaryHintText),
-            nameof(AutoShowDailyReport), nameof(AutoDailyReportButtonText), nameof(NeedsSetup), nameof(RestReminderLimitText), nameof(RestReminderMaxPerDay),
-            nameof(RestReminderMaxPerWeek), nameof(RestReminderMinContinuousMinutes), nameof(PrivacyHintText), nameof(PeriodReportText),
-            nameof(ShareCardStyle), nameof(HudFunEnabled), nameof(GestureXpBonusEnabled)
+            nameof(AutoShowDailyReport), nameof(AutoDailyReportButtonText), nameof(NeedsSetup), nameof(ShowEmptySalaryGuide), nameof(RestReminderLimitText), nameof(RestReminderMaxPerDay),
+            nameof(RestReminderMaxPerWeek), nameof(RestReminderMinContinuousMinutes), nameof(PrivacyHintText), nameof(GreetingText), nameof(PeriodReportText),
+            nameof(StageAccentColor), nameof(StageStartColor), nameof(StageAccentBrush), nameof(StageStartBrush), nameof(StageSoftBrush), nameof(RestRiskBrush), nameof(RestRiskSoftBrush), nameof(RestRiskAccentColor), nameof(RestRiskLevel), nameof(WorkdayProgress), nameof(WorkdayProgressPercent), nameof(WorkdayProgressText), nameof(OffWorkProgress), nameof(OffWorkProgressText), nameof(ShareCardStyle), nameof(HudFunEnabled), nameof(GestureXpBonusEnabled)
         })
         {
             OnPropertyChanged(name);
@@ -670,6 +867,25 @@ public sealed class WorkstationDashboardViewModel : INotifyPropertyChanged
     {
         if (value <= TimeSpan.Zero) return "到点了";
         return $"{(int)value.TotalHours:D2}:{value.Minutes:D2}:{value.Seconds:D2}";
+    }
+
+
+    private static Media.Brush ParseBrush(string? hex, string fallback)
+    {
+        return new Media.SolidColorBrush(ParseColor(hex, fallback));
+    }
+
+    private static Media.Color ParseColor(string? hex, string fallback)
+    {
+        var value = string.IsNullOrWhiteSpace(hex) ? fallback : hex.Trim();
+        try
+        {
+            return (Media.Color)Media.ColorConverter.ConvertFromString(value)!;
+        }
+        catch
+        {
+            return (Media.Color)Media.ColorConverter.ConvertFromString(fallback)!;
+        }
     }
 
     private static string FormatMoney(decimal value) => $"￥{value:F2}";

@@ -95,7 +95,12 @@ public sealed class WorkstationDashboardService : IWorkstationDashboardService
             overtime,
             rating,
             report.ReportText,
-            "仅供娱乐估算，不作财务或考勤依据；所有数据仅保存在本地。");
+            "仅供娱乐估算，不作财务或考勤依据；所有数据仅保存在本地。",
+            stageSnapshot.Theme.AccentColor,
+            stageSnapshot.Theme.StartColor,
+            stageSnapshot.Theme.EndColor,
+            stageSnapshot.WorkProgress,
+            MapRestRiskLevel(WorkBearTextProvider.RestRisk(stageSnapshot.EffectiveWorkedTime, stageSnapshot.Stage)));
     }
 
     public async Task StartFishingAsync(DateTimeOffset now, CancellationToken cancellationToken)
@@ -518,17 +523,28 @@ public sealed class WorkstationDashboardService : IWorkstationDashboardService
         string bearLine)
     {
         var text = new StringBuilder();
-        text.AppendLine("今日牛马生存报告：");
-        text.AppendLine(CultureInfo.InvariantCulture, $"今天你在工位坚守了 {FormatDuration(workDuration)}。");
-        text.AppendLine(CultureInfo.InvariantCulture, $"有效工位时间约 {FormatDuration(effectiveWorkDuration)}，加班 {FormatDuration(overtime)}。");
-        text.AppendLine(CultureInfo.InvariantCulture, $"老板已为你支出 {FormatMoney(todayEarned)}。");
-        text.AppendLine(CultureInfo.InvariantCulture, $"复制 {stats.CopyCount} 次，粘贴 {stats.PasteCount} 次，手势 {stats.GestureCount} 次，打开剪贴板 {stats.OpenClipboardCount} 次。");
-        text.AppendLine(CultureInfo.InvariantCulture, $"你通过 GestureClip 少点了 {stats.EstimatedSavedClicks} 次鼠标。");
-        text.AppendLine(CultureInfo.InvariantCulture, $"今日摸鱼 {FormatDuration(fishingDuration)}，约值 {FormatMoney(fishingValue)}。");
-        text.AppendLine(CultureInfo.InvariantCulture, $"今日休息提醒 {stats.OverworkReminderCount} 次。");
-        text.AppendLine(CultureInfo.InvariantCulture, $"工位小熊评价：{rating}。");
-        text.AppendLine(CultureInfo.InvariantCulture, $"小熊一句话：{bearLine}");
-        text.Append("隐私：报告不包含剪贴板正文、图片内容、浏览器内容或敏感路径。");
+        text.AppendLine("今日牛马生存报告");
+        text.AppendLine();
+        text.AppendLine("⏱ 工时");
+        text.AppendLine(CultureInfo.InvariantCulture, $"· 坚守工位 {FormatDuration(workDuration)}");
+        text.AppendLine(CultureInfo.InvariantCulture, $"· 有效工时约 {FormatDuration(effectiveWorkDuration)} · 加班 {FormatDuration(overtime)}");
+        text.AppendLine();
+        text.AppendLine("💰 收益（本地估算）");
+        text.AppendLine(CultureInfo.InvariantCulture, $"· 老板今日已支出 {FormatMoney(todayEarned)}");
+        text.AppendLine();
+        text.AppendLine("📊 动作");
+        text.AppendLine(CultureInfo.InvariantCulture, $"· 复制 {stats.CopyCount} · 粘贴 {stats.PasteCount} · 手势 {stats.GestureCount} · 打开剪贴板 {stats.OpenClipboardCount}");
+        text.AppendLine(CultureInfo.InvariantCulture, $"· 大约少点了 {stats.EstimatedSavedClicks} 次鼠标");
+        text.AppendLine();
+        text.AppendLine("🐟 摸鱼");
+        text.AppendLine(CultureInfo.InvariantCulture, $"· 今日摸鱼 {FormatDuration(fishingDuration)} · 约值 {FormatMoney(fishingValue)}");
+        text.AppendLine(CultureInfo.InvariantCulture, $"· 休息提醒 {stats.OverworkReminderCount} 次");
+        text.AppendLine();
+        text.AppendLine("🐻 小熊点评");
+        text.AppendLine(CultureInfo.InvariantCulture, $"· 评级：{rating}");
+        text.AppendLine(CultureInfo.InvariantCulture, $"· {bearLine}");
+        text.AppendLine();
+        text.Append("隐私：报告不含剪贴板正文、图片、浏览器内容或敏感路径。");
 
         return new WorkBearDailyReport(
             date,
@@ -548,6 +564,15 @@ public sealed class WorkstationDashboardService : IWorkstationDashboardService
             bearLine,
             text.ToString());
     }
+
+
+    private static string MapRestRiskLevel(string restRiskText) => restRiskText switch
+    {
+        "已超时工作" => "critical",
+        "建议活动" => "high",
+        "注意休息" => "caution",
+        _ => "normal"
+    };
 
     private static string FormatMoney(decimal value) => string.Create(CultureInfo.InvariantCulture, $"￥{value:0.00}");
 

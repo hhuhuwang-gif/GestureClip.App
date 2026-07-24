@@ -117,7 +117,7 @@ public sealed class WorkstationDashboardServiceTests
         var report = await service.GenerateDailyReportAsync(now, CancellationToken.None);
 
         Assert.Contains("今日牛马生存报告", report.ReportText, StringComparison.Ordinal);
-        Assert.Contains("不包含剪贴板正文", report.ReportText, StringComparison.Ordinal);
+        Assert.Contains("不含剪贴板正文", report.ReportText, StringComparison.Ordinal);
         Assert.DoesNotContain("password", report.ReportText, StringComparison.OrdinalIgnoreCase);
         Assert.DoesNotContain("https://", report.ReportText, StringComparison.OrdinalIgnoreCase);
     }

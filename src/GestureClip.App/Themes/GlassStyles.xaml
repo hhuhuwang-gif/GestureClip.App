@@ -362,4 +362,245 @@
             </Setter.Value>
         </Setter>
     </Style>
+
+    <!-- WorkBear Hub: readable hierarchy + emoji-capable font stack -->
+    <Style x:Key="HubRootTextStyle" TargetType="TextBlock">
+        <Setter Property="FontFamily" Value="Segoe UI Variable Text, Segoe UI Emoji, Segoe UI Symbol, Microsoft YaHei UI, Segoe UI" />
+        <Setter Property="Foreground" Value="{DynamicResource BrushTextPrimary}" />
+        <Setter Property="TextOptions.TextFormattingMode" Value="Display" />
+        <Setter Property="TextOptions.TextRenderingMode" Value="ClearType" />
+    </Style>
+
+    <Style x:Key="HubTitleStyle" TargetType="TextBlock" BasedOn="{StaticResource HubRootTextStyle}">
+        <Setter Property="FontSize" Value="22" />
+        <Setter Property="FontWeight" Value="SemiBold" />
+        <Setter Property="LineHeight" Value="30" />
+    </Style>
+
+    <Style x:Key="HubSubtitleStyle" TargetType="TextBlock" BasedOn="{StaticResource HubRootTextStyle}">
+        <Setter Property="FontSize" Value="12" />
+        <Setter Property="Foreground" Value="{DynamicResource BrushTextSecondary}" />
+        <Setter Property="LineHeight" Value="18" />
+        <Setter Property="TextWrapping" Value="Wrap" />
+    </Style>
+
+    <Style x:Key="HubMetricLabelStyle" TargetType="TextBlock" BasedOn="{StaticResource HubRootTextStyle}">
+        <Setter Property="FontSize" Value="12" />
+        <Setter Property="Foreground" Value="{DynamicResource BrushTextMuted}" />
+        <Setter Property="LineHeight" Value="18" />
+    </Style>
+
+    <Style x:Key="HubMetricValueStyle" TargetType="TextBlock" BasedOn="{StaticResource HubRootTextStyle}">
+        <Setter Property="FontSize" Value="24" />
+        <Setter Property="FontWeight" Value="SemiBold" />
+        <Setter Property="LineHeight" Value="32" />
+    </Style>
+
+    <Style x:Key="HubBodyStyle" TargetType="TextBlock" BasedOn="{StaticResource HubRootTextStyle}">
+        <Setter Property="FontSize" Value="13" />
+        <Setter Property="Foreground" Value="{DynamicResource BrushTextSecondary}" />
+        <Setter Property="LineHeight" Value="20" />
+        <Setter Property="TextWrapping" Value="Wrap" />
+    </Style>
+
+    <Style x:Key="HubHeroCardStyle" TargetType="Border" BasedOn="{StaticResource GlassCardStyle}">
+        <Setter Property="Padding" Value="18" />
+        <Setter Property="CornerRadius" Value="16" />
+        <Setter Property="Background" Value="{DynamicResource BrushGlassStrong}" />
+    </Style>
+
+    <Style x:Key="HubSetupCardStyle" TargetType="Border" BasedOn="{StaticResource GlassCardStyle}">
+        <Setter Property="Padding" Value="18" />
+        <Setter Property="CornerRadius" Value="16" />
+        <Setter Property="Background" Value="{DynamicResource BrushGlassAccent}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource BrushPrimarySoft}" />
+    </Style>
+
+    <Style x:Key="HubSectionCardStyle" TargetType="Border">
+        <Setter Property="Padding" Value="14,10,14,4" />
+        <Setter Property="Margin" Value="0" />
+        <Setter Property="Background" Value="Transparent" />
+        <Setter Property="BorderThickness" Value="0" />
+    </Style>
+
+    <Style x:Key="HubSectionExpanderStyle" TargetType="Expander">
+        <Setter Property="Foreground" Value="{DynamicResource BrushTextPrimary}" />
+        <Setter Property="Background" Value="Transparent" />
+        <Setter Property="BorderThickness" Value="0" />
+        <Setter Property="Margin" Value="0,0,0,8" />
+        <Setter Property="FontFamily" Value="Segoe UI Variable Text, Segoe UI Emoji, Segoe UI Symbol, Microsoft YaHei UI, Segoe UI" />
+        <Setter Property="FontSize" Value="14" />
+        <Setter Property="FontWeight" Value="SemiBold" />
+        <Setter Property="Padding" Value="0" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="Expander">
+                    <Border x:Name="Root"
+                            Background="{DynamicResource BrushGlassCard}"
+                            BorderBrush="{DynamicResource BrushBorder}"
+                            BorderThickness="1"
+                            CornerRadius="14"
+                            SnapsToDevicePixels="True">
+                        <DockPanel>
+                            <ToggleButton x:Name="HeaderSite"
+                                          DockPanel.Dock="Top"
+                                          IsChecked="{Binding IsExpanded, Mode=TwoWay, RelativeSource={RelativeSource TemplatedParent}}"
+                                          Content="{TemplateBinding Header}"
+                                          Background="Transparent"
+                                          BorderThickness="0"
+                                          Padding="14,12"
+                                          Cursor="Hand"
+                                          Focusable="False"
+                                          FontFamily="{TemplateBinding FontFamily}"
+                                          FontSize="{TemplateBinding FontSize}"
+                                          FontWeight="{TemplateBinding FontWeight}"
+                                          Foreground="{TemplateBinding Foreground}">
+                                <ToggleButton.Template>
+                                    <ControlTemplate TargetType="ToggleButton">
+                                        <Border x:Name="HeaderBorder"
+                                                Background="Transparent"
+                                                CornerRadius="14"
+                                                Padding="{TemplateBinding Padding}">
+                                            <Grid>
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="*" />
+                                                    <ColumnDefinition Width="Auto" />
+                                                </Grid.ColumnDefinitions>
+                                                <ContentPresenter VerticalAlignment="Center"
+                                                                  RecognizesAccessKey="True"
+                                                                  ContentSource="Content"
+                                                                  TextElement.FontFamily="{TemplateBinding FontFamily}"
+                                                                  TextElement.FontSize="{TemplateBinding FontSize}"
+                                                                  TextElement.FontWeight="{TemplateBinding FontWeight}"
+                                                                  TextElement.Foreground="{DynamicResource BrushTextPrimary}" />
+                                                <Path x:Name="Arrow"
+                                                      Grid.Column="1"
+                                                      Width="10"
+                                                      Height="6"
+                                                      Margin="12,0,0,0"
+                                                      VerticalAlignment="Center"
+                                                      Stretch="Uniform"
+                                                      Fill="{DynamicResource BrushTextMuted}"
+                                                      Data="M0,0 L10,0 L5,6 Z"
+                                                      RenderTransformOrigin="0.5,0.5">
+                                                    <Path.RenderTransform>
+                                                        <RotateTransform Angle="-90" />
+                                                    </Path.RenderTransform>
+                                                </Path>
+                                            </Grid>
+                                        </Border>
+                                        <ControlTemplate.Triggers>
+                                            <Trigger Property="IsMouseOver" Value="True">
+                                                <Setter TargetName="HeaderBorder" Property="Background" Value="{DynamicResource BrushControlHover}" />
+                                            </Trigger>
+                                            <Trigger Property="IsChecked" Value="True">
+                                                <Setter TargetName="Arrow" Property="RenderTransform">
+                                                    <Setter.Value>
+                                                        <RotateTransform Angle="0" />
+                                                    </Setter.Value>
+                                                </Setter>
+                                            </Trigger>
+                                        </ControlTemplate.Triggers>
+                                    </ControlTemplate>
+                                </ToggleButton.Template>
+                            </ToggleButton>
+                            <Border x:Name="ContentSite"
+                                    Visibility="Collapsed"
+                                    Padding="4,0,4,10"
+                                    BorderBrush="{DynamicResource BrushBorder}"
+                                    BorderThickness="0,1,0,0">
+                                <ContentPresenter />
+                            </Border>
+                        </DockPanel>
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsExpanded" Value="True">
+                            <Setter TargetName="ContentSite" Property="Visibility" Value="Visible" />
+                        </Trigger>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="Root" Property="BorderBrush" Value="{DynamicResource BrushPrimarySoft}" />
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <Style x:Key="HubProgressTrackStyle" TargetType="Border">
+        <Setter Property="Height" Value="6" />
+        <Setter Property="CornerRadius" Value="999" />
+        <Setter Property="Background" Value="{DynamicResource BrushFillTertiary}" />
+        <Setter Property="SnapsToDevicePixels" Value="True" />
+        <Setter Property="ClipToBounds" Value="True" />
+    </Style>
+
+    <Style x:Key="HubThinProgressBarStyle" TargetType="ProgressBar">
+        <Setter Property="Height" Value="6" />
+        <Setter Property="Minimum" Value="0" />
+        <Setter Property="Maximum" Value="1" />
+        <Setter Property="Background" Value="{DynamicResource BrushFillTertiary}" />
+        <Setter Property="BorderThickness" Value="0" />
+        <Setter Property="Foreground" Value="{DynamicResource BrushPrimaryBright}" />
+        <Setter Property="SnapsToDevicePixels" Value="True" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="ProgressBar">
+                    <Border x:Name="PART_Track"
+                            Background="{TemplateBinding Background}"
+                            CornerRadius="999"
+                            ClipToBounds="True"
+                            Height="{TemplateBinding Height}">
+                        <Border x:Name="PART_Indicator"
+                                HorizontalAlignment="Left"
+                                Background="{TemplateBinding Foreground}"
+                                CornerRadius="999"
+                                Height="{TemplateBinding Height}" />
+                    </Border>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <Style x:Key="HubChipStyle" TargetType="Border">
+        <Setter Property="CornerRadius" Value="999" />
+        <Setter Property="Padding" Value="10,4" />
+        <Setter Property="Background" Value="{DynamicResource BrushAccentSoft}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource BrushPrimarySoft}" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="VerticalAlignment" Value="Center" />
+    </Style>
+
+
+    <!-- Soft metric flash used when countdown/earnings refresh -->
+    <Storyboard x:Key="HubMetricFlashStoryboard">
+        <DoubleAnimation Storyboard.TargetProperty="Opacity"
+                         From="0.55" To="1" Duration="0:0:0.18" />
+    </Storyboard>
+
+    <Style x:Key="HubFishingBannerStyle" TargetType="Border">
+        <Setter Property="CornerRadius" Value="10" />
+        <Setter Property="Padding" Value="10,6" />
+        <Setter Property="Margin" Value="0,10,0,0" />
+        <Setter Property="HorizontalAlignment" Value="Left" />
+        <Setter Property="Background" Value="#3340C4AA" />
+        <Setter Property="BorderBrush" Value="#FF2DD4BF" />
+        <Setter Property="BorderThickness" Value="1" />
+    </Style>
+
+    <Style x:Key="HubReportBlockStyle" TargetType="Border">
+        <Setter Property="Background" Value="{DynamicResource BrushGlassCard}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource BrushBorder}" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="CornerRadius" Value="12" />
+        <Setter Property="Padding" Value="12,10" />
+        <Setter Property="Margin" Value="0,12,0,0" />
+    </Style>
+
+    <Style x:Key="HubReportTextStyle" TargetType="TextBlock" BasedOn="{StaticResource HubBodyStyle}">
+        <Setter Property="FontFamily" Value="Segoe UI Variable Text, Cascadia Mono, Consolas, Microsoft YaHei UI, Segoe UI Emoji, Segoe UI" />
+        <Setter Property="LineHeight" Value="22" />
+        <Setter Property="LineStackingStrategy" Value="BlockLineHeight" />
+        <Setter Property="TextWrapping" Value="Wrap" />
+    </Style>
+
 </ResourceDictionary>

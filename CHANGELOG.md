@@ -1,5 +1,25 @@
 # CHANGELOG
 
+## GestureClip v0.6.32 Beta
+
+### 工位小熊 Hub 美化与人性化
+
+- 修复暗色主题下硬编码浅色卡片导致文字发灰/难读；全局补 emoji 字体栈
+- 阶段色条、休息风险 chip、今日工时/下班细进度条
+- 玻璃风格 Expander；空状态月薪引导；重置今日二次确认
+- Esc 关闭；摸鱼进行中描边与状态条；收益/倒计时轻淡入
+- 日报分段排版（工时/收益/动作/摸鱼/点评）
+
+### 安装包
+
+- 推荐便携 zip：`GestureClip-v0.6.32-beta-win-x64.zip` → 解压双击 `GestureClip.exe`
+- Setup：`GestureClip-Setup-v0.6.32-beta-win-x64.zip` → `Setup.cmd`
+
+### 验证
+
+- `dotnet test ./GestureClip.sln`
+
+
 ## GestureClip v0.6.31 Beta
 
 ### 你点名要的优化
