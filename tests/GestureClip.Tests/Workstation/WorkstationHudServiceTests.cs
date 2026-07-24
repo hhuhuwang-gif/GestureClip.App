@@ -57,7 +57,7 @@ public sealed class WorkstationHudServiceTests
         var snapshot = await service.BuildSnapshotAsync(hudInfo, gainedXp: 3, DateTimeOffset.Now, CancellationToken.None);
 
         Assert.Equal("粘贴成功 · 今日已赚 ￥186.40", snapshot.WorkSummaryText);
-        Assert.Equal("手势 37 · 复制 25 · 粘贴 18 · 少点 111 次", snapshot.StatsText);
+        Assert.Equal("手势 37  ·  复制 25  ·  粘贴 18  ·  少点 111", snapshot.StatsText);
         Assert.DoesNotContain("secret clipboard text", snapshot.FunText + snapshot.WorkSummaryText + snapshot.StatsText);
     }
 

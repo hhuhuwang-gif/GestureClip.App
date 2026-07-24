@@ -16,7 +16,7 @@ public sealed class GestureOverlayViewModel : INotifyPropertyChanged
     private string _paydayCountdownText = "--";
     private string _todayEarnedText = "￥0.00";
     private string _todayFishingValueText = "￥0.00";
-    private string _efficiencyStatsText = "复制 0 · 粘贴 0 · 手势 0";
+    private string _efficiencyStatsText = "复制 0  ·  粘贴 0  ·  手势 0";
     private string _savedClicksText = "少点了 0 次";
     private string _funText = "右键一滑，效率开挂";
     private string _gainedXpText = "";
@@ -24,7 +24,7 @@ public sealed class GestureOverlayViewModel : INotifyPropertyChanged
     private string _xpText = "XP 0 / 50";
     private double _xpProgressPercent;
     private string _workSummaryText = "今日 ￥0.00 · 下班 -- · 发薪 --";
-    private string _statsText = "手势 0 · 复制 0 · 粘贴 0 · 少点 0 次";
+    private string _statsText = "手势 0  ·  复制 0  ·  粘贴 0  ·  少点 0";
     private PointCollection _points = [];
     private System.Windows.Media.Brush _strokeBrush = new SolidColorBrush(System.Windows.Media.Color.FromRgb(140, 200, 255));
     private System.Windows.Media.Brush _hudBackgroundBrush = new LinearGradientBrush(

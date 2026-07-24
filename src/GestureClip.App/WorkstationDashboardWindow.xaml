@@ -329,9 +329,11 @@
                                         <TextBlock Text="今日动作统计" Style="{StaticResource HubMetricLabelStyle}" />
                                         <TextBlock Text="{Binding ActionStatsText}"
                                                    Style="{StaticResource HubRootTextStyle}"
-                                                   FontSize="13"
+                                                   FontSize="14"
                                                    FontWeight="SemiBold"
-                                                   TextWrapping="Wrap" />
+                                                   Foreground="{DynamicResource BrushTextPrimary}"
+                                                   TextWrapping="Wrap"
+                                                   LineHeight="22" />
                                     </StackPanel>
                                 </UniformGrid>
                             </StackPanel>

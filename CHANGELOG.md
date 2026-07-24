@@ -1,5 +1,23 @@
 # CHANGELOG
 
+## GestureClip v0.6.33 Beta
+
+### 手势浮层可读性（你每天看见的那一行）
+
+- 修复手势 HUD 底部「手势 · 复制 · 粘贴 · 少点」对比度过低、发灰看不清
+- 统计行改为近白字 + 半透明底衬，字号略加大
+- 次要灰字（手势码标签等）同步提亮
+
+### 安装包
+
+- `GestureClip-v0.6.33-beta-win-x64.zip` → 解压双击 `GestureClip.exe`
+- `GestureClip-Setup-v0.6.33-beta-win-x64.zip` → `Setup.cmd`
+
+### 验证
+
+- `dotnet test ./GestureClip.sln`
+
+
 ## GestureClip v0.6.32 Beta
 
 ### 工位小熊 Hub 美化与人性化

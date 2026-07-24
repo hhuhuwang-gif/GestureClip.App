@@ -12,7 +12,10 @@
         Focusable="False"
         IsHitTestVisible="False"
         ResizeMode="NoResize"
-        WindowStartupLocation="Manual">
+        WindowStartupLocation="Manual"
+        FontFamily="Segoe UI Variable Text, Segoe UI Emoji, Segoe UI Symbol, Microsoft YaHei UI, Segoe UI"
+        TextOptions.TextFormattingMode="Display"
+        TextOptions.TextRenderingMode="ClearType">
     <Grid IsHitTestVisible="False">
         <Canvas IsHitTestVisible="False">
             <Polyline Points="{Binding Points}"
@@ -78,7 +81,7 @@
                                    FontSize="13"
                                    FontWeight="SemiBold" />
                         <TextBlock Text="  ·  "
-                                   Foreground="#668A94A8"
+                                   Foreground="#B8C4D4"
                                    FontSize="13" />
                         <TextBlock Text="{Binding PresetName}"
                                    Foreground="#FFD8E1EE"
@@ -100,9 +103,9 @@
                                    FontWeight="SemiBold"
                                    TextTrimming="CharacterEllipsis" />
                         <TextBlock Text="   手势码: "
-                                   Foreground="#FF8A94A8"
+                                   Foreground="#FFE2E8F0"
                                    FontSize="14"
-                                   FontFamily="Cascadia Mono, Consolas, Microsoft YaHei UI"
+                                   FontFamily="Cascadia Mono, Consolas, Microsoft YaHei UI, Segoe UI Emoji"
                                    FontWeight="SemiBold" />
                         <TextBlock Text="{Binding Pattern}"
                                    Foreground="{Binding HudAccentBrush}"
@@ -156,8 +159,24 @@
                                  Background="#24FFFFFF"
                                  BorderThickness="0" />
                     <StackPanel x:Name="TodayStatsLine" Margin="0,8,0,0">
-                        <TextBlock Text="{Binding WorkSummaryText}" Foreground="#FFFFFFFF" FontSize="13" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" />
-                        <TextBlock Text="{Binding StatsText}" Foreground="#FFC9D4E5" FontSize="12" FontWeight="SemiBold" Margin="0,5,0,0" TextTrimming="CharacterEllipsis" />
+                        <TextBlock Text="{Binding WorkSummaryText}"
+                                   Foreground="#FFF8FAFC"
+                                   FontSize="13"
+                                   FontWeight="SemiBold"
+                                   TextTrimming="CharacterEllipsis" />
+                        <!-- Stats must stay high-contrast: users stare at this line every gesture -->
+                        <Border Background="#33000000"
+                                CornerRadius="8"
+                                Padding="8,5"
+                                Margin="0,6,0,0"
+                                HorizontalAlignment="Left">
+                            <TextBlock Text="{Binding StatsText}"
+                                       Foreground="#FFF1F5F9"
+                                       FontSize="13"
+                                       FontWeight="SemiBold"
+                                       FontFamily="Segoe UI Variable Text, Segoe UI Emoji, Microsoft YaHei UI, Segoe UI"
+                                       TextTrimming="CharacterEllipsis" />
+                        </Border>
                     </StackPanel>
                 </StackPanel>
 
@@ -175,7 +194,7 @@
                                Margin="0,7,0,0"
                                TextTrimming="CharacterEllipsis" />
                     <TextBlock Text="普通右键不显示"
-                               Foreground="#FF8A94A8"
+                               Foreground="#FF94A3B8"
                                FontSize="11"
                                FontWeight="SemiBold"
                                HorizontalAlignment="Right"

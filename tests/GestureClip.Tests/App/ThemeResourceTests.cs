@@ -858,6 +858,10 @@ public sealed class ThemeResourceTests
         Assert.Contains("FontSize=\"34\"", xaml);
         Assert.Contains("FontSize=\"28\"", xaml);
         Assert.Contains("FontSize=\"14\"", xaml);
+        Assert.Contains("StatsText", xaml);
+        Assert.Contains("Foreground=\"#FFF1F5F9\"", xaml);
+        Assert.Contains("TodayStatsLine", xaml);
+        Assert.DoesNotContain("Foreground=\"#FFC9D4E5\"", xaml);
         Assert.DoesNotContain("Pattern: ", xaml);
     }
 

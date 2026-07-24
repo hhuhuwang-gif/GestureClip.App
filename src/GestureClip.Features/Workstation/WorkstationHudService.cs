@@ -76,7 +76,7 @@ public sealed class WorkstationHudService : IWorkstationHudService
             showLevel ? level.XpText : string.Empty,
             showLevel ? level.ProgressPercent : 0d,
             showStatusText ? GetWorkSummaryText(dashboard, hudInfo, mergedActionCount) : string.Empty,
-            showStatusText ? $"手势 {dashboard.GestureCount} · 复制 {dashboard.CopyCount} · 粘贴 {dashboard.PasteCount} · 少点 {dashboard.EstimatedSavedClicks} 次" : string.Empty,
+            showStatusText ? $"手势 {dashboard.GestureCount}  ·  复制 {dashboard.CopyCount}  ·  粘贴 {dashboard.PasteCount}  ·  少点 {dashboard.EstimatedSavedClicks}" : string.Empty,
             showStatusText ? theme.ShortStatusText : string.Empty,
             showLevel,
             stageSnapshot.Stage,
