@@ -1,13 +1,13 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
-    <TargetFramework>net8.0-windows</TargetFramework>
+    <TargetFramework>net8.0-windows10.0.19041.0</TargetFramework>
     <AssemblyName>GestureClip</AssemblyName>
     <Product>GestureClip</Product>
-    <Version>0.6.30-beta</Version>
-    <FileVersion>0.6.30.0</FileVersion>
-    <AssemblyVersion>0.6.30.0</AssemblyVersion>
-    <InformationalVersion>0.6.30 Beta</InformationalVersion>
+    <Version>0.6.31-beta</Version>
+    <FileVersion>0.6.31.0</FileVersion>
+    <AssemblyVersion>0.6.31.0</AssemblyVersion>
+    <InformationalVersion>0.6.31 Beta</InformationalVersion>
     <UseWPF>true</UseWPF>
     <UseWindowsForms>true</UseWindowsForms>
     <ApplicationIcon>Assets\GestureClip.ico</ApplicationIcon>

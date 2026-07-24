@@ -48,6 +48,7 @@ public static class InfrastructureServiceCollectionExtensions
         services.AddSingleton<IUpdateCheckService, GitHubReleaseUpdateCheckService>();
         services.AddSingleton<IUpdateInstallerService, GitHubReleaseUpdateInstallerService>();
         services.AddSingleton<ISensitiveCaptureGate, SensitiveCaptureGate>();
+        services.AddSingleton<IImageOcrService, WindowsImageOcrService>();
 
         return services;
     }

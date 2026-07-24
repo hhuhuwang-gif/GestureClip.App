@@ -17,6 +17,7 @@ public sealed record ClipboardItem(
     DateTimeOffset UpdatedAt,
     DateTimeOffset? LastUsedAt,
     string? ThumbnailContent = null,
+    string? OcrText = null,
     /// <summary>
     /// UI-only: marked when user copied this item from the overlay this session.
     /// Not persisted; used so multi-select copy can show which rows were already handled.

@@ -815,7 +815,7 @@
                                        TextWrapping="Wrap" />
 
 
-                            <TextBlock x:Name="SectionClipboardCleanup" Text="历史数据与清理" Style="{StaticResource SettingsGroupTitleStyle}" Margin="4,28,0,10" />
+                            <TextBlock x:Name="SectionClipboardCleanup" Text="历史数据与清理（含定时保留天数）" Style="{StaticResource SettingsGroupTitleStyle}" Margin="4,28,0,10" />
                             <Border Style="{StaticResource SettingsListContainerStyle}">
                                 <StackPanel>
                                     <Border Style="{StaticResource SettingsFormRowStyle}">

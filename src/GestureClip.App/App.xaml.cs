@@ -85,10 +85,9 @@ public partial class App : System.Windows.Application
                     MessageBoxImage.Warning);
             }
 
-            await _serviceProvider.GetRequiredService<IEdgeTriggerService>().StartAsync(CancellationToken.None);
+            // Hotkeys first (user-facing), then secondary services without blocking first paint too long.
             _serviceProvider.GetRequiredService<IGlobalHotkeyService>().Start();
-            await _serviceProvider.GetRequiredService<IOverworkReminderService>().StartAsync(CancellationToken.None);
-            await _serviceProvider.GetRequiredService<WorkBearDailyReportAutoService>().StartAsync(CancellationToken.None);
+            _ = StartSecondaryServicesAsync(logger);
 
             var onboarding = _serviceProvider.GetRequiredService<IFirstRunOnboardingService>();
             if (onboarding.ShouldShowOnboarding())
@@ -117,6 +116,37 @@ public partial class App : System.Windows.Application
                 MessageBoxButton.OK,
                 MessageBoxImage.Error);
             System.Windows.Application.Current.Shutdown();
+        }
+    }
+
+
+    private async Task StartSecondaryServicesAsync(ILogger logger)
+    {
+        try
+        {
+            await _serviceProvider!.GetRequiredService<IEdgeTriggerService>().StartAsync(CancellationToken.None);
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Edge trigger service failed to start.");
+        }
+
+        try
+        {
+            await _serviceProvider!.GetRequiredService<IOverworkReminderService>().StartAsync(CancellationToken.None);
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Overwork reminder failed to start.");
+        }
+
+        try
+        {
+            await _serviceProvider!.GetRequiredService<WorkBearDailyReportAutoService>().StartAsync(CancellationToken.None);
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "WorkBear daily report service failed to start.");
         }
     }
 

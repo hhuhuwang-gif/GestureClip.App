@@ -22,7 +22,7 @@ public sealed class ClipboardRepository : IClipboardRepository
             """
 SELECT
     Id, ContentType, TextContent, ThumbnailContent, PreviewText, Hash, PlainTextHash, SourceApp, SourceProcess,
-    IsPinned, IsFavorite, IsSensitive, UseCount, CreatedAt, UpdatedAt, LastUsedAt
+    IsPinned, IsFavorite, IsSensitive, UseCount, CreatedAt, UpdatedAt, LastUsedAt, OcrText
 FROM ClipboardItems
 WHERE Hash = @Hash
 LIMIT 1;
@@ -40,11 +40,11 @@ LIMIT 1;
             """
 INSERT INTO ClipboardItems (
     Id, ContentType, TextContent, PreviewText, Hash, PlainTextHash, SourceApp, SourceProcess,
-    ThumbnailContent, IsPinned, IsFavorite, IsSensitive, UseCount, CreatedAt, UpdatedAt, LastUsedAt
+    ThumbnailContent, IsPinned, IsFavorite, IsSensitive, UseCount, CreatedAt, UpdatedAt, LastUsedAt, OcrText
 )
 SELECT
     @Id, @ContentType, @TextContent, @PreviewText, @Hash, @PlainTextHash, @SourceApp, @SourceProcess,
-    @ThumbnailContent, @IsPinned, @IsFavorite, @IsSensitive, @UseCount, @CreatedAt, @UpdatedAt, @LastUsedAt
+    @ThumbnailContent, @IsPinned, @IsFavorite, @IsSensitive, @UseCount, @CreatedAt, @UpdatedAt, @LastUsedAt, @OcrText
 WHERE NOT EXISTS (
     SELECT 1
     FROM ClipboardItems
@@ -87,8 +87,8 @@ WHERE NOT EXISTS (
         if (normalizedKeyword.Length > 0)
         {
             whereParts.Add("""
-((ContentType = 'text' AND (TextContent LIKE @LikeKeyword OR PreviewText LIKE @LikeKeyword))
-   OR (ContentType <> 'text' AND PreviewText LIKE @LikeKeyword))
+((ContentType = 'text' AND (TextContent LIKE @LikeKeyword OR PreviewText LIKE @LikeKeyword OR IFNULL(OcrText,'') LIKE @LikeKeyword))
+   OR (ContentType <> 'text' AND (PreviewText LIKE @LikeKeyword OR IFNULL(OcrText,'') LIKE @LikeKeyword)))
 """);
         }
 
@@ -105,7 +105,7 @@ SELECT
         ELSE ThumbnailContent
     END AS ThumbnailContent,
     PreviewText, Hash, PlainTextHash, SourceApp, SourceProcess,
-    IsPinned, IsFavorite, IsSensitive, UseCount, CreatedAt, UpdatedAt, LastUsedAt
+    IsPinned, IsFavorite, IsSensitive, UseCount, CreatedAt, UpdatedAt, LastUsedAt, OcrText
 FROM ClipboardItems
 {whereSql}
 ORDER BY IsPinned DESC, COALESCE(LastUsedAt, CreatedAt) DESC, CreatedAt DESC
@@ -132,7 +132,7 @@ LIMIT @Limit OFFSET @Offset;
             """
 SELECT
     Id, ContentType, TextContent, ThumbnailContent, PreviewText, Hash, PlainTextHash, SourceApp, SourceProcess,
-    IsPinned, IsFavorite, IsSensitive, UseCount, CreatedAt, UpdatedAt, LastUsedAt
+    IsPinned, IsFavorite, IsSensitive, UseCount, CreatedAt, UpdatedAt, LastUsedAt, OcrText
 FROM ClipboardItems
 WHERE ContentType = 'text'
 ORDER BY CreatedAt DESC
@@ -150,7 +150,7 @@ LIMIT 1;
             """
 SELECT
     Id, ContentType, TextContent, ThumbnailContent, PreviewText, Hash, PlainTextHash, SourceApp, SourceProcess,
-    IsPinned, IsFavorite, IsSensitive, UseCount, CreatedAt, UpdatedAt, LastUsedAt
+    IsPinned, IsFavorite, IsSensitive, UseCount, CreatedAt, UpdatedAt, LastUsedAt, OcrText
 FROM ClipboardItems
 WHERE Id = @Id
 LIMIT 1;
@@ -419,6 +419,7 @@ WHERE IsPinned = 0
             item.ContentType,
             item.TextContent,
             item.ThumbnailContent,
+            item.OcrText,
             item.PreviewText,
             item.Hash,
             item.PlainTextHash,
@@ -470,12 +471,31 @@ WHERE Id = @Id;
         };
     }
 
+    public async Task SetOcrTextAsync(Guid id, string? ocrText, CancellationToken cancellationToken)
+    {
+        await using var connection = await _connectionFactory.OpenConnectionAsync(cancellationToken);
+        await connection.ExecuteAsync(
+            """
+UPDATE ClipboardItems
+SET OcrText = @OcrText,
+    UpdatedAt = @UpdatedAt
+WHERE Id = @Id;
+""",
+            new
+            {
+                Id = id.ToString(),
+                OcrText = ocrText,
+                UpdatedAt = DateTimeOffset.UtcNow.ToString("O")
+            });
+    }
+
     private sealed class ClipboardItemRow
     {
         public string Id { get; set; } = "";
         public string ContentType { get; set; } = "";
         public string? TextContent { get; set; }
         public string? ThumbnailContent { get; set; }
+        public string? OcrText { get; set; }
         public string? PreviewText { get; set; }
         public string Hash { get; set; } = "";
         public string? PlainTextHash { get; set; }
@@ -507,7 +527,8 @@ WHERE Id = @Id;
                 DateTimeOffset.Parse(CreatedAt),
                 DateTimeOffset.Parse(UpdatedAt),
                 string.IsNullOrWhiteSpace(LastUsedAt) ? null : DateTimeOffset.Parse(LastUsedAt),
-                ThumbnailContent);
+                ThumbnailContent,
+                OcrText);
         }
     }
 }

@@ -118,6 +118,27 @@ public sealed partial class SettingsViewModel
         _globalHotkeyService.Stop();
         _globalHotkeyService.Start();
         OnPropertyChanged(nameof(HotkeyStatusText));
+        if (_globalHotkeyService.Status.State == HotkeyRegistrationState.Failed)
+        {
+            var failed = HotkeyDefinition.ParseOrDefault(
+                _settingsService.Get(SettingKeys.HotkeyOpenClipboardOverlayKey, HotkeyDefinition.DefaultOpenClipboardOverlay));
+            var tips = HotkeyDefinition.SuggestAlternatives(failed, 4)
+                .Select(h => h.DisplayText)
+                .ToArray();
+            HotkeyCaptureStatusText = tips.Length == 0
+                ? HotkeyStatusText
+                : $"{HotkeyStatusText}。可尝试：{string.Join(" / ", tips)}";
+        }
+    }
+
+    public void ApplySuggestedHotkey(string displayText)
+    {
+        if (string.IsNullOrWhiteSpace(displayText))
+        {
+            return;
+        }
+
+        OpenClipboardHotkeyText = displayText;
     }
 
 

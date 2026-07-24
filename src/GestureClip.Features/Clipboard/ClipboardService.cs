@@ -26,6 +26,7 @@ public sealed class ClipboardService : IClipboardService
     private readonly IAppBlacklistService _appBlacklistService;
     private readonly ISettingsService _settingsService;
     private readonly IWorkstationDashboardService _workstationDashboardService;
+    private readonly IImageOcrService? _imageOcrService;
     private readonly ILogger<ClipboardService> _logger;
     private int _started;
     private Channel<ClipboardChangedEventArgs>? _captureQueue;
@@ -48,6 +49,7 @@ public sealed class ClipboardService : IClipboardService
         ISettingsService settingsService,
         IWorkstationDashboardService workstationDashboardService,
         ILogger<ClipboardService> logger,
+        IImageOcrService? imageOcrService = null,
         ISensitiveCaptureGate? sensitiveCaptureGate = null)
     {
         _clipboardListener = clipboardListener;
@@ -56,6 +58,7 @@ public sealed class ClipboardService : IClipboardService
         _clipboardRepository = clipboardRepository;
         _clipboardHashService = clipboardHashService;
         _sensitiveContentDetector = sensitiveContentDetector;
+        _imageOcrService = imageOcrService;
         _sensitiveCaptureGate = sensitiveCaptureGate;
         _foregroundAppService = foregroundAppService;
         _appBlacklistService = appBlacklistService;
@@ -559,12 +562,36 @@ public sealed class ClipboardService : IClipboardService
         thumbnailWatch.Stop();
         LogPerf("ThumbnailDecodeDurationMs", thumbnailWatch.ElapsedMilliseconds, ("ContentType", "image/png"));
 
+        var itemId = Guid.NewGuid();
+        string? ocrText = null;
+        if (_imageOcrService is not null)
+        {
+            try
+            {
+                var ocrWatch = Stopwatch.StartNew();
+                // Prefer thumbnail for speed; fall back to full image.
+                ocrText = await _imageOcrService.RecognizePngBase64Async(
+                    string.IsNullOrWhiteSpace(thumbnailContent) ? pngBase64 : thumbnailContent,
+                    cancellationToken);
+                ocrWatch.Stop();
+                LogPerf("OcrMs", ocrWatch.ElapsedMilliseconds, ("ContentType", "image/png"), ("OcrLen", ocrText?.Length ?? 0));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogDebug(ex, "Image OCR skipped.");
+            }
+        }
+
+        var preview = string.IsNullOrWhiteSpace(ocrText)
+            ? "图片"
+            : (ocrText.Length > 80 ? ocrText[..80] + "…" : ocrText);
+
         await _clipboardRepository.InsertAsync(
             new ClipboardItem(
-                Guid.NewGuid(),
+                itemId,
                 "image/png",
                 pngBase64,
-                "图片",
+                preview,
                 hash,
                 null,
                 foreground.WindowTitle,
@@ -576,12 +603,13 @@ public sealed class ClipboardService : IClipboardService
                 now,
                 now,
                 null,
-                thumbnailContent),
+                thumbnailContent,
+                ocrText),
             cancellationToken);
         insertWatch.Stop();
         LogPerf("InsertMs", insertWatch.ElapsedMilliseconds, ("ContentType", "image/png"));
         RecordCopyInBackground(now);
-        _logger.LogInformation("Clipboard image item captured.");
+        _logger.LogInformation("Clipboard image item captured. OcrChars={OcrChars}", ocrText?.Length ?? 0);
     }
 
     private void RecordCopyInBackground(DateTimeOffset now)

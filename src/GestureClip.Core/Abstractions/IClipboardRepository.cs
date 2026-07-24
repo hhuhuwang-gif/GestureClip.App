@@ -59,6 +59,11 @@ public interface IClipboardRepository
 
     Task SetFavoriteAsync(Guid id, bool isFavorite, CancellationToken cancellationToken);
 
+    Task SetOcrTextAsync(Guid id, string? ocrText, CancellationToken cancellationToken)
+    {
+        return Task.CompletedTask;
+    }
+
     Task<bool> IsProcessBlockedAsync(string? processName, CancellationToken cancellationToken);
 
     Task<int> GetCountAsync(CancellationToken cancellationToken);

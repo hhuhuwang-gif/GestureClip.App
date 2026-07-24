@@ -334,6 +334,56 @@ public sealed record HotkeyDefinition(uint Modifiers, uint VirtualKey, string Di
 
         return display.Length > 0;
     }
+
+    public static IReadOnlyList<HotkeyDefinition> SuggestAlternatives(HotkeyDefinition current, int count = 6)
+    {
+        var suggestions = new List<HotkeyDefinition>();
+        var baseMods = new[]
+        {
+            HotkeyModifier.Control | HotkeyModifier.Alt,
+            HotkeyModifier.Control | HotkeyModifier.Shift,
+            HotkeyModifier.Alt | HotkeyModifier.Shift,
+            HotkeyModifier.Control | HotkeyModifier.Alt | HotkeyModifier.Shift,
+            HotkeyModifier.Win | HotkeyModifier.Shift,
+            HotkeyModifier.Control | HotkeyModifier.Win,
+        };
+
+        var keys = new uint[]
+        {
+            current.VirtualKey,
+            (uint)'V', (uint)'C', (uint)'H', (uint)'J', (uint)'K', (uint)'L',
+            (uint)'Q', (uint)'B', (uint)'N', HotkeyVirtualKey.Oem3, 0x20
+        };
+
+        foreach (var mods in baseMods)
+        {
+            foreach (var key in keys.Distinct())
+            {
+                if (!TryFromVirtualKey(mods, key, out var candidate))
+                {
+                    continue;
+                }
+
+                if (string.Equals(candidate.DisplayText, current.DisplayText, StringComparison.Ordinal))
+                {
+                    continue;
+                }
+
+                if (suggestions.Any(s => string.Equals(s.DisplayText, candidate.DisplayText, StringComparison.Ordinal)))
+                {
+                    continue;
+                }
+
+                suggestions.Add(candidate);
+                if (suggestions.Count >= count)
+                {
+                    return suggestions;
+                }
+            }
+        }
+
+        return suggestions;
+    }
 }
 
 public static class HotkeyModifier

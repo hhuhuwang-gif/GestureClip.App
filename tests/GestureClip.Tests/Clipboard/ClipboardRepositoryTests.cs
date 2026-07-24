@@ -474,7 +474,8 @@ public sealed class ClipboardRepositoryTests
             await runner.RunAsync(connection,
                 [
                     new SqlMigration(1, "initial", InitialMigration.Sql),
-                    new SqlMigration(5, "clipboard_image_thumbnails", ClipboardThumbnailMigration.Sql)
+                    new SqlMigration(5, "clipboard_image_thumbnails", ClipboardThumbnailMigration.Sql),
+                    new SqlMigration(7, "clipboard_ocr_text", ClipboardOcrMigration.Sql)
                 ],
                 CancellationToken.None);
             return database;

@@ -120,8 +120,36 @@ public sealed class TrayIconService : IDisposable
             _menu.Items.Add(CreateWorkBearMenu());
         }
         _menu.Items.Add(new Forms.ToolStripSeparator());
+        // Quick permanent toggles
         _menu.Items.Add(
-            snapshot.ClipboardCaptureEnabled ? "暂停剪贴板记录 10 分钟" : "恢复剪贴板记录",
+            snapshot.ClipboardCaptureEnabled ? "✓ 剪贴板记录：开" : "剪贴板记录：关",
+            null,
+            async (_, _) =>
+            {
+                await _featureToggleService.SetClipboardCaptureEnabledAsync(!snapshot.ClipboardCaptureEnabled, CancellationToken.None);
+                ShowWorkBearBalloon("GestureClip", snapshot.ClipboardCaptureEnabled ? "剪贴板记录已关闭。" : "剪贴板记录已开启。");
+            });
+        _menu.Items.Add(
+            snapshot.GestureEnabled ? "✓ 鼠标手势：开" : "鼠标手势：关",
+            null,
+            async (_, _) =>
+            {
+                await _featureToggleService.SetGestureEnabledAsync(!snapshot.GestureEnabled, CancellationToken.None);
+                ShowWorkBearBalloon("GestureClip", snapshot.GestureEnabled ? "鼠标手势已关闭。" : "鼠标手势已开启。");
+            });
+        var bothOn = snapshot.ClipboardCaptureEnabled && snapshot.GestureEnabled;
+        _menu.Items.Add(
+            bothOn ? "暂停全部功能" : "恢复全部功能",
+            null,
+            async (_, _) =>
+            {
+                var enable = !bothOn;
+                await _featureToggleService.SetClipboardCaptureEnabledAsync(enable, CancellationToken.None);
+                await _featureToggleService.SetGestureEnabledAsync(enable, CancellationToken.None);
+                ShowWorkBearBalloon("GestureClip", enable ? "剪贴板与手势已恢复。" : "剪贴板与手势已全部暂停。");
+            });
+        _menu.Items.Add(
+            snapshot.ClipboardCaptureEnabled ? "暂停剪贴板 10 分钟" : "恢复剪贴板记录",
             null,
             async (_, _) =>
             {
@@ -135,7 +163,7 @@ public sealed class TrayIconService : IDisposable
                 }
             });
         _menu.Items.Add(
-            snapshot.GestureEnabled ? "暂停鼠标手势 10 分钟" : "恢复鼠标手势",
+            snapshot.GestureEnabled ? "暂停手势 10 分钟" : "恢复鼠标手势",
             null,
             async (_, _) =>
             {
@@ -149,6 +177,7 @@ public sealed class TrayIconService : IDisposable
                 }
             });
         _menu.Items.Add(new Forms.ToolStripSeparator());
+        _menu.Items.Add("卸载 GestureClip…", null, (_, _) => LaunchUninstall());
         _menu.Items.Add("查看日志", null, (_, _) => OpenDirectory(_paths.LogDirectory));
         _menu.Items.Add("打开数据目录", null, (_, _) => OpenDirectory(Path.GetDirectoryName(_paths.DatabasePath) ?? _paths.LogDirectory));
         _menu.Items.Add("导出诊断包", null, async (_, _) =>
@@ -275,6 +304,58 @@ public sealed class TrayIconService : IDisposable
         await Task.Delay(duration);
         await _featureToggleService.SetGestureEnabledAsync(true, CancellationToken.None);
         ShowWorkBearBalloon("GestureClip", "鼠标手势已恢复。");
+    }
+
+
+    private void LaunchUninstall()
+    {
+        try
+        {
+            var candidates = new[]
+            {
+                Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Programs", "GestureClip", "uninstall.ps1"),
+                Path.Combine(AppContext.BaseDirectory, "uninstall.ps1"),
+            };
+            var uninstall = candidates.Select(Path.GetFullPath).FirstOrDefault(File.Exists);
+            if (uninstall is null)
+            {
+                var dir = AppContext.BaseDirectory.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+                var result = Forms.MessageBox.Show(
+                    "未找到卸载脚本（便携版可直接删除程序文件夹）。\n\n是否打开当前程序目录？\n\n用户数据在 %LOCALAPPDATA%\\GestureClip\\，删除程序不会自动清除。",
+                    "卸载 GestureClip",
+                    Forms.MessageBoxButtons.YesNo,
+                    Forms.MessageBoxIcon.Question);
+                if (result == Forms.DialogResult.Yes)
+                {
+                    OpenDirectory(dir);
+                }
+                return;
+            }
+
+            var confirm = Forms.MessageBox.Show(
+                "将卸载程序文件（默认不会删除 %LOCALAPPDATA%\\GestureClip 用户数据）。\n\n是否继续？",
+                "卸载 GestureClip",
+                Forms.MessageBoxButtons.YesNo,
+                Forms.MessageBoxIcon.Warning);
+            if (confirm != Forms.DialogResult.Yes)
+            {
+                return;
+            }
+
+            Process.Start(new ProcessStartInfo
+            {
+                FileName = "powershell.exe",
+                Arguments = $"-NoProfile -ExecutionPolicy Bypass -File \"{uninstall}\" -Uninstall",
+                UseShellExecute = true,
+                WorkingDirectory = Path.GetDirectoryName(uninstall) ?? Environment.CurrentDirectory
+            });
+            _appLifecycleService.ExitApplication();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to launch uninstall.");
+            Forms.MessageBox.Show("无法启动卸载：" + ex.Message, "GestureClip", Forms.MessageBoxButtons.OK, Forms.MessageBoxIcon.Error);
+        }
     }
 
     private void OpenDirectory(string path)
