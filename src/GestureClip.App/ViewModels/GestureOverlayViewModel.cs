@@ -25,6 +25,10 @@ public sealed class GestureOverlayViewModel : INotifyPropertyChanged
     private double _xpProgressPercent;
     private string _workSummaryText = "今日 ￥0.00 · 下班 -- · 发薪 --";
     private string _statsText = "手势 0  ·  复制 0  ·  粘贴 0  ·  少点 0";
+    private string _gestureCountText = "0";
+    private string _copyCountText = "0";
+    private string _pasteCountText = "0";
+    private string _savedClicksCountText = "0";
     private PointCollection _points = [];
     private System.Windows.Media.Brush _strokeBrush = new SolidColorBrush(System.Windows.Media.Color.FromRgb(140, 200, 255));
     private System.Windows.Media.Brush _hudBackgroundBrush = new LinearGradientBrush(
@@ -319,6 +323,51 @@ public sealed class GestureOverlayViewModel : INotifyPropertyChanged
             OnPropertyChanged();
         }
     }
+
+    public string GestureCountText
+    {
+        get => _gestureCountText;
+        set
+        {
+            if (_gestureCountText == value) return;
+            _gestureCountText = value;
+            OnPropertyChanged();
+        }
+    }
+
+    public string CopyCountText
+    {
+        get => _copyCountText;
+        set
+        {
+            if (_copyCountText == value) return;
+            _copyCountText = value;
+            OnPropertyChanged();
+        }
+    }
+
+    public string PasteCountText
+    {
+        get => _pasteCountText;
+        set
+        {
+            if (_pasteCountText == value) return;
+            _pasteCountText = value;
+            OnPropertyChanged();
+        }
+    }
+
+    public string SavedClicksCountText
+    {
+        get => _savedClicksCountText;
+        set
+        {
+            if (_savedClicksCountText == value) return;
+            _savedClicksCountText = value;
+            OnPropertyChanged();
+        }
+    }
+
     public PointCollection Points
     {
         get => _points;

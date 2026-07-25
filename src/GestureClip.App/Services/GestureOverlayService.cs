@@ -288,6 +288,10 @@ public sealed class GestureOverlayService : IGestureOverlayService
                     _viewModel.XpProgressPercent = snapshot.XpProgressPercent;
                     _viewModel.WorkSummaryText = snapshot.WorkSummaryText;
                     _viewModel.StatsText = snapshot.StatsText;
+                    _viewModel.GestureCountText = snapshot.GestureCount.ToString();
+                    _viewModel.CopyCountText = snapshot.CopyCount.ToString();
+                    _viewModel.PasteCountText = snapshot.PasteCount.ToString();
+                    _viewModel.SavedClicksCountText = snapshot.EstimatedSavedClicks.ToString();
                     _viewModel.HudBackgroundBrush = GetHudBackgroundBrush(
                         snapshot.HudThemeKey,
                         snapshot.HudStartColor,

@@ -17,4 +17,8 @@ public sealed record WorkstationHudSnapshot(
     string HudStartColor,
     string HudEndColor,
     string HudAccentColor,
-    string HudFriendlyColorName);
+    string HudFriendlyColorName,
+    int GestureCount = 0,
+    int CopyCount = 0,
+    int PasteCount = 0,
+    int EstimatedSavedClicks = 0);

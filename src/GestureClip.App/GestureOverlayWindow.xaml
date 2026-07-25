@@ -13,10 +13,49 @@
         IsHitTestVisible="False"
         ResizeMode="NoResize"
         WindowStartupLocation="Manual"
-        FontFamily="Segoe UI Variable Text, Segoe UI Emoji, Segoe UI Symbol, Microsoft YaHei UI, Segoe UI"
+        UseLayoutRounding="True"
+        SnapsToDevicePixels="True"
+        FontFamily="Microsoft YaHei UI, Segoe UI, Segoe UI Emoji, Segoe UI Symbol"
         TextOptions.TextFormattingMode="Display"
-        TextOptions.TextRenderingMode="ClearType">
-    <Grid IsHitTestVisible="False">
+        TextOptions.TextRenderingMode="Grayscale"
+        TextOptions.TextHintingMode="Fixed">
+    <Window.Resources>
+        <!-- Transparent overlays: Grayscale beats ClearType (less purple/blur on Chinese). -->
+        <Style TargetType="TextBlock">
+            <Setter Property="FontFamily" Value="Microsoft YaHei UI, Segoe UI, Segoe UI Emoji, Segoe UI Symbol" />
+            <Setter Property="TextOptions.TextFormattingMode" Value="Display" />
+            <Setter Property="TextOptions.TextRenderingMode" Value="Grayscale" />
+            <Setter Property="TextOptions.TextHintingMode" Value="Fixed" />
+            <Setter Property="SnapsToDevicePixels" Value="True" />
+        </Style>
+        <Style x:Key="HudMonoText" TargetType="TextBlock" BasedOn="{StaticResource {x:Type TextBlock}}">
+            <!-- Mono only for pure codes/numbers; still fall back to YaHei for CJK. -->
+            <Setter Property="FontFamily" Value="Cascadia Mono, Consolas, Microsoft YaHei UI, Segoe UI" />
+        </Style>
+        <Style x:Key="HudStatChip" TargetType="Border">
+            <Setter Property="Background" Value="#66000000" />
+            <Setter Property="CornerRadius" Value="8" />
+            <Setter Property="Padding" Value="10,5" />
+            <Setter Property="Margin" Value="0,0,8,0" />
+            <Setter Property="BorderBrush" Value="#33FFFFFF" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="SnapsToDevicePixels" Value="True" />
+        </Style>
+        <Style x:Key="HudStatLabel" TargetType="TextBlock" BasedOn="{StaticResource {x:Type TextBlock}}">
+            <Setter Property="Foreground" Value="#FF94A3B8" />
+            <Setter Property="FontSize" Value="12" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="Margin" Value="0,0,4,0" />
+            <Setter Property="VerticalAlignment" Value="Center" />
+        </Style>
+        <Style x:Key="HudStatValue" TargetType="TextBlock" BasedOn="{StaticResource {x:Type TextBlock}}">
+            <Setter Property="Foreground" Value="#FFF8FAFC" />
+            <Setter Property="FontSize" Value="14" />
+            <Setter Property="FontWeight" Value="Bold" />
+            <Setter Property="VerticalAlignment" Value="Center" />
+        </Style>
+    </Window.Resources>
+    <Grid IsHitTestVisible="False" UseLayoutRounding="True" SnapsToDevicePixels="True">
         <Canvas IsHitTestVisible="False">
             <Polyline Points="{Binding Points}"
                       Stroke="{Binding StrokeBrush}"
@@ -36,36 +75,38 @@
         <Border HorizontalAlignment="Center"
                 VerticalAlignment="Bottom"
                 Margin="0,0,0,70"
-                Width="860"
-                Height="210"
+                MinWidth="720"
+                MaxWidth="920"
+                MinHeight="200"
                 CornerRadius="18"
-                Padding="14"
+                Padding="16,14"
                 Background="{Binding HudBackgroundBrush}"
-                BorderBrush="#48FFFFFF"
+                BorderBrush="#55FFFFFF"
                 BorderThickness="1"
                 x:Name="CompactGameHud"
-                SnapsToDevicePixels="True">
+                SnapsToDevicePixels="True"
+                UseLayoutRounding="True">
             <Border.Effect>
                 <DropShadowEffect Color="#101827" BlurRadius="22" ShadowDepth="5" Opacity="0.22" />
             </Border.Effect>
             <Grid x:Name="GestureActionStrip" SnapsToDevicePixels="True">
                 <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="86" />
-                <ColumnDefinition Width="*" />
-                <ColumnDefinition Width="188" />
+                    <ColumnDefinition Width="86" />
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="188" />
                 </Grid.ColumnDefinitions>
 
                 <Border Width="72"
                         Height="72"
                         CornerRadius="20"
-                        Background="#E6111724"
-                        BorderBrush="#6693C5FD"
+                        Background="#F0111724"
+                        BorderBrush="#8893C5FD"
                         BorderThickness="1"
                         HorizontalAlignment="Left"
                         VerticalAlignment="Center">
                     <TextBlock Text="{Binding DirectionText}"
                                Foreground="#FFFFFFFF"
-                               FontSize="34"
+                               FontSize="32"
                                FontWeight="Bold"
                                HorizontalAlignment="Center"
                                VerticalAlignment="Center"
@@ -74,45 +115,46 @@
 
                 <StackPanel Grid.Column="1"
                             VerticalAlignment="Center"
-                            Margin="2,0,12,0">
+                            Margin="4,0,12,0">
                     <StackPanel Orientation="Horizontal">
                         <TextBlock Text="工位小熊"
                                    Foreground="{Binding HudAccentBrush}"
                                    FontSize="13"
                                    FontWeight="SemiBold" />
                         <TextBlock Text="  ·  "
-                                   Foreground="#B8C4D4"
+                                   Foreground="#FF94A3B8"
                                    FontSize="13" />
                         <TextBlock Text="{Binding PresetName}"
-                                   Foreground="#FFD8E1EE"
+                                   Foreground="#FFE2E8F0"
                                    FontSize="13"
                                    FontWeight="SemiBold"
                                    TextTrimming="CharacterEllipsis" />
                     </StackPanel>
+
                     <TextBlock Text="{Binding ActionName}"
                                Foreground="#FFFFFFFF"
-                               FontSize="28"
-                               FontWeight="SemiBold"
-                               Margin="0,3,0,0"
+                               FontSize="26"
+                               FontWeight="Bold"
+                               Margin="0,4,0,0"
                                TextTrimming="CharacterEllipsis" />
-                    <StackPanel Orientation="Horizontal" Margin="0,3,0,0">
+
+                    <StackPanel Orientation="Horizontal" Margin="0,4,0,0">
                         <TextBlock Text="{Binding ShortcutText}"
-                                   Foreground="#FFDCEBFF"
-                                   FontSize="14"
-                                   FontFamily="Cascadia Mono, Consolas, Microsoft YaHei UI"
+                                   Foreground="#FFE2E8F0"
+                                   FontSize="13"
                                    FontWeight="SemiBold"
                                    TextTrimming="CharacterEllipsis" />
-                        <TextBlock Text="   手势码: "
-                                   Foreground="#FFE2E8F0"
-                                   FontSize="14"
-                                   FontFamily="Cascadia Mono, Consolas, Microsoft YaHei UI, Segoe UI Emoji"
+                        <TextBlock Text="   手势码 "
+                                   Foreground="#FF94A3B8"
+                                   FontSize="13"
                                    FontWeight="SemiBold" />
                         <TextBlock Text="{Binding Pattern}"
+                                   Style="{StaticResource HudMonoText}"
                                    Foreground="{Binding HudAccentBrush}"
-                                   FontSize="14"
-                                   FontFamily="Cascadia Mono, Consolas, Microsoft YaHei UI"
+                                   FontSize="13"
                                    FontWeight="Bold" />
                     </StackPanel>
+
                     <Grid Margin="0,8,0,0">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="*" />
@@ -120,7 +162,7 @@
                         </Grid.ColumnDefinitions>
                         <TextBlock Text="{Binding FunText}"
                                    Foreground="{Binding HudAccentBrush}"
-                                   FontSize="14"
+                                   FontSize="13"
                                    FontWeight="SemiBold"
                                    TextWrapping="NoWrap"
                                    TextTrimming="CharacterEllipsis" />
@@ -131,79 +173,92 @@
                                    FontWeight="Bold"
                                    Margin="12,0,0,0" />
                     </Grid>
+
                     <Grid Margin="0,8,0,0">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="*" />
-                            <ColumnDefinition Width="120" />
+                            <ColumnDefinition Width="Auto" MinWidth="110" />
                         </Grid.ColumnDefinitions>
                         <TextBlock Text="{Binding LevelText}"
-                                   Foreground="#FFE0F2FE"
+                                   Foreground="#FFF1F5F9"
                                    FontSize="13"
                                    FontWeight="SemiBold"
                                    TextTrimming="CharacterEllipsis" />
                         <TextBlock Grid.Column="1"
                                    Text="{Binding XpText}"
+                                   Style="{StaticResource HudMonoText}"
                                    Foreground="{Binding HudAccentBrush}"
                                    FontSize="12"
-                                   FontFamily="Cascadia Mono, Consolas, Microsoft YaHei UI"
                                    FontWeight="SemiBold"
-                                   HorizontalAlignment="Right"
-                                   TextTrimming="CharacterEllipsis" />
+                                   HorizontalAlignment="Right" />
                     </Grid>
+
                     <ProgressBar Minimum="0"
                                  Maximum="1"
                                  Value="{Binding XpProgressPercent}"
                                  Height="5"
                                  Margin="0,7,0,0"
                                  Foreground="{Binding HudAccentBrush}"
-                                 Background="#24FFFFFF"
+                                 Background="#33FFFFFF"
                                  BorderThickness="0" />
-                    <StackPanel x:Name="TodayStatsLine" Margin="0,8,0,0">
+
+                    <!-- Work summary + stats chips (high contrast, no mono CJK) -->
+                    <StackPanel x:Name="TodayStatsLine" Margin="0,10,0,0">
                         <TextBlock Text="{Binding WorkSummaryText}"
                                    Foreground="#FFF8FAFC"
                                    FontSize="13"
                                    FontWeight="SemiBold"
                                    TextTrimming="CharacterEllipsis" />
-                        <!-- Stats must stay high-contrast: users stare at this line every gesture -->
-                        <Border Background="#33000000"
-                                CornerRadius="8"
-                                Padding="8,5"
-                                Margin="0,6,0,0"
-                                HorizontalAlignment="Left">
-                            <TextBlock Text="{Binding StatsText}"
-                                       Foreground="#FFF1F5F9"
-                                       FontSize="13"
-                                       FontWeight="SemiBold"
-                                       FontFamily="Segoe UI Variable Text, Segoe UI Emoji, Microsoft YaHei UI, Segoe UI"
-                                       TextTrimming="CharacterEllipsis" />
-                        </Border>
+                        <StackPanel Orientation="Horizontal" Margin="0,8,0,0">
+                            <Border Style="{StaticResource HudStatChip}">
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock Text="手势" Style="{StaticResource HudStatLabel}" />
+                                    <TextBlock Text="{Binding GestureCountText}" Style="{StaticResource HudStatValue}" />
+                                </StackPanel>
+                            </Border>
+                            <Border Style="{StaticResource HudStatChip}">
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock Text="复制" Style="{StaticResource HudStatLabel}" />
+                                    <TextBlock Text="{Binding CopyCountText}" Style="{StaticResource HudStatValue}" />
+                                </StackPanel>
+                            </Border>
+                            <Border Style="{StaticResource HudStatChip}">
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock Text="粘贴" Style="{StaticResource HudStatLabel}" />
+                                    <TextBlock Text="{Binding PasteCountText}" Style="{StaticResource HudStatValue}" />
+                                </StackPanel>
+                            </Border>
+                            <Border Style="{StaticResource HudStatChip}" Margin="0">
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock Text="少点" Style="{StaticResource HudStatLabel}" />
+                                    <TextBlock Text="{Binding SavedClicksCountText}" Style="{StaticResource HudStatValue}" />
+                                </StackPanel>
+                            </Border>
+                        </StackPanel>
                     </StackPanel>
                 </StackPanel>
 
                 <StackPanel Grid.Column="2" VerticalAlignment="Center">
                     <TextBlock Text="松开右键执行"
                                Foreground="{Binding HudAccentBrush}"
-                               FontSize="16"
+                               FontSize="15"
                                FontWeight="SemiBold"
                                HorizontalAlignment="Right" />
                     <TextBlock Text="{Binding WorkStatusText}"
-                               Foreground="{Binding HudAccentBrush}"
-                               FontSize="14"
+                               Foreground="#FFE2E8F0"
+                               FontSize="13"
                                FontWeight="SemiBold"
                                HorizontalAlignment="Right"
-                               Margin="0,7,0,0"
+                               Margin="0,8,0,0"
                                TextTrimming="CharacterEllipsis" />
                     <TextBlock Text="普通右键不显示"
                                Foreground="#FF94A3B8"
                                FontSize="11"
                                FontWeight="SemiBold"
                                HorizontalAlignment="Right"
-                               Margin="0,6,0,0" />
+                               Margin="0,8,0,0" />
                 </StackPanel>
             </Grid>
         </Border>
     </Grid>
 </Window>
-
-
-

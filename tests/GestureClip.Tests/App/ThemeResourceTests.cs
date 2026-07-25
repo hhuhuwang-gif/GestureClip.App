@@ -853,15 +853,16 @@ public sealed class ThemeResourceTests
         var path = FindRepositoryFile("src", "GestureClip.App", "GestureOverlayWindow.xaml");
         var xaml = File.ReadAllText(path);
 
-        Assert.Contains("Background=\"#E6111724\"", xaml);
-        Assert.Contains("手势码:", xaml);
-        Assert.Contains("FontSize=\"34\"", xaml);
-        Assert.Contains("FontSize=\"28\"", xaml);
-        Assert.Contains("FontSize=\"14\"", xaml);
-        Assert.Contains("StatsText", xaml);
-        Assert.Contains("Foreground=\"#FFF1F5F9\"", xaml);
+        Assert.Contains("Background=\"#F0111724\"", xaml);
+        Assert.Contains("手势码", xaml);
+        Assert.Contains("Microsoft YaHei UI", xaml);
+        Assert.Contains("TextRenderingMode=\"Grayscale\"", xaml);
+        Assert.Contains("GestureCountText", xaml);
+        Assert.Contains("CopyCountText", xaml);
+        Assert.Contains("PasteCountText", xaml);
+        Assert.Contains("SavedClicksCountText", xaml);
+        Assert.Contains("HudStatChip", xaml);
         Assert.Contains("TodayStatsLine", xaml);
-        Assert.DoesNotContain("Foreground=\"#FFC9D4E5\"", xaml);
         Assert.DoesNotContain("Pattern: ", xaml);
     }
 

@@ -84,7 +84,11 @@ public sealed class WorkstationHudService : IWorkstationHudService
             theme.StartColor,
             theme.EndColor,
             theme.AccentColor,
-            theme.FriendlyColorName);
+            theme.FriendlyColorName,
+            dashboard.GestureCount,
+            dashboard.CopyCount,
+            dashboard.PasteCount,
+            dashboard.EstimatedSavedClicks);
     }
 
     private async Task<(WorkstationDashboardSnapshot Dashboard, WorkerLevelSnapshot Level)> GetCachedSnapshotsAsync(

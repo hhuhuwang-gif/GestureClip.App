@@ -1,5 +1,23 @@
 # CHANGELOG
 
+## GestureClip v0.6.34 Beta
+
+### 手势浮层中文可读（截图那条）
+
+- 透明 HUD 改用 **Microsoft YaHei UI 优先**，关闭 ClearType 改用 **Grayscale**，减少中文发糊/发紫
+- 「手势 / 复制 / 粘贴 / 少点」拆成独立高对比 chip，不再一整行等宽糊字
+- 数字与中文标签分离排版，字号与底色对比加强
+
+### 安装包
+
+- `GestureClip-v0.6.34-beta-win-x64.zip` → 解压双击 `GestureClip.exe`
+- `GestureClip-Setup-v0.6.34-beta-win-x64.zip` → `Setup.cmd`
+
+### 验证
+
+- `dotnet test ./GestureClip.sln`
+
+
 ## GestureClip v0.6.33 Beta
 
 ### 手势浮层可读性（你每天看见的那一行）
