@@ -3,33 +3,33 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Title="工位小熊 Hub"
         Icon="Assets/GestureClip.ico"
-        Width="780"
-        Height="880"
-        MinWidth="700"
-        MinHeight="740"
+        Width="980"
+        Height="920"
+        MinWidth="860"
+        MinHeight="780"
         WindowStartupLocation="CenterScreen"
         Background="Transparent"
         AllowsTransparency="True"
         WindowStyle="None"
         ResizeMode="CanResize"
-        FontFamily="Segoe UI Variable Text, Segoe UI Emoji, Segoe UI Symbol, Microsoft YaHei UI, Segoe UI"
+        FontFamily="Microsoft YaHei UI, Segoe UI Variable Text, Segoe UI, Segoe UI Emoji"
         Foreground="{DynamicResource BrushTextPrimary}"
         TextOptions.TextFormattingMode="Display"
-        TextOptions.TextRenderingMode="ClearType"
+        TextOptions.TextRenderingMode="Grayscale"
         Loaded="Window_Loaded"
         Closing="Window_Closing"
         KeyDown="Window_KeyDown">
     <Window.Resources>
         <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter" />
     </Window.Resources>
-    <Border CornerRadius="20"
+    <Border CornerRadius="24"
             Background="{DynamicResource BrushAppBackground}"
             BorderBrush="{DynamicResource BrushBorder}"
             BorderThickness="1"
-            Padding="20"
+            Padding="28"
             MouseLeftButtonDown="WindowBackground_MouseLeftButtonDown">
         <Border.Effect>
-            <DropShadowEffect Color="#000000" BlurRadius="40" ShadowDepth="6" Opacity="0.18" Direction="270" />
+            <DropShadowEffect Color="#000000" BlurRadius="56" ShadowDepth="8" Opacity="0.22" Direction="270" />
         </Border.Effect>
         <Grid>
             <Grid.RowDefinitions>
@@ -38,55 +38,80 @@
                 <RowDefinition Height="Auto" />
             </Grid.RowDefinitions>
 
-            <!-- Header -->
-            <DockPanel Margin="2,0,2,14">
-                <StackPanel DockPanel.Dock="Left"
-                            Orientation="Horizontal"
-                            VerticalAlignment="Top"
-                            Margin="0,4,14,0">
-                    <Button Style="{StaticResource TrafficLightButtonStyle}"
-                            Background="{DynamicResource BrushTrafficClose}"
-                            ToolTip="关闭"
-                            Click="CloseButton_Click" />
-                    <Button Style="{StaticResource TrafficLightButtonStyle}"
-                            Background="{DynamicResource BrushTrafficYellow}"
-                            ToolTip="最大化 / 还原"
-                            Click="MaximizeButton_Click" />
-                    <Button Style="{StaticResource TrafficLightButtonStyle}"
-                            Background="{DynamicResource BrushTrafficGreen}"
-                            ToolTip="最小化"
-                            Click="MinimizeButton_Click" />
-                </StackPanel>
-                <StackPanel>
-                    <DockPanel LastChildFill="False">
-                        <TextBlock DockPanel.Dock="Left"
-                                   Text="🐻 工位小熊 Hub"
-                                   Style="{StaticResource HubTitleStyle}" />
-                        <Border DockPanel.Dock="Right"
-                                Style="{StaticResource HubChipStyle}"
-                                Margin="12,2,0,0"
-                                ToolTip="本地统计，不上传">
+            <!-- Header: unmistakable product chrome -->
+            <Border Grid.Row="0"
+                    Margin="0,0,0,18"
+                    Padding="16,14"
+                    CornerRadius="16"
+                    Background="{DynamicResource BrushGlassStrong}"
+                    BorderBrush="{DynamicResource BrushBorder}"
+                    BorderThickness="1">
+                <DockPanel>
+                    <StackPanel DockPanel.Dock="Left"
+                                Orientation="Horizontal"
+                                VerticalAlignment="Center"
+                                Margin="0,0,16,0">
+                        <Button Style="{StaticResource TrafficLightButtonStyle}"
+                                Background="{DynamicResource BrushTrafficClose}"
+                                ToolTip="关闭"
+                                Click="CloseButton_Click" />
+                        <Button Style="{StaticResource TrafficLightButtonStyle}"
+                                Background="{DynamicResource BrushTrafficYellow}"
+                                ToolTip="最大化 / 还原"
+                                Click="MaximizeButton_Click" />
+                        <Button Style="{StaticResource TrafficLightButtonStyle}"
+                                Background="{DynamicResource BrushTrafficGreen}"
+                                ToolTip="最小化"
+                                Click="MinimizeButton_Click" />
+                    </StackPanel>
+                    <StackPanel DockPanel.Dock="Right"
+                                Orientation="Horizontal"
+                                VerticalAlignment="Center"
+                                Margin="12,0,0,0">
+                        <Border Background="{DynamicResource BrushAccentSoft}"
+                                BorderBrush="{DynamicResource BrushPrimarySoft}"
+                                BorderThickness="1"
+                                CornerRadius="999"
+                                Padding="12,6"
+                                Margin="0,0,8,0">
                             <TextBlock Text="{Binding GreetingText}"
                                        Style="{StaticResource HubRootTextStyle}"
                                        FontSize="12"
                                        FontWeight="SemiBold"
                                        Foreground="{DynamicResource BrushPrimaryBright}" />
                         </Border>
-                    </DockPanel>
-                    <TextBlock Text="{Binding Subtitle}"
-                               Style="{StaticResource HubSubtitleStyle}"
-                               Margin="0,4,0,0" />
-                    <TextBlock Text="{Binding PrivacyHintText}"
-                               Style="{StaticResource HubBodyStyle}"
-                               FontSize="12"
-                               Margin="0,6,0,0"
-                               Opacity="0.92" />
-                    <TextBlock Text="Esc 关闭 · 数据仅本机"
-                               Style="{StaticResource HubMetricLabelStyle}"
-                               Margin="0,4,0,0"
-                               Opacity="0.75" />
-                </StackPanel>
-            </DockPanel>
+                        <Border Background="#1A60A5FA"
+                                BorderBrush="#5560A5FA"
+                                BorderThickness="1"
+                                CornerRadius="999"
+                                Padding="12,6">
+                            <TextBlock Text="v0.6.37 · 本地"
+                                       Style="{StaticResource HubRootTextStyle}"
+                                       FontSize="12"
+                                       FontWeight="Bold"
+                                       Foreground="{DynamicResource BrushPrimaryBright}" />
+                        </Border>
+                    </StackPanel>
+                    <StackPanel VerticalAlignment="Center">
+                        <TextBlock Text="工位小熊"
+                                   Style="{StaticResource HubTitleStyle}"
+                                   FontSize="26"
+                                   FontWeight="Bold" />
+                        <Border Width="56"
+                                Height="3"
+                                CornerRadius="2"
+                                HorizontalAlignment="Left"
+                                Margin="0,8,0,6"
+                                Background="{DynamicResource BrushPrimaryBright}" />
+                        <TextBlock Text="{Binding Subtitle}"
+                                   Style="{StaticResource HubSubtitleStyle}"
+                                   FontSize="13" />
+                        <TextBlock Text="本地统计 · Esc 关闭 · 不上传"
+                                   Style="{StaticResource HubMetricLabelStyle}"
+                                   Margin="0,6,0,0" />
+                    </StackPanel>
+                </DockPanel>
+            </Border>
 
             <ScrollViewer Grid.Row="1"
                           Style="{StaticResource GlassScrollViewerStyle}"
@@ -99,7 +124,7 @@
                             Margin="0,0,0,12"
                             Visibility="{Binding NeedsSetup, Converter={StaticResource BooleanToVisibilityConverter}}">
                         <StackPanel>
-                            <TextBlock Text="⏱ 30 秒开工配置"
+                            <TextBlock Text="30 秒开工配置"
                                        Style="{StaticResource HubRootTextStyle}"
                                        FontSize="17"
                                        FontWeight="SemiBold" />
@@ -182,131 +207,163 @@
                         </DockPanel>
                     </Border>
 
-                    <!-- Hero status -->
+                    <!-- Hero status: bold 3-tile metrics + stage strip (visibly different) -->
                     <Border x:Name="HeroCard"
-                            Style="{StaticResource HubHeroCardStyle}"
-                            Margin="0,0,0,12"
+                            Margin="0,0,0,16"
                             Padding="0"
                             ClipToBounds="True"
+                            CornerRadius="20"
                             BorderBrush="{Binding FishingBorderBrush}"
-                            BorderThickness="{Binding FishingBorderThickness}">
+                            BorderThickness="{Binding FishingBorderThickness}"
+                            Background="{DynamicResource BrushGlassStrong}">
+                        <Border.Effect>
+                            <DropShadowEffect Color="#000000" BlurRadius="32" ShadowDepth="4" Opacity="0.16" Direction="270" />
+                        </Border.Effect>
                         <Grid>
                             <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="5" />
+                                <ColumnDefinition Width="8" />
                                 <ColumnDefinition Width="*" />
                             </Grid.ColumnDefinitions>
 
-                            <!-- Stage accent rail -->
+                            <!-- Wide stage accent rail (obvious color) -->
                             <Border Grid.Column="0"
                                     Background="{Binding StageAccentBrush}"
-                                    CornerRadius="16,0,0,16" />
+                                    CornerRadius="20,0,0,20" />
 
-                            <Grid Grid.Column="1" Margin="16,16,16,14">
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="*" />
-                                    <ColumnDefinition Width="16" />
-                                    <ColumnDefinition Width="Auto" MinWidth="200" />
-                                </Grid.ColumnDefinitions>
-                                <Grid.RowDefinitions>
-                                    <RowDefinition Height="Auto" />
-                                    <RowDefinition Height="Auto" />
-                                </Grid.RowDefinitions>
-
-                                <StackPanel>
-                                    <TextBlock Text="当前状态" Style="{StaticResource HubMetricLabelStyle}" />
-                                    <TextBlock Text="{Binding CurrentStateText}"
-                                               Style="{StaticResource HubRootTextStyle}"
-                                               FontSize="26"
-                                               FontWeight="SemiBold"
-                                               Foreground="{Binding StageAccentBrush}"
-                                               Margin="0,6,0,0"
-                                               TextWrapping="Wrap" />
-                                    <Border Background="{Binding StageSoftBrush}"
+                            <StackPanel Grid.Column="1" Margin="20,18,18,16">
+                                <!-- Status row -->
+                                <DockPanel LastChildFill="False" Margin="0,0,0,14">
+                                    <StackPanel DockPanel.Dock="Left">
+                                        <TextBlock Text="当前状态"
+                                                   Style="{StaticResource HubMetricLabelStyle}"
+                                                   FontSize="11" />
+                                        <TextBlock Text="{Binding CurrentStateText}"
+                                                   Style="{StaticResource HubRootTextStyle}"
+                                                   FontSize="28"
+                                                   FontWeight="Bold"
+                                                   Foreground="{Binding StageAccentBrush}"
+                                                   Margin="0,4,0,0"
+                                                   TextWrapping="Wrap" />
+                                    </StackPanel>
+                                    <Border DockPanel.Dock="Right"
+                                            Background="{Binding StageSoftBrush}"
                                             BorderBrush="{Binding StageAccentBrush}"
-                                            BorderThickness="1"
+                                            BorderThickness="1.5"
                                             CornerRadius="999"
-                                            Padding="10,4"
-                                            Margin="0,10,0,0"
-                                            HorizontalAlignment="Left">
+                                            Padding="14,7"
+                                            VerticalAlignment="Center">
                                         <TextBlock Text="{Binding BearStatusText}"
                                                    Style="{StaticResource HubRootTextStyle}"
                                                    FontSize="13"
-                                                   FontWeight="SemiBold"
+                                                   FontWeight="Bold"
                                                    Foreground="{Binding StageAccentBrush}" />
                                     </Border>
-                                    <TextBlock Text="{Binding BearLineText}"
-                                               Style="{StaticResource HubBodyStyle}"
-                                               Margin="0,12,0,0"
-                                               MaxWidth="420" />
-                                    <Border Style="{StaticResource HubFishingBannerStyle}"
-                                            Visibility="{Binding IsFishing, Converter={StaticResource BooleanToVisibilityConverter}}">
-                                        <TextBlock Text="{Binding FishingStatusBanner}"
-                                                   Style="{StaticResource HubRootTextStyle}"
-                                                   FontSize="12"
-                                                   FontWeight="SemiBold"
-                                                   Foreground="#5EEAD4" />
-                                    </Border>
-                                </StackPanel>
+                                </DockPanel>
 
-                                <Border Grid.Column="2"
-                                        Background="{DynamicResource BrushGlassCard}"
-                                        BorderBrush="{DynamicResource BrushBorder}"
-                                        BorderThickness="1"
-                                        CornerRadius="14"
-                                        Padding="14,12"
-                                        MinWidth="200">
-                                    <StackPanel>
-                                        <TextBlock Text="今日已赚" Style="{StaticResource HubMetricLabelStyle}" TextAlignment="Right" />
-                                        <TextBlock x:Name="TodayEarnedMetric"
-                                                   Text="{Binding TodayEarnedText}"
-                                                   Style="{StaticResource HubMetricValueStyle}"
-                                                   FontSize="28"
-                                                   TextAlignment="Right"
-                                                   Foreground="{Binding StageAccentBrush}" />
-                                        <TextBlock Text="距离下班" Style="{StaticResource HubMetricLabelStyle}" TextAlignment="Right" Margin="0,12,0,0" />
-                                        <TextBlock x:Name="OffWorkMetric"
-                                                   Text="{Binding OffWorkCountdownText}"
-                                                   Style="{StaticResource HubRootTextStyle}"
-                                                   FontSize="20"
-                                                   FontWeight="SemiBold"
-                                                   TextAlignment="Right" />
-                                        <TextBlock Text="{Binding SavedClicksText}"
-                                                   Style="{StaticResource HubMetricLabelStyle}"
-                                                   TextAlignment="Right"
-                                                   Margin="0,10,0,0" />
-                                    </StackPanel>
+                                <TextBlock Text="{Binding BearLineText}"
+                                           Style="{StaticResource HubBodyStyle}"
+                                           FontSize="14"
+                                           Margin="0,0,0,16"
+                                           TextWrapping="Wrap" />
+
+                                <!-- 3 metric tiles: obvious visual change -->
+                                <UniformGrid Columns="3" Margin="0,0,0,14">
+                                    <Border Margin="0,0,8,0"
+                                            Padding="14,12"
+                                            CornerRadius="14"
+                                            Background="#221D4ED8"
+                                            BorderBrush="#5560A5FA"
+                                            BorderThickness="1">
+                                        <StackPanel>
+                                            <TextBlock Text="今日已赚"
+                                                       Style="{StaticResource HubMetricLabelStyle}"
+                                                       Foreground="#FF93C5FD" />
+                                            <TextBlock x:Name="TodayEarnedMetric"
+                                                       Text="{Binding TodayEarnedText}"
+                                                       Style="{StaticResource HubRootTextStyle}"
+                                                       FontSize="24"
+                                                       FontWeight="Bold"
+                                                       Foreground="#FFDBEAFE"
+                                                       Margin="0,6,0,0" />
+                                        </StackPanel>
+                                    </Border>
+                                    <Border Margin="0,0,8,0"
+                                            Padding="14,12"
+                                            CornerRadius="14"
+                                            Background="#2210B981"
+                                            BorderBrush="#5534D399"
+                                            BorderThickness="1">
+                                        <StackPanel>
+                                            <TextBlock Text="距离下班"
+                                                       Style="{StaticResource HubMetricLabelStyle}"
+                                                       Foreground="#FF6EE7B7" />
+                                            <TextBlock x:Name="OffWorkMetric"
+                                                       Text="{Binding OffWorkCountdownText}"
+                                                       Style="{StaticResource HubRootTextStyle}"
+                                                       FontSize="22"
+                                                       FontWeight="Bold"
+                                                       Foreground="#FFD1FAE5"
+                                                       Margin="0,6,0,0" />
+                                        </StackPanel>
+                                    </Border>
+                                    <Border Padding="14,12"
+                                            CornerRadius="14"
+                                            Background="#22F59E0B"
+                                            BorderBrush="#55FBBF24"
+                                            BorderThickness="1">
+                                        <StackPanel>
+                                            <TextBlock Text="今日进度"
+                                                       Style="{StaticResource HubMetricLabelStyle}"
+                                                       Foreground="#FFFCD34D" />
+                                            <TextBlock Text="{Binding WorkdayProgressPercent, StringFormat={}{0:0}%}"
+                                                       Style="{StaticResource HubRootTextStyle}"
+                                                       FontSize="24"
+                                                       FontWeight="Bold"
+                                                       Foreground="#FFFEF3C7"
+                                                       Margin="0,6,0,0" />
+                                        </StackPanel>
+                                    </Border>
+                                </UniformGrid>
+
+                                <DockPanel Margin="0,0,0,6">
+                                    <TextBlock Text="{Binding WorkdayProgressText}"
+                                               Style="{StaticResource HubMetricLabelStyle}"
+                                               DockPanel.Dock="Left"
+                                               FontSize="12" />
+                                    <TextBlock Text="{Binding SavedClicksText}"
+                                               Style="{StaticResource HubMetricLabelStyle}"
+                                               HorizontalAlignment="Right"
+                                               FontSize="12" />
+                                </DockPanel>
+                                <ProgressBar Style="{StaticResource HubThinProgressBarStyle}"
+                                             Height="8"
+                                             Value="{Binding WorkdayProgress}"
+                                             Foreground="{Binding StageAccentBrush}"
+                                             ToolTip="{Binding WorkdayProgressText}" />
+                                <TextBlock Text="{Binding OffWorkProgressText}"
+                                           Style="{StaticResource HubMetricLabelStyle}"
+                                           Margin="0,10,0,4"
+                                           FontSize="12" />
+                                <ProgressBar Style="{StaticResource HubThinProgressBarStyle}"
+                                             Height="6"
+                                             Value="{Binding OffWorkProgress}"
+                                             Foreground="{Binding StageStartBrush}"
+                                             ToolTip="{Binding OffWorkProgressText}" />
+
+                                <Border Style="{StaticResource HubFishingBannerStyle}"
+                                        Visibility="{Binding IsFishing, Converter={StaticResource BooleanToVisibilityConverter}}">
+                                    <TextBlock Text="{Binding FishingStatusBanner}"
+                                               Style="{StaticResource HubRootTextStyle}"
+                                               FontSize="13"
+                                               FontWeight="Bold"
+                                               Foreground="#FF5EEAD4" />
                                 </Border>
-
-                                <!-- Progress bars: workday + off-work -->
-                                <StackPanel Grid.Row="1" Grid.ColumnSpan="3" Margin="0,16,0,0">
-                                    <DockPanel Margin="0,0,0,6">
-                                        <TextBlock Text="{Binding WorkdayProgressText}"
-                                                   Style="{StaticResource HubMetricLabelStyle}"
-                                                   DockPanel.Dock="Left" />
-                                        <TextBlock Text="{Binding WorkdayProgressPercent, StringFormat={}{0:0}%}"
-                                                   Style="{StaticResource HubMetricLabelStyle}"
-                                                   HorizontalAlignment="Right" />
-                                    </DockPanel>
-                                    <ProgressBar Style="{StaticResource HubThinProgressBarStyle}"
-                                                 Value="{Binding WorkdayProgress}"
-                                                 Foreground="{Binding StageAccentBrush}"
-                                                 ToolTip="{Binding WorkdayProgressText}" />
-                                    <DockPanel Margin="0,12,0,6">
-                                        <TextBlock Text="{Binding OffWorkProgressText}"
-                                                   Style="{StaticResource HubMetricLabelStyle}"
-                                                   DockPanel.Dock="Left" />
-                                    </DockPanel>
-                                    <ProgressBar Style="{StaticResource HubThinProgressBarStyle}"
-                                                 Value="{Binding OffWorkProgress}"
-                                                 Foreground="{Binding StageStartBrush}"
-                                                 ToolTip="{Binding OffWorkProgressText}" />
-                                </StackPanel>
-                            </Grid>
+                            </StackPanel>
                         </Grid>
                     </Border>
 
                     <!-- Earnings -->
-                    <Expander Header="💰 收益与效率"
+                    <Expander Header="收益与效率"
                               IsExpanded="{Binding EarningsExpanded, Mode=TwoWay}"
                               Style="{StaticResource HubSectionExpanderStyle}">
                         <Border Style="{StaticResource HubSectionCardStyle}">
@@ -341,7 +398,7 @@
                     </Expander>
 
                     <!-- Fishing -->
-                    <Expander Header="🐟 摸鱼模式"
+                    <Expander Header="摸鱼模式"
                               IsExpanded="{Binding FishingExpanded, Mode=TwoWay}"
                               Style="{StaticResource HubSectionExpanderStyle}">
                         <Border Style="{StaticResource HubSectionCardStyle}">
@@ -385,7 +442,7 @@
                     </Expander>
 
                     <!-- Rest -->
-                    <Expander Header="🧘 休息提醒"
+                    <Expander Header="休息提醒"
                               IsExpanded="{Binding RestExpanded, Mode=TwoWay}"
                               Style="{StaticResource HubSectionExpanderStyle}">
                         <Border Style="{StaticResource HubSectionCardStyle}">
@@ -457,7 +514,7 @@
                     </Expander>
 
                     <!-- Sprint -->
-                    <Expander Header="🏁 下班冲刺"
+                    <Expander Header="下班冲刺"
                               IsExpanded="{Binding SprintExpanded, Mode=TwoWay}"
                               Style="{StaticResource HubSectionExpanderStyle}">
                         <Border Style="{StaticResource HubSectionCardStyle}">
@@ -486,7 +543,7 @@
                     </Expander>
 
                     <!-- Daily report -->
-                    <Expander Header="📊 今日生存报告"
+                    <Expander Header="今日生存报告"
                               IsExpanded="{Binding ReportExpanded, Mode=TwoWay}"
                               Style="{StaticResource HubSectionExpanderStyle}">
                         <Border Style="{StaticResource HubSectionCardStyle}">
@@ -545,7 +602,7 @@
                     </Expander>
 
                     <!-- Period report -->
-                    <Expander Header="📅 周报 / 月报（本地）"
+                    <Expander Header="周报 / 月报（本地）"
                               IsExpanded="{Binding PeriodExpanded, Mode=TwoWay}"
                               Style="{StaticResource HubSectionExpanderStyle}">
                         <Border Style="{StaticResource HubSectionCardStyle}">
@@ -568,7 +625,7 @@
                     </Expander>
 
                     <!-- Settings -->
-                    <Expander Header="⚙️ 工作规则设置"
+                    <Expander Header="工作规则设置"
                               IsExpanded="{Binding SettingsExpanded, Mode=TwoWay}"
                               Style="{StaticResource HubSectionExpanderStyle}">
                         <Border Style="{StaticResource HubSectionCardStyle}">
@@ -644,12 +701,8 @@
 
             <!-- Footer -->
             <Border Grid.Row="2"
-                    Margin="0,14,0,0"
-                    Padding="12,10"
-                    Background="{DynamicResource BrushGlassCard}"
-                    BorderBrush="{DynamicResource BrushBorder}"
-                    BorderThickness="1"
-                    CornerRadius="12">
+                    Style="{StaticResource HubFooterBarStyle}"
+                    Margin="0,16,0,0">
                 <DockPanel>
                     <WrapPanel DockPanel.Dock="Right" HorizontalAlignment="Right" VerticalAlignment="Center">
                         <Button Content="刷新"

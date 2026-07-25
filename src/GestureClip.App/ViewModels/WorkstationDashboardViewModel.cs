@@ -19,17 +19,17 @@ public sealed class WorkstationDashboardViewModel : INotifyPropertyChanged
     private readonly IConfirmationService? _confirmationService;
     private WorkstationDashboardSnapshot _snapshot = EmptySnapshot;
     private string _lastMessage = "本地统计，不上传。小熊只陪你看看状态，不偷看剪贴板正文。";
-    private bool _settingsExpanded;
+    private bool _settingsExpanded = true;
     private bool _earningsExpanded = true;
     private bool _fishingExpanded = true;
     private bool _restExpanded = true;
-    private bool _sprintExpanded;
-    private bool _reportExpanded;
+    private bool _sprintExpanded = true;
+    private bool _reportExpanded = true;
     private string _setupSalaryText = "";
     private string _setupStartTime = "09:00";
     private string _setupEndTime = "18:00";
     private string _periodReportText = "点下面按钮生成本地周报或近 30 天总结，不上传。";
-    private bool _periodExpanded;
+    private bool _periodExpanded = true;
 
     public WorkstationDashboardViewModel(
         IWorkstationDashboardService dashboardService,

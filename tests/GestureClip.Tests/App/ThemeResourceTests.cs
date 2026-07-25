@@ -543,12 +543,13 @@ public sealed class ThemeResourceTests
         var xaml = File.ReadAllText(path);
 
         Assert.Contains("工位小熊", xaml);
+        Assert.Contains("v0.6.37 · 本地", xaml);
+        Assert.Contains("UniformGrid", xaml);
         Assert.Contains("OffWorkCountdownText", xaml);
         Assert.Contains("TodayEarnedText", xaml);
         Assert.Contains("TodayFishingValueText", xaml);
         Assert.Contains("ActionStatsText", xaml);
-        Assert.Contains("HubHeroCardStyle", xaml);
-        Assert.Contains("Segoe UI Emoji", xaml);
+        Assert.Contains("Microsoft YaHei UI", xaml);
         Assert.Contains("GreetingText", xaml);
         Assert.Contains("StageAccentBrush", xaml);
         Assert.Contains("WorkdayProgress", xaml);
@@ -577,7 +578,9 @@ public sealed class ThemeResourceTests
         Assert.Contains("HubFishingBannerStyle", xaml);
         Assert.Contains("HubReportTextStyle", xaml);
         Assert.Contains("ControlTemplate", xaml);
-        Assert.Contains("Segoe UI Emoji", xaml);
+        Assert.Contains("Microsoft YaHei UI", xaml);
+        Assert.Contains("HubFooterBarStyle", xaml);
+        Assert.Contains("HubMetricPanelStyle", xaml);
     }
 
     [Fact]

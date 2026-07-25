@@ -1,5 +1,43 @@
 # CHANGELOG
 
+## GestureClip v0.6.37 Beta
+
+### Hub 一眼可见的重设计
+
+- 默认窗口 **980×920**（MinWidth 860），解决偏窄观感
+- **顶栏产品条** + 版本徽章 `v0.6.37 · 本地`（打开 Hub 即可确认新版本）
+- **三色指标砖**：今日已赚 / 距离下班 / 今日进度（蓝 / 绿 / 琥珀）
+- 状态色条加宽、主进度条加粗；分区无 emoji、卡片阴影更强
+
+### 安装包
+
+- `GestureClip-v0.6.37-beta-win-x64.zip` → **先退出旧进程**再解压运行
+- `GestureClip-Setup-v0.6.37-beta-win-x64.zip`
+
+### 验证
+
+- `dotnet test ./GestureClip.sln`
+
+
+## GestureClip v0.6.36 Beta
+
+### 工位小熊 Hub 高级轻盈重设计
+
+- 窗口中等加宽：默认 900 / MinWidth 800（缓解“变窄”）
+- Apple 轻盈卡片：更软阴影、更大圆角、统一分区质感
+- 标题与分区去掉 emoji，中文雅黑优先 + Grayscale
+- 信息分区默认全展开；留白与指标面板更疏朗
+
+### 安装包
+
+- `GestureClip-v0.6.36-beta-win-x64.zip` → 解压双击 `GestureClip.exe`
+- `GestureClip-Setup-v0.6.36-beta-win-x64.zip` → `Setup.cmd`
+
+### 验证
+
+- `dotnet test ./GestureClip.sln`
+
+
 ## GestureClip v0.6.35 Beta
 
 ### 未绑定手势一键绑定

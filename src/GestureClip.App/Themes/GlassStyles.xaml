@@ -363,35 +363,39 @@
         </Setter>
     </Style>
 
-    <!-- WorkBear Hub: readable hierarchy + emoji-capable font stack -->
+    <!-- WorkBear Hub: Apple-light premium — calm cards, airy type, minimal chrome -->
     <Style x:Key="HubRootTextStyle" TargetType="TextBlock">
-        <Setter Property="FontFamily" Value="Segoe UI Variable Text, Segoe UI Emoji, Segoe UI Symbol, Microsoft YaHei UI, Segoe UI" />
+        <Setter Property="FontFamily" Value="Microsoft YaHei UI, Segoe UI Variable Text, Segoe UI, Segoe UI Emoji" />
         <Setter Property="Foreground" Value="{DynamicResource BrushTextPrimary}" />
         <Setter Property="TextOptions.TextFormattingMode" Value="Display" />
-        <Setter Property="TextOptions.TextRenderingMode" Value="ClearType" />
+        <Setter Property="TextOptions.TextRenderingMode" Value="Grayscale" />
+        <Setter Property="TextOptions.TextHintingMode" Value="Fixed" />
+        <Setter Property="SnapsToDevicePixels" Value="True" />
     </Style>
 
     <Style x:Key="HubTitleStyle" TargetType="TextBlock" BasedOn="{StaticResource HubRootTextStyle}">
-        <Setter Property="FontSize" Value="22" />
+        <Setter Property="FontSize" Value="23" />
         <Setter Property="FontWeight" Value="SemiBold" />
         <Setter Property="LineHeight" Value="30" />
     </Style>
 
     <Style x:Key="HubSubtitleStyle" TargetType="TextBlock" BasedOn="{StaticResource HubRootTextStyle}">
-        <Setter Property="FontSize" Value="12" />
+        <Setter Property="FontSize" Value="12.5" />
         <Setter Property="Foreground" Value="{DynamicResource BrushTextSecondary}" />
         <Setter Property="LineHeight" Value="18" />
         <Setter Property="TextWrapping" Value="Wrap" />
+        <Setter Property="Opacity" Value="0.92" />
     </Style>
 
     <Style x:Key="HubMetricLabelStyle" TargetType="TextBlock" BasedOn="{StaticResource HubRootTextStyle}">
         <Setter Property="FontSize" Value="12" />
         <Setter Property="Foreground" Value="{DynamicResource BrushTextMuted}" />
-        <Setter Property="LineHeight" Value="18" />
+        <Setter Property="LineHeight" Value="16" />
+        <Setter Property="FontWeight" Value="Medium" />
     </Style>
 
     <Style x:Key="HubMetricValueStyle" TargetType="TextBlock" BasedOn="{StaticResource HubRootTextStyle}">
-        <Setter Property="FontSize" Value="24" />
+        <Setter Property="FontSize" Value="26" />
         <Setter Property="FontWeight" Value="SemiBold" />
         <Setter Property="LineHeight" Value="32" />
     </Style>
@@ -403,21 +407,36 @@
         <Setter Property="TextWrapping" Value="Wrap" />
     </Style>
 
-    <Style x:Key="HubHeroCardStyle" TargetType="Border" BasedOn="{StaticResource GlassCardStyle}">
-        <Setter Property="Padding" Value="18" />
-        <Setter Property="CornerRadius" Value="16" />
+    <Style x:Key="HubHeroCardStyle" TargetType="Border">
+        <Setter Property="Padding" Value="0" />
+        <Setter Property="CornerRadius" Value="18" />
         <Setter Property="Background" Value="{DynamicResource BrushGlassStrong}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource BrushBorder}" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="SnapsToDevicePixels" Value="True" />
+        <Setter Property="Effect">
+            <Setter.Value>
+                <DropShadowEffect Color="#000000" BlurRadius="28" ShadowDepth="2" Opacity="0.08" Direction="270" RenderingBias="Quality" />
+            </Setter.Value>
+        </Setter>
     </Style>
 
-    <Style x:Key="HubSetupCardStyle" TargetType="Border" BasedOn="{StaticResource GlassCardStyle}">
-        <Setter Property="Padding" Value="18" />
+    <Style x:Key="HubSetupCardStyle" TargetType="Border">
+        <Setter Property="Padding" Value="20" />
         <Setter Property="CornerRadius" Value="16" />
-        <Setter Property="Background" Value="{DynamicResource BrushGlassAccent}" />
+        <Setter Property="Background" Value="{DynamicResource BrushGlassCard}" />
         <Setter Property="BorderBrush" Value="{DynamicResource BrushPrimarySoft}" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="SnapsToDevicePixels" Value="True" />
+        <Setter Property="Effect">
+            <Setter.Value>
+                <DropShadowEffect Color="#000000" BlurRadius="20" ShadowDepth="1" Opacity="0.06" Direction="270" />
+            </Setter.Value>
+        </Setter>
     </Style>
 
     <Style x:Key="HubSectionCardStyle" TargetType="Border">
-        <Setter Property="Padding" Value="14,10,14,4" />
+        <Setter Property="Padding" Value="16,12,16,8" />
         <Setter Property="Margin" Value="0" />
         <Setter Property="Background" Value="Transparent" />
         <Setter Property="BorderThickness" Value="0" />
@@ -427,8 +446,8 @@
         <Setter Property="Foreground" Value="{DynamicResource BrushTextPrimary}" />
         <Setter Property="Background" Value="Transparent" />
         <Setter Property="BorderThickness" Value="0" />
-        <Setter Property="Margin" Value="0,0,0,8" />
-        <Setter Property="FontFamily" Value="Segoe UI Variable Text, Segoe UI Emoji, Segoe UI Symbol, Microsoft YaHei UI, Segoe UI" />
+        <Setter Property="Margin" Value="0,0,0,10" />
+        <Setter Property="FontFamily" Value="Microsoft YaHei UI, Segoe UI Variable Text, Segoe UI" />
         <Setter Property="FontSize" Value="14" />
         <Setter Property="FontWeight" Value="SemiBold" />
         <Setter Property="Padding" Value="0" />
@@ -439,8 +458,11 @@
                             Background="{DynamicResource BrushGlassCard}"
                             BorderBrush="{DynamicResource BrushBorder}"
                             BorderThickness="1"
-                            CornerRadius="14"
+                            CornerRadius="16"
                             SnapsToDevicePixels="True">
+                        <Border.Effect>
+                            <DropShadowEffect Color="#000000" BlurRadius="16" ShadowDepth="1" Opacity="0.05" Direction="270" />
+                        </Border.Effect>
                         <DockPanel>
                             <ToggleButton x:Name="HeaderSite"
                                           DockPanel.Dock="Top"
@@ -448,7 +470,7 @@
                                           Content="{TemplateBinding Header}"
                                           Background="Transparent"
                                           BorderThickness="0"
-                                          Padding="14,12"
+                                          Padding="16,13"
                                           Cursor="Hand"
                                           Focusable="False"
                                           FontFamily="{TemplateBinding FontFamily}"
@@ -459,7 +481,7 @@
                                     <ControlTemplate TargetType="ToggleButton">
                                         <Border x:Name="HeaderBorder"
                                                 Background="Transparent"
-                                                CornerRadius="14"
+                                                CornerRadius="16"
                                                 Padding="{TemplateBinding Padding}">
                                             <Grid>
                                                 <Grid.ColumnDefinitions>
@@ -506,7 +528,7 @@
                             </ToggleButton>
                             <Border x:Name="ContentSite"
                                     Visibility="Collapsed"
-                                    Padding="4,0,4,10"
+                                    Padding="4,0,4,12"
                                     BorderBrush="{DynamicResource BrushBorder}"
                                     BorderThickness="0,1,0,0">
                                 <ContentPresenter />
@@ -527,7 +549,7 @@
     </Style>
 
     <Style x:Key="HubProgressTrackStyle" TargetType="Border">
-        <Setter Property="Height" Value="6" />
+        <Setter Property="Height" Value="5" />
         <Setter Property="CornerRadius" Value="999" />
         <Setter Property="Background" Value="{DynamicResource BrushFillTertiary}" />
         <Setter Property="SnapsToDevicePixels" Value="True" />
@@ -535,7 +557,7 @@
     </Style>
 
     <Style x:Key="HubThinProgressBarStyle" TargetType="ProgressBar">
-        <Setter Property="Height" Value="6" />
+        <Setter Property="Height" Value="5" />
         <Setter Property="Minimum" Value="0" />
         <Setter Property="Maximum" Value="1" />
         <Setter Property="Background" Value="{DynamicResource BrushFillTertiary}" />
@@ -563,27 +585,38 @@
 
     <Style x:Key="HubChipStyle" TargetType="Border">
         <Setter Property="CornerRadius" Value="999" />
-        <Setter Property="Padding" Value="10,4" />
+        <Setter Property="Padding" Value="11,5" />
         <Setter Property="Background" Value="{DynamicResource BrushAccentSoft}" />
-        <Setter Property="BorderBrush" Value="{DynamicResource BrushPrimarySoft}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource BrushBorder}" />
         <Setter Property="BorderThickness" Value="1" />
         <Setter Property="VerticalAlignment" Value="Center" />
     </Style>
 
+    <Style x:Key="HubMetricPanelStyle" TargetType="Border">
+        <Setter Property="Background" Value="{DynamicResource BrushGlassCard}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource BrushBorder}" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="CornerRadius" Value="14" />
+        <Setter Property="Padding" Value="16,14" />
+        <Setter Property="MinWidth" Value="210" />
+    </Style>
 
-    <!-- Soft metric flash used when countdown/earnings refresh -->
-    <Storyboard x:Key="HubMetricFlashStoryboard">
-        <DoubleAnimation Storyboard.TargetProperty="Opacity"
-                         From="0.55" To="1" Duration="0:0:0.18" />
-    </Storyboard>
+    <Style x:Key="HubFooterBarStyle" TargetType="Border">
+        <Setter Property="Background" Value="{DynamicResource BrushGlassCard}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource BrushBorder}" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="CornerRadius" Value="14" />
+        <Setter Property="Padding" Value="14,12" />
+    </Style>
+
 
     <Style x:Key="HubFishingBannerStyle" TargetType="Border">
-        <Setter Property="CornerRadius" Value="10" />
-        <Setter Property="Padding" Value="10,6" />
-        <Setter Property="Margin" Value="0,10,0,0" />
+        <Setter Property="CornerRadius" Value="12" />
+        <Setter Property="Padding" Value="12,7" />
+        <Setter Property="Margin" Value="0,12,0,0" />
         <Setter Property="HorizontalAlignment" Value="Left" />
-        <Setter Property="Background" Value="#3340C4AA" />
-        <Setter Property="BorderBrush" Value="#FF2DD4BF" />
+        <Setter Property="Background" Value="{DynamicResource BrushAccentSoft}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource BrushBorder}" />
         <Setter Property="BorderThickness" Value="1" />
     </Style>
 
@@ -591,16 +624,17 @@
         <Setter Property="Background" Value="{DynamicResource BrushGlassCard}" />
         <Setter Property="BorderBrush" Value="{DynamicResource BrushBorder}" />
         <Setter Property="BorderThickness" Value="1" />
-        <Setter Property="CornerRadius" Value="12" />
-        <Setter Property="Padding" Value="12,10" />
+        <Setter Property="CornerRadius" Value="14" />
+        <Setter Property="Padding" Value="14,12" />
         <Setter Property="Margin" Value="0,12,0,0" />
     </Style>
 
     <Style x:Key="HubReportTextStyle" TargetType="TextBlock" BasedOn="{StaticResource HubBodyStyle}">
-        <Setter Property="FontFamily" Value="Segoe UI Variable Text, Cascadia Mono, Consolas, Microsoft YaHei UI, Segoe UI Emoji, Segoe UI" />
+        <Setter Property="FontFamily" Value="Microsoft YaHei UI, Segoe UI Variable Text, Segoe UI" />
         <Setter Property="LineHeight" Value="22" />
         <Setter Property="LineStackingStrategy" Value="BlockLineHeight" />
         <Setter Property="TextWrapping" Value="Wrap" />
+        <Setter Property="Foreground" Value="{DynamicResource BrushTextSecondary}" />
     </Style>
 
 </ResourceDictionary>
