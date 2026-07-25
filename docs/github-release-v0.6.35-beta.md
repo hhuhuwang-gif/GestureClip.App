@@ -2,8 +2,8 @@
 
 ## 推荐安装（便携）
 
-1. 下载 GestureClip-v0.6.35-beta-win-x64.zip
-2. **先退出旧进程**，再解压双击 GestureClip.exe
+1. 下载 `GestureClip-v0.6.35-beta-win-x64.zip`
+2. **先退出旧进程**，再解压双击 `GestureClip.exe`
 
 ## 本版亮点
 
@@ -12,9 +12,9 @@
 
 ## 安装包
 
-- GestureClip-v0.6.35-beta-win-x64.zip（推荐）
-- GestureClip-Setup-v0.6.35-beta-win-x64.zip
-- SHA256SUMS.txt
+- `GestureClip-v0.6.35-beta-win-x64.zip`（推荐）
+- `GestureClip-Setup-v0.6.35-beta-win-x64.zip`
+- `SHA256SUMS.txt`
 
 ## 剪贴板
 
@@ -22,4 +22,4 @@
 
 ## 数据
 
-%LOCALAPPDATA%\GestureClip\
+`%LOCALAPPDATA%\GestureClip\`
