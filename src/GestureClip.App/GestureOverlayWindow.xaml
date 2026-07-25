@@ -55,7 +55,7 @@
             <Setter Property="VerticalAlignment" Value="Center" />
         </Style>
     </Window.Resources>
-    <Grid IsHitTestVisible="False" UseLayoutRounding="True" SnapsToDevicePixels="True">
+    <Grid x:Name="RootGrid" IsHitTestVisible="True" UseLayoutRounding="True" SnapsToDevicePixels="True">
         <Canvas IsHitTestVisible="False">
             <Polyline Points="{Binding Points}"
                       Stroke="{Binding StrokeBrush}"
@@ -85,7 +85,8 @@
                 BorderThickness="1"
                 x:Name="CompactGameHud"
                 SnapsToDevicePixels="True"
-                UseLayoutRounding="True">
+                UseLayoutRounding="True"
+                IsHitTestVisible="True">
             <Border.Effect>
                 <DropShadowEffect Color="#101827" BlurRadius="22" ShadowDepth="5" Opacity="0.22" />
             </Border.Effect>
@@ -103,7 +104,8 @@
                         BorderBrush="#8893C5FD"
                         BorderThickness="1"
                         HorizontalAlignment="Left"
-                        VerticalAlignment="Center">
+                        VerticalAlignment="Center"
+                        IsHitTestVisible="False">
                     <TextBlock Text="{Binding DirectionText}"
                                Foreground="#FFFFFFFF"
                                FontSize="32"
@@ -236,9 +238,44 @@
                             </Border>
                         </StackPanel>
                     </StackPanel>
+
+                                    <!-- Unbound: one-click open action binding -->
+                                    <Border x:Name="BindActionBar"
+                                            Margin="0,10,0,0"
+                                            Padding="10,8"
+                                            CornerRadius="10"
+                                            Background="#CC1D4ED8"
+                                            BorderBrush="#99BFDBFE"
+                                            BorderThickness="1"
+                                            Cursor="Hand"
+                                            IsHitTestVisible="True"
+                                            Visibility="{Binding ShowBindAction, Converter={StaticResource BooleanToVisibilityConverter}}"
+                                            MouseLeftButtonUp="BindActionBar_MouseLeftButtonUp">
+                                        <DockPanel>
+                                            <Button DockPanel.Dock="Right"
+                                                    Content="{Binding BindActionButtonText}"
+                                                    Command="{Binding BindUnboundGestureCommand}"
+                                                    Padding="12,4"
+                                                    MinWidth="72"
+                                                    FontSize="13"
+                                                    FontWeight="SemiBold"
+                                                    Cursor="Hand"
+                                                    IsHitTestVisible="True"
+                                                    Background="#FFF8FAFC"
+                                                    Foreground="#FF1E3A8A"
+                                                    BorderThickness="0" />
+                                            <TextBlock Text="{Binding BindActionHintText}"
+                                                       Foreground="#FFF8FAFC"
+                                                       FontSize="13"
+                                                       FontWeight="SemiBold"
+                                                       VerticalAlignment="Center"
+                                                       TextTrimming="CharacterEllipsis"
+                                                       Margin="0,0,10,0" />
+                                        </DockPanel>
+                                    </Border>
                 </StackPanel>
 
-                <StackPanel Grid.Column="2" VerticalAlignment="Center">
+                <StackPanel Grid.Column="2" VerticalAlignment="Center" IsHitTestVisible="False">
                     <TextBlock Text="松开右键执行"
                                Foreground="{Binding HudAccentBrush}"
                                FontSize="15"

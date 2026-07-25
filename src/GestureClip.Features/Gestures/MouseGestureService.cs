@@ -494,7 +494,10 @@ public sealed class MouseGestureService : IMouseGestureService
                 }
 
                 await ExecuteGestureAsync(executionContext);
-                if (pendingGesture.ShowOverlay && !IsPasteFamilyAction(resolvedAction))
+                // Keep HUD visible longer when unbound so user can click 「去绑定」.
+                if (pendingGesture.ShowOverlay
+                    && !IsPasteFamilyAction(resolvedAction)
+                    && resolvedAction != BuiltInGestureAction.None)
                 {
                     await _gestureOverlayService.HideAsync(CancellationToken.None);
                 }

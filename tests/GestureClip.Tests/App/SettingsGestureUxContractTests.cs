@@ -51,6 +51,8 @@ public sealed class SettingsGestureUxContractTests
         Assert.Contains("ShowSettingsWindow(string? page = null)", life);
         Assert.Contains("NavigateToPage(page)", life);
         Assert.Contains("ShowSettingsWindow(string? page = null)", iface);
+        Assert.Contains("ShowGestureBindingEditor", iface);
+        Assert.Contains("ShowGestureBindingEditor", life);
     }
 
 

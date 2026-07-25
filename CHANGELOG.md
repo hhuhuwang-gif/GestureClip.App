@@ -1,5 +1,24 @@
 # CHANGELOG
 
+## GestureClip v0.6.35 Beta
+
+### 未绑定手势一键绑定
+
+- 划出未绑定手势时，HUD 显示「去绑定」入口（约 4.5 秒可点）
+- 点击后打开设置「动作绑定」页，并自动选中该手势码
+- 未绑定文案改为：松开后可点「去绑定」
+- 已绑定手势仍立即执行并收起，不影响日常手势速度
+
+### 安装包
+
+- `GestureClip-v0.6.35-beta-win-x64.zip` → 解压双击 `GestureClip.exe`
+- `GestureClip-Setup-v0.6.35-beta-win-x64.zip` → `Setup.cmd`
+
+### 验证
+
+- `dotnet test ./GestureClip.sln`
+
+
 ## GestureClip v0.6.34 Beta
 
 ### 手势浮层中文可读（截图那条）

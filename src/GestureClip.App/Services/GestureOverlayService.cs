@@ -27,6 +27,8 @@ public sealed class GestureOverlayService : IGestureOverlayService
     private GestureHudInfo? _pendingUpdateHudInfo;
     private bool _updateQueued;
     private readonly IWorkstationHudService _workstationHudService;
+    private readonly IAppLifecycleService _appLifecycleService;
+    private bool _holdForBindAction;
     private DateTimeOffset _lastWorkstationSnapshotAt = DateTimeOffset.MinValue;
     private int _workstationSnapshotQueued;
     private Rect _lastWindowBounds = Rect.Empty;
@@ -40,11 +42,13 @@ public sealed class GestureOverlayService : IGestureOverlayService
     public GestureOverlayService(
         IServiceProvider serviceProvider,
         ISettingsService settingsService,
-        IWorkstationHudService workstationHudService)
+        IWorkstationHudService workstationHudService,
+        IAppLifecycleService appLifecycleService)
     {
         _serviceProvider = serviceProvider;
         _settingsService = settingsService;
         _workstationHudService = workstationHudService;
+        _appLifecycleService = appLifecycleService;
     }
 
     public async Task ShowGestureStartAsync(GesturePoint point, GestureHudInfo hudInfo, CancellationToken cancellationToken)
@@ -130,6 +134,13 @@ public sealed class GestureOverlayService : IGestureOverlayService
             cancellationToken.ThrowIfCancellationRequested();
             ClearPendingUpdate();
             _hideCts?.Cancel();
+            _holdForBindAction = false;
+            if (_window is not null)
+            {
+                _window.IsHitTestVisible = false;
+                _window.Focusable = false;
+            }
+
             FadeOutAndHideWindow();
         });
     }
@@ -230,10 +241,16 @@ public sealed class GestureOverlayService : IGestureOverlayService
         _viewModel = _serviceProvider.GetRequiredService<GestureOverlayViewModel>();
         _window = _serviceProvider.GetRequiredService<GestureOverlayWindow>();
         _window.DataContext = _viewModel;
+        _viewModel.SetBindActionHandler(() =>
+        {
+            _holdForBindAction = false;
+            _ = HideAsync(CancellationToken.None);
+        });
         _window.Closed += (_, _) =>
         {
             _window = null;
             _viewModel = null;
+            _holdForBindAction = false;
         };
     }
 
@@ -245,7 +262,26 @@ public sealed class GestureOverlayService : IGestureOverlayService
         _viewModel.ShortcutText = hudInfo.ShortcutText;
         _viewModel.PresetName = hudInfo.PresetName;
         _viewModel.StrokeBrush = GetStrokeBrush(_settingsService.Get(SettingKeys.GestureStrokeColor, "#8CC8FF"));
+        _holdForBindAction = IsUnboundHud(hudInfo);
+        if (_window is not null)
+        {
+            // Allow clicking 「去绑定」 only when unbound; keep drawing pass-through otherwise.
+            _window.IsHitTestVisible = _holdForBindAction;
+            _window.Focusable = _holdForBindAction;
+        }
+
         QueueWorkstationSnapshotRefresh(hudInfo);
+    }
+
+    private static bool IsUnboundHud(GestureHudInfo hudInfo)
+    {
+        if (string.IsNullOrWhiteSpace(hudInfo.Pattern) || hudInfo.Pattern == "-")
+        {
+            return false;
+        }
+
+        return hudInfo.Action == BuiltInGestureAction.None
+            || string.Equals(hudInfo.ActionName, "未绑定", StringComparison.Ordinal);
     }
 
     private void QueueWorkstationSnapshotRefresh(GestureHudInfo hudInfo)
@@ -478,7 +514,9 @@ public sealed class GestureOverlayService : IGestureOverlayService
     {
         try
         {
-            await Task.Delay(800, cancellationToken);
+            // Give user time to click 「去绑定」 when the stroke has no action.
+            var delayMs = _holdForBindAction ? 4500 : 800;
+            await Task.Delay(delayMs, cancellationToken);
             await HideAsync(cancellationToken);
         }
         catch (OperationCanceledException)

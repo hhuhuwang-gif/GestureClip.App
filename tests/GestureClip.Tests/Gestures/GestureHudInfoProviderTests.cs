@@ -42,7 +42,7 @@ public sealed class GestureHudInfoProviderTests
         Assert.Equal("→↓→", info.DirectionText);
         Assert.Equal("RDR", info.Pattern);
         Assert.Equal("未绑定", info.ActionName);
-        Assert.Equal("暂无动作", info.ShortcutText);
+        Assert.Equal("松开后可点「去绑定」", info.ShortcutText);
     }
 
     [Fact]

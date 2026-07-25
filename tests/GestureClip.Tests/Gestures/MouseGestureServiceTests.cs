@@ -616,7 +616,7 @@ public sealed class MouseGestureServiceTests
     }
 
     [Fact]
-    public async Task Invalid_or_unbound_gesture_hides_overlay_without_executing_action()
+    public async Task Invalid_or_unbound_gesture_shows_unbound_hud_without_executing_action()
     {
         var hook = new FakeLowLevelMouseHook();
         var executor = new FakeMouseGestureActionExecutor();
@@ -630,9 +630,11 @@ public sealed class MouseGestureServiceTests
         hook.Raise(MouseHookEventType.Move, 80, 40);
         hook.Raise(MouseHookEventType.RightButtonUp, 80, 40);
 
-        await WaitForAsync(() => overlay.Events.Contains("hide"));
+        // Unbound strokes keep the HUD for 「去绑定」; do not force-hide immediately.
+        await WaitForAsync(() => overlay.Events.Any(e => e.StartsWith("complete:", StringComparison.Ordinal)));
 
         Assert.Empty(executor.Actions);
+        Assert.DoesNotContain("hide", overlay.Events);
         Assert.Contains(overlay.HudInfos, info => info.Pattern == "RDR" && info.ActionName == "未绑定");
     }
 
@@ -669,7 +671,7 @@ public sealed class MouseGestureServiceTests
     }
 
     [Fact]
-    public async Task Complex_gesture_stays_visible_while_dragging_and_hides_on_release()
+    public async Task Complex_gesture_stays_visible_while_dragging_and_completes_on_release()
     {
         var hook = new FakeLowLevelMouseHook();
         var executor = new FakeMouseGestureActionExecutor();
@@ -687,12 +689,14 @@ public sealed class MouseGestureServiceTests
         Assert.DoesNotContain("hide", overlay.Events);
 
         var up = hook.Raise(MouseHookEventType.RightButtonUp, 120, 60);
-        await WaitForAsync(() => overlay.Events.Contains("hide"));
+        // RDR is unbound: complete stays visible for bind CTA; hide is deferred.
+        await WaitForAsync(() => overlay.Events.Any(e => e.StartsWith("complete:", StringComparison.Ordinal)));
 
         Assert.True(down.Suppress);
         Assert.True(up.Suppress);
         Assert.Empty(executor.Actions);
         Assert.Empty(synthesizer.Clicks);
+        Assert.DoesNotContain("hide", overlay.Events);
         Assert.Equal(GestureRuntimeState.Idle, service.Diagnostics.State);
     }
 

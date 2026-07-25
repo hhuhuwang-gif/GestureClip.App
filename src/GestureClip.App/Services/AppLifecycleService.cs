@@ -50,6 +50,19 @@ public sealed class AppLifecycleService : IAppLifecycleService
         _logger.LogInformation("Settings window shown. Page={Page}", page ?? "default");
     }
 
+
+    public void ShowGestureBindingEditor(string? pattern = null)
+    {
+        ShowSettingsWindow("bindings");
+        if (_settingsWindow is null)
+        {
+            return;
+        }
+
+        _settingsWindow.FocusGestureBinding(pattern);
+        _logger.LogInformation("Gesture binding editor shown. Pattern={Pattern}", pattern ?? "(none)");
+    }
+
     public void ToggleSettingsWindow()
     {
         if (_settingsWindow is not null &&

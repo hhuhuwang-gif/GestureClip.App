@@ -189,6 +189,7 @@ public sealed class AssistantActionExecutorTests
         public int ShowSettingsCount { get; private set; }
         public bool IsExplicitExit => false;
         public void ShowSettingsWindow(string? page = null) => ShowSettingsCount++;
+        public void ShowGestureBindingEditor(string? pattern = null) => ShowSettingsCount++;
         public void ToggleSettingsWindow() { }
         public void ShowWorkstationDashboardWindow() { }
         public void OpenLatestReleasePage() { }

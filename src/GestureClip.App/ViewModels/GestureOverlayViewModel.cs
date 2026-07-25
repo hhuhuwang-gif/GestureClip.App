@@ -1,11 +1,14 @@
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
+using System.Windows.Input;
 using System.Windows.Media;
+using GestureClip.Core.Abstractions;
 
 namespace GestureClip.App.ViewModels;
 
 public sealed class GestureOverlayViewModel : INotifyPropertyChanged
 {
+    private readonly IAppLifecycleService? _appLifecycleService;
     private string _directionText = "右键";
     private string _pattern = "-";
     private string _actionName = "未绑定";
@@ -36,8 +39,20 @@ public sealed class GestureOverlayViewModel : INotifyPropertyChanged
         System.Windows.Media.Color.FromRgb(30, 41, 59),
         0);
     private System.Windows.Media.Brush _hudAccentBrush = new SolidColorBrush(System.Windows.Media.Color.FromRgb(147, 197, 253));
+    private Action? _bindActionHandler;
+
+    public GestureOverlayViewModel(IAppLifecycleService? appLifecycleService = null)
+    {
+        _appLifecycleService = appLifecycleService;
+        BindUnboundGestureCommand = new RelayCommand(_ => BindUnboundGesture(), _ => ShowBindAction);
+    }
 
     public event PropertyChangedEventHandler? PropertyChanged;
+
+    public ICommand BindUnboundGestureCommand { get; }
+
+    /// <summary>Optional host callback (e.g. hide overlay after opening settings).</summary>
+    public void SetBindActionHandler(Action? handler) => _bindActionHandler = handler;
 
     public string Pattern
     {
@@ -51,6 +66,7 @@ public sealed class GestureOverlayViewModel : INotifyPropertyChanged
 
             _pattern = value;
             OnPropertyChanged();
+            NotifyBindActionChanged();
         }
     }
 
@@ -81,6 +97,7 @@ public sealed class GestureOverlayViewModel : INotifyPropertyChanged
 
             _actionName = value;
             OnPropertyChanged();
+            NotifyBindActionChanged();
         }
     }
 
@@ -329,7 +346,11 @@ public sealed class GestureOverlayViewModel : INotifyPropertyChanged
         get => _gestureCountText;
         set
         {
-            if (_gestureCountText == value) return;
+            if (_gestureCountText == value)
+            {
+                return;
+            }
+
             _gestureCountText = value;
             OnPropertyChanged();
         }
@@ -340,7 +361,11 @@ public sealed class GestureOverlayViewModel : INotifyPropertyChanged
         get => _copyCountText;
         set
         {
-            if (_copyCountText == value) return;
+            if (_copyCountText == value)
+            {
+                return;
+            }
+
             _copyCountText = value;
             OnPropertyChanged();
         }
@@ -351,7 +376,11 @@ public sealed class GestureOverlayViewModel : INotifyPropertyChanged
         get => _pasteCountText;
         set
         {
-            if (_pasteCountText == value) return;
+            if (_pasteCountText == value)
+            {
+                return;
+            }
+
             _pasteCountText = value;
             OnPropertyChanged();
         }
@@ -362,11 +391,29 @@ public sealed class GestureOverlayViewModel : INotifyPropertyChanged
         get => _savedClicksCountText;
         set
         {
-            if (_savedClicksCountText == value) return;
+            if (_savedClicksCountText == value)
+            {
+                return;
+            }
+
             _savedClicksCountText = value;
             OnPropertyChanged();
         }
     }
+
+    /// <summary>True when the current stroke has a pattern but no action mapping.</summary>
+    public bool ShowBindAction =>
+        !string.IsNullOrWhiteSpace(_pattern)
+        && _pattern != "-"
+        && (string.IsNullOrWhiteSpace(_actionName)
+            || string.Equals(_actionName, "未绑定", StringComparison.Ordinal));
+
+    public string BindActionHintText =>
+        ShowBindAction
+            ? $"手势 {_pattern} 还没有动作"
+            : string.Empty;
+
+    public string BindActionButtonText => "去绑定";
 
     public PointCollection Points
     {
@@ -423,10 +470,30 @@ public sealed class GestureOverlayViewModel : INotifyPropertyChanged
         }
     }
 
+    private void BindUnboundGesture()
+    {
+        if (!ShowBindAction)
+        {
+            return;
+        }
+
+        _appLifecycleService?.ShowGestureBindingEditor(_pattern);
+        _bindActionHandler?.Invoke();
+    }
+
+    private void NotifyBindActionChanged()
+    {
+        OnPropertyChanged(nameof(ShowBindAction));
+        OnPropertyChanged(nameof(BindActionHintText));
+        OnPropertyChanged(nameof(BindActionButtonText));
+        if (BindUnboundGestureCommand is RelayCommand relay)
+        {
+            relay.RaiseCanExecuteChanged();
+        }
+    }
+
     private void OnPropertyChanged([CallerMemberName] string? propertyName = null)
     {
         PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
     }
 }
-
-

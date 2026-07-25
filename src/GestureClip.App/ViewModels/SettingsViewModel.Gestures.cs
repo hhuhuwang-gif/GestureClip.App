@@ -554,6 +554,60 @@ public sealed partial class SettingsViewModel
     }
 
 
+
+    /// <summary>
+    /// Select an existing binding card, or stage a new pattern in the editor so user can assign an action.
+    /// </summary>
+    public void FocusGestureBinding(string? pattern)
+    {
+        var normalized = NormalizeGesturePattern(pattern);
+        if (string.IsNullOrWhiteSpace(normalized) || normalized == "-")
+        {
+            SelectedGestureBindingCard = PrimaryGestureBindingCards.FirstOrDefault(card => !card.IsBound)
+                ?? GestureBindingCards.FirstOrDefault(card => !card.IsBound)
+                ?? PrimaryGestureBindingCards.FirstOrDefault()
+                ?? GestureBindingCards.FirstOrDefault();
+            return;
+        }
+
+        if (!IsValidGesturePattern(normalized))
+        {
+            return;
+        }
+
+        var existing = GestureBindingCards.FirstOrDefault(card =>
+            string.Equals(card.Pattern, normalized, StringComparison.Ordinal));
+        if (existing is null)
+        {
+            var card = CreateGestureBindingCard(normalized, BuiltInGestureAction.None);
+            GestureBindingCards.Add(card);
+            if (card.IsCommon || card.IsBound)
+            {
+                PrimaryGestureBindingCards.Add(card);
+            }
+            else
+            {
+                AdvancedGestureBindingCards.Add(card);
+            }
+
+            NewGesturePattern = normalized;
+            SelectedGestureBindingCard = card;
+            RecordGestureStatusText = $"已选中手势 {DirectionText(normalized)}，请选择要执行的动作。";
+            NotifyGestureBindingEmptyStatesChanged();
+            return;
+        }
+
+        SelectedGestureBindingCard = existing;
+        if (!existing.IsBound)
+        {
+            RecordGestureStatusText = $"手势 {DirectionText(normalized)} 尚未绑定，请选择动作。";
+        }
+        else
+        {
+            RecordGestureStatusText = $"已定位到手势 {DirectionText(normalized)}。";
+        }
+    }
+
     private void SelectGestureBindingAfterRefresh(string pattern)
     {
         RefreshGestureBindingCards();

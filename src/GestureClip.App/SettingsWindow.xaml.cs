@@ -168,6 +168,19 @@ public partial class SettingsWindow : Window
     /// <summary>
     /// Open a settings tab by header keyword / alias. Safe to call after show.
     /// </summary>
+
+    /// <summary>Navigate to bindings and select/create card for pattern.</summary>
+    public void FocusGestureBinding(string? pattern)
+    {
+        NavigateToPage("bindings", "SectionGestureEditor");
+        if (DataContext is SettingsViewModel vm)
+        {
+            Dispatcher.BeginInvoke(
+                new Action(() => vm.FocusGestureBinding(pattern)),
+                System.Windows.Threading.DispatcherPriority.Loaded);
+        }
+    }
+
     public void NavigateToPage(string page, string? targetElementName = null)
     {
         if (MainSettingsTabControl is null)
