@@ -259,6 +259,23 @@ public sealed class GlobalHotkeyServiceTests
             PastePlainUnregisterCount++;
         }
 
+        public event EventHandler? PasteQueueHotkeyPressed;
+        public int PasteQueueRegisterCount { get; private set; }
+        public int PasteQueueUnregisterCount { get; private set; }
+
+        public bool RegisterPasteQueueHotkey(HotkeyDefinition hotkey)
+        {
+            PasteQueueRegisterCount++;
+            return true;
+        }
+
+        public void UnregisterPasteQueueHotkey()
+        {
+            PasteQueueUnregisterCount++;
+        }
+
+        public void RaisePasteQueueHotkeyPressed() => PasteQueueHotkeyPressed?.Invoke(this, EventArgs.Empty);
+
         public int GetLastError() => LastError;
 
         public void RaiseHotkeyPressed() => HotkeyPressed?.Invoke(this, EventArgs.Empty);

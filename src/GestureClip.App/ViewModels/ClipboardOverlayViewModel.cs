@@ -20,6 +20,7 @@ public sealed class ClipboardOverlayViewModel : INotifyPropertyChanged
     private const string RegexSearchPrefix = "re:";
 
     private readonly IClipboardService _clipboardService;
+    private readonly IPasteQueueService? _pasteQueueService;
     private readonly TimeSpan _searchDebounceDelay;
     private string _searchText = "";
     private ClipboardItem? _selectedItem;
@@ -45,12 +46,25 @@ public sealed class ClipboardOverlayViewModel : INotifyPropertyChanged
     /// <summary>Ids copied (or pasted) from the overlay in this process session.</summary>
     private readonly HashSet<Guid> _sessionCopiedIds = [];
 
-    public ClipboardOverlayViewModel(IClipboardService clipboardService, TimeSpan? searchDebounceDelay = null)
+    public ClipboardOverlayViewModel(
+        IClipboardService clipboardService,
+        TimeSpan? searchDebounceDelay = null,
+        IPasteQueueService? pasteQueueService = null)
     {
         _clipboardService = clipboardService;
+        _pasteQueueService = pasteQueueService;
         _searchDebounceDelay = searchDebounceDelay ?? TimeSpan.FromMilliseconds(180);
         StatusText = "";
         RefreshShortcutHint();
+        if (_pasteQueueService is not null)
+        {
+            _pasteQueueService.QueueChanged += (_, _) =>
+            {
+                OnPropertyChanged(nameof(PasteQueueCount));
+                OnPropertyChanged(nameof(HasPasteQueue));
+                OnPropertyChanged(nameof(PasteQueueText));
+            };
+        }
     }
 
     public event PropertyChangedEventHandler? PropertyChanged;
@@ -321,6 +335,35 @@ public sealed class ClipboardOverlayViewModel : INotifyPropertyChanged
     {
         var cancellation = ReplaceSearchCancellation();
         await SearchCoreAsync(cancellation.Token);
+    }
+
+    public int PasteQueueCount => _pasteQueueService?.PendingCount ?? 0;
+
+    public bool HasPasteQueue => PasteQueueCount > 0;
+
+    public string PasteQueueText => $"粘贴队列剩 {PasteQueueCount} 条 · 在目标应用按 Ctrl+V 依次粘贴";
+
+    public bool EnqueueToPasteQueue(IReadOnlyList<ClipboardItem> items)
+    {
+        if (_pasteQueueService is null || items.Count == 0)
+        {
+            return false;
+        }
+
+        if (!_pasteQueueService.Enqueue(items))
+        {
+            StatusText = "粘贴队列启动失败：Ctrl+V 被其他程序占用";
+            return false;
+        }
+
+        StatusText = $"已加入粘贴队列（{items.Count} 条）· 到目标应用连按 Ctrl+V 依次粘贴";
+        return true;
+    }
+
+    public void ClearPasteQueue()
+    {
+        _pasteQueueService?.Clear();
+        StatusText = "粘贴队列已清空，Ctrl+V 恢复正常";
     }
 
     public bool IsSnippetEditorOpen

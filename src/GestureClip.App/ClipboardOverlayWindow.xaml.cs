@@ -212,6 +212,13 @@ public partial class ClipboardOverlayWindow : Window
             return;
         }
 
+        if (e.Key == Key.Q && (Keyboard.Modifiers & ModifierKeys.Control) == ModifierKeys.Control)
+        {
+            _viewModel.EnqueueToPasteQueue(GetSelectedItems());
+            e.Handled = true;
+            return;
+        }
+
         if (e.Key == Key.Delete && !isSearchTyping)
         {
             var selected = GetSelectedItems();
@@ -559,6 +566,16 @@ public partial class ClipboardOverlayWindow : Window
     private async void TogglePinnedMenuItem_Click(object sender, RoutedEventArgs e)
     {
         await _viewModel.ToggleSelectedPinnedAsync();
+    }
+
+    private void EnqueuePasteQueueMenuItem_Click(object sender, RoutedEventArgs e)
+    {
+        _viewModel.EnqueueToPasteQueue(GetSelectedItems());
+    }
+
+    private void ClearPasteQueueButton_Click(object sender, RoutedEventArgs e)
+    {
+        _viewModel.ClearPasteQueue();
     }
 
     private void AddSnippetButton_Click(object sender, RoutedEventArgs e)

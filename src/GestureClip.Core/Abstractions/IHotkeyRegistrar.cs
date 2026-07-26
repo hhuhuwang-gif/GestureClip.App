@@ -10,6 +10,8 @@ public interface IHotkeyRegistrar
 
     event EventHandler? PastePlainTextHotkeyPressed;
 
+    event EventHandler? PasteQueueHotkeyPressed;
+
     bool RegisterOpenClipboardHotkey(HotkeyDefinition hotkey);
 
     void UnregisterOpenClipboardHotkey();
@@ -21,6 +23,10 @@ public interface IHotkeyRegistrar
     bool RegisterPastePlainTextHotkey(HotkeyDefinition hotkey);
 
     void UnregisterPastePlainTextHotkey();
+
+    bool RegisterPasteQueueHotkey(HotkeyDefinition hotkey);
+
+    void UnregisterPasteQueueHotkey();
 
     int GetLastError();
 }

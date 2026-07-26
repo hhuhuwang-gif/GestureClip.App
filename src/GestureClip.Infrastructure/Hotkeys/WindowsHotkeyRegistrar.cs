@@ -13,6 +13,7 @@ public sealed class WindowsHotkeyRegistrar : IHotkeyRegistrar, IDisposable
     private const int OpenClipboardOverlayHotkeyId = 0x4743;
     private const int OpenQuickActionHotkeyId = 0x4744;
     private const int PastePlainTextHotkeyId = 0x4745;
+    private const int PasteQueueHotkeyId = 0x4746;
     private readonly Dispatcher _dispatcher;
     private HwndSource? _source;
     private int _lastError;
@@ -27,6 +28,8 @@ public sealed class WindowsHotkeyRegistrar : IHotkeyRegistrar, IDisposable
     public event EventHandler? QuickActionHotkeyPressed;
 
     public event EventHandler? PastePlainTextHotkeyPressed;
+
+    public event EventHandler? PasteQueueHotkeyPressed;
 
     public bool RegisterOpenClipboardHotkey(HotkeyDefinition hotkey)
     {
@@ -58,6 +61,16 @@ public sealed class WindowsHotkeyRegistrar : IHotkeyRegistrar, IDisposable
         Unregister(PastePlainTextHotkeyId);
     }
 
+    public bool RegisterPasteQueueHotkey(HotkeyDefinition hotkey)
+    {
+        return Register(PasteQueueHotkeyId, hotkey);
+    }
+
+    public void UnregisterPasteQueueHotkey()
+    {
+        Unregister(PasteQueueHotkeyId);
+    }
+
     public int GetLastError() => _lastError;
 
     public void Dispose()
@@ -72,6 +85,7 @@ public sealed class WindowsHotkeyRegistrar : IHotkeyRegistrar, IDisposable
             HotkeyNativeMethods.UnregisterHotKey(_source.Handle, OpenClipboardOverlayHotkeyId);
             HotkeyNativeMethods.UnregisterHotKey(_source.Handle, OpenQuickActionHotkeyId);
             HotkeyNativeMethods.UnregisterHotKey(_source.Handle, PastePlainTextHotkeyId);
+            HotkeyNativeMethods.UnregisterHotKey(_source.Handle, PasteQueueHotkeyId);
             _source.RemoveHook(WndProc);
             _source.Dispose();
             _source = null;
@@ -145,6 +159,11 @@ public sealed class WindowsHotkeyRegistrar : IHotkeyRegistrar, IDisposable
         else if (id == PastePlainTextHotkeyId)
         {
             PastePlainTextHotkeyPressed?.Invoke(this, EventArgs.Empty);
+            handled = true;
+        }
+        else if (id == PasteQueueHotkeyId)
+        {
+            PasteQueueHotkeyPressed?.Invoke(this, EventArgs.Empty);
             handled = true;
         }
 
