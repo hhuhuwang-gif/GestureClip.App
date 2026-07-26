@@ -586,12 +586,39 @@
                                             </Grid.ColumnDefinitions>
                                             <StackPanel>
                                                 <TextBlock Text="外观" FontSize="14" FontWeight="Medium" />
-                                                <TextBlock Text="深色模式可随时切换" Style="{StaticResource MutedTextStyle}" FontSize="12" Margin="0,4,0,0" />
+                                                <TextBlock Text="浅色 / 深色 / 跟随系统" Style="{StaticResource MutedTextStyle}" FontSize="12" Margin="0,4,0,0" />
                                             </StackPanel>
-                                            <CheckBox Grid.Column="1"
-                                                      Style="{StaticResource SettingsToggleCheckBoxStyle}"
-                                                      ToolTip="深色模式"
-                                                      IsChecked="{Binding IsDarkTheme, Mode=TwoWay}" />
+                                            <ComboBox Grid.Column="1"
+                                                      Width="150"
+                                                      VerticalAlignment="Center"
+                                                      SelectedIndex="{Binding ThemeModeIndex, Mode=TwoWay}">
+                                                <ComboBoxItem Content="浅色" />
+                                                <ComboBoxItem Content="深色" />
+                                                <ComboBoxItem Content="跟随系统" />
+                                            </ComboBox>
+                                        </Grid>
+                                    </Border>
+                                    <Border Style="{StaticResource SettingsFormRowStyle}">
+                                        <Grid>
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="*" />
+                                                <ColumnDefinition Width="Auto" />
+                                            </Grid.ColumnDefinitions>
+                                            <StackPanel>
+                                                <TextBlock Text="主题色" FontSize="14" FontWeight="Medium" />
+                                                <TextBlock Text="按钮、选中态等强调色" Style="{StaticResource MutedTextStyle}" FontSize="12" Margin="0,4,0,0" />
+                                            </StackPanel>
+                                            <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                                                <Border Width="16" Height="16" CornerRadius="8" Margin="0,0,8,0"
+                                                        VerticalAlignment="Center"
+                                                        Background="{DynamicResource BrushPrimaryBright}"
+                                                        BorderBrush="{DynamicResource BrushBorder}" BorderThickness="1" />
+                                                <ComboBox Width="170"
+                                                          VerticalAlignment="Center"
+                                                          ItemsSource="{Binding UiAccentColorOptions}"
+                                                          SelectedItem="{Binding SelectedUiAccentColorOption, Mode=TwoWay}"
+                                                          DisplayMemberPath="DisplayName" />
+                                            </StackPanel>
                                         </Grid>
                                     </Border>
                                     <Border Style="{StaticResource SettingsFormRowStyle}">

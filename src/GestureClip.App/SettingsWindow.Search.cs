@@ -37,7 +37,7 @@ public partial class SettingsWindow
     [
         new("总览", "首页", "总览 首页 状态 权限", "home", "HomePageIntro"),
         new("智能粘贴", "首页 / 智能粘贴", "智能粘贴 推荐 纯文本 净化 Ctrl+V 粘贴", "home", "SmartPasteRecommendationCard"),
-        new("深色模式", "首页 / 系统信息", "深色 外观 主题 夜间 模式", "home", "SectionSystemInfo"),
+        new("外观主题", "首页 / 系统信息", "深色 浅色 跟随系统 主题色 强调色 外观 主题 夜间 模式", "home", "SectionSystemInfo"),
         new("系统信息", "首页 / 系统信息", "权限 数据库 日志 运行状态", "home", "SectionSystemInfo"),
         new("剪贴板记录", "剪贴板 / 剪贴板记录", "剪贴板 记录 历史 捕获 启用 开关", "clipboard", "SectionClipboardCapture"),
         new("打开历史热键", "剪贴板 / 快捷键", "快捷键 热键 历史 Ctrl 打开", "clipboard", "SectionClipboardHotkeys"),

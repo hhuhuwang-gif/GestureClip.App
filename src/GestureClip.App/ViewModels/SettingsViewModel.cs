@@ -44,7 +44,8 @@ public sealed partial class SettingsViewModel : INotifyPropertyChanged
     private readonly IGestureConfigTransferService _gestureConfigTransferService;
     private readonly IEdgeTriggerService _edgeTriggerService;
     private readonly IWorkerLevelService _workerLevelService;
-    private bool _isDarkTheme;
+    private int _themeModeIndex;
+    private string _uiAccentColor = string.Empty;
     private bool _clipboardCaptureEnabled;
     private bool _gestureEnabled;
     private bool _gestureShowOverlay;
@@ -288,10 +289,9 @@ public sealed partial class SettingsViewModel : INotifyPropertyChanged
         _snippet3Text = _settingsService.Get(SettingKeys.GestureSnippet3Text, "稍后回复您。");
         _gestureDiagnostics = _mouseGestureService.Diagnostics;
         _startWithWindows = _startupService.IsEnabled();
-        _isDarkTheme = string.Equals(
-            _settingsService.Get(SettingKeys.UiThemeMode, "Light"),
-            "Dark",
-            StringComparison.OrdinalIgnoreCase);
+        _themeModeIndex = (int)AppThemeService.ParsePreference(
+            _settingsService.Get(SettingKeys.UiThemeMode, "Light"));
+        _uiAccentColor = _settingsService.Get(SettingKeys.UiAccentColor, string.Empty) ?? string.Empty;
         StartupModeWarning = _startupService.IsDevelopmentRunMode()
             ? "当前看起来是开发运行路径，开机自启建议在发布版中开启。"
             : "";
@@ -436,19 +436,48 @@ public sealed partial class SettingsViewModel : INotifyPropertyChanged
         }
     }
 
-    public bool IsDarkTheme
+    public int ThemeModeIndex
     {
-        get => _isDarkTheme;
+        get => _themeModeIndex;
         set
         {
-            if (_isDarkTheme == value)
+            if (_themeModeIndex == value || value < 0)
             {
                 return;
             }
 
-            _isDarkTheme = value;
+            _themeModeIndex = value;
             OnPropertyChanged();
-            _ = ApplyThemeAsync(value);
+            _ = ApplyThemeModeAsync(value);
+        }
+    }
+
+    public IReadOnlyList<UiAccentColorOption> UiAccentColorOptions { get; } =
+    [
+        new("默认蓝", ""),
+        new("紫罗兰", "#8B5CF6"),
+        new("樱粉", "#EC4899"),
+        new("珊瑚红", "#EF4444"),
+        new("落日橙", "#F97316"),
+        new("森林绿", "#16A34A"),
+        new("青碧", "#0D9488"),
+        new("石墨灰", "#475569")
+    ];
+
+    public UiAccentColorOption? SelectedUiAccentColorOption
+    {
+        get => UiAccentColorOptions.FirstOrDefault(option => string.Equals(option.Hex, _uiAccentColor, StringComparison.OrdinalIgnoreCase))
+               ?? UiAccentColorOptions[0];
+        set
+        {
+            if (value is null || string.Equals(_uiAccentColor, value.Hex, StringComparison.OrdinalIgnoreCase))
+            {
+                return;
+            }
+
+            _uiAccentColor = value.Hex;
+            OnPropertyChanged();
+            _ = ApplyAccentColorAsync(value.Hex);
         }
     }
 
@@ -2094,16 +2123,30 @@ public sealed partial class SettingsViewModel : INotifyPropertyChanged
     }
 
 
-    private async Task ApplyThemeAsync(bool dark)
+    private async Task ApplyThemeModeAsync(int modeIndex)
     {
-        var mode = dark ? AppUiThemeMode.Dark : AppUiThemeMode.Light;
+        var preference = (AppThemePreference)modeIndex;
         if (_themeService is not null)
         {
-            await _themeService.SetModeAsync(mode);
+            await _themeService.SetPreferenceAsync(preference);
             return;
         }
 
-        await _settingsService.SetAsync(SettingKeys.UiThemeMode, dark ? "Dark" : "Light", CancellationToken.None);
+        await _settingsService.SetAsync(
+            SettingKeys.UiThemeMode,
+            AppThemeService.PreferenceToSettingValue(preference),
+            CancellationToken.None);
+    }
+
+    private async Task ApplyAccentColorAsync(string hex)
+    {
+        if (_themeService is not null)
+        {
+            await _themeService.SetAccentColorAsync(hex);
+            return;
+        }
+
+        await _settingsService.SetAsync(SettingKeys.UiAccentColor, hex, CancellationToken.None);
     }
 
 

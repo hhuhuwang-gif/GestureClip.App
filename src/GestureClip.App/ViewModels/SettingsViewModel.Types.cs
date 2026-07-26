@@ -50,6 +50,13 @@ public sealed partial class SettingsViewModel
         public override string ToString() => DisplayName;
     }
 
+    public sealed record UiAccentColorOption(string Name, string Hex)
+    {
+        public string DisplayName => string.IsNullOrEmpty(Hex) ? Name : $"{Name}  {Hex}";
+
+        public override string ToString() => DisplayName;
+    }
+
     public sealed record GestureTriggerModeViewModel(string Name, string Status, bool IsEnabled);
 
     public IReadOnlyList<GestureActionOptionViewModel> GestureActionOptions { get; } = GestureActionCatalog.DefaultOptions;
