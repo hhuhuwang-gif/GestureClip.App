@@ -7,7 +7,10 @@ namespace GestureClip.App.Converters;
 
 public sealed class ImageBase64ToSourceConverter : IValueConverter
 {
-    private const int MaxCachedImages = 96;
+    private const int MaxCachedImages = 128;
+    /// <summary>Chars sampled from each end of the raw base64 for the cache key, so a
+    /// cache hit never scans the full (possibly multi-MB) string.</summary>
+    private const int CacheKeySampleLength = 64;
     private const int DefaultDecodePixelWidth = 320;
     private const int MinDecodePixelWidth = 32;
     private const int MaxDecodePixelWidth = 720;
@@ -24,14 +27,14 @@ public sealed class ImageBase64ToSourceConverter : IValueConverter
 
         try
         {
-            var base64 = NormalizeBase64(rawBase64);
             var decodePixelWidth = GetDecodePixelWidth(parameter);
-            var cacheKey = CreateCacheKey(base64, decodePixelWidth);
+            var cacheKey = CreateCacheKey(rawBase64, decodePixelWidth);
             if (TryGetCached(cacheKey, out var cached))
             {
                 return cached;
             }
 
+            var base64 = NormalizeBase64(rawBase64);
             var bytes = System.Convert.FromBase64String(base64);
             using var stream = new MemoryStream(bytes);
             var image = new BitmapImage();
@@ -109,10 +112,14 @@ public sealed class ImageBase64ToSourceConverter : IValueConverter
         }
     }
 
-    private static string CreateCacheKey(string base64, int decodePixelWidth)
+    private static string CreateCacheKey(string rawBase64, int decodePixelWidth)
     {
+        // Length + head/tail samples identify an image without touching the middle of the
+        // payload; hashing the full string used to cost O(n) on every cache hit.
+        var head = rawBase64[..Math.Min(CacheKeySampleLength, rawBase64.Length)];
+        var tail = rawBase64[Math.Max(0, rawBase64.Length - CacheKeySampleLength)..];
         return string.Create(
             CultureInfo.InvariantCulture,
-            $"{decodePixelWidth}:{base64.Length}:{base64.GetHashCode(StringComparison.Ordinal):X8}");
+            $"{decodePixelWidth}:{rawBase64.Length}:{head.GetHashCode(StringComparison.Ordinal):X8}:{tail.GetHashCode(StringComparison.Ordinal):X8}");
     }
 }
