@@ -31,4 +31,16 @@ public interface IWorkstationStatsRepository
     }
 
     Task ResetAsync(DateOnly date, CancellationToken cancellationToken);
+
+    /// <summary>Inclusive date range, one entry per day; missing days are zero-filled, nothing is written.</summary>
+    async Task<IReadOnlyList<WorkstationDailyStats>> GetRangeAsync(DateOnly from, DateOnly to, CancellationToken cancellationToken)
+    {
+        var results = new List<WorkstationDailyStats>();
+        for (var date = from; date <= to; date = date.AddDays(1))
+        {
+            results.Add(await GetOrCreateAsync(date, cancellationToken));
+        }
+
+        return results;
+    }
 }

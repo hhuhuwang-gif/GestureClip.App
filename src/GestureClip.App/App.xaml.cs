@@ -142,6 +142,15 @@ public partial class App : System.Windows.Application
 
         try
         {
+            await _serviceProvider!.GetRequiredService<IWellnessReminderService>().StartAsync(CancellationToken.None);
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Wellness reminder failed to start.");
+        }
+
+        try
+        {
             await _serviceProvider!.GetRequiredService<WorkBearDailyReportAutoService>().StartAsync(CancellationToken.None);
         }
         catch (Exception ex)

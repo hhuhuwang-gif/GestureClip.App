@@ -45,6 +45,7 @@ public static class FeaturesServiceCollectionExtensions
         services.AddSingleton<IWorkerLevelService, WorkerLevelService>();
         services.AddSingleton<IWorkstationHudService, WorkstationHudService>();
         services.AddSingleton<IOverworkReminderService, OverworkReminderService>();
+        services.AddSingleton<IWellnessReminderService, WellnessReminderService>();
         return services;
     }
 }

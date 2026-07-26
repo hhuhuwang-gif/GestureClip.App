@@ -124,4 +124,8 @@ public static class SettingKeys
     public const string WorkerLevelShowLevelInHud = "WorkerLevel.ShowLevelInHud";
     public const string HudFunTextEnabled = "Hud.FunTextEnabled";
     public const string HudStatusLevelEnabled = "Hud.StatusLevelEnabled";
+    public const string WellnessWaterReminderEnabled = "Wellness.Water.Enabled";
+    public const string WellnessWaterIntervalMinutes = "Wellness.Water.IntervalMinutes";
+    public const string WellnessStretchReminderEnabled = "Wellness.Stretch.Enabled";
+    public const string WellnessStretchIntervalMinutes = "Wellness.Stretch.IntervalMinutes";
 }

@@ -130,6 +130,30 @@ ON CONFLICT(Date) DO UPDATE SET
         return SaveAsync(new WorkstationDailyStats(date), cancellationToken);
     }
 
+    public async Task<IReadOnlyList<WorkstationDailyStats>> GetRangeAsync(DateOnly from, DateOnly to, CancellationToken cancellationToken)
+    {
+        await using var connection = await _connectionFactory.OpenConnectionAsync(cancellationToken);
+        var rows = await connection.QueryAsync<WorkstationStatsRow>(
+            """
+SELECT Date, CopyCount, PasteCount, GestureCount, EstimatedSavedClicks, OpenClipboardCount, OverworkReminderCount, FishingMinutes, FishingStartedAt
+FROM WorkdayStats
+WHERE Date >= @From AND Date <= @To
+ORDER BY Date;
+""",
+            new { From = ToKey(from), To = ToKey(to) });
+
+        var byDate = rows.ToDictionary(row => row.Date, StringComparer.Ordinal);
+        var results = new List<WorkstationDailyStats>();
+        for (var date = from; date <= to; date = date.AddDays(1))
+        {
+            results.Add(byDate.TryGetValue(ToKey(date), out var row)
+                ? ToStats(row)
+                : new WorkstationDailyStats(date));
+        }
+
+        return results;
+    }
+
     private static string ToKey(DateOnly date) => date.ToString("yyyy-MM-dd");
 
     private static WorkstationDailyStats ToStats(WorkstationStatsRow row)

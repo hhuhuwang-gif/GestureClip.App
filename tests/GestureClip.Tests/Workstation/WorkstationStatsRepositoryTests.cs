@@ -24,6 +24,25 @@ public sealed class WorkstationStatsRepositoryTests
     }
 
     [Fact]
+    public async Task GetRangeAsync_returns_one_entry_per_day_with_zero_fill()
+    {
+        using var database = await TestDatabase.CreateAsync();
+        var repository = new WorkstationStatsRepository(database.ConnectionFactory);
+        var monday = new DateOnly(2026, 7, 6);
+        await repository.SaveAsync(new WorkstationDailyStats(monday, CopyCount: 2, PasteCount: 3, GestureCount: 4), CancellationToken.None);
+        await repository.SaveAsync(new WorkstationDailyStats(monday.AddDays(2), CopyCount: 7), CancellationToken.None);
+
+        var range = await repository.GetRangeAsync(monday, monday.AddDays(3), CancellationToken.None);
+
+        Assert.Equal(4, range.Count);
+        Assert.Equal([monday, monday.AddDays(1), monday.AddDays(2), monday.AddDays(3)], range.Select(day => day.Date));
+        Assert.Equal(2, range[0].CopyCount);
+        Assert.Equal(0, range[1].CopyCount);
+        Assert.Equal(7, range[2].CopyCount);
+        Assert.Equal(0, range[3].CopyCount);
+    }
+
+    [Fact]
     public async Task SaveAsync_persists_daily_counts_and_fishing_state()
     {
         using var database = await TestDatabase.CreateAsync();

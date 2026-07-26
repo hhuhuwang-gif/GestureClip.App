@@ -17,6 +17,7 @@ public sealed class WorkstationDashboardViewModel : INotifyPropertyChanged
     private readonly IWorkBearShareCardService? _shareCardService;
     private readonly IOverworkReminderService? _overworkReminderService;
     private readonly IConfirmationService? _confirmationService;
+    private readonly IWorkstationStatsRepository? _statsRepository;
     private WorkstationDashboardSnapshot _snapshot = EmptySnapshot;
     private string _lastMessage = "本地统计，不上传。小熊只陪你看看状态，不偷看剪贴板正文。";
     private bool _settingsExpanded = true;
@@ -36,13 +37,15 @@ public sealed class WorkstationDashboardViewModel : INotifyPropertyChanged
         ISettingsService? settingsService = null,
         IWorkBearShareCardService? shareCardService = null,
         IOverworkReminderService? overworkReminderService = null,
-        IConfirmationService? confirmationService = null)
+        IConfirmationService? confirmationService = null,
+        IWorkstationStatsRepository? statsRepository = null)
     {
         _dashboardService = dashboardService;
         _settingsService = settingsService;
         _shareCardService = shareCardService;
         _overworkReminderService = overworkReminderService;
         _confirmationService = confirmationService;
+        _statsRepository = statsRepository;
         _setupSalaryText = WorkstationMonthlySalary > 0 ? WorkstationMonthlySalary.ToString("0") : "10000";
         _setupStartTime = WorkstationWorkStartTime;
         _setupEndTime = WorkstationWorkEndTime;
@@ -470,6 +473,34 @@ public sealed class WorkstationDashboardViewModel : INotifyPropertyChanged
 
     public string[] ShareCardStyleOptions { get; } = ["经典蓝", "简洁白", "吐槽风", "数据风"];
 
+    public bool WaterReminderEnabled
+    {
+        get => _settingsService?.Get(SettingKeys.WellnessWaterReminderEnabled, false) ?? false;
+        set => _ = SetSettingAsync(SettingKeys.WellnessWaterReminderEnabled, value);
+    }
+
+    public int WaterReminderIntervalMinutes
+    {
+        get => _settingsService?.Get(SettingKeys.WellnessWaterIntervalMinutes, 60) ?? 60;
+        set => _ = SetSettingAsync(SettingKeys.WellnessWaterIntervalMinutes, value);
+    }
+
+    public bool StretchReminderEnabled
+    {
+        get => _settingsService?.Get(SettingKeys.WellnessStretchReminderEnabled, false) ?? false;
+        set => _ = SetSettingAsync(SettingKeys.WellnessStretchReminderEnabled, value);
+    }
+
+    public int StretchReminderIntervalMinutes
+    {
+        get => _settingsService?.Get(SettingKeys.WellnessStretchIntervalMinutes, 90) ?? 90;
+        set => _ = SetSettingAsync(SettingKeys.WellnessStretchIntervalMinutes, value);
+    }
+
+    public IReadOnlyList<int> WaterIntervalOptions { get; } = [30, 45, 60, 90, 120];
+
+    public IReadOnlyList<int> StretchIntervalOptions { get; } = [45, 60, 90, 120, 180];
+
     public bool HudFunEnabled
     {
         get => _settingsService?.Get(SettingKeys.WorkBearHudFunEnabled, true) ?? true;
@@ -548,6 +579,45 @@ public sealed class WorkstationDashboardViewModel : INotifyPropertyChanged
     {
         _snapshot = await _dashboardService.GetSnapshotAsync(DateTimeOffset.Now, CancellationToken.None);
         RaiseSnapshotProperties();
+        await RefreshWeeklyTrendAsync();
+    }
+
+    public sealed record WeeklyTrendDay(string DayLabel, int ActionCount, double BarHeight, bool IsToday, string TooltipText);
+
+    public IReadOnlyList<WeeklyTrendDay> WeeklyTrend { get; private set; } = [];
+
+    private async Task RefreshWeeklyTrendAsync()
+    {
+        if (_statsRepository is null)
+        {
+            return;
+        }
+
+        try
+        {
+            var today = DateOnly.FromDateTime(DateTime.Today);
+            var days = await _statsRepository.GetRangeAsync(today.AddDays(-6), today, CancellationToken.None);
+            var max = Math.Max(1, days.Max(day => day.CopyCount + day.PasteCount + day.GestureCount));
+            const double maxBarHeight = 44;
+            string[] weekdayNames = ["日", "一", "二", "三", "四", "五", "六"];
+            WeeklyTrend = days
+                .Select(day =>
+                {
+                    var total = day.CopyCount + day.PasteCount + day.GestureCount;
+                    return new WeeklyTrendDay(
+                        weekdayNames[(int)day.Date.DayOfWeek],
+                        total,
+                        Math.Max(3, maxBarHeight * total / max),
+                        day.Date == today,
+                        $"{day.Date:M月d日} · 动作 {total}（复制 {day.CopyCount} / 粘贴 {day.PasteCount} / 手势 {day.GestureCount}）");
+                })
+                .ToArray();
+            OnPropertyChanged(nameof(WeeklyTrend));
+        }
+        catch
+        {
+            // Trend is decorative; never let it break the dashboard refresh.
+        }
     }
 
     public async Task StartFishingAsync()
