@@ -191,6 +191,14 @@ public sealed class ClipboardOverlayViewModel : INotifyPropertyChanged
 
     public bool IsEmpty => Items.Count == 0 && !IsLoading;
 
+    public bool HasActiveQuery => !string.IsNullOrWhiteSpace(_searchText) || _selectedFilter != ClipboardOverlayFilter.All;
+
+    public string EmptyStateTitle => HasActiveQuery ? "没有匹配的记录" : "还没有剪贴板记录";
+
+    public string EmptyStateHint => HasActiveQuery
+        ? "换个关键词，或点「全部」重置筛选试试"
+        : "复制任意文字或截图后，会出现在这里";
+
     public string ShortcutHintText { get; private set; } =
         "拼音首字母/re:正则搜索 · Alt+数字快捷粘贴 · Ctrl+Enter 粘贴不关 · ? 快捷键 · Esc 清搜索/关闭";
 
@@ -717,6 +725,8 @@ public sealed class ClipboardOverlayViewModel : INotifyPropertyChanged
         OnPropertyChanged(nameof(SummaryText));
         OnPropertyChanged(nameof(HasItems));
         OnPropertyChanged(nameof(IsEmpty));
+        OnPropertyChanged(nameof(EmptyStateTitle));
+        OnPropertyChanged(nameof(EmptyStateHint));
         refreshWatch.Stop();
         Trace.WriteLine($"ClipboardPerf UiRefreshDurationMs ElapsedMs={refreshWatch.ElapsedMilliseconds} ItemCount={Items.Count} Filter={SelectedFilter}");
     }
@@ -1352,6 +1362,8 @@ public sealed class ClipboardOverlayViewModel : INotifyPropertyChanged
         OnPropertyChanged(nameof(SummaryText));
         OnPropertyChanged(nameof(HasItems));
         OnPropertyChanged(nameof(IsEmpty));
+        OnPropertyChanged(nameof(EmptyStateTitle));
+        OnPropertyChanged(nameof(EmptyStateHint));
     }
 
     private void OnPropertyChanged([CallerMemberName] string? propertyName = null)

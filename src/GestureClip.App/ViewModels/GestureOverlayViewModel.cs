@@ -34,6 +34,7 @@ public sealed class GestureOverlayViewModel : INotifyPropertyChanged
     private string _savedClicksCountText = "0";
     private PointCollection _points = [];
     private System.Windows.Media.Brush _strokeBrush = new SolidColorBrush(System.Windows.Media.Color.FromRgb(140, 200, 255));
+    private System.Windows.Media.Color _strokeGlowColor = System.Windows.Media.Color.FromRgb(140, 200, 255);
     private System.Windows.Media.Brush _hudBackgroundBrush = new LinearGradientBrush(
         System.Windows.Media.Color.FromRgb(17, 23, 36),
         System.Windows.Media.Color.FromRgb(30, 41, 59),
@@ -436,6 +437,21 @@ public sealed class GestureOverlayViewModel : INotifyPropertyChanged
             }
 
             _strokeBrush = value;
+            OnPropertyChanged();
+        }
+    }
+
+    public System.Windows.Media.Color StrokeGlowColor
+    {
+        get => _strokeGlowColor;
+        set
+        {
+            if (_strokeGlowColor == value)
+            {
+                return;
+            }
+
+            _strokeGlowColor = value;
             OnPropertyChanged();
         }
     }

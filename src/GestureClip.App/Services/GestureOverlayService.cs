@@ -102,6 +102,7 @@ public sealed class GestureOverlayService : IGestureOverlayService
             EnsureWindow();
             ApplyHudInfo(hudInfo);
             ShowWindow();
+            _window?.PlayTrailFeedback(!IsUnboundHud(hudInfo));
             _hideCts?.Cancel();
             _hideCts = new CancellationTokenSource();
             _ = HideLaterAsync(_hideCts.Token);
@@ -262,6 +263,10 @@ public sealed class GestureOverlayService : IGestureOverlayService
         _viewModel.ShortcutText = hudInfo.ShortcutText;
         _viewModel.PresetName = hudInfo.PresetName;
         _viewModel.StrokeBrush = GetStrokeBrush(_settingsService.Get(SettingKeys.GestureStrokeColor, "#8CC8FF"));
+        if (_viewModel.StrokeBrush is SolidColorBrush strokeSolid)
+        {
+            _viewModel.StrokeGlowColor = strokeSolid.Color;
+        }
         _holdForBindAction = IsUnboundHud(hudInfo);
         if (_window is not null)
         {

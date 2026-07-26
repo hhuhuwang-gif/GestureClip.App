@@ -57,20 +57,38 @@
     </Window.Resources>
     <Grid x:Name="RootGrid" IsHitTestVisible="True" UseLayoutRounding="True" SnapsToDevicePixels="True">
         <Canvas IsHitTestVisible="False">
-            <Polyline Points="{Binding Points}"
+            <!-- Soft neon under-glow tinted by the user's stroke color -->
+            <Polyline x:Name="TrailGlowLine"
+                      Points="{Binding Points}"
+                      Stroke="{Binding StrokeBrush}"
+                      StrokeThickness="9"
+                      StrokeStartLineCap="Round"
+                      StrokeEndLineCap="Round"
+                      StrokeLineJoin="Round"
+                      Opacity="0.22">
+                <Polyline.Effect>
+                    <DropShadowEffect Color="{Binding StrokeGlowColor}"
+                                      BlurRadius="18"
+                                      ShadowDepth="0"
+                                      Opacity="0.55" />
+                </Polyline.Effect>
+            </Polyline>
+            <Polyline x:Name="TrailLine"
+                      Points="{Binding Points}"
                       Stroke="{Binding StrokeBrush}"
                       StrokeThickness="2.6"
                       StrokeStartLineCap="Round"
                       StrokeEndLineCap="Round"
                       StrokeLineJoin="Round"
-                      Opacity="0.97">
-                <Polyline.Effect>
-                    <DropShadowEffect Color="#AA2563EB"
-                                      BlurRadius="14"
-                                      ShadowDepth="0"
-                                      Opacity="0.34" />
-                </Polyline.Effect>
-            </Polyline>
+                      Opacity="0.97" />
+            <!-- Success/fail pulse painted over the trail on completion -->
+            <Polyline x:Name="TrailFeedbackLine"
+                      Points="{Binding Points}"
+                      StrokeThickness="4"
+                      StrokeStartLineCap="Round"
+                      StrokeEndLineCap="Round"
+                      StrokeLineJoin="Round"
+                      Opacity="0" />
         </Canvas>
         <Border HorizontalAlignment="Center"
                 VerticalAlignment="Bottom"

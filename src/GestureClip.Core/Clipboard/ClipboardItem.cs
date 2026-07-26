@@ -28,6 +28,10 @@ public sealed record ClipboardItem(
 
     public bool IsImage => ContentType.StartsWith("image/", StringComparison.OrdinalIgnoreCase);
 
+    public bool IsLink => IsText &&
+        ((TextContent ?? PreviewText ?? "").Contains("://", StringComparison.Ordinal) ||
+         (TextContent ?? PreviewText ?? "").StartsWith("www.", StringComparison.OrdinalIgnoreCase));
+
     public string ContentTypeLabel => IsImage
         ? "图片"
         : IsText
