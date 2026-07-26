@@ -1,6 +1,6 @@
 # CHANGELOG
 
-## Unreleased
+## GestureClip v0.6.38 Beta
 
 ### 剪贴板面板修复
 
@@ -31,6 +31,11 @@
 - 剪贴板面板打开时淡入动画
 - 列表卡片悬停高亮描边
 - 快捷键速查、底部提示同步更新
+
+### 安装包
+
+- `GestureClip-v0.6.38-beta-win-x64.zip` → **先退出旧进程**再解压运行
+- `GestureClip-Setup-v0.6.38-beta-win-x64.zip`
 
 ### 验证
 

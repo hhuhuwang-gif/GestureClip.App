@@ -85,7 +85,7 @@
                                 BorderThickness="1"
                                 CornerRadius="999"
                                 Padding="12,6">
-                            <TextBlock Text="v0.6.37 · 本地"
+                            <TextBlock Text="v0.6.38 · 本地"
                                        Style="{StaticResource HubRootTextStyle}"
                                        FontSize="12"
                                        FontWeight="Bold"

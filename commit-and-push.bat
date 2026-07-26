@@ -1,7 +1,8 @@
 @echo off
-rem One-click commit & push for the clipboard overlay improvements.
+setlocal
 cd /d "%~dp0"
 git add -A
-git commit -m "fix(clipboard): digits typed in search no longer trigger paste-by-index; add pinyin-initial & regex search, links filter, text tools, UI polish"
+git commit -m "fix(clipboard): search-box digit bug; pinyin/regex search, links filter, text tools, UI polish"
 git push origin main
+echo.
 pause

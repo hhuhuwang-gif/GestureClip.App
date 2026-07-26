@@ -23,9 +23,9 @@
 <p align="center">
   <a href="https://github.com/hhuhuwang-gif/GestureClip.App/releases/latest"><strong>⬇ 下载最新版（Latest）</strong></a>
   ·
-  <a href="https://github.com/hhuhuwang-gif/GestureClip.App/releases/download/v0.6.37-beta/GestureClip-v0.6.37-beta-win-x64.zip"><strong>v0.6.37 Beta zip</strong></a>
+  <a href="https://github.com/hhuhuwang-gif/GestureClip.App/releases/download/v0.6.38-beta/GestureClip-v0.6.38-beta-win-x64.zip"><strong>v0.6.38 Beta zip</strong></a>
   ·
-  <a href="https://github.com/hhuhuwang-gif/GestureClip.App/releases/tag/v0.6.37-beta">Release 说明</a>
+  <a href="https://github.com/hhuhuwang-gif/GestureClip.App/releases/tag/v0.6.38-beta">Release 说明</a>
   ·
   <a href="CHANGELOG.md">更新日志</a>
 </p>
@@ -63,20 +63,21 @@
 
 ---
 
-## 当前版本：v0.6.37 Beta
+## 当前版本：v0.6.38 Beta
 
 | 资源 | 链接 |
 | --- | --- |
 | **推荐下载（Latest）** | [Releases / latest](https://github.com/hhuhuwang-gif/GestureClip.App/releases/latest) |
-| 安装包 | [GestureClip-v0.6.37-beta-win-x64.zip](https://github.com/hhuhuwang-gif/GestureClip.App/releases/download/v0.6.37-beta/GestureClip-v0.6.37-beta-win-x64.zip) |
-| 校验文件 | [SHA256SUMS.txt](https://github.com/hhuhuwang-gif/GestureClip.App/releases/download/v0.6.37-beta/SHA256SUMS.txt) |
+| 安装包 | [GestureClip-v0.6.38-beta-win-x64.zip](https://github.com/hhuhuwang-gif/GestureClip.App/releases/download/v0.6.38-beta/GestureClip-v0.6.38-beta-win-x64.zip) |
+| 校验文件 | [SHA256SUMS.txt](https://github.com/hhuhuwang-gif/GestureClip.App/releases/download/v0.6.38-beta/SHA256SUMS.txt) |
 | 历史版本 | 旧版在 Releases 里标记为 **Pre-release**，默认请用 Latest |
 
-### 本版亮点（v0.6.37）
+### 本版亮点（v0.6.38）
 
-- **手势 HUD 统计行可读**：`手势 · 复制 · 粘贴 · 少点` 高对比白字 + 底衬，不再发灰看不清
-- **工位小熊 Hub 质感**（0.6.32）：阶段色、进度条、空状态引导、重置确认、Esc
-- **含 0.6.31**：OCR 搜索、托盘开关、热键冲突提示、启动加速
+- **修复：剪贴板搜索框输入数字不再直接跳转粘贴**，Delete/Home/End/? 也不再误触快捷键
+- **搜索增强**：拼音首字母（`wx`→微信）、`re:` 正则、🔗 链接筛选（Ctrl+6）、搜索时 ↑/↓ 选条目
+- **文本工具**：右键记录一键转大小写 / 去空白 / JSON 格式化压缩 / URL 解码
+- **含 0.6.37**：Hub 版本徽章、三色指标砖、手势 HUD 统计行可读
 
 ---
 
@@ -196,7 +197,7 @@ v0.6.37 起历史再复制会统一写成纯文本；也可用「复制为纯文
 可手动到 [Latest](https://github.com/hhuhuwang-gif/GestureClip.App/releases/latest) 下载。
 
 **为什么 GitHub 上还有很多旧版本？**  
-历史包仍保留下载；已标为 Pre-release。日常请只用 **Latest = v0.6.37 Beta**。
+历史包仍保留下载；已标为 Pre-release。日常请只用 **Latest = v0.6.38 Beta**。
 
 ---
 
@@ -222,7 +223,7 @@ powershell -ExecutionPolicy Bypass -File .\scripts\publish-win-x64.ps1
 - 本地快捷动作：Ctrl+Shift+Q 做去空格、JSON、URL 等
 - 工位小熊（可选）：下班倒计时、复制统计
 
-v0.6.37 Beta，解压双击 GestureClip.exe。
+v0.6.38 Beta，解压双击 GestureClip.exe。
 
 项目：https://github.com/hhuhuwang-gif/GestureClip.App
 下载：https://github.com/hhuhuwang-gif/GestureClip.App/releases/latest
