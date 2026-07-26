@@ -63,6 +63,15 @@ public interface IClipboardService
 
     Task SetFavoriteAsync(Guid id, bool isFavorite, CancellationToken cancellationToken);
 
+    /// <summary>
+    /// Insert a user-authored text snippet directly into history as a favorite.
+    /// Returns the stored item, or null if the text was empty.
+    /// </summary>
+    Task<ClipboardItem?> AddSnippetAsync(string text, CancellationToken cancellationToken)
+    {
+        return Task.FromResult<ClipboardItem?>(null);
+    }
+
     private static bool MatchesFilter(ClipboardItem item, ClipboardContentFilter filter)
     {
         return filter switch

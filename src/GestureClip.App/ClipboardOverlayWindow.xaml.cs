@@ -64,6 +64,18 @@ public partial class ClipboardOverlayWindow : Window
 
     private async void Window_KeyDown(object sender, System.Windows.Input.KeyEventArgs e)
     {
+        // Snippet editor owns the keyboard while open: Esc closes it, everything else types.
+        if (_viewModel.IsSnippetEditorOpen)
+        {
+            if (e.Key == Key.Escape)
+            {
+                _viewModel.CloseSnippetEditor();
+                e.Handled = true;
+            }
+
+            return;
+        }
+
         // While the search box owns keyboard focus, printable keys (digits, "?" etc.) must go
         // into the text box instead of triggering list shortcuts. See KNOWN_ISSUES: typing a
         // number in the search box used to instantly paste history item N and close the panel.
@@ -547,6 +559,34 @@ public partial class ClipboardOverlayWindow : Window
     private async void TogglePinnedMenuItem_Click(object sender, RoutedEventArgs e)
     {
         await _viewModel.ToggleSelectedPinnedAsync();
+    }
+
+    private void AddSnippetButton_Click(object sender, RoutedEventArgs e)
+    {
+        _viewModel.OpenSnippetEditor();
+        Dispatcher.BeginInvoke(new Action(() => SnippetTextBox.Focus()), System.Windows.Threading.DispatcherPriority.Input);
+    }
+
+    private void SnippetCancelButton_Click(object sender, RoutedEventArgs e)
+    {
+        _viewModel.CloseSnippetEditor();
+    }
+
+    private async void SnippetSaveButton_Click(object sender, RoutedEventArgs e)
+    {
+        if (!await _viewModel.SaveSnippetAsync())
+        {
+            return;
+        }
+
+        if (FavoritesFilterButton.IsChecked == true)
+        {
+            await _viewModel.SearchAsync();
+        }
+        else
+        {
+            FavoritesFilterButton.IsChecked = true;
+        }
     }
 
     private async void ToggleFavoriteMenuItem_Click(object sender, RoutedEventArgs e)

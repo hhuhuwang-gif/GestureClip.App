@@ -39,6 +39,8 @@ public sealed class ClipboardOverlayViewModel : INotifyPropertyChanged
     private bool _hasMoreItems;
     private string? _errorMessage;
     private bool _isShortcutHelpVisible;
+    private bool _isSnippetEditorOpen;
+    private string _newSnippetText = "";
     private IReadOnlyList<ClipboardItem> _undoDeleteItems = [];
     /// <summary>Ids copied (or pasted) from the overlay in this process session.</summary>
     private readonly HashSet<Guid> _sessionCopiedIds = [];
@@ -319,6 +321,61 @@ public sealed class ClipboardOverlayViewModel : INotifyPropertyChanged
     {
         var cancellation = ReplaceSearchCancellation();
         await SearchCoreAsync(cancellation.Token);
+    }
+
+    public bool IsSnippetEditorOpen
+    {
+        get => _isSnippetEditorOpen;
+        private set
+        {
+            if (_isSnippetEditorOpen == value)
+            {
+                return;
+            }
+
+            _isSnippetEditorOpen = value;
+            OnPropertyChanged();
+        }
+    }
+
+    public string NewSnippetText
+    {
+        get => _newSnippetText;
+        set
+        {
+            if (_newSnippetText == value)
+            {
+                return;
+            }
+
+            _newSnippetText = value;
+            OnPropertyChanged();
+        }
+    }
+
+    public void OpenSnippetEditor()
+    {
+        NewSnippetText = "";
+        IsSnippetEditorOpen = true;
+    }
+
+    public void CloseSnippetEditor()
+    {
+        IsSnippetEditorOpen = false;
+    }
+
+    public async Task<bool> SaveSnippetAsync()
+    {
+        var item = await _clipboardService.AddSnippetAsync(NewSnippetText, CancellationToken.None);
+        if (item is null)
+        {
+            StatusText = "片段内容不能为空";
+            return false;
+        }
+
+        IsSnippetEditorOpen = false;
+        StatusText = "片段已保存 · 粘贴时 {date} {time} 等变量自动展开";
+        return true;
     }
 
     public async Task<bool> ClearSearchAsync()

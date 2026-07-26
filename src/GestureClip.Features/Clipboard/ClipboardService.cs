@@ -236,6 +236,46 @@ public sealed class ClipboardService : IClipboardService
         _logger.LogInformation("Clipboard text item captured.");
     }
 
+    public async Task<ClipboardItem?> AddSnippetAsync(string text, CancellationToken cancellationToken)
+    {
+        var trimmed = text?.Trim();
+        if (string.IsNullOrEmpty(trimmed))
+        {
+            return null;
+        }
+
+        var hash = _clipboardHashService.ComputeHash(trimmed);
+        var existing = await _clipboardRepository.FindByHashAsync(hash, cancellationToken);
+        if (existing is not null)
+        {
+            await _clipboardRepository.SetFavoriteAsync(existing.Id, true, cancellationToken);
+            await _clipboardRepository.TouchAsync(existing.Id, cancellationToken);
+            _logger.LogInformation("Snippet already in history; marked as favorite.");
+            return existing with { IsFavorite = true };
+        }
+
+        var now = DateTimeOffset.UtcNow;
+        var item = new ClipboardItem(
+            Guid.NewGuid(),
+            "text",
+            trimmed,
+            CreatePreview(trimmed),
+            hash,
+            _clipboardHashService.ComputePlainTextHash(trimmed),
+            "GestureClip",
+            "gestureclip.snippet",
+            false,
+            true,
+            false,
+            0,
+            now,
+            now,
+            null);
+        await _clipboardRepository.InsertAsync(item, cancellationToken);
+        _logger.LogInformation("User snippet added as favorite.");
+        return item;
+    }
+
     public async Task<IReadOnlyList<ClipboardItem>> SearchAsync(string keyword, int limit, CancellationToken cancellationToken)
     {
         return await SearchAsync(keyword, limit, 0, cancellationToken);
@@ -304,6 +344,11 @@ public sealed class ClipboardService : IClipboardService
         }
 
         var pasteText = textItem.TextContent;
+        if (textItem.IsFavorite && SnippetTemplate.ContainsVariables(pasteText))
+        {
+            pasteText = SnippetTemplate.Expand(pasteText, DateTimeOffset.Now);
+        }
+
         if (options.PlainText)
         {
             pasteText = LocalTextTransforms.ToPlainText(pasteText);
@@ -374,9 +419,11 @@ public sealed class ClipboardService : IClipboardService
         var text = string.Join(
             "\r\n",
             textItems
-                .Select(item => item.TextContent)
-                .Where(text => !string.IsNullOrEmpty(text))
-                .Select(text => LocalTextTransforms.ToPlainText(text!)));
+                .Where(item => !string.IsNullOrEmpty(item.TextContent))
+                .Select(item => item.IsFavorite && SnippetTemplate.ContainsVariables(item.TextContent)
+                    ? SnippetTemplate.Expand(item.TextContent!, DateTimeOffset.Now)
+                    : item.TextContent!)
+                .Select(LocalTextTransforms.ToPlainText));
         if (string.IsNullOrEmpty(text))
         {
             return;

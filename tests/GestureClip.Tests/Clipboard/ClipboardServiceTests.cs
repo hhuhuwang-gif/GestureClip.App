@@ -85,6 +85,56 @@ public sealed class ClipboardServiceTests
     }
 
     [Fact]
+    public async Task PasteAsync_expands_variables_only_for_favorite_snippets()
+    {
+        var repository = new FakeClipboardRepository();
+        var writer = new FakeClipboardWriter();
+        var service = CreateService(repository, writer: writer);
+
+        await service.PasteAsync(
+            Item("今天 {date}") with { IsFavorite = true },
+            new PasteOptions(false),
+            CancellationToken.None);
+        Assert.Equal($"今天 {DateTimeOffset.Now.ToLocalTime():yyyy-MM-dd}", writer.Text);
+
+        await service.PasteAsync(Item("普通 {date}"), new PasteOptions(false), CancellationToken.None);
+        Assert.Equal("普通 {date}", writer.Text);
+    }
+
+    [Fact]
+    public async Task AddSnippetAsync_inserts_favorite_text_item()
+    {
+        var repository = new FakeClipboardRepository();
+        var service = CreateService(repository);
+
+        var item = await service.AddSnippetAsync("  请查收，谢谢。  ", CancellationToken.None);
+
+        Assert.NotNull(item);
+        Assert.True(item!.IsFavorite);
+        Assert.Equal("请查收，谢谢。", item.TextContent);
+        Assert.Single(repository.Items);
+    }
+
+    [Fact]
+    public async Task AddSnippetAsync_rejects_blank_and_marks_existing_duplicate_as_favorite()
+    {
+        var repository = new FakeClipboardRepository();
+        var service = CreateService(repository);
+
+        Assert.Null(await service.AddSnippetAsync("   ", CancellationToken.None));
+
+        await service.CaptureTextAsync(Capture("好的，收到。"), CancellationToken.None);
+        var captured = Assert.Single(repository.Items);
+        Assert.False(captured.IsFavorite);
+
+        var snippet = await service.AddSnippetAsync("好的，收到。", CancellationToken.None);
+
+        Assert.NotNull(snippet);
+        Assert.True(snippet!.IsFavorite);
+        Assert.Single(repository.Items);
+    }
+
+    [Fact]
     public async Task PasteAsync_returns_after_clipboard_write_records_paste_count_without_waiting_for_usage_stats()
     {
         var repository = new FakeClipboardRepository();

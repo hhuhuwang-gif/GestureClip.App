@@ -106,9 +106,17 @@
                 </Grid>
             </DockPanel>
 
-            <Border Grid.Row="2"
+            <DockPanel Grid.Row="2" Margin="0,12,0,0" LastChildFill="False">
+                <Button DockPanel.Dock="Right"
+                        x:Name="AddSnippetButton"
+                        Content="＋ 片段"
+                        Style="{StaticResource SecondaryButtonStyle}"
+                        Padding="12,6"
+                        VerticalAlignment="Center"
+                        ToolTip="新建常用片段（支持 {date} {time} 等变量）"
+                        Click="AddSnippetButton_Click" />
+                <Border DockPanel.Dock="Left"
                     Style="{StaticResource SegmentedFilterBarStyle}"
-                    Margin="0,12,0,0"
                     HorizontalAlignment="Left">
                 <StackPanel Orientation="Horizontal">
                     <RadioButton x:Name="AllFilterButton"
@@ -143,7 +151,8 @@
                                  Tag="Links"
                                  Checked="FilterRadioButton_Checked" />
                 </StackPanel>
-            </Border>
+                </Border>
+            </DockPanel>
 
             <Grid Grid.Row="3"
                   Margin="0,14,0,10">
@@ -829,6 +838,64 @@
                                        TextWrapping="Wrap" />
                         </ScrollViewer>
                     </DockPanel>
+                </Border>
+            </Border>
+
+            <!-- 新建片段浮层 -->
+            <Border Grid.RowSpan="5"
+                    Background="#66000000"
+                    CornerRadius="20">
+                <Border.Style>
+                    <Style TargetType="Border">
+                        <Setter Property="Visibility" Value="Collapsed" />
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding IsSnippetEditorOpen}" Value="True">
+                                <Setter Property="Visibility" Value="Visible" />
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </Border.Style>
+                <Border Width="440"
+                        Margin="24"
+                        Padding="20"
+                        CornerRadius="18"
+                        Background="{DynamicResource BrushOverlayPanel}"
+                        BorderBrush="{DynamicResource BrushBorder}"
+                        BorderThickness="1"
+                        HorizontalAlignment="Center"
+                        VerticalAlignment="Center">
+                    <StackPanel>
+                        <TextBlock Text="新建常用片段"
+                                   FontSize="18"
+                                   FontWeight="SemiBold" />
+                        <TextBlock Text="保存后出现在「★ 片段」筛选里；粘贴时 {date} {time} {datetime} {weekday} 会替换成当下时间。"
+                                   Style="{StaticResource MutedTextStyle}"
+                                   FontSize="12"
+                                   TextWrapping="Wrap"
+                                   Margin="0,6,0,10" />
+                        <TextBox x:Name="SnippetTextBox"
+                                 MinHeight="96"
+                                 MaxHeight="200"
+                                 AcceptsReturn="True"
+                                 TextWrapping="Wrap"
+                                 VerticalScrollBarVisibility="Auto"
+                                 Padding="10,8"
+                                 FontSize="14"
+                                 Text="{Binding NewSnippetText, UpdateSourceTrigger=PropertyChanged}" />
+                        <StackPanel Orientation="Horizontal"
+                                    HorizontalAlignment="Right"
+                                    Margin="0,14,0,0">
+                            <Button Content="取消"
+                                    Style="{StaticResource SecondaryButtonStyle}"
+                                    MinWidth="80"
+                                    Margin="0,0,10,0"
+                                    Click="SnippetCancelButton_Click" />
+                            <Button Content="保存片段"
+                                    Style="{StaticResource PrimaryButtonStyle}"
+                                    MinWidth="100"
+                                    Click="SnippetSaveButton_Click" />
+                        </StackPanel>
+                    </StackPanel>
                 </Border>
             </Border>
         </Grid>
