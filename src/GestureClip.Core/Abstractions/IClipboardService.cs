@@ -71,7 +71,20 @@ public interface IClipboardService
             ClipboardContentFilter.Favorites => item.IsFavorite,
             ClipboardContentFilter.Text => item.IsText,
             ClipboardContentFilter.Images => item.IsImage,
+            ClipboardContentFilter.Links => LooksLikeLink(item),
             _ => true
         };
+    }
+
+    private static bool LooksLikeLink(ClipboardItem item)
+    {
+        if (!item.IsText)
+        {
+            return false;
+        }
+
+        var text = item.TextContent ?? item.PreviewText ?? "";
+        return text.Contains("://", StringComparison.Ordinal) ||
+            text.StartsWith("www.", StringComparison.OrdinalIgnoreCase);
     }
 }

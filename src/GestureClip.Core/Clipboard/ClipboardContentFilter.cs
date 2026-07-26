@@ -6,5 +6,7 @@ public enum ClipboardContentFilter
     Pinned,
     Favorites,
     Text,
-    Images
+    Images,
+    /// <summary>Text records that look like URLs (contain "://" or start with www.).</summary>
+    Links
 }

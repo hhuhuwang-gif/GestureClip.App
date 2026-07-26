@@ -467,6 +467,7 @@ WHERE Id = @Id;
             ClipboardContentFilter.Favorites => "IsFavorite = 1",
             ClipboardContentFilter.Text => "ContentType = 'text'",
             ClipboardContentFilter.Images => "ContentType LIKE 'image/%'",
+            ClipboardContentFilter.Links => "(ContentType = 'text' AND (TextContent LIKE '%://%' OR TextContent LIKE 'www.%' OR PreviewText LIKE '%://%' OR PreviewText LIKE 'www.%'))",
             _ => ""
         };
     }

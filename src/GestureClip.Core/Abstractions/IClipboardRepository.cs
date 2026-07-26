@@ -82,6 +82,9 @@ public interface IClipboardRepository
             ClipboardContentFilter.Favorites => item.IsFavorite,
             ClipboardContentFilter.Text => item.IsText,
             ClipboardContentFilter.Images => item.IsImage,
+            ClipboardContentFilter.Links => item.IsText &&
+                ((item.TextContent ?? item.PreviewText ?? "").Contains("://", StringComparison.Ordinal) ||
+                 (item.TextContent ?? item.PreviewText ?? "").StartsWith("www.", StringComparison.OrdinalIgnoreCase)),
             _ => true
         };
     }

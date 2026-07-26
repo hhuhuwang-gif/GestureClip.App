@@ -69,20 +69,41 @@
                 <StackPanel>
                     <TextBlock Text="剪贴板历史"
                                Style="{StaticResource Title22Style}" />
-                    <TextBlock Text="双击复制 · Enter 粘贴 · 绿条=本会话已复制"
+                    <TextBlock Text="双击复制 · Enter 粘贴 · 拼音首字母搜索 · 绿条=本会话已复制"
                                Style="{StaticResource Caption11Style}"
                                Margin="0,4,0,0"
-                               ToolTip="左侧色条：蓝=文本 · 紫=图片 · 橙=置顶 · 绿=本会话已从历史复制。多选时绿条可区分进度。" />
+                               ToolTip="左侧色条：蓝=文本 · 紫=图片 · 橙=置顶 · 绿=本会话已从历史复制。多选时绿条可区分进度。搜索支持拼音首字母（wx→微信）和 re: 正则。" />
                 </StackPanel>
             </DockPanel>
 
             <DockPanel Grid.Row="1" LastChildFill="True">
-                <TextBox x:Name="SearchBox"
-                         Height="44"
-                         FontSize="15"
-                         Padding="16,0"
-                         VerticalContentAlignment="Center"
-                         Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}" />
+                <Grid>
+                    <TextBox x:Name="SearchBox"
+                             Height="44"
+                             FontSize="15"
+                             Padding="16,0"
+                             VerticalContentAlignment="Center"
+                             PreviewKeyDown="SearchBox_PreviewKeyDown"
+                             Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}" />
+                    <TextBlock x:Name="SearchPlaceholder"
+                               Text="🔍 搜索历史 · 支持拼音首字母（wx→微信）· re: 正则"
+                               FontSize="13"
+                               Margin="18,0,18,0"
+                               VerticalAlignment="Center"
+                               IsHitTestVisible="False"
+                               Foreground="{DynamicResource BrushTextMuted}">
+                        <TextBlock.Style>
+                            <Style TargetType="TextBlock">
+                                <Setter Property="Visibility" Value="Collapsed" />
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding Text, ElementName=SearchBox}" Value="">
+                                        <Setter Property="Visibility" Value="Visible" />
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </TextBlock.Style>
+                    </TextBlock>
+                </Grid>
             </DockPanel>
 
             <Border Grid.Row="2"
@@ -115,6 +136,11 @@
                                  Style="{StaticResource SegmentedFilterRadioStyle}"
                                  Content="🖼 图片"
                                  Tag="Images"
+                                 Checked="FilterRadioButton_Checked" />
+                    <RadioButton x:Name="LinksFilterButton"
+                                 Style="{StaticResource SegmentedFilterRadioStyle}"
+                                 Content="🔗 链接"
+                                 Tag="Links"
                                  Checked="FilterRadioButton_Checked" />
                 </StackPanel>
             </Border>
@@ -153,6 +179,18 @@
                         <Separator />
                         <MenuItem Header="{Binding SelectedPinActionText}" Click="TogglePinnedMenuItem_Click" InputGestureText="Ctrl+P" />
                         <MenuItem Header="{Binding SelectedFavoriteActionText}" Click="ToggleFavoriteMenuItem_Click" InputGestureText="Ctrl+S" />
+                        <Separator />
+                        <MenuItem Header="文本工具（复制转换结果）"
+                                  IsEnabled="{Binding IsSelectedText}">
+                            <MenuItem Header="转大写" Click="TransformUpperMenuItem_Click" />
+                            <MenuItem Header="转小写" Click="TransformLowerMenuItem_Click" />
+                            <MenuItem Header="去多余空白/空行" Click="TransformTrimMenuItem_Click" />
+                            <Separator />
+                            <MenuItem Header="JSON 格式化" Click="TransformJsonMenuItem_Click" />
+                            <MenuItem Header="JSON 压缩" Click="TransformJsonMinifyMenuItem_Click" />
+                            <MenuItem Header="URL 解码" Click="TransformUrlDecodeMenuItem_Click" />
+                        </MenuItem>
+                        <Separator />
                         <MenuItem Header="删除选中" Click="DeleteSelectedMenuItem_Click" InputGestureText="Delete" />
                         <MenuItem Header="撤销删除" Click="UndoDeleteMenuItem_Click" InputGestureText="Ctrl+Z" />
                     </ContextMenu>
@@ -432,6 +470,9 @@
                             </Grid>
                         </Border>
                         <DataTemplate.Triggers>
+                            <DataTrigger Binding="{Binding IsMouseOver, RelativeSource={RelativeSource AncestorType=ListBoxItem}}" Value="True">
+                                <Setter TargetName="ItemCard" Property="BorderBrush" Value="{DynamicResource BrushPrimaryBright}" />
+                            </DataTrigger>
                             <DataTrigger Binding="{Binding IsSelected, RelativeSource={RelativeSource AncestorType=ListBoxItem}}" Value="True">
                                 <Setter TargetName="ItemCard" Property="Background" Value="{DynamicResource BrushControlSelected}" />
                                 <Setter TargetName="ItemCard" Property="BorderBrush" Value="{DynamicResource BrushPrimaryBright}" />

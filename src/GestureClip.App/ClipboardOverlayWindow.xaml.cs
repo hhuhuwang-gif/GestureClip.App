@@ -29,6 +29,25 @@ public partial class ClipboardOverlayWindow : Window
         DataContext = _viewModel;
         HistoryList.AlternationCount = 10;
         SetAlwaysVisible(_settingsService.Get(SettingKeys.ClipboardOverlayAlwaysVisible, false), persist: false);
+        IsVisibleChanged += ClipboardOverlayWindow_IsVisibleChanged;
+    }
+
+    private void ClipboardOverlayWindow_IsVisibleChanged(object sender, DependencyPropertyChangedEventArgs e)
+    {
+        if (e.NewValue is not true)
+        {
+            return;
+        }
+
+        // Gentle fade-in every time the overlay is shown.
+        var fade = new System.Windows.Media.Animation.DoubleAnimation(0.0, 1.0, TimeSpan.FromMilliseconds(150))
+        {
+            EasingFunction = new System.Windows.Media.Animation.QuadraticEase
+            {
+                EasingMode = System.Windows.Media.Animation.EasingMode.EaseOut
+            }
+        };
+        BeginAnimation(OpacityProperty, fade);
     }
 
     public async Task LoadHistoryAsync()
@@ -45,11 +64,28 @@ public partial class ClipboardOverlayWindow : Window
 
     private async void Window_KeyDown(object sender, System.Windows.Input.KeyEventArgs e)
     {
-        if (IsShortcutHelpToggleKey(e))
+        // While the search box owns keyboard focus, printable keys (digits, "?" etc.) must go
+        // into the text box instead of triggering list shortcuts. See KNOWN_ISSUES: typing a
+        // number in the search box used to instantly paste history item N and close the panel.
+        var isSearchTyping = SearchBox.IsKeyboardFocusWithin;
+
+        if (IsShortcutHelpToggleKey(e) && (e.Key == Key.F1 || !isSearchTyping))
         {
             _viewModel.ToggleShortcutHelp();
             e.Handled = true;
             return;
+        }
+
+        // Alt+digit pastes by index no matter where focus is (search-safe quick paste).
+        if (e.Key == Key.System && (Keyboard.Modifiers & ModifierKeys.Alt) == ModifierKeys.Alt)
+        {
+            var altIndex = GetDigitIndex(e.SystemKey);
+            if (altIndex is not null)
+            {
+                await PasteByIndexWithFocusRestoreAsync(altIndex.Value);
+                e.Handled = true;
+                return;
+            }
         }
 
         if (_viewModel.IsShortcutHelpVisible && e.Key == Key.Escape)
@@ -73,14 +109,14 @@ public partial class ClipboardOverlayWindow : Window
             return;
         }
 
-        if (e.Key == Key.Home)
+        if (e.Key == Key.Home && !isSearchTyping)
         {
             ScrollToTopAndSelectLatest();
             e.Handled = true;
             return;
         }
 
-        if (e.Key == Key.End)
+        if (e.Key == Key.End && !isSearchTyping)
         {
             ScrollToBottom();
             e.Handled = true;
@@ -91,7 +127,7 @@ public partial class ClipboardOverlayWindow : Window
             (Keyboard.Modifiers & ModifierKeys.Control) == ModifierKeys.Control &&
             (Keyboard.Modifiers & ModifierKeys.Shift) == 0 &&
             _viewModel.CanUndoDelete &&
-            !IsSearchBoxTyping())
+            !isSearchTyping)
         {
             await _viewModel.UndoLastDeleteAsync();
             SyncListSelectionFromViewModel();
@@ -121,23 +157,29 @@ public partial class ClipboardOverlayWindow : Window
             return;
         }
 
-        if (e.Key == Key.A && (Keyboard.Modifiers & ModifierKeys.Control) == ModifierKeys.Control)
+        if (e.Key == Key.A && (Keyboard.Modifiers & ModifierKeys.Control) == ModifierKeys.Control && !isSearchTyping)
         {
             HistoryList.SelectAll();
             e.Handled = true;
             return;
         }
 
+        // Let Ctrl+C copy the text the user selected inside the search box.
+        var searchBoxOwnsCopy = isSearchTyping && SearchBox.SelectionLength > 0;
+
         if (e.Key == Key.C &&
             (Keyboard.Modifiers & ModifierKeys.Control) == ModifierKeys.Control &&
-            (Keyboard.Modifiers & ModifierKeys.Shift) == ModifierKeys.Shift)
+            (Keyboard.Modifiers & ModifierKeys.Shift) == ModifierKeys.Shift &&
+            !searchBoxOwnsCopy)
         {
             await _viewModel.CopySelectedAsPlainTextAsync(GetSelectedItems());
             e.Handled = true;
             return;
         }
 
-        if (e.Key == Key.C && (Keyboard.Modifiers & ModifierKeys.Control) == ModifierKeys.Control)
+        if (e.Key == Key.C &&
+            (Keyboard.Modifiers & ModifierKeys.Control) == ModifierKeys.Control &&
+            !searchBoxOwnsCopy)
         {
             await _viewModel.CopySelectedAsync(GetSelectedItems());
             e.Handled = true;
@@ -158,7 +200,7 @@ public partial class ClipboardOverlayWindow : Window
             return;
         }
 
-        if (e.Key == Key.Delete)
+        if (e.Key == Key.Delete && !isSearchTyping)
         {
             var selected = GetSelectedItems();
             if (selected.Count > 0 && ConfirmDeleteSelectedItems(selected))
@@ -186,17 +228,45 @@ public partial class ClipboardOverlayWindow : Window
             return;
         }
 
-        var index = GetDigitIndex(e.Key);
-        if (index is not null)
+        // Bare digits quick-paste only when the list (not the search box) owns focus,
+        // so "123" can be typed as a search keyword. Alt+digit works everywhere.
+        if (!isSearchTyping)
         {
-            await PasteByIndexWithFocusRestoreAsync(index.Value);
-            e.Handled = true;
+            var index = GetDigitIndex(e.Key);
+            if (index is not null)
+            {
+                await PasteByIndexWithFocusRestoreAsync(index.Value);
+                e.Handled = true;
+            }
         }
     }
 
-    private bool IsSearchBoxTyping()
+    private void SearchBox_PreviewKeyDown(object sender, System.Windows.Input.KeyEventArgs e)
     {
-        return SearchBox.IsKeyboardFocusWithin && !string.IsNullOrEmpty(SearchBox.Text);
+        // Up/Down while typing moves the list selection without leaving the search box.
+        if (e.Key is not (Key.Down or Key.Up))
+        {
+            return;
+        }
+
+        MoveListSelection(e.Key == Key.Down ? 1 : -1);
+        e.Handled = true;
+    }
+
+    private void MoveListSelection(int delta)
+    {
+        if (_viewModel.Items.Count == 0)
+        {
+            return;
+        }
+
+        var currentIndex = _viewModel.SelectedItem is { } current ? _viewModel.Items.IndexOf(current) : -1;
+        var nextIndex = Math.Clamp(currentIndex + delta, 0, _viewModel.Items.Count - 1);
+        var item = _viewModel.Items[nextIndex];
+        HistoryList.SelectedItems.Clear();
+        HistoryList.SelectedItem = item;
+        _viewModel.SelectedItem = item;
+        HistoryList.ScrollIntoView(item);
     }
 
     private static bool IsShortcutHelpToggleKey(System.Windows.Input.KeyEventArgs e)
@@ -349,6 +419,7 @@ public partial class ClipboardOverlayWindow : Window
             Key.D3 or Key.NumPad3 => FavoritesFilterButton,
             Key.D4 or Key.NumPad4 => TextFilterButton,
             Key.D5 or Key.NumPad5 => ImagesFilterButton,
+            Key.D6 or Key.NumPad6 => LinksFilterButton,
             _ => null
         };
 
@@ -448,6 +519,7 @@ public partial class ClipboardOverlayWindow : Window
             "Favorites" => ClipboardOverlayFilter.Favorites,
             "Text" => ClipboardOverlayFilter.Text,
             "Images" => ClipboardOverlayFilter.Images,
+            "Links" => ClipboardOverlayFilter.Links,
             _ => ClipboardOverlayFilter.All
         };
     }
@@ -498,6 +570,36 @@ public partial class ClipboardOverlayWindow : Window
     {
         await _viewModel.UndoLastDeleteAsync();
         SyncListSelectionFromViewModel();
+    }
+
+    private async void TransformUpperMenuItem_Click(object sender, RoutedEventArgs e)
+    {
+        await _viewModel.TransformSelectedTextAsync(ClipboardTextTransform.UpperCase);
+    }
+
+    private async void TransformLowerMenuItem_Click(object sender, RoutedEventArgs e)
+    {
+        await _viewModel.TransformSelectedTextAsync(ClipboardTextTransform.LowerCase);
+    }
+
+    private async void TransformTrimMenuItem_Click(object sender, RoutedEventArgs e)
+    {
+        await _viewModel.TransformSelectedTextAsync(ClipboardTextTransform.CompactWhitespace);
+    }
+
+    private async void TransformJsonMenuItem_Click(object sender, RoutedEventArgs e)
+    {
+        await _viewModel.TransformSelectedTextAsync(ClipboardTextTransform.FormatJson);
+    }
+
+    private async void TransformJsonMinifyMenuItem_Click(object sender, RoutedEventArgs e)
+    {
+        await _viewModel.TransformSelectedTextAsync(ClipboardTextTransform.MinifyJson);
+    }
+
+    private async void TransformUrlDecodeMenuItem_Click(object sender, RoutedEventArgs e)
+    {
+        await _viewModel.TransformSelectedTextAsync(ClipboardTextTransform.UrlDecode);
     }
 
     private async void QuickCopyItemButton_Click(object sender, RoutedEventArgs e)

@@ -81,10 +81,12 @@ public sealed class ClipboardOverlayViewModelTests
         viewModel.SearchText = "ab";
         viewModel.SearchText = "abc";
 
-        await WaitForAsync(() => service.SearchKeywords.Count == 1);
+        // Letter-only keywords issue one primary search plus one supplemental
+        // pinyin-initial pool fetch (empty keyword, larger limit).
+        await WaitForAsync(() => service.SearchKeywords.Count == 2);
 
-        Assert.Equal(["abc"], service.SearchKeywords);
-        Assert.Equal([50], service.SearchLimits);
+        Assert.Equal(["abc", ""], service.SearchKeywords);
+        Assert.Equal([50, 200], service.SearchLimits);
     }
 
     [Fact]

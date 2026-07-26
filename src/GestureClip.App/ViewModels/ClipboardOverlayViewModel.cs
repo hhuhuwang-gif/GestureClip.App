@@ -2,8 +2,11 @@ using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
+using System.Text.RegularExpressions;
 using GestureClip.Core.Abstractions;
 using GestureClip.Core.Clipboard;
+using GestureClip.Features.Assistant;
+using GestureClip.Features.Clipboard;
 
 namespace GestureClip.App.ViewModels;
 
@@ -12,6 +15,9 @@ public sealed class ClipboardOverlayViewModel : INotifyPropertyChanged
     private const int PageSize = 50;
     private const int SelectedImagePreviewPixelWidth = 320;
     private const int MaxInlineImagePreviewBytes = 512 * 1024;
+    /// <summary>Pool size fetched for client-side pinyin-initial / regex matching.</summary>
+    private const int SmartSearchScanLimit = 200;
+    private const string RegexSearchPrefix = "re:";
 
     private readonly IClipboardService _clipboardService;
     private readonly TimeSpan _searchDebounceDelay;
@@ -24,6 +30,9 @@ public sealed class ClipboardOverlayViewModel : INotifyPropertyChanged
     private int _selectedImagePreviewVersion;
     private int _selectedCount;
     private IReadOnlyList<ClipboardItem> _lastSearchResults = [];
+    /// <summary>How many of <see cref="_lastSearchResults"/> came straight from repository paging
+    /// (excludes client-side pinyin matches), so LoadMore keeps a correct offset.</summary>
+    private int _primaryResultCount;
     private ClipboardOverlayFilter _selectedFilter = ClipboardOverlayFilter.All;
     private bool _isLoading;
     private bool _isLoadingMore;
@@ -52,7 +61,8 @@ public sealed class ClipboardOverlayViewModel : INotifyPropertyChanged
         new(ClipboardOverlayFilter.Pinned, "固定"),
         new(ClipboardOverlayFilter.Favorites, "片段"),
         new(ClipboardOverlayFilter.Text, "文本"),
-        new(ClipboardOverlayFilter.Images, "图片")
+        new(ClipboardOverlayFilter.Images, "图片"),
+        new(ClipboardOverlayFilter.Links, "链接")
     ];
 
     public ClipboardOverlayFilter SelectedFilter
@@ -166,7 +176,7 @@ public sealed class ClipboardOverlayViewModel : INotifyPropertyChanged
     public bool IsEmpty => Items.Count == 0 && !IsLoading;
 
     public string ShortcutHintText { get; private set; } =
-        "Home 回顶 · End 到底 · Ctrl+Enter 粘贴不关 · Ctrl+Shift+C 纯文本 · ? 快捷键 · Esc 清搜索/关闭";
+        "拼音首字母/re:正则搜索 · Alt+数字快捷粘贴 · Ctrl+Enter 粘贴不关 · ? 快捷键 · Esc 清搜索/关闭";
 
     public bool CanUndoDelete => _undoDeleteItems.Count > 0;
 
@@ -189,11 +199,12 @@ public sealed class ClipboardOverlayViewModel : INotifyPropertyChanged
         """
         打开/关闭面板    Ctrl + `
         聚焦搜索         Ctrl + F
-        分类筛选         Ctrl + 1~5
+        分类筛选         Ctrl + 1~6
         复制             Ctrl + C
         纯文本复制       Ctrl + Shift + C
         粘贴并关闭       Enter
         粘贴不关闭       Ctrl + Enter
+        数字快捷粘贴     1~9/0（列表聚焦）或 Alt+数字
         置顶 / 片段      Ctrl + P / Ctrl + S
         删除             Delete
         撤销删除         Ctrl + Z（刚删过时）
@@ -201,8 +212,14 @@ public sealed class ClipboardOverlayViewModel : INotifyPropertyChanged
         重置视图         Esc（有搜索时）或「清空」
         快捷键速查       ? 或 F1
 
+        搜索技巧：
+        · 拼音首字母搜索（如 wx 找「微信」）
+        · re: 开头使用正则搜索（如 re:\d{6}）
+        · 搜索时 ↑/↓ 直接切换选中项
+
         左侧色条：蓝=文本 紫=图片 橙=置顶 绿=本会话已从历史复制
         多选复制时，绿条可区分哪些已复制、哪些还没动。
+        右键文本记录可用「文本工具」：大小写 / 去空白 / JSON / URL 解码。
         """;
 
     public string EmptyStateText
@@ -386,15 +403,50 @@ public sealed class ClipboardOverlayViewModel : INotifyPropertyChanged
     {
         var version = Interlocked.Increment(ref _searchVersion);
         IReadOnlyList<ClipboardItem> results;
+        var primaryCount = 0;
+        var hasMore = false;
+        var statusOverride = "";
         try
         {
             IsLoading = true;
             ErrorMessage = null;
             var keyword = SearchText;
             var filter = ToContentFilter(SelectedFilter);
-            results = await Task.Run(
-                () => _clipboardService.SearchAsync(keyword, PageSize, 0, filter, cancellationToken),
-                cancellationToken);
+            if (TryGetRegexPattern(keyword, out var regexPattern))
+            {
+                // "re:" prefix → client-side regex over the most recent records.
+                var pool = await Task.Run(
+                    () => _clipboardService.SearchAsync("", SmartSearchScanLimit, 0, filter, cancellationToken),
+                    cancellationToken);
+                (results, statusOverride) = FilterByRegex(pool, regexPattern);
+                primaryCount = results.Count;
+            }
+            else
+            {
+                results = await Task.Run(
+                    () => _clipboardService.SearchAsync(keyword, PageSize, 0, filter, cancellationToken),
+                    cancellationToken);
+                primaryCount = results.Count;
+                hasMore = results.Count == PageSize;
+
+                if (ShouldAugmentWithPinyin(keyword, results.Count))
+                {
+                    // Supplemental pass: fetch recent records once and add pinyin-initial matches
+                    // (e.g. "wx" → 微信) that the SQL LIKE search cannot find.
+                    var pool = await Task.Run(
+                        () => _clipboardService.SearchAsync("", SmartSearchScanLimit, 0, filter, cancellationToken),
+                        cancellationToken);
+                    var knownIds = results.Select(item => item.Id).ToHashSet();
+                    var pinyinMatches = pool
+                        .Where(item => knownIds.Add(item.Id) && MatchesPinyinInitials(item, keyword))
+                        .ToArray();
+                    if (pinyinMatches.Length > 0)
+                    {
+                        results = results.Concat(pinyinMatches).ToArray();
+                        statusOverride = $"含 {pinyinMatches.Length} 条拼音首字母匹配";
+                    }
+                }
+            }
         }
         catch (OperationCanceledException)
         {
@@ -420,9 +472,80 @@ public sealed class ClipboardOverlayViewModel : INotifyPropertyChanged
         }
 
         _lastSearchResults = results.Select(WithSessionCopiedFlag).ToArray();
-        HasMoreItems = results.Count == PageSize;
+        _primaryResultCount = primaryCount;
+        HasMoreItems = hasMore;
         ApplyFilter();
-        StatusText = "";
+        StatusText = statusOverride;
+    }
+
+    private static bool TryGetRegexPattern(string keyword, out string pattern)
+    {
+        pattern = "";
+        var trimmed = keyword.Trim();
+        if (!trimmed.StartsWith(RegexSearchPrefix, StringComparison.OrdinalIgnoreCase))
+        {
+            return false;
+        }
+
+        pattern = trimmed[RegexSearchPrefix.Length..].Trim();
+        return pattern.Length > 0;
+    }
+
+    private static (IReadOnlyList<ClipboardItem> Results, string Status) FilterByRegex(
+        IReadOnlyList<ClipboardItem> pool,
+        string pattern)
+    {
+        Regex regex;
+        try
+        {
+            regex = new Regex(
+                pattern,
+                RegexOptions.IgnoreCase | RegexOptions.CultureInvariant,
+                TimeSpan.FromMilliseconds(250));
+        }
+        catch (ArgumentException)
+        {
+            return ([], "正则表达式无效，请检查 re: 后面的内容");
+        }
+
+        var matches = new List<ClipboardItem>();
+        foreach (var item in pool)
+        {
+            var text = item.TextContent ?? item.PreviewText ?? item.OcrText;
+            if (string.IsNullOrEmpty(text))
+            {
+                continue;
+            }
+
+            try
+            {
+                if (regex.IsMatch(text))
+                {
+                    matches.Add(item);
+                }
+            }
+            catch (RegexMatchTimeoutException)
+            {
+                // Skip pathological inputs; keep the overlay responsive.
+            }
+        }
+
+        return (matches, $"正则匹配 {matches.Count} 条");
+    }
+
+    private static bool ShouldAugmentWithPinyin(string keyword, int primaryCount)
+    {
+        var trimmed = keyword.Trim();
+        return trimmed.Length is >= 2 and <= 12 &&
+            primaryCount < PageSize &&
+            trimmed.All(char.IsAsciiLetter);
+    }
+
+    private static bool MatchesPinyinInitials(ClipboardItem item, string keyword)
+    {
+        return PinyinInitialMatcher.Matches(item.PreviewText, keyword) ||
+            PinyinInitialMatcher.Matches(item.TextContent, keyword) ||
+            PinyinInitialMatcher.Matches(item.OcrText, keyword);
     }
 
     public async Task<bool> LoadMoreAsync()
@@ -434,7 +557,7 @@ public sealed class ClipboardOverlayViewModel : INotifyPropertyChanged
 
         var version = Volatile.Read(ref _searchVersion);
         var cancellation = _searchCancellation?.Token ?? CancellationToken.None;
-        var offset = _lastSearchResults.Count;
+        var offset = _primaryResultCount;
         try
         {
             IsLoadingMore = true;
@@ -453,6 +576,7 @@ public sealed class ClipboardOverlayViewModel : INotifyPropertyChanged
             _lastSearchResults = _lastSearchResults
                 .Concat(nextPage.Where(item => existingIds.Add(item.Id)).Select(WithSessionCopiedFlag))
                 .ToArray();
+            _primaryResultCount += nextPage.Count;
             HasMoreItems = nextPage.Count == PageSize;
             ApplyFilter(keepSelection: true);
             StatusText = nextPage.Count == 0 ? "没有更多记录了" : $"已加载 {nextPage.Count} 条";
@@ -516,8 +640,21 @@ public sealed class ClipboardOverlayViewModel : INotifyPropertyChanged
             ClipboardOverlayFilter.Favorites => item.IsFavorite,
             ClipboardOverlayFilter.Text => item.IsText,
             ClipboardOverlayFilter.Images => item.IsImage,
+            ClipboardOverlayFilter.Links => IsLinkItem(item),
             _ => true
         };
+    }
+
+    private static bool IsLinkItem(ClipboardItem item)
+    {
+        if (!item.IsText)
+        {
+            return false;
+        }
+
+        var text = item.TextContent ?? item.PreviewText ?? "";
+        return text.Contains("://", StringComparison.Ordinal) ||
+            text.StartsWith("www.", StringComparison.OrdinalIgnoreCase);
     }
 
     private static ClipboardContentFilter ToContentFilter(ClipboardOverlayFilter filter)
@@ -528,6 +665,7 @@ public sealed class ClipboardOverlayViewModel : INotifyPropertyChanged
             ClipboardOverlayFilter.Favorites => ClipboardContentFilter.Favorites,
             ClipboardOverlayFilter.Text => ClipboardContentFilter.Text,
             ClipboardOverlayFilter.Images => ClipboardContentFilter.Images,
+            ClipboardOverlayFilter.Links => ClipboardContentFilter.Links,
             _ => ClipboardContentFilter.All
         };
     }
@@ -756,7 +894,7 @@ public sealed class ClipboardOverlayViewModel : INotifyPropertyChanged
     {
         ShortcutHintText = CanUndoDelete
             ? "Ctrl+Z 撤销删除 · Home 回顶 · Ctrl+Enter 粘贴不关 · ? 快捷键"
-            : "Home 回顶 · End 到底 · Ctrl+Enter 粘贴不关 · Ctrl+Shift+C 纯文本 · ? 快捷键 · Esc 清搜索/关闭";
+            : "拼音首字母/re:正则搜索 · Alt+数字快捷粘贴 · Ctrl+Enter 粘贴不关 · ? 快捷键 · Esc 清搜索/关闭";
         OnPropertyChanged(nameof(ShortcutHintText));
     }
 
@@ -798,6 +936,101 @@ public sealed class ClipboardOverlayViewModel : INotifyPropertyChanged
         }
 
         return string.Join("\r\n", result);
+    }
+
+    /// <summary>
+    /// Apply a local text transform to the selected text item and put the result
+    /// on the system clipboard (history capture will record it as a new entry).
+    /// </summary>
+    public async Task<bool> TransformSelectedTextAsync(ClipboardTextTransform transform)
+    {
+        if (SelectedItem is null)
+        {
+            return false;
+        }
+
+        if (!SelectedItem.IsText)
+        {
+            StatusText = "文本工具只支持文本记录";
+            return false;
+        }
+
+        try
+        {
+            ErrorMessage = null;
+            var full = await _clipboardService.GetByIdAsync(SelectedItem.Id, CancellationToken.None) ?? SelectedItem;
+            var raw = full.TextContent ?? SelectedItem.TextContent ?? SelectedItem.PreviewText ?? "";
+            if (string.IsNullOrEmpty(raw))
+            {
+                StatusText = "选中的记录没有文本内容";
+                return false;
+            }
+
+            string transformed;
+            string label;
+            switch (transform)
+            {
+                case ClipboardTextTransform.UpperCase:
+                    transformed = LocalTextTransforms.ToUpper(raw);
+                    label = "大写";
+                    break;
+                case ClipboardTextTransform.LowerCase:
+                    transformed = LocalTextTransforms.ToLower(raw);
+                    label = "小写";
+                    break;
+                case ClipboardTextTransform.CompactWhitespace:
+                    transformed = CleanPlainText(raw);
+                    label = "去多余空白";
+                    break;
+                case ClipboardTextTransform.FormatJson:
+                    if (!LocalTextTransforms.TryFormatJson(raw, out transformed, out _))
+                    {
+                        StatusText = "不是有效的 JSON，无法格式化";
+                        return false;
+                    }
+
+                    label = "JSON 格式化";
+                    break;
+                case ClipboardTextTransform.MinifyJson:
+                    if (!LocalTextTransforms.TryMinifyJson(raw, out transformed, out _))
+                    {
+                        StatusText = "不是有效的 JSON，无法压缩";
+                        return false;
+                    }
+
+                    label = "JSON 压缩";
+                    break;
+                case ClipboardTextTransform.UrlDecode:
+                    transformed = LocalTextTransforms.UrlDecode(raw);
+                    label = "URL 解码";
+                    break;
+                default:
+                    return false;
+            }
+
+            if (string.IsNullOrEmpty(transformed))
+            {
+                StatusText = "转换结果为空，未复制";
+                return false;
+            }
+
+            var transformedItem = full with
+            {
+                ContentType = "text",
+                TextContent = transformed,
+                PreviewText = transformed.Length > 120 ? transformed[..120] : transformed
+            };
+            await _clipboardService.CopyItemsAsync([transformedItem], CancellationToken.None);
+            MarkItemsUsed([full.Id]);
+            StatusText = $"已复制转换结果（{label}）· 面板未关闭";
+            return true;
+        }
+        catch (Exception ex)
+        {
+            ErrorMessage = $"文本转换失败：{ex.Message}";
+            StatusText = "文本转换失败";
+            return false;
+        }
     }
 
     public async Task<bool> ToggleSelectedPinnedAsync()
@@ -1033,7 +1266,18 @@ public enum ClipboardOverlayFilter
     Pinned,
     Favorites,
     Text,
-    Images
+    Images,
+    Links
+}
+
+public enum ClipboardTextTransform
+{
+    UpperCase,
+    LowerCase,
+    CompactWhitespace,
+    FormatJson,
+    MinifyJson,
+    UrlDecode
 }
 
 public sealed record ClipboardOverlayFilterOption(ClipboardOverlayFilter Filter, string Label);
