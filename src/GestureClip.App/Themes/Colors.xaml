@@ -68,4 +68,5 @@
     <Color x:Key="ColorRailBackground">#E6F8FAFC</Color>
     <Color x:Key="ColorContentBackground">#CCFFFFFF</Color>
     <Color x:Key="ColorHintYellow">#CCFFFBEB</Color>
+    <Color x:Key="ColorBackdropWash">#A8F4F7FB</Color>
 </ResourceDictionary>

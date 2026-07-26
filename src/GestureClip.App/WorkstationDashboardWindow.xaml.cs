@@ -3,6 +3,7 @@ using System.Windows;
 using System.Windows.Input;
 using System.Windows.Media.Animation;
 using System.Windows.Threading;
+using GestureClip.App.Services;
 using GestureClip.App.ViewModels;
 using GestureClip.Core.Abstractions;
 
@@ -12,23 +13,42 @@ public partial class WorkstationDashboardWindow : Window
 {
     private readonly WorkstationDashboardViewModel _viewModel;
     private readonly IAppLifecycleService _appLifecycleService;
+    private readonly AppThemeService _themeService;
     private readonly DispatcherTimer _refreshTimer;
     private string _lastEarned = "";
     private string _lastOffWork = "";
+    private bool _micaApplied;
 
-    public WorkstationDashboardWindow(WorkstationDashboardViewModel viewModel, IAppLifecycleService appLifecycleService)
+    public WorkstationDashboardWindow(
+        WorkstationDashboardViewModel viewModel,
+        IAppLifecycleService appLifecycleService,
+        AppThemeService themeService)
     {
         _viewModel = viewModel;
         _appLifecycleService = appLifecycleService;
+        _themeService = themeService;
         InitializeComponent();
         DataContext = viewModel;
         _viewModel.PropertyChanged += ViewModel_PropertyChanged;
+        _themeService.Changed += ThemeService_Changed;
         _refreshTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(5) };
         _refreshTimer.Tick += async (_, _) => await _viewModel.RefreshAsync();
     }
 
+    protected override void OnSourceInitialized(EventArgs e)
+    {
+        base.OnSourceInitialized(e);
+        _micaApplied = WindowBackdrop.TryApplyMica(this, _themeService.Mode == AppUiThemeMode.Dark);
+        if (_micaApplied)
+        {
+            // Translucent wash lets the mica material read through the content surface.
+            RootBorder.SetResourceReference(BackgroundProperty, "BrushBackdropWash");
+        }
+    }
+
     private async void Window_Loaded(object sender, RoutedEventArgs e)
     {
+        PlayOpenAnimation();
         await _viewModel.RefreshAsync();
         _lastEarned = _viewModel.TodayEarnedText;
         _lastOffWork = _viewModel.OffWorkCountdownText;
@@ -39,6 +59,27 @@ public partial class WorkstationDashboardWindow : Window
     {
         _refreshTimer.Stop();
         _viewModel.PropertyChanged -= ViewModel_PropertyChanged;
+        _themeService.Changed -= ThemeService_Changed;
+    }
+
+    private void ThemeService_Changed(object? sender, EventArgs e)
+    {
+        if (_micaApplied)
+        {
+            WindowBackdrop.UpdateDarkMode(this, _themeService.Mode == AppUiThemeMode.Dark);
+        }
+    }
+
+    private void PlayOpenAnimation()
+    {
+        var fade = new DoubleAnimation
+        {
+            From = 0,
+            To = 1,
+            Duration = TimeSpan.FromMilliseconds(240),
+            EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut }
+        };
+        BeginAnimation(OpacityProperty, fade);
     }
 
     private void Window_KeyDown(object sender, System.Windows.Input.KeyEventArgs e)

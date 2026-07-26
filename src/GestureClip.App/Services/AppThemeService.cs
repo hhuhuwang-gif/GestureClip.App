@@ -40,6 +40,9 @@ public sealed class AppThemeService : IDisposable
         _settingsService = settingsService;
     }
 
+    /// <summary>Raised after a theme (mode or accent) has been applied to application resources.</summary>
+    public event EventHandler? Changed;
+
     public AppUiThemeMode Mode => _mode;
 
     public AppThemePreference Preference => _preference;
@@ -169,6 +172,7 @@ public sealed class AppThemeService : IDisposable
         }
 
         ApplyAccentOverlay(app, mode);
+        Changed?.Invoke(this, EventArgs.Empty);
     }
 
     public void Dispose()

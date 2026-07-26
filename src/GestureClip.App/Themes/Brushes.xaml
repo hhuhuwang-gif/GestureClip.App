@@ -43,6 +43,7 @@
     <SolidColorBrush x:Key="BrushRailBackground" Color="{StaticResource ColorRailBackground}" />
     <SolidColorBrush x:Key="BrushContentBackground" Color="{StaticResource ColorContentBackground}" />
     <SolidColorBrush x:Key="BrushHintYellow" Color="{StaticResource ColorHintYellow}" />
+    <SolidColorBrush x:Key="BrushBackdropWash" Color="{StaticResource ColorBackdropWash}" />
     <SolidColorBrush x:Key="BrushBrandNavy" Color="{StaticResource ColorBrandNavy}" />
     <SolidColorBrush x:Key="BrushBrandRed" Color="{StaticResource ColorBrandRed}" />
     <SolidColorBrush x:Key="BrushBrandYellow" Color="{StaticResource ColorBrandYellow}" />

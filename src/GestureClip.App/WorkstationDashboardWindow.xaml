@@ -1,6 +1,7 @@
 <Window x:Class="GestureClip.App.WorkstationDashboardWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:controls="clr-namespace:GestureClip.App.Controls"
         Title="工位小熊 Hub"
         Icon="Assets/GestureClip.ico"
         Width="980"
@@ -9,7 +10,6 @@
         MinHeight="780"
         WindowStartupLocation="CenterScreen"
         Background="Transparent"
-        AllowsTransparency="True"
         WindowStyle="None"
         ResizeMode="CanResize"
         FontFamily="Microsoft YaHei UI, Segoe UI Variable Text, Segoe UI, Segoe UI Emoji"
@@ -19,18 +19,20 @@
         Loaded="Window_Loaded"
         Closing="Window_Closing"
         KeyDown="Window_KeyDown">
+    <WindowChrome.WindowChrome>
+        <WindowChrome CaptionHeight="0"
+                      ResizeBorderThickness="6"
+                      GlassFrameThickness="-1"
+                      CornerRadius="0"
+                      UseAeroCaptionButtons="False" />
+    </WindowChrome.WindowChrome>
     <Window.Resources>
         <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter" />
     </Window.Resources>
-    <Border CornerRadius="24"
+    <Border x:Name="RootBorder"
             Background="{DynamicResource BrushAppBackground}"
-            BorderBrush="{DynamicResource BrushBorder}"
-            BorderThickness="1"
-            Padding="28"
+            Padding="26,22"
             MouseLeftButtonDown="WindowBackground_MouseLeftButtonDown">
-        <Border.Effect>
-            <DropShadowEffect Color="#000000" BlurRadius="56" ShadowDepth="8" Opacity="0.22" Direction="270" />
-        </Border.Effect>
         <Grid>
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto" />
@@ -38,14 +40,10 @@
                 <RowDefinition Height="Auto" />
             </Grid.RowDefinitions>
 
-            <!-- Header: unmistakable product chrome -->
+            <!-- Header: floats directly on the backdrop -->
             <Border Grid.Row="0"
-                    Margin="0,0,0,18"
-                    Padding="16,14"
-                    CornerRadius="16"
-                    Background="{DynamicResource BrushGlassStrong}"
-                    BorderBrush="{DynamicResource BrushBorder}"
-                    BorderThickness="1">
+                    Margin="0,0,0,16"
+                    Padding="4,2">
                 <DockPanel>
                     <StackPanel DockPanel.Dock="Left"
                                 Orientation="Horizontal"
@@ -80,8 +78,8 @@
                                        FontWeight="SemiBold"
                                        Foreground="{DynamicResource BrushPrimaryBright}" />
                         </Border>
-                        <Border Background="#1A60A5FA"
-                                BorderBrush="#5560A5FA"
+                        <Border Background="{DynamicResource BrushPrimarySoft}"
+                                BorderBrush="{DynamicResource BrushFocusRing}"
                                 BorderThickness="1"
                                 CornerRadius="999"
                                 Padding="12,6">
@@ -93,22 +91,24 @@
                         </Border>
                     </StackPanel>
                     <StackPanel VerticalAlignment="Center">
-                        <TextBlock Text="工位小熊"
-                                   Style="{StaticResource HubTitleStyle}"
-                                   FontSize="26"
-                                   FontWeight="Bold" />
-                        <Border Width="56"
-                                Height="3"
-                                CornerRadius="2"
-                                HorizontalAlignment="Left"
-                                Margin="0,8,0,6"
-                                Background="{DynamicResource BrushPrimaryBright}" />
+                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                            <TextBlock Text="工位小熊"
+                                       Style="{StaticResource HubTitleStyle}"
+                                       FontSize="24"
+                                       FontWeight="Bold"
+                                       VerticalAlignment="Center" />
+                            <Border Width="6" Height="6" CornerRadius="3"
+                                    Margin="10,4,0,0"
+                                    VerticalAlignment="Center"
+                                    Background="{DynamicResource BrushPrimaryBright}" />
+                        </StackPanel>
                         <TextBlock Text="{Binding Subtitle}"
                                    Style="{StaticResource HubSubtitleStyle}"
-                                   FontSize="13" />
+                                   FontSize="13"
+                                   Margin="0,4,0,0" />
                         <TextBlock Text="本地统计 · Esc 关闭 · 不上传"
                                    Style="{StaticResource HubMetricLabelStyle}"
-                                   Margin="0,6,0,0" />
+                                   Margin="0,4,0,0" />
                     </StackPanel>
                 </DockPanel>
             </Border>
@@ -266,83 +266,62 @@
                                            Margin="0,0,0,16"
                                            TextWrapping="Wrap" />
 
-                                <!-- 3 metric tiles: obvious visual change -->
-                                <UniformGrid Columns="3" Margin="0,0,0,14">
-                                    <Border Margin="0,0,8,0"
-                                            Padding="14,12"
-                                            CornerRadius="14"
-                                            Background="#221D4ED8"
-                                            BorderBrush="#5560A5FA"
-                                            BorderThickness="1">
-                                        <StackPanel>
-                                            <TextBlock Text="今日已赚"
-                                                       Style="{StaticResource HubMetricLabelStyle}"
-                                                       Foreground="#FF93C5FD" />
-                                            <TextBlock x:Name="TodayEarnedMetric"
-                                                       Text="{Binding TodayEarnedText}"
-                                                       Style="{StaticResource HubRootTextStyle}"
-                                                       FontSize="24"
-                                                       FontWeight="Bold"
-                                                       Foreground="#FFDBEAFE"
-                                                       Margin="0,6,0,0" />
-                                        </StackPanel>
-                                    </Border>
-                                    <Border Margin="0,0,8,0"
-                                            Padding="14,12"
-                                            CornerRadius="14"
-                                            Background="#2210B981"
-                                            BorderBrush="#5534D399"
-                                            BorderThickness="1">
-                                        <StackPanel>
-                                            <TextBlock Text="距离下班"
-                                                       Style="{StaticResource HubMetricLabelStyle}"
-                                                       Foreground="#FF6EE7B7" />
-                                            <TextBlock x:Name="OffWorkMetric"
-                                                       Text="{Binding OffWorkCountdownText}"
-                                                       Style="{StaticResource HubRootTextStyle}"
-                                                       FontSize="22"
-                                                       FontWeight="Bold"
-                                                       Foreground="#FFD1FAE5"
-                                                       Margin="0,6,0,0" />
-                                        </StackPanel>
-                                    </Border>
-                                    <Border Padding="14,12"
-                                            CornerRadius="14"
-                                            Background="#22F59E0B"
-                                            BorderBrush="#55FBBF24"
-                                            BorderThickness="1">
-                                        <StackPanel>
-                                            <TextBlock Text="今日进度"
-                                                       Style="{StaticResource HubMetricLabelStyle}"
-                                                       Foreground="#FFFCD34D" />
+                                <!-- Hero metrics: big numbers + progress ring on one calm surface -->
+                                <Grid Margin="0,2,0,16">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
+                                    <StackPanel VerticalAlignment="Center">
+                                        <TextBlock Text="今日已赚"
+                                                   Style="{StaticResource HubMetricLabelStyle}" />
+                                        <TextBlock x:Name="TodayEarnedMetric"
+                                                   Text="{Binding TodayEarnedText}"
+                                                   Style="{StaticResource HubRootTextStyle}"
+                                                   FontSize="34"
+                                                   FontWeight="Bold"
+                                                   Foreground="{DynamicResource BrushPrimaryBright}"
+                                                   Margin="0,6,0,0" />
+                                    </StackPanel>
+                                    <StackPanel Grid.Column="1" VerticalAlignment="Center" Margin="12,0,0,0">
+                                        <TextBlock Text="距离下班"
+                                                   Style="{StaticResource HubMetricLabelStyle}" />
+                                        <TextBlock x:Name="OffWorkMetric"
+                                                   Text="{Binding OffWorkCountdownText}"
+                                                   Style="{StaticResource HubRootTextStyle}"
+                                                   FontSize="26"
+                                                   FontWeight="Bold"
+                                                   Foreground="{DynamicResource BrushSuccess}"
+                                                   Margin="0,6,0,0" />
+                                    </StackPanel>
+                                    <Grid Grid.Column="2" Width="84" Height="84" Margin="12,0,4,0"
+                                          ToolTip="{Binding WorkdayProgressText}">
+                                        <controls:RingProgress Progress="{Binding WorkdayProgressPercent}"
+                                                               StrokeThickness="7"
+                                                               TrackBrush="{DynamicResource BrushSeparator}"
+                                                               ProgressBrush="{Binding StageAccentBrush}" />
+                                        <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
                                             <TextBlock Text="{Binding WorkdayProgressPercent, StringFormat={}{0:0}%}"
                                                        Style="{StaticResource HubRootTextStyle}"
-                                                       FontSize="24"
+                                                       FontSize="17"
                                                        FontWeight="Bold"
-                                                       Foreground="#FFFEF3C7"
-                                                       Margin="0,6,0,0" />
+                                                       HorizontalAlignment="Center" />
+                                            <TextBlock Text="今日进度"
+                                                       Style="{StaticResource HubMetricLabelStyle}"
+                                                       FontSize="10"
+                                                       HorizontalAlignment="Center" />
                                         </StackPanel>
-                                    </Border>
-                                </UniformGrid>
+                                    </Grid>
+                                </Grid>
 
-                                <DockPanel Margin="0,0,0,6">
-                                    <TextBlock Text="{Binding WorkdayProgressText}"
-                                               Style="{StaticResource HubMetricLabelStyle}"
-                                               DockPanel.Dock="Left"
-                                               FontSize="12" />
-                                    <TextBlock Text="{Binding SavedClicksText}"
-                                               Style="{StaticResource HubMetricLabelStyle}"
-                                               HorizontalAlignment="Right"
-                                               FontSize="12" />
-                                </DockPanel>
-                                <ProgressBar Style="{StaticResource HubThinProgressBarStyle}"
-                                             Height="8"
-                                             Value="{Binding WorkdayProgress}"
-                                             Foreground="{Binding StageAccentBrush}"
-                                             ToolTip="{Binding WorkdayProgressText}" />
+                                <TextBlock Text="{Binding SavedClicksText}"
+                                           Style="{StaticResource HubMetricLabelStyle}"
+                                           Margin="0,0,0,6"
+                                           FontSize="12" />
                                 <TextBlock Text="{Binding OffWorkProgressText}"
                                            Style="{StaticResource HubMetricLabelStyle}"
-                                           Margin="0,10,0,4"
+                                           Margin="0,4,0,4"
                                            FontSize="12" />
                                 <ProgressBar Style="{StaticResource HubThinProgressBarStyle}"
                                              Height="6"
