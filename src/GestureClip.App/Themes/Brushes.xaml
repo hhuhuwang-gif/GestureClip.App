@@ -44,6 +44,29 @@
     <SolidColorBrush x:Key="BrushContentBackground" Color="{StaticResource ColorContentBackground}" />
     <SolidColorBrush x:Key="BrushHintYellow" Color="{StaticResource ColorHintYellow}" />
     <SolidColorBrush x:Key="BrushBackdropWash" Color="{StaticResource ColorBackdropWash}" />
+
+    <!-- Hub metric tiles -->
+    <LinearGradientBrush x:Key="BrushTileBlueBg" StartPoint="0,0" EndPoint="0.4,1">
+        <GradientStop Color="{StaticResource ColorTileBlueBgTop}" Offset="0" />
+        <GradientStop Color="{StaticResource ColorTileBlueBgBottom}" Offset="1" />
+    </LinearGradientBrush>
+    <SolidColorBrush x:Key="BrushTileBlueBorder" Color="{StaticResource ColorTileBlueBorder}" />
+    <SolidColorBrush x:Key="BrushTileBlueLabel" Color="{StaticResource ColorTileBlueLabel}" />
+    <SolidColorBrush x:Key="BrushTileBlueValue" Color="{StaticResource ColorTileBlueValue}" />
+    <LinearGradientBrush x:Key="BrushTileGreenBg" StartPoint="0,0" EndPoint="0.4,1">
+        <GradientStop Color="{StaticResource ColorTileGreenBgTop}" Offset="0" />
+        <GradientStop Color="{StaticResource ColorTileGreenBgBottom}" Offset="1" />
+    </LinearGradientBrush>
+    <SolidColorBrush x:Key="BrushTileGreenBorder" Color="{StaticResource ColorTileGreenBorder}" />
+    <SolidColorBrush x:Key="BrushTileGreenLabel" Color="{StaticResource ColorTileGreenLabel}" />
+    <SolidColorBrush x:Key="BrushTileGreenValue" Color="{StaticResource ColorTileGreenValue}" />
+    <LinearGradientBrush x:Key="BrushTileAmberBg" StartPoint="0,0" EndPoint="0.4,1">
+        <GradientStop Color="{StaticResource ColorTileAmberBgTop}" Offset="0" />
+        <GradientStop Color="{StaticResource ColorTileAmberBgBottom}" Offset="1" />
+    </LinearGradientBrush>
+    <SolidColorBrush x:Key="BrushTileAmberBorder" Color="{StaticResource ColorTileAmberBorder}" />
+    <SolidColorBrush x:Key="BrushTileAmberLabel" Color="{StaticResource ColorTileAmberLabel}" />
+    <SolidColorBrush x:Key="BrushTileAmberValue" Color="{StaticResource ColorTileAmberValue}" />
     <SolidColorBrush x:Key="BrushBrandNavy" Color="{StaticResource ColorBrandNavy}" />
     <SolidColorBrush x:Key="BrushBrandRed" Color="{StaticResource ColorBrandRed}" />
     <SolidColorBrush x:Key="BrushBrandYellow" Color="{StaticResource ColorBrandYellow}" />

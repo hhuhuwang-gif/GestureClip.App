@@ -65,4 +65,20 @@
     <Color x:Key="ColorContentBackground">#151C2C</Color>
     <Color x:Key="ColorHintYellow">#2A2418</Color>
     <Color x:Key="ColorBackdropWash">#A80B1220</Color>
+    <!-- Hub metric tiles: gradient glass in blue / green / amber, tuned per theme -->
+    <Color x:Key="ColorTileBlueBgTop">#3D1D4ED8</Color>
+    <Color x:Key="ColorTileBlueBgBottom">#1A1E3A8A</Color>
+    <Color x:Key="ColorTileBlueBorder">#5560A5FA</Color>
+    <Color x:Key="ColorTileBlueLabel">#93C5FD</Color>
+    <Color x:Key="ColorTileBlueValue">#DBEAFE</Color>
+    <Color x:Key="ColorTileGreenBgTop">#3D059669</Color>
+    <Color x:Key="ColorTileGreenBgBottom">#1A065F46</Color>
+    <Color x:Key="ColorTileGreenBorder">#5534D399</Color>
+    <Color x:Key="ColorTileGreenLabel">#6EE7B7</Color>
+    <Color x:Key="ColorTileGreenValue">#D1FAE5</Color>
+    <Color x:Key="ColorTileAmberBgTop">#3DB45309</Color>
+    <Color x:Key="ColorTileAmberBgBottom">#1A92400E</Color>
+    <Color x:Key="ColorTileAmberBorder">#55FBBF24</Color>
+    <Color x:Key="ColorTileAmberLabel">#FCD34D</Color>
+    <Color x:Key="ColorTileAmberValue">#FEF3C7</Color>
 </ResourceDictionary>
