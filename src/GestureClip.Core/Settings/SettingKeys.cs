@@ -41,6 +41,9 @@ public static class SettingKeys
     public const string GestureSnippet3Text = "Gesture.Snippet3.Text";
     public const string AppSmartPasteRulesJson = "App.SmartPasteRulesJson";
     public const string GestureTriggerRightButtonEnabled = "Gesture.Trigger.RightButton.Enabled";
+    public const string GestureWheelGestureEnabled = "Gesture.WheelGesture.Enabled";
+    public const string GestureWheelUpAction = "Gesture.WheelGesture.UpAction";
+    public const string GestureWheelDownAction = "Gesture.WheelGesture.DownAction";
     public const string GestureTriggerLeftButtonEnabled = "Gesture.Trigger.LeftButton.Enabled";
     public const string GestureTriggerMiddleButtonEnabled = "Gesture.Trigger.MiddleButton.Enabled";
     public const string GestureTriggerXButton1Enabled = "Gesture.Trigger.XButton1.Enabled";
@@ -84,6 +87,10 @@ public static class SettingKeys
     public const string WorkstationPayday = "Workstation.Payday";
     public const string WorkstationShowFishingValue = "Workstation.ShowFishingValue";
     public const string WorkstationShowOffWorkCountdown = "Workstation.ShowOffWorkCountdown";
+    public const string WorkBearWidgetEnabled = "Workstation.Widget.Enabled";
+    public const string WorkBearWidgetLeft = "Workstation.Widget.Left";
+    public const string WorkBearWidgetTop = "Workstation.Widget.Top";
+    public const string WorkBearWidgetPetPath = "Workstation.Widget.PetPath";
     public const string WorkstationDailyReportEnabled = "Workstation.DailyReportEnabled";
     public const string WorkstationCopywritingStyle = "Workstation.CopywritingStyle";
     public const string EnableWorkBearHub = "WorkBear.EnableHub";

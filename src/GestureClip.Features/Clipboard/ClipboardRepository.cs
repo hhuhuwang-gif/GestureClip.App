@@ -296,6 +296,37 @@ WHERE Id = @Id;
             });
     }
 
+    public async Task UpdateTextContentAsync(
+        Guid id,
+        string text,
+        string hash,
+        string? plainTextHash,
+        string preview,
+        CancellationToken cancellationToken)
+    {
+        await using var connection = await _connectionFactory.OpenConnectionAsync(cancellationToken);
+
+        await connection.ExecuteAsync(
+            """
+UPDATE ClipboardItems
+SET TextContent = @TextContent,
+    PreviewText = @PreviewText,
+    Hash = @Hash,
+    PlainTextHash = @PlainTextHash,
+    UpdatedAt = @UpdatedAt
+WHERE Id = @Id AND ContentType = 'text';
+""",
+            new
+            {
+                Id = id.ToString(),
+                TextContent = text,
+                PreviewText = preview,
+                Hash = hash,
+                PlainTextHash = plainTextHash,
+                UpdatedAt = DateTimeOffset.UtcNow.ToString("O")
+            });
+    }
+
     public async Task<bool> IsProcessBlockedAsync(string? processName, CancellationToken cancellationToken)
     {
         if (string.IsNullOrWhiteSpace(processName))

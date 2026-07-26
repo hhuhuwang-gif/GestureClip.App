@@ -276,6 +276,35 @@ public sealed class ClipboardService : IClipboardService
         return item;
     }
 
+    public async Task<ClipboardItem?> UpdateTextContentAsync(Guid id, string text, CancellationToken cancellationToken)
+    {
+        var trimmed = text?.Trim();
+        if (string.IsNullOrEmpty(trimmed))
+        {
+            return null;
+        }
+
+        var existing = await _clipboardRepository.GetByIdAsync(id, cancellationToken);
+        if (existing is null || !existing.IsText)
+        {
+            return null;
+        }
+
+        var hash = _clipboardHashService.ComputeHash(trimmed);
+        var plainTextHash = _clipboardHashService.ComputePlainTextHash(trimmed);
+        var preview = CreatePreview(trimmed);
+        await _clipboardRepository.UpdateTextContentAsync(id, trimmed, hash, plainTextHash, preview, cancellationToken);
+        _logger.LogInformation("Clipboard text item edited in place.");
+        return existing with
+        {
+            TextContent = trimmed,
+            PreviewText = preview,
+            Hash = hash,
+            PlainTextHash = plainTextHash,
+            UpdatedAt = DateTimeOffset.UtcNow
+        };
+    }
+
     public async Task<IReadOnlyList<ClipboardItem>> SearchAsync(string keyword, int limit, CancellationToken cancellationToken)
     {
         return await SearchAsync(keyword, limit, 0, cancellationToken);

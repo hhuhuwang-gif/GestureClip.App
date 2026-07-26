@@ -191,7 +191,10 @@ public sealed partial class SettingsViewModel
             _gestureMiddleButtonEnabled,
             _gestureXButton1Enabled,
             _gestureXButton2Enabled,
-            _gestureRightButtonEnabled));
+            _gestureRightButtonEnabled,
+            _gestureWheelGestureEnabled,
+            _gestureWheelUpAction,
+            _gestureWheelDownAction));
     }
 
 

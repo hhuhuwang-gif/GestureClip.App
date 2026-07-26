@@ -76,6 +76,29 @@ public partial class ClipboardOverlayWindow : Window
             return;
         }
 
+        // Item editor: same keyboard ownership rules as the snippet editor.
+        if (_viewModel.IsItemEditorOpen)
+        {
+            if (e.Key == Key.Escape)
+            {
+                _viewModel.CloseItemEditor();
+                e.Handled = true;
+            }
+
+            return;
+        }
+
+        if (_viewModel.IsQrOpen)
+        {
+            if (e.Key == Key.Escape)
+            {
+                _viewModel.CloseQr();
+                e.Handled = true;
+            }
+
+            return;
+        }
+
         // While the search box owns keyboard focus, printable keys (digits, "?" etc.) must go
         // into the text box instead of triggering list shortcuts. See KNOWN_ISSUES: typing a
         // number in the search box used to instantly paste history item N and close the panel.
@@ -215,6 +238,18 @@ public partial class ClipboardOverlayWindow : Window
         if (e.Key == Key.Q && (Keyboard.Modifiers & ModifierKeys.Control) == ModifierKeys.Control)
         {
             _viewModel.EnqueueToPasteQueue(GetSelectedItems());
+            e.Handled = true;
+            return;
+        }
+
+        if (e.Key == Key.F2 && !isSearchTyping)
+        {
+            if (await _viewModel.OpenItemEditorAsync(GetSelectedItems().FirstOrDefault()))
+            {
+                ItemEditorTextBox.Focus();
+                ItemEditorTextBox.CaretIndex = ItemEditorTextBox.Text.Length;
+            }
+
             e.Handled = true;
             return;
         }
@@ -551,6 +586,59 @@ public partial class ClipboardOverlayWindow : Window
     private async void CopyPlainTextMenuItem_Click(object sender, RoutedEventArgs e)
     {
         await _viewModel.CopySelectedAsPlainTextAsync(GetSelectedItems());
+    }
+
+    private async void CopyAsFilesMenuItem_Click(object sender, RoutedEventArgs e)
+    {
+        await _viewModel.CopySelectedAsFilesAsync(GetSelectedItems());
+    }
+
+    private async void EditItemMenuItem_Click(object sender, RoutedEventArgs e)
+    {
+        if (await _viewModel.OpenItemEditorAsync(GetSelectedItems().FirstOrDefault()))
+        {
+            ItemEditorTextBox.Focus();
+            ItemEditorTextBox.CaretIndex = ItemEditorTextBox.Text.Length;
+        }
+    }
+
+    private void ItemEditorCancelButton_Click(object sender, RoutedEventArgs e)
+    {
+        _viewModel.CloseItemEditor();
+    }
+
+    private async void ItemEditorSaveButton_Click(object sender, RoutedEventArgs e)
+    {
+        await _viewModel.SaveItemEditAsync();
+    }
+
+    private async void ShowQrMenuItem_Click(object sender, RoutedEventArgs e)
+    {
+        await _viewModel.ShowQrForItemAsync(GetSelectedItems().FirstOrDefault());
+    }
+
+    private void QrCloseButton_Click(object sender, RoutedEventArgs e)
+    {
+        _viewModel.CloseQr();
+    }
+
+    private async void PinImageMenuItem_Click(object sender, RoutedEventArgs e)
+    {
+        var full = await _viewModel.PreparePinImageAsync(GetSelectedItems().FirstOrDefault());
+        if (full?.TextContent is null)
+        {
+            return;
+        }
+
+        try
+        {
+            var image = GestureClip.Infrastructure.Clipboard.ClipboardImageFactory.CreateFrozenBitmapImage(full.TextContent);
+            new PinImageWindow(image).Show();
+        }
+        catch (Exception ex)
+        {
+            _viewModel.SetStatusText($"贴图失败:{ex.Message}");
+        }
     }
 
     private async void PasteSelectedMenuItem_Click(object sender, RoutedEventArgs e)

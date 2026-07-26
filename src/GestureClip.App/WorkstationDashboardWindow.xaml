@@ -40,6 +40,22 @@
                 <RowDefinition Height="Auto" />
             </Grid.RowDefinitions>
 
+            <!-- Ambient color washes behind the glass surfaces -->
+            <Grid Grid.Row="0" Grid.RowSpan="3" IsHitTestVisible="False">
+                <Ellipse Width="560" Height="440"
+                         Fill="{DynamicResource BrushAmbientBlue}"
+                         HorizontalAlignment="Left" VerticalAlignment="Top"
+                         Margin="-160,-140,0,0" />
+                <Ellipse Width="520" Height="420"
+                         Fill="{DynamicResource BrushAmbientViolet}"
+                         HorizontalAlignment="Right" VerticalAlignment="Top"
+                         Margin="0,-100,-180,0" />
+                <Ellipse Width="640" Height="460"
+                         Fill="{DynamicResource BrushAmbientTeal}"
+                         HorizontalAlignment="Center" VerticalAlignment="Bottom"
+                         Margin="0,0,0,-220" />
+            </Grid>
+
             <!-- Header: floats directly on the backdrop -->
             <Border Grid.Row="0"
                     Margin="0,0,0,16"
@@ -83,7 +99,7 @@
                                 BorderThickness="1"
                                 CornerRadius="999"
                                 Padding="12,6">
-                            <TextBlock Text="v0.6.38 · 本地"
+                            <TextBlock Text="v0.6.39 · 本地"
                                        Style="{StaticResource HubRootTextStyle}"
                                        FontSize="12"
                                        FontWeight="Bold"
@@ -109,6 +125,27 @@
                         <TextBlock Text="本地统计 · Esc 关闭 · 不上传"
                                    Style="{StaticResource HubMetricLabelStyle}"
                                    Margin="0,4,0,0" />
+                        <ItemsControl ItemsSource="{Binding HolidayCountdownTexts}"
+                                      Margin="0,8,0,0">
+                            <ItemsControl.ItemsPanel>
+                                <ItemsPanelTemplate>
+                                    <WrapPanel />
+                                </ItemsPanelTemplate>
+                            </ItemsControl.ItemsPanel>
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Border Style="{StaticResource HubChipStyle}"
+                                            Padding="10,4"
+                                            Margin="0,0,6,4">
+                                        <TextBlock Text="{Binding}"
+                                                   Style="{StaticResource HubRootTextStyle}"
+                                                   FontSize="11.5"
+                                                   FontWeight="SemiBold"
+                                                   Foreground="{DynamicResource BrushTextSecondary}" />
+                                    </Border>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
                     </StackPanel>
                 </DockPanel>
             </Border>
@@ -161,7 +198,7 @@
                                 <ItemsControl.ItemTemplate>
                                     <DataTemplate>
                                         <Button Content="{Binding Name}"
-                                                Style="{StaticResource SettingsCompactActionButtonStyle}"
+                                                Style="{StaticResource SecondaryButtonStyle}"
                                                 Command="{Binding DataContext.ApplyWorkTemplateCommand, RelativeSource={RelativeSource AncestorType=Window}}"
                                                 CommandParameter="{Binding}"
                                                 Margin="0,0,8,8"
@@ -212,12 +249,12 @@
                             Margin="0,0,0,16"
                             Padding="0"
                             ClipToBounds="True"
-                            CornerRadius="20"
+                            CornerRadius="24"
                             BorderBrush="{Binding FishingBorderBrush}"
                             BorderThickness="{Binding FishingBorderThickness}"
                             Background="{DynamicResource BrushGlassHighlight}">
                         <Border.Effect>
-                            <DropShadowEffect Color="#000000" BlurRadius="32" ShadowDepth="4" Opacity="0.16" Direction="270" />
+                            <DropShadowEffect Color="#000000" BlurRadius="40" ShadowDepth="6" Opacity="0.12" Direction="270" />
                         </Border.Effect>
                         <Grid>
                             <Grid.ColumnDefinitions>
@@ -228,7 +265,12 @@
                             <!-- Wide stage accent rail (obvious color) -->
                             <Border Grid.Column="0"
                                     Background="{Binding StageAccentBrush}"
-                                    CornerRadius="20,0,0,20" />
+                                    CornerRadius="24,0,0,24" />
+
+                            <!-- Liquid glass: inner top sheen + specular rim -->
+                            <Border Grid.ColumnSpan="2"
+                                    CornerRadius="24"
+                                    Style="{StaticResource HubGlassSheenStyle}" />
 
                             <StackPanel Grid.Column="1" Margin="20,18,18,16">
                                 <!-- Status row -->
@@ -269,50 +311,53 @@
                                 <!-- Hero metrics: gradient glass tiles (blue / green / amber), theme-aware -->
                                 <UniformGrid Columns="3" Margin="0,2,0,16">
                                     <Border Margin="0,0,10,0"
-                                            Padding="16,14"
-                                            CornerRadius="16"
+                                            CornerRadius="18"
                                             Background="{DynamicResource BrushTileBlueBg}"
                                             BorderBrush="{DynamicResource BrushTileBlueBorder}"
                                             BorderThickness="1">
-                                        <StackPanel VerticalAlignment="Center">
-                                            <TextBlock Text="今日已赚"
-                                                       Style="{StaticResource HubMetricLabelStyle}"
-                                                       Foreground="{DynamicResource BrushTileBlueLabel}" />
-                                            <TextBlock x:Name="TodayEarnedMetric"
-                                                       Text="{Binding TodayEarnedText}"
-                                                       Style="{StaticResource HubRootTextStyle}"
-                                                       FontSize="28"
-                                                       FontWeight="Bold"
-                                                       Foreground="{DynamicResource BrushTileBlueValue}"
-                                                       Margin="0,6,0,0" />
-                                        </StackPanel>
+                                        <Grid>
+                                            <Border CornerRadius="18" Style="{StaticResource HubGlassSheenStyle}" />
+                                            <StackPanel VerticalAlignment="Center" Margin="16,14">
+                                                <TextBlock Text="今日已赚"
+                                                           Style="{StaticResource HubMetricLabelStyle}"
+                                                           Foreground="{DynamicResource BrushTileBlueLabel}" />
+                                                <TextBlock Text="{Binding TodayEarnedText}"
+                                                           Style="{StaticResource HubRootTextStyle}"
+                                                           FontSize="28"
+                                                           FontWeight="Bold"
+                                                           Foreground="{DynamicResource BrushTileBlueValue}"
+                                                           Margin="0,6,0,0" />
+                                            </StackPanel>
+                                        </Grid>
                                     </Border>
                                     <Border Margin="0,0,10,0"
-                                            Padding="16,14"
-                                            CornerRadius="16"
+                                            CornerRadius="18"
                                             Background="{DynamicResource BrushTileGreenBg}"
                                             BorderBrush="{DynamicResource BrushTileGreenBorder}"
                                             BorderThickness="1">
-                                        <StackPanel VerticalAlignment="Center">
-                                            <TextBlock Text="距离下班"
-                                                       Style="{StaticResource HubMetricLabelStyle}"
-                                                       Foreground="{DynamicResource BrushTileGreenLabel}" />
-                                            <TextBlock x:Name="OffWorkMetric"
-                                                       Text="{Binding OffWorkCountdownText}"
-                                                       Style="{StaticResource HubRootTextStyle}"
-                                                       FontSize="24"
-                                                       FontWeight="Bold"
-                                                       Foreground="{DynamicResource BrushTileGreenValue}"
-                                                       Margin="0,6,0,0" />
-                                        </StackPanel>
+                                        <Grid>
+                                            <Border CornerRadius="18" Style="{StaticResource HubGlassSheenStyle}" />
+                                            <StackPanel VerticalAlignment="Center" Margin="16,14">
+                                                <TextBlock Text="距离下班"
+                                                           Style="{StaticResource HubMetricLabelStyle}"
+                                                           Foreground="{DynamicResource BrushTileGreenLabel}" />
+                                                <TextBlock Text="{Binding OffWorkCountdownText}"
+                                                           Style="{StaticResource HubRootTextStyle}"
+                                                           FontSize="24"
+                                                           FontWeight="Bold"
+                                                           Foreground="{DynamicResource BrushTileGreenValue}"
+                                                           Margin="0,6,0,0" />
+                                            </StackPanel>
+                                        </Grid>
                                     </Border>
-                                    <Border Padding="14,10"
-                                            CornerRadius="16"
+                                    <Border CornerRadius="18"
                                             Background="{DynamicResource BrushTileAmberBg}"
                                             BorderBrush="{DynamicResource BrushTileAmberBorder}"
                                             BorderThickness="1"
                                             ToolTip="{Binding WorkdayProgressText}">
-                                        <DockPanel>
+                                        <Grid>
+                                            <Border CornerRadius="18" Style="{StaticResource HubGlassSheenStyle}" />
+                                            <DockPanel Margin="14,10">
                                             <Grid DockPanel.Dock="Right" Width="62" Height="62" VerticalAlignment="Center">
                                                 <controls:RingProgress Progress="{Binding WorkdayProgressPercent}"
                                                                        StrokeThickness="6"
@@ -338,6 +383,7 @@
                                                            Margin="0,4,0,0" />
                                             </StackPanel>
                                         </DockPanel>
+                                        </Grid>
                                     </Border>
                                 </UniformGrid>
 
@@ -351,9 +397,17 @@
                                            FontSize="12" />
                                 <ProgressBar Style="{StaticResource HubThinProgressBarStyle}"
                                              Height="6"
-                                             Value="{Binding OffWorkProgress}"
+                                             Value="{Binding OffWorkProgress, Mode=OneWay}"
                                              Foreground="{Binding StageStartBrush}"
                                              ToolTip="{Binding OffWorkProgressText}" />
+
+                                <TextBlock Text="{Binding OvertimeText}"
+                                           Style="{StaticResource HubRootTextStyle}"
+                                           FontSize="12.5"
+                                           FontWeight="SemiBold"
+                                           Foreground="{DynamicResource BrushDanger}"
+                                           Margin="0,10,0,0"
+                                           Visibility="{Binding HasOvertime, Converter={StaticResource BooleanToVisibilityConverter}}" />
 
                                 <Border Style="{StaticResource HubFishingBannerStyle}"
                                         Visibility="{Binding IsFishing, Converter={StaticResource BooleanToVisibilityConverter}}">
@@ -364,6 +418,12 @@
                                                Foreground="#FF5EEAD4" />
                                 </Border>
                             </StackPanel>
+
+                            <Border Grid.ColumnSpan="2"
+                                    CornerRadius="24"
+                                    BorderBrush="{DynamicResource BrushGlassRim}"
+                                    BorderThickness="1"
+                                    IsHitTestVisible="False" />
                         </Grid>
                     </Border>
 
@@ -494,7 +554,7 @@
                               Style="{StaticResource HubSectionExpanderStyle}">
                         <Border Style="{StaticResource HubSectionCardStyle}">
                             <StackPanel>
-                                <TextBlock Text="温柔提醒，可稍后、可关闭。不做医疗判断，也不再弹轰炸。"
+                                <TextBlock Text="温柔提醒，可稍后、可关闭。离开电脑几分钟会自动算休息（只看键鼠是否空闲，不看你在用什么）。"
                                            Style="{StaticResource HubBodyStyle}"
                                            Margin="0,0,0,12" />
                                 <TextBlock Text="{Binding ContinuousWorkText, StringFormat=已连续工作 {0}}"
@@ -791,6 +851,11 @@
                                 Style="{StaticResource SecondaryButtonStyle}"
                                 Click="OpenSettingsButton_Click"
                                 Margin="0,0,8,0" />
+                        <Button Content="迷你挂件"
+                                Style="{StaticResource SecondaryButtonStyle}"
+                                Click="ToggleWidgetButton_Click"
+                                Margin="0,0,8,0"
+                                ToolTip="开/关桌面置顶小挂件：实时已赚 + 下班倒计时，右键可换桌宠图" />
                         <Button Content="重置今日"
                                 Style="{StaticResource DangerButtonStyle}"
                                 Command="{Binding ResetTodayCommand}"

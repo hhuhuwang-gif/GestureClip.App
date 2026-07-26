@@ -66,6 +66,36 @@ public sealed class ClipboardServiceTests
     }
 
     [Fact]
+    public async Task UpdateTextContentAsync_edits_text_item_in_place()
+    {
+        var repository = new FakeClipboardRepository();
+        var service = CreateService(repository);
+        await service.CaptureTextAsync(Capture("original"), CancellationToken.None);
+        var item = Assert.Single(repository.Items);
+
+        var updated = await service.UpdateTextContentAsync(item.Id, "  edited text  ", CancellationToken.None);
+
+        Assert.NotNull(updated);
+        Assert.Equal("edited text", updated!.TextContent);
+        Assert.Equal("edited text", Assert.Single(repository.Items).TextContent);
+        Assert.NotEqual(item.Hash, updated.Hash);
+    }
+
+    [Fact]
+    public async Task UpdateTextContentAsync_rejects_missing_item_and_empty_text()
+    {
+        var repository = new FakeClipboardRepository();
+        var service = CreateService(repository);
+
+        Assert.Null(await service.UpdateTextContentAsync(Guid.NewGuid(), "x", CancellationToken.None));
+
+        await service.CaptureTextAsync(Capture("original"), CancellationToken.None);
+        var item = Assert.Single(repository.Items);
+        Assert.Null(await service.UpdateTextContentAsync(item.Id, "   ", CancellationToken.None));
+        Assert.Equal("original", Assert.Single(repository.Items).TextContent);
+    }
+
+    [Fact]
     public async Task PasteAsync_suppresses_capture_writes_text_sends_paste_and_updates_usage()
     {
         var repository = new FakeClipboardRepository();
@@ -676,6 +706,29 @@ public sealed class ClipboardServiceTests
         public Task<ClipboardItem?> GetByIdAsync(Guid id, CancellationToken cancellationToken)
         {
             return Task.FromResult(Items.FirstOrDefault(item => item.Id == id));
+        }
+
+        public Task UpdateTextContentAsync(
+            Guid id,
+            string text,
+            string hash,
+            string? plainTextHash,
+            string preview,
+            CancellationToken cancellationToken)
+        {
+            var index = Items.FindIndex(item => item.Id == id);
+            if (index >= 0)
+            {
+                Items[index] = Items[index] with
+                {
+                    TextContent = text,
+                    PreviewText = preview,
+                    Hash = hash,
+                    PlainTextHash = plainTextHash
+                };
+            }
+
+            return Task.CompletedTask;
         }
 
         public Task TouchAsync(Guid id, CancellationToken cancellationToken)

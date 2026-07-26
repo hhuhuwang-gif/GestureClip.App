@@ -15,6 +15,7 @@ public sealed class AppLifecycleService : IAppLifecycleService
     private readonly ILogger<AppLifecycleService> _logger;
     private SettingsWindow? _settingsWindow;
     private WorkstationDashboardWindow? _workstationDashboardWindow;
+    private WorkBearWidgetWindow? _workBearWidgetWindow;
     private int _exitStarted;
 
     public AppLifecycleService(IServiceProvider serviceProvider, ILogger<AppLifecycleService> logger)
@@ -93,6 +94,42 @@ public sealed class AppLifecycleService : IAppLifecycleService
 
         _workstationDashboardWindow.Activate();
         _logger.LogInformation("Workstation dashboard window shown.");
+    }
+
+    public void ToggleWorkBearWidget()
+    {
+        var settingsService = _serviceProvider.GetRequiredService<ISettingsService>();
+        if (_workBearWidgetWindow is not null)
+        {
+            _ = settingsService.SetAsync(Core.Settings.SettingKeys.WorkBearWidgetEnabled, false, CancellationToken.None);
+            _workBearWidgetWindow.Close();
+            _logger.LogInformation("WorkBear widget closed by toggle.");
+            return;
+        }
+
+        _ = settingsService.SetAsync(Core.Settings.SettingKeys.WorkBearWidgetEnabled, true, CancellationToken.None);
+        ShowWorkBearWidget();
+    }
+
+    public void ShowWorkBearWidgetIfEnabled()
+    {
+        var settingsService = _serviceProvider.GetRequiredService<ISettingsService>();
+        if (settingsService.Get(Core.Settings.SettingKeys.WorkBearWidgetEnabled, false))
+        {
+            ShowWorkBearWidget();
+        }
+    }
+
+    private void ShowWorkBearWidget()
+    {
+        if (_workBearWidgetWindow is null)
+        {
+            _workBearWidgetWindow = _serviceProvider.GetRequiredService<WorkBearWidgetWindow>();
+            _workBearWidgetWindow.Closed += (_, _) => _workBearWidgetWindow = null;
+        }
+
+        _workBearWidgetWindow.Show();
+        _logger.LogInformation("WorkBear widget shown.");
     }
 
     public void OpenLatestReleasePage()

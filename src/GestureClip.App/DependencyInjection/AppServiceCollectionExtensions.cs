@@ -42,6 +42,7 @@ public static class AppServiceCollectionExtensions
         services.AddTransient<QuickActionCenterWindow>();
         services.AddTransient<OverworkReminderToastWindow>();
         services.AddTransient<WorkstationDashboardWindow>();
+        services.AddTransient<WorkBearWidgetWindow>();
         services.AddTransient<WorkerLevelUpWindow>();
         services.AddTransient<OnboardingWindow>();
         services.AddTransient<SettingsWindow>();

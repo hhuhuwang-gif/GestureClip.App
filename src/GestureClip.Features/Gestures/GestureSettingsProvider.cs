@@ -25,7 +25,10 @@ public sealed class GestureSettingsProvider : IGestureSettingsProvider
             settingsService.Get(SettingKeys.GestureTriggerMiddleButtonEnabled, false),
             settingsService.Get(SettingKeys.GestureTriggerXButton1Enabled, false),
             settingsService.Get(SettingKeys.GestureTriggerXButton2Enabled, false),
-            settingsService.Get(SettingKeys.GestureTriggerRightButtonEnabled, true));
+            settingsService.Get(SettingKeys.GestureTriggerRightButtonEnabled, true),
+            settingsService.Get(SettingKeys.GestureWheelGestureEnabled, true),
+            settingsService.Get(SettingKeys.GestureWheelUpAction, BuiltInGestureAction.PreviousTab),
+            settingsService.Get(SettingKeys.GestureWheelDownAction, BuiltInGestureAction.NextTab));
     }
 
     public GestureSettings GetCurrent()

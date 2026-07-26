@@ -14,15 +14,18 @@ public sealed class WorkstationDashboardService : IWorkstationDashboardService
     private readonly ISettingsService _settingsService;
     private readonly IWorkstationStatsRepository _statsRepository;
     private readonly IWorkTimeStageService _stageService;
+    private readonly IContinuousWorkTracker? _continuousWorkTracker;
 
     public WorkstationDashboardService(
         ISettingsService settingsService,
         IWorkstationStatsRepository statsRepository,
-        IWorkTimeStageService stageService)
+        IWorkTimeStageService stageService,
+        IContinuousWorkTracker? continuousWorkTracker = null)
     {
         _settingsService = settingsService;
         _statsRepository = statsRepository;
         _stageService = stageService;
+        _continuousWorkTracker = continuousWorkTracker;
     }
 
     public WorkstationDashboardService(
@@ -46,6 +49,8 @@ public sealed class WorkstationDashboardService : IWorkstationDashboardService
         var workDuration = GetGrossWorkDuration(now, settings);
         var overtime = GetOvertimeDuration(now, settings);
         var untilOffWork = GetTimeUntilOffWork(now, settings);
+        // Activity-driven when the tracker is present; falls back to clock-based.
+        var continuousWork = _continuousWorkTracker?.GetContinuousWorkDuration(now) ?? stageSnapshot.EffectiveWorkedTime;
         var sprintActive = IsSprintActive(untilOffWork, stageSnapshot.Stage);
         var rating = WorkBearTextProvider.Rating(workDuration, TimeSpan.FromMinutes(totalFishingMinutes), overtime, stats.EstimatedSavedClicks);
         var report = BuildDailyReport(
@@ -85,10 +90,10 @@ public sealed class WorkstationDashboardService : IWorkstationDashboardService
             stats.OpenClipboardCount,
             workDuration,
             TimeSpan.FromMinutes((double)earnedMinutes),
-            stageSnapshot.EffectiveWorkedTime,
+            continuousWork,
             GetNextRestReminderAt(now),
             stats.OverworkReminderCount,
-            WorkBearTextProvider.RestRisk(stageSnapshot.EffectiveWorkedTime, stageSnapshot.Stage),
+            WorkBearTextProvider.RestRisk(continuousWork, stageSnapshot.Stage),
             IsRestReminderEnabledForToday(now),
             sprintActive,
             WorkBearTextProvider.SprintSuggestion(stageSnapshot.Stage, untilOffWork, textStyle),
@@ -100,7 +105,7 @@ public sealed class WorkstationDashboardService : IWorkstationDashboardService
             stageSnapshot.Theme.StartColor,
             stageSnapshot.Theme.EndColor,
             stageSnapshot.WorkProgress,
-            MapRestRiskLevel(WorkBearTextProvider.RestRisk(stageSnapshot.EffectiveWorkedTime, stageSnapshot.Stage)));
+            MapRestRiskLevel(WorkBearTextProvider.RestRisk(continuousWork, stageSnapshot.Stage)));
     }
 
     public async Task StartFishingAsync(DateTimeOffset now, CancellationToken cancellationToken)

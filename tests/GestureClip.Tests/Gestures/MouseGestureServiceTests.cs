@@ -106,6 +106,47 @@ public sealed class MouseGestureServiceTests
     }
 
     [Fact]
+    public async Task Wheel_while_holding_right_button_fires_wheel_actions_and_release_stays_quiet()
+    {
+        var hook = new FakeLowLevelMouseHook();
+        var executor = new FakeMouseGestureActionExecutor();
+        var synthesizer = new FakeRightClickSynthesizer();
+        var service = CreateService(hook, executor, synthesizer: synthesizer, showOverlay: false);
+        await service.StartAsync(CancellationToken.None);
+
+        hook.Raise(MouseHookEventType.RightButtonDown, 0, 0);
+        var wheelUp = hook.Raise(MouseHookEventType.Wheel, 0, 0, wheelDelta: 120);
+        var wheelDown = hook.Raise(MouseHookEventType.Wheel, 0, 0, wheelDelta: -120);
+        var up = hook.Raise(MouseHookEventType.RightButtonUp, 0, 0);
+        await WaitForAsync(() => executor.Actions.Count == 2);
+
+        Assert.True(wheelUp.Suppress);
+        Assert.True(wheelDown.Suppress);
+        Assert.True(up.Suppress);
+        Assert.Contains(BuiltInGestureAction.PreviousTab, executor.Actions);
+        Assert.Contains(BuiltInGestureAction.NextTab, executor.Actions);
+        // Release after wheel usage must not synthesize a right click (no context menu).
+        await Task.Delay(80);
+        Assert.Empty(synthesizer.Clicks);
+        Assert.Equal(GestureRuntimeState.Idle, service.Diagnostics.State);
+    }
+
+    [Fact]
+    public async Task Wheel_without_holding_trigger_button_is_ignored()
+    {
+        var hook = new FakeLowLevelMouseHook();
+        var executor = new FakeMouseGestureActionExecutor();
+        var service = CreateService(hook, executor, showOverlay: false);
+        await service.StartAsync(CancellationToken.None);
+
+        var wheel = hook.Raise(MouseHookEventType.Wheel, 0, 0, wheelDelta: 120);
+        await Task.Delay(50);
+
+        Assert.False(wheel.Suppress);
+        Assert.Empty(executor.Actions);
+    }
+
+    [Fact]
     public async Task Gesture_active_records_gesture_count_after_action()
     {
         var hook = new FakeLowLevelMouseHook();
@@ -913,11 +954,12 @@ public sealed class MouseGestureServiceTests
             int x,
             int y,
             bool isInjected = false,
-            DateTimeOffset? time = null)
+            DateTimeOffset? time = null,
+            int wheelDelta = 0)
         {
             var args = new MouseHookEventArgs
             {
-                Event = new MouseHookEvent(type, x, y, time ?? DateTimeOffset.UtcNow, isInjected)
+                Event = new MouseHookEvent(type, x, y, time ?? DateTimeOffset.UtcNow, isInjected, wheelDelta)
             };
             MouseEventReceived?.Invoke(this, args);
             return args;

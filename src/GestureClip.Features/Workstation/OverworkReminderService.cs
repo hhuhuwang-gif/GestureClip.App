@@ -13,6 +13,7 @@ public sealed class OverworkReminderService : IOverworkReminderService, IDisposa
     private readonly IWorkTimeStageService _stageService;
     private readonly IOverworkReminderToastService _toastService;
     private readonly IWorkstationDashboardService _dashboardService;
+    private readonly IContinuousWorkTracker? _continuousWorkTracker;
     private readonly object _syncRoot = new();
 
     private Timer? _timer;
@@ -25,12 +26,14 @@ public sealed class OverworkReminderService : IOverworkReminderService, IDisposa
         ISettingsService settingsService,
         IWorkTimeStageService stageService,
         IOverworkReminderToastService toastService,
-        IWorkstationDashboardService dashboardService)
+        IWorkstationDashboardService dashboardService,
+        IContinuousWorkTracker? continuousWorkTracker = null)
     {
         _settingsService = settingsService;
         _stageService = stageService;
         _toastService = toastService;
         _dashboardService = dashboardService;
+        _continuousWorkTracker = continuousWorkTracker;
     }
 
     public OverworkReminderService(
@@ -126,6 +129,13 @@ public sealed class OverworkReminderService : IOverworkReminderService, IDisposa
         var strongWarning = _settingsService.Get(SettingKeys.WorkstationEnableStrongOverworkWarning, false);
         var title = "工位小熊提醒";
 
+        // Activity-aware: if the user is already resting (idle), any reminder is noise.
+        var continuousWork = _continuousWorkTracker?.GetContinuousWorkDuration(now);
+        if (continuousWork == TimeSpan.Zero)
+        {
+            return null;
+        }
+
         if (snapshot.EffectiveWorkedTime.TotalHours >= highRiskAfterHours)
         {
             return new OverworkReminderNotification(
@@ -159,12 +169,14 @@ public sealed class OverworkReminderService : IOverworkReminderService, IDisposa
         }
 
         // Only remind in early/mid work after continuous work threshold + interval cadence.
+        // With the tracker this is real input-activity time, not wall-clock time.
+        var effectiveContinuous = continuousWork ?? snapshot.EffectiveWorkedTime;
         if (snapshot.Stage is WorkTimeStage.EarlyWork or WorkTimeStage.MidWork &&
-            snapshot.EffectiveWorkedTime.TotalMinutes >= Math.Max(interval, minContinuousMinutes))
+            effectiveContinuous.TotalMinutes >= Math.Max(interval, minContinuousMinutes))
         {
             return new OverworkReminderNotification(
                 title,
-                $"已连续工作约 {(int)snapshot.EffectiveWorkedTime.TotalMinutes} 分钟，建议休息 3 分钟。",
+                $"已连续工作约 {(int)effectiveContinuous.TotalMinutes} 分钟，建议休息 3 分钟。",
                 "起来走两步，喝口水，看远处 20 秒。",
                 snapshot.Stage,
                 canSnooze);

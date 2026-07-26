@@ -40,6 +40,7 @@ public static class FeaturesServiceCollectionExtensions
         services.AddSingleton<IAssistantActionCatalog, BuiltInAssistantActionCatalog>();
         services.AddSingleton<IAssistantActionExecutor, AssistantActionExecutor>();
         services.AddSingleton<IWorkstationStatsRepository, WorkstationStatsRepository>();
+        services.AddSingleton<IContinuousWorkTracker, ContinuousWorkTracker>();
         services.AddSingleton<IWorkstationDashboardService, WorkstationDashboardService>();
         services.AddSingleton<IWorkTimeStageService, WorkTimeStageService>();
         services.AddSingleton<IWorkerLevelService, WorkerLevelService>();

@@ -72,6 +72,15 @@ public interface IClipboardService
         return Task.FromResult<ClipboardItem?>(null);
     }
 
+    /// <summary>
+    /// Edit a text history item in place (CopyQ-style). Returns the updated item,
+    /// or null when the item does not exist / is not text / the text is empty.
+    /// </summary>
+    Task<ClipboardItem?> UpdateTextContentAsync(Guid id, string text, CancellationToken cancellationToken)
+    {
+        return Task.FromResult<ClipboardItem?>(null);
+    }
+
     private static bool MatchesFilter(ClipboardItem item, ClipboardContentFilter filter)
     {
         return filter switch

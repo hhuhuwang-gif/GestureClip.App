@@ -43,6 +43,8 @@ public sealed class MouseGestureService : IMouseGestureService
     private GesturePoint? _pendingSyntheticClickPoint;
     private GestureTriggerButton _activeTriggerButton = GestureTriggerButton.Right;
     private bool _rightLeftRockerDown;
+    /// <summary>Wheel gesture fired during this hold; release must not run pattern/synthesize click.</summary>
+    private bool _wheelGestureFired;
     private bool _leftClickConfirmDown;
     private bool _leftButtonModifier;
     private GestureTriggerButton? _suppressNextButtonUp;
@@ -339,6 +341,38 @@ public sealed class MouseGestureService : IMouseGestureService
 
                 return null;
 
+            case MouseHookEventType.Wheel:
+                // Wheel gesture: scroll while holding the trigger button. Fires per notch
+                // (repeatable, e.g. tab switching); release then does nothing extra.
+                if (_state == GestureRuntimeState.Idle ||
+                    _activeSettings is null ||
+                    !_activeSettings.WheelGestureEnabled)
+                {
+                    return null;
+                }
+
+                args.Suppress = true;
+                _wheelGestureFired = true;
+                var wheelAction = mouseEvent.WheelDelta > 0
+                    ? _activeSettings.WheelUpAction
+                    : _activeSettings.WheelDownAction;
+                lock (_syncRoot)
+                {
+                    _lastPattern = mouseEvent.WheelDelta > 0 ? "WHEEL_UP" : "WHEEL_DOWN";
+                    _lastAction = wheelAction;
+                }
+
+                if (wheelAction != BuiltInGestureAction.None)
+                {
+                    var wheelContext = new GestureExecutionContext(
+                        mouseEvent.WheelDelta > 0 ? "WHEEL_UP" : "WHEEL_DOWN",
+                        _leftButtonModifier,
+                        _gestureTargetHwnd);
+                    _ = Task.Run(() => _actionExecutor.ExecuteAsync(wheelAction, wheelContext, CancellationToken.None));
+                }
+
+                return null;
+
             case MouseHookEventType.LeftButtonUp:
             case MouseHookEventType.RightButtonUp:
             case MouseHookEventType.MiddleButtonUp:
@@ -388,6 +422,21 @@ public sealed class MouseGestureService : IMouseGestureService
 
                 args.Suppress = true;
                 LogDebug(_activeSettings, "Suppressed original {Button} button", upButton);
+
+                if (_wheelGestureFired)
+                {
+                    // Wheel action(s) already executed during the hold; release ends the
+                    // gesture quietly — no pattern run, no synthetic click, no context menu.
+                    _wheelGestureFired = false;
+                    var wheelOverlayShown = _activeSettings?.ShowOverlay == true && _state == GestureRuntimeState.GestureActive;
+                    ResetState("WheelGestureReset");
+                    if (wheelOverlayShown)
+                    {
+                        _ = _gestureOverlayService.HideAsync(CancellationToken.None);
+                    }
+
+                    return null;
+                }
 
                 if (_activeSettings is null)
                 {
@@ -633,6 +682,7 @@ public sealed class MouseGestureService : IMouseGestureService
         _pendingSyntheticClickPoint = null;
         _activeTriggerButton = GestureTriggerButton.Right;
         _rightLeftRockerDown = false;
+        _wheelGestureFired = false;
         _leftClickConfirmDown = false;
         _leftButtonModifier = false;
         // Keep _gestureTargetHwnd until pending gesture is built; cleared after copy into PendingGesture via reset after return.

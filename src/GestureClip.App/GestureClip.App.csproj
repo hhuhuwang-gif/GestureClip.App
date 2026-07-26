@@ -4,10 +4,10 @@
     <TargetFramework>net8.0-windows10.0.19041.0</TargetFramework>
     <AssemblyName>GestureClip</AssemblyName>
     <Product>GestureClip</Product>
-    <Version>0.6.38-beta</Version>
-    <FileVersion>0.6.38.0</FileVersion>
-    <AssemblyVersion>0.6.38.0</AssemblyVersion>
-    <InformationalVersion>0.6.38 Beta</InformationalVersion>
+    <Version>0.6.39-beta</Version>
+    <FileVersion>0.6.39.0</FileVersion>
+    <AssemblyVersion>0.6.39.0</AssemblyVersion>
+    <InformationalVersion>0.6.39 Beta</InformationalVersion>
     <UseWPF>true</UseWPF>
     <UseWindowsForms>true</UseWindowsForms>
     <ApplicationIcon>Assets\GestureClip.ico</ApplicationIcon>
@@ -17,6 +17,7 @@
   <ItemGroup>
     <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="9.0.6" />
     <PackageReference Include="Microsoft.Extensions.Logging" Version="9.0.6" />
+    <PackageReference Include="QRCoder" Version="1.6.0" />
   </ItemGroup>
   <ItemGroup>
     <Resource Include="Assets\GestureClip.ico" />

@@ -23,9 +23,9 @@
 <p align="center">
   <a href="https://github.com/hhuhuwang-gif/GestureClip.App/releases/latest"><strong>⬇ 下载最新版（Latest）</strong></a>
   ·
-  <a href="https://github.com/hhuhuwang-gif/GestureClip.App/releases/download/v0.6.38-beta/GestureClip-v0.6.38-beta-win-x64.zip"><strong>v0.6.38 Beta zip</strong></a>
+  <a href="https://github.com/hhuhuwang-gif/GestureClip.App/releases/download/v0.6.39-beta/GestureClip-v0.6.39-beta-win-x64.zip"><strong>v0.6.39 Beta zip</strong></a>
   ·
-  <a href="https://github.com/hhuhuwang-gif/GestureClip.App/releases/tag/v0.6.38-beta">Release 说明</a>
+  <a href="https://github.com/hhuhuwang-gif/GestureClip.App/releases/tag/v0.6.39-beta">Release 说明</a>
   ·
   <a href="CHANGELOG.md">更新日志</a>
 </p>
@@ -63,21 +63,24 @@
 
 ---
 
-## 当前版本：v0.6.38 Beta
+## 当前版本：v0.6.39 Beta
 
 | 资源 | 链接 |
 | --- | --- |
 | **推荐下载（Latest）** | [Releases / latest](https://github.com/hhuhuwang-gif/GestureClip.App/releases/latest) |
-| 安装包 | [GestureClip-v0.6.38-beta-win-x64.zip](https://github.com/hhuhuwang-gif/GestureClip.App/releases/download/v0.6.38-beta/GestureClip-v0.6.38-beta-win-x64.zip) |
-| 校验文件 | [SHA256SUMS.txt](https://github.com/hhuhuwang-gif/GestureClip.App/releases/download/v0.6.38-beta/SHA256SUMS.txt) |
+| 安装包 | [GestureClip-v0.6.39-beta-win-x64.zip](https://github.com/hhuhuwang-gif/GestureClip.App/releases/download/v0.6.39-beta/GestureClip-v0.6.39-beta-win-x64.zip) |
+| 校验文件 | [SHA256SUMS.txt](https://github.com/hhuhuwang-gif/GestureClip.App/releases/download/v0.6.39-beta/SHA256SUMS.txt) |
 | 历史版本 | 旧版在 Releases 里标记为 **Pre-release**，默认请用 Latest |
 
-### 本版亮点（v0.6.38）
+### 本版亮点（v0.6.39）
 
-- **修复：剪贴板搜索框输入数字不再直接跳转粘贴**，Delete/Home/End/? 也不再误触快捷键
-- **搜索增强**：拼音首字母（`wx`→微信）、`re:` 正则、🔗 链接筛选（Ctrl+6）、搜索时 ↑/↓ 选条目
-- **文本工具**：右键记录一键转大小写 / 去空白 / JSON 格式化压缩 / URL 解码
-- **含 0.6.37**：Hub 版本徽章、三色指标砖、手势 HUD 统计行可读
+- **滚轮手势**：按住右键滚滚轮切标签（动作可改、可连发、不弹菜单）
+- **剪贴板增强**：以文件形式复制（.txt/.png）、F2 就地编辑、二维码扫码带走、**图片贴图置顶**
+- **小熊迷你挂件**：桌面常驻已赚 + 倒计时小胶囊，可换自定义桌宠 GIF
+- **小熊升级**：节假日倒计时、收益秒级跳动、活动驱动休息判断、加班统计
+- **Hub 液态玻璃视觉升级**：镜面高光描边、内部光泽、环境色晕（亮 / 暗双主题）
+- 修复暗色主题无 Mica 回退时窗口背景误用浅色
+- **含 0.6.38**：剪贴板搜索修复与增强（拼音首字母、`re:` 正则、链接筛选）、文本工具
 
 ---
 
@@ -94,8 +97,12 @@
 
 ### 1. 剪贴板历史
 
-- 文本 + 图片 / 截图，支持搜索、固定、收藏、多选合并复制
+- 文本 + 图片 / 截图，支持搜索（拼音首字母 / `re:` 正则 / 链接筛选）、固定、收藏、多选合并复制
 - 左侧色条：蓝=文本 · 紫=图片 · 橙=置顶 · **绿=本会话已复制**
+- **F2 就地编辑**：选中历史直接改内容，覆盖原记录不新建
+- **以文件形式复制**：文本变 .txt、图片变 .png，直接 Ctrl+V 粘贴到资源管理器
+- **生成二维码**：文本条目本机生成二维码，手机扫码带走，不上传
+- **贴图置顶**：历史图片一键贴到桌面变置顶参考图（拖动 / 滚轮缩放 / 双击关闭，可贴多张）
 - 可暂停记录；数据在本机 SQLite
 
 ![剪贴板](docs/images/settings-clipboard.png)
@@ -127,8 +134,9 @@
 | 左 / 右 | 后退 / 前进 |
 | 左右 / 右左 | 全选 / 撤销 |
 | 下左 | 粘贴并回车 |
+| **按住右键 + 滚轮** | 上 / 下一个标签页（可改任意动作，滚一格触发一次） |
 
-可在设置中自定义绑定；支持左键增强等高级手势。
+可在设置中自定义绑定；支持左键增强、摇杆手势、屏幕边缘角落触发等高级手势。
 
 ![手势设置](docs/images/settings-gestures.png)
 
@@ -137,6 +145,11 @@
 ### 5. 手势 HUD + 工位小熊（可选）
 
 划手势时显示当前动作；可打开工位小熊看今日收益估算、下班倒计时、复制/粘贴统计与等级。**可关闭。**
+
+- **今日已赚每秒跳动** + 距周末 / 法定节假日倒计时（本地内置假日表）
+- **活动驱动休息判断**：离开电脑 5 分钟自动算休息，人在休息不弹提醒（只看键鼠空闲，不识别应用）
+- 过了下班点显示**加班账**：已加班时长 ≈ 白送老板多少钱
+- **迷你挂件**：桌面常驻置顶小胶囊（已赚 + 倒计时），可拖动、可换自定义桌宠图（GIF 会动）
 
 ![手势 HUD](docs/images/gesture-hud-workbear.png)
 
@@ -197,7 +210,7 @@ v0.6.37 起历史再复制会统一写成纯文本；也可用「复制为纯文
 可手动到 [Latest](https://github.com/hhuhuwang-gif/GestureClip.App/releases/latest) 下载。
 
 **为什么 GitHub 上还有很多旧版本？**  
-历史包仍保留下载；已标为 Pre-release。日常请只用 **Latest = v0.6.38 Beta**。
+历史包仍保留下载；已标为 Pre-release。日常请只用 **Latest = v0.6.39 Beta**。
 
 ---
 
@@ -223,7 +236,7 @@ powershell -ExecutionPolicy Bypass -File .\scripts\publish-win-x64.ps1
 - 本地快捷动作：Ctrl+Shift+Q 做去空格、JSON、URL 等
 - 工位小熊（可选）：下班倒计时、复制统计
 
-v0.6.38 Beta，解压双击 GestureClip.exe。
+v0.6.39 Beta，解压双击 GestureClip.exe。
 
 项目：https://github.com/hhuhuwang-gif/GestureClip.App
 下载：https://github.com/hhuhuwang-gif/GestureClip.App/releases/latest

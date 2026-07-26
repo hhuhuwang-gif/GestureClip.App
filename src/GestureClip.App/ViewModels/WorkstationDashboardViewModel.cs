@@ -110,12 +110,16 @@ public sealed class WorkstationDashboardViewModel : INotifyPropertyChanged
     public string WorkStatusText => _snapshot.WorkStatusText;
     public string BearStatusText => _snapshot.BearStatusText;
     public string BearLineText => _snapshot.BearLineText;
-    public string OffWorkCountdownText => ShowOffWorkCountdown ? FormatDurationClock(_snapshot.TimeUntilOffWork) : "已隐藏";
-    public string TodayEarnedText => FormatMoney(_snapshot.TodayEarned);
+    public string OffWorkCountdownText => ShowOffWorkCountdown ? FormatDurationClock(ExtrapolatedTimeUntilOffWork) : "已隐藏";
+    public string TodayEarnedText => FormatMoney(ExtrapolatedTodayEarned);
     public string MonthEarnedText => FormatMoney(_snapshot.MonthEarned);
     public string MinuteValueText => FormatMoney(_snapshot.MinuteValue);
-    public string BossPaidText => FormatMoney(_snapshot.TodayEarned);
+    public string BossPaidText => FormatMoney(ExtrapolatedTodayEarned);
     public string PaydayText => _snapshot.DaysUntilPayday <= 0 ? "就是今天" : $"还剩 {_snapshot.DaysUntilPayday} 天";
+    public bool HasOvertime => _snapshot.OvertimeDuration > TimeSpan.Zero;
+    public string OvertimeText => HasOvertime
+        ? $"已加班 {FormatDuration(_snapshot.OvertimeDuration)} · 约白送老板 {FormatMoney((decimal)_snapshot.OvertimeDuration.TotalMinutes * _snapshot.MinuteValue)}"
+        : string.Empty;
     public string FishingButtonText => _snapshot.IsFishing ? "结束本次摸鱼" : "开始摸鱼计时";
     public bool IsFishing => _snapshot.IsFishing;
     public string FishingStatusBanner => _snapshot.IsFishing
@@ -245,7 +249,57 @@ public sealed class WorkstationDashboardViewModel : INotifyPropertyChanged
                 return _snapshot.WorkTimeStage == WorkTimeStage.Overtime ? "已过下班点" : "到点了";
             }
 
-            return $"距离下班 {FormatDurationClock(_snapshot.TimeUntilOffWork)}";
+            return $"距离下班 {FormatDurationClock(ExtrapolatedTimeUntilOffWork)}";
+        }
+    }
+
+    // Live extrapolation between snapshots: earnings/countdown tick every second
+    // without touching the database. The 5s full refresh corrects any drift.
+    private DateTimeOffset _snapshotAt = DateTimeOffset.Now;
+
+    private TimeSpan ElapsedSinceSnapshot
+    {
+        get
+        {
+            var elapsed = DateTimeOffset.Now - _snapshotAt;
+            return elapsed > TimeSpan.Zero ? elapsed : TimeSpan.Zero;
+        }
+    }
+
+    private bool IsEarningNow => _snapshot.WorkTimeStage
+        is WorkTimeStage.EarlyWork or WorkTimeStage.MidWork or WorkTimeStage.LateWork;
+
+    private decimal ExtrapolatedTodayEarned => IsEarningNow && _snapshot.MinuteValue > 0
+        ? _snapshot.TodayEarned + (decimal)ElapsedSinceSnapshot.TotalMinutes * _snapshot.MinuteValue
+        : _snapshot.TodayEarned;
+
+    private TimeSpan ExtrapolatedTimeUntilOffWork => _snapshot.TimeUntilOffWork > TimeSpan.Zero
+        ? _snapshot.TimeUntilOffWork - TimeSpan.FromSeconds(Math.Floor(ElapsedSinceSnapshot.TotalSeconds))
+        : _snapshot.TimeUntilOffWork;
+
+    /// <summary>Raises only the per-second live metrics; called by the window's 1s timer.</summary>
+    public void TickRealtime()
+    {
+        OnPropertyChanged(nameof(TodayEarnedText));
+        OnPropertyChanged(nameof(BossPaidText));
+        OnPropertyChanged(nameof(OffWorkCountdownText));
+        OnPropertyChanged(nameof(OffWorkProgressText));
+    }
+
+    public IReadOnlyList<string> HolidayCountdownTexts
+    {
+        get
+        {
+            var today = DateOnly.FromDateTime(DateTime.Now);
+            var items = new List<string>();
+            var weekend = HolidayCalendar.GetWeekendCountdown(today);
+            items.Add(weekend.DaysAway == 0 ? "周末进行中" : $"距周末 {weekend.DaysAway} 天");
+            foreach (var holiday in HolidayCalendar.GetUpcomingHolidays(today))
+            {
+                items.Add(holiday.DaysAway == 0 ? $"{holiday.Name}就是今天" : $"距{holiday.Name} {holiday.DaysAway} 天");
+            }
+
+            return items;
         }
     }
 
@@ -578,6 +632,7 @@ public sealed class WorkstationDashboardViewModel : INotifyPropertyChanged
     public async Task RefreshAsync()
     {
         _snapshot = await _dashboardService.GetSnapshotAsync(DateTimeOffset.Now, CancellationToken.None);
+        _snapshotAt = DateTimeOffset.Now;
         RaiseSnapshotProperties();
         await RefreshWeeklyTrendAsync();
     }
@@ -919,7 +974,7 @@ public sealed class WorkstationDashboardViewModel : INotifyPropertyChanged
             nameof(RestReminderButtonText), nameof(SprintCountdownText), nameof(SprintSuggestionText), nameof(DailyRatingText), nameof(DailyReportText), nameof(SalaryHintText),
             nameof(AutoShowDailyReport), nameof(AutoDailyReportButtonText), nameof(NeedsSetup), nameof(ShowEmptySalaryGuide), nameof(RestReminderLimitText), nameof(RestReminderMaxPerDay),
             nameof(RestReminderMaxPerWeek), nameof(RestReminderMinContinuousMinutes), nameof(PrivacyHintText), nameof(GreetingText), nameof(PeriodReportText),
-            nameof(StageAccentColor), nameof(StageStartColor), nameof(StageAccentBrush), nameof(StageStartBrush), nameof(StageSoftBrush), nameof(RestRiskBrush), nameof(RestRiskSoftBrush), nameof(RestRiskAccentColor), nameof(RestRiskLevel), nameof(WorkdayProgress), nameof(WorkdayProgressPercent), nameof(WorkdayProgressText), nameof(OffWorkProgress), nameof(OffWorkProgressText), nameof(ShareCardStyle), nameof(HudFunEnabled), nameof(GestureXpBonusEnabled)
+            nameof(StageAccentColor), nameof(StageStartColor), nameof(StageAccentBrush), nameof(StageStartBrush), nameof(StageSoftBrush), nameof(RestRiskBrush), nameof(RestRiskSoftBrush), nameof(RestRiskAccentColor), nameof(RestRiskLevel), nameof(WorkdayProgress), nameof(WorkdayProgressPercent), nameof(WorkdayProgressText), nameof(OffWorkProgress), nameof(OffWorkProgressText), nameof(ShareCardStyle), nameof(HudFunEnabled), nameof(GestureXpBonusEnabled), nameof(HolidayCountdownTexts), nameof(HasOvertime), nameof(OvertimeText)
         })
         {
             OnPropertyChanged(name);

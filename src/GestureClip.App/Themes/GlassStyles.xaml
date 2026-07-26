@@ -423,16 +423,23 @@
 
     <Style x:Key="HubSetupCardStyle" TargetType="Border">
         <Setter Property="Padding" Value="20" />
-        <Setter Property="CornerRadius" Value="16" />
+        <Setter Property="CornerRadius" Value="20" />
         <Setter Property="Background" Value="{DynamicResource BrushGlassCard}" />
         <Setter Property="BorderBrush" Value="{DynamicResource BrushPrimarySoft}" />
         <Setter Property="BorderThickness" Value="1" />
         <Setter Property="SnapsToDevicePixels" Value="True" />
         <Setter Property="Effect">
             <Setter.Value>
-                <DropShadowEffect Color="#000000" BlurRadius="20" ShadowDepth="1" Opacity="0.06" Direction="270" />
+                <DropShadowEffect Color="#000000" BlurRadius="28" ShadowDepth="3" Opacity="0.08" Direction="270" />
             </Setter.Value>
         </Setter>
+    </Style>
+
+    <!-- Liquid-glass inner sheen overlay: lay over a glass surface, never hit-testable -->
+    <Style x:Key="HubGlassSheenStyle" TargetType="Border">
+        <Setter Property="Background" Value="{DynamicResource BrushGlassSheen}" />
+        <Setter Property="IsHitTestVisible" Value="False" />
+        <Setter Property="Focusable" Value="False" />
     </Style>
 
     <Style x:Key="HubSectionCardStyle" TargetType="Border">
@@ -456,12 +463,12 @@
                 <ControlTemplate TargetType="Expander">
                     <Border x:Name="Root"
                             Background="{DynamicResource BrushGlassCard}"
-                            BorderBrush="{DynamicResource BrushBorder}"
+                            BorderBrush="{DynamicResource BrushGlassRim}"
                             BorderThickness="1"
-                            CornerRadius="16"
+                            CornerRadius="20"
                             SnapsToDevicePixels="True">
                         <Border.Effect>
-                            <DropShadowEffect Color="#000000" BlurRadius="16" ShadowDepth="1" Opacity="0.05" Direction="270" />
+                            <DropShadowEffect Color="#000000" BlurRadius="24" ShadowDepth="3" Opacity="0.07" Direction="270" />
                         </Border.Effect>
                         <DockPanel>
                             <ToggleButton x:Name="HeaderSite"
@@ -481,7 +488,7 @@
                                     <ControlTemplate TargetType="ToggleButton">
                                         <Border x:Name="HeaderBorder"
                                                 Background="Transparent"
-                                                CornerRadius="16"
+                                                CornerRadius="20"
                                                 Padding="{TemplateBinding Padding}">
                                             <Grid>
                                                 <Grid.ColumnDefinitions>
@@ -603,10 +610,16 @@
 
     <Style x:Key="HubFooterBarStyle" TargetType="Border">
         <Setter Property="Background" Value="{DynamicResource BrushGlassCard}" />
-        <Setter Property="BorderBrush" Value="{DynamicResource BrushBorder}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource BrushGlassRim}" />
         <Setter Property="BorderThickness" Value="1" />
-        <Setter Property="CornerRadius" Value="14" />
+        <Setter Property="CornerRadius" Value="18" />
         <Setter Property="Padding" Value="14,12" />
+        <Setter Property="SnapsToDevicePixels" Value="True" />
+        <Setter Property="Effect">
+            <Setter.Value>
+                <DropShadowEffect Color="#000000" BlurRadius="20" ShadowDepth="2" Opacity="0.06" Direction="270" />
+            </Setter.Value>
+        </Setter>
     </Style>
 
 
@@ -622,9 +635,9 @@
 
     <Style x:Key="HubReportBlockStyle" TargetType="Border">
         <Setter Property="Background" Value="{DynamicResource BrushGlassCard}" />
-        <Setter Property="BorderBrush" Value="{DynamicResource BrushBorder}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource BrushGlassRim}" />
         <Setter Property="BorderThickness" Value="1" />
-        <Setter Property="CornerRadius" Value="14" />
+        <Setter Property="CornerRadius" Value="16" />
         <Setter Property="Padding" Value="14,12" />
         <Setter Property="Margin" Value="0,12,0,0" />
     </Style>

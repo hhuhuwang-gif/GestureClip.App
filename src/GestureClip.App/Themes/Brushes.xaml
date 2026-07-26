@@ -75,10 +75,35 @@
     <!-- Soft ambient wash — themeable via Colors*.xaml -->
     <SolidColorBrush x:Key="BrushAppBackgroundSolid" Color="{StaticResource ColorAppBg1}" />
     <LinearGradientBrush x:Key="BrushAppBackground" StartPoint="0,0" EndPoint="1,1">
-        <GradientStop Color="#EEF2F7" Offset="0" />
-        <GradientStop Color="#F4F7FB" Offset="0.45" />
-        <GradientStop Color="#EAF0F8" Offset="1" />
+        <GradientStop Color="{StaticResource ColorAppBg0}" Offset="0" />
+        <GradientStop Color="{StaticResource ColorAppBg1}" Offset="0.45" />
+        <GradientStop Color="{StaticResource ColorAppBg2}" Offset="1" />
     </LinearGradientBrush>
+
+    <!-- Liquid glass: specular rim border (bright top edge fading down) -->
+    <LinearGradientBrush x:Key="BrushGlassRim" StartPoint="0,0" EndPoint="0,1">
+        <GradientStop Color="{StaticResource ColorGlassRimTop}" Offset="0" />
+        <GradientStop Color="{StaticResource ColorGlassRimBottom}" Offset="0.6" />
+        <GradientStop Color="{StaticResource ColorGlassRimBottom}" Offset="1" />
+    </LinearGradientBrush>
+    <!-- Inner top sheen laid over glass surfaces (non-hit-test overlay) -->
+    <LinearGradientBrush x:Key="BrushGlassSheen" StartPoint="0,0" EndPoint="0,1">
+        <GradientStop Color="{StaticResource ColorGlassSheen}" Offset="0" />
+        <GradientStop Color="#00FFFFFF" Offset="0.38" />
+    </LinearGradientBrush>
+    <!-- Ambient washes behind glass surfaces -->
+    <RadialGradientBrush x:Key="BrushAmbientBlue" GradientOrigin="0.5,0.5" Center="0.5,0.5" RadiusX="0.5" RadiusY="0.5">
+        <GradientStop Color="{StaticResource ColorAmbientBlue}" Offset="0" />
+        <GradientStop Color="#003B82F6" Offset="1" />
+    </RadialGradientBrush>
+    <RadialGradientBrush x:Key="BrushAmbientViolet" GradientOrigin="0.5,0.5" Center="0.5,0.5" RadiusX="0.5" RadiusY="0.5">
+        <GradientStop Color="{StaticResource ColorAmbientViolet}" Offset="0" />
+        <GradientStop Color="#008B5CF6" Offset="1" />
+    </RadialGradientBrush>
+    <RadialGradientBrush x:Key="BrushAmbientTeal" GradientOrigin="0.5,0.5" Center="0.5,0.5" RadiusX="0.5" RadiusY="0.5">
+        <GradientStop Color="{StaticResource ColorAmbientTeal}" Offset="0" />
+        <GradientStop Color="#002DD4BF" Offset="1" />
+    </RadialGradientBrush>
 
     <LinearGradientBrush x:Key="BrushGlassHighlight" StartPoint="0,0" EndPoint="0,1">
         <GradientStop Color="{StaticResource ColorGlassTop}" Offset="0" />

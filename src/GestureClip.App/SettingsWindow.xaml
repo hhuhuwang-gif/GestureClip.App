@@ -488,6 +488,47 @@
                                 </Grid>
                             </Border>
 
+                            <Border x:Name="WhatsNewCard"
+                                    Padding="24,20"
+                                    Margin="0,0,0,28"
+                                    Background="{DynamicResource BrushGlassCard}"
+                                    BorderBrush="{DynamicResource BrushGlassRim}"
+                                    BorderThickness="1"
+                                    CornerRadius="14"
+                                    ClipToBounds="True"
+                                    HorizontalAlignment="Stretch"
+                                    SnapsToDevicePixels="True">
+                                <StackPanel>
+                                    <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
+                                        <TextBlock Text="v0.6.39 新功能"
+                                                   FontSize="16"
+                                                   FontWeight="SemiBold"
+                                                   Foreground="{DynamicResource BrushTextPrimary}"
+                                                   VerticalAlignment="Center" />
+                                        <Border Style="{StaticResource StatusBadgeStyle}"
+                                                Margin="10,0,0,0"
+                                                VerticalAlignment="Center">
+                                            <TextBlock Text="NEW"
+                                                       FontSize="11"
+                                                       LineHeight="14"
+                                                       VerticalAlignment="Center"
+                                                       Foreground="{DynamicResource BrushPrimaryBright}"
+                                                       FontWeight="SemiBold" />
+                                        </Border>
+                                    </StackPanel>
+                                    <TextBlock Text="🖱 滚轮手势：按住右键滚滚轮 = 上一个 / 下一个标签页，滚一格切一次，松开不弹菜单。想换动作或关闭：设置 → 手势。"
+                                               Style="{StaticResource MutedTextStyle}" FontSize="13" LineHeight="20" TextWrapping="Wrap" Margin="0,0,0,8" />
+                                    <TextBlock Text="📋 剪贴板历史（Ctrl + `）右键新招：「以文件形式复制」把文字 / 图片变 .txt / .png 直接粘到文件夹；选中按 F2 就地编辑；「生成二维码」手机扫码带走（本机生成，不上传）。"
+                                               Style="{StaticResource MutedTextStyle}" FontSize="13" LineHeight="20" TextWrapping="Wrap" Margin="0,0,0,8" />
+                                    <TextBlock Text="🐻 工位小熊：顶部新增距周末 / 节假日倒计时；「今日已赚」每秒跳动；离开电脑 5 分钟自动算休息（只看键鼠空闲，不看内容）；过点干活会显示加班账。"
+                                               Style="{StaticResource MutedTextStyle}" FontSize="13" LineHeight="20" TextWrapping="Wrap" Margin="0,0,0,8" />
+                                    <TextBlock Text="📌 贴图置顶：剪贴板历史里的图片右键「贴到桌面」→ 置顶悬浮参考图（拖动移动 / 滚轮缩放 / 双击关闭），对照文档、抄数据神器。"
+                                               Style="{StaticResource MutedTextStyle}" FontSize="13" LineHeight="20" TextWrapping="Wrap" Margin="0,0,0,8" />
+                                    <TextBlock Text="🧸 迷你挂件：Hub 底部点「迷你挂件」→ 桌面常驻小胶囊，实时跳「已赚 + 下班倒计时」；右键可换成你自己的桌宠图（GIF 会动，可去 codex-pet.org 之类的桌宠站下载素材）。"
+                                               Style="{StaticResource MutedTextStyle}" FontSize="13" LineHeight="20" TextWrapping="Wrap" />
+                                </StackPanel>
+                            </Border>
+
                             <TextBlock Text="我能帮你做什么"
                                        Style="{StaticResource SettingsGroupTitleStyle}"
                                        Margin="0,0,0,6" />
@@ -1160,6 +1201,31 @@
                                                 <TextBox Width="70" Margin="12,0,0,0" Text="{Binding GestureTriggerThreshold, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
                                                 <TextBlock Text="像素" Margin="6,0,0,0" VerticalAlignment="Center" />
                                             </StackPanel>
+                                            <Border Height="1" Background="{DynamicResource BrushSeparator}" Margin="0,12,0,12" />
+                                            <CheckBox Content="启用滚轮手势（按住触发键滚滚轮，可连发）"
+                                                      IsChecked="{Binding GestureWheelGestureEnabled, Mode=TwoWay}" />
+                                            <Grid Margin="0,8,0,0" IsEnabled="{Binding GestureWheelGestureEnabled}">
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="Auto" />
+                                                    <ColumnDefinition Width="*" />
+                                                </Grid.ColumnDefinitions>
+                                                <Grid.RowDefinitions>
+                                                    <RowDefinition Height="Auto" />
+                                                    <RowDefinition Height="Auto" />
+                                                </Grid.RowDefinitions>
+                                                <TextBlock Text="滚轮向上" VerticalAlignment="Center" Margin="0,0,12,0" />
+                                                <ComboBox Grid.Column="1"
+                                                          ItemsSource="{Binding GestureActionOptions}"
+                                                          DisplayMemberPath="DisplayName"
+                                                          SelectedItem="{Binding GestureWheelUpAction, Mode=TwoWay, Converter={StaticResource GestureActionOptionConverter}}" />
+                                                <TextBlock Grid.Row="1" Text="滚轮向下" VerticalAlignment="Center" Margin="0,8,12,0" />
+                                                <ComboBox Grid.Row="1"
+                                                          Grid.Column="1"
+                                                          Margin="0,8,0,0"
+                                                          ItemsSource="{Binding GestureActionOptions}"
+                                                          DisplayMemberPath="DisplayName"
+                                                          SelectedItem="{Binding GestureWheelDownAction, Mode=TwoWay, Converter={StaticResource GestureActionOptionConverter}}" />
+                                            </Grid>
                                         </StackPanel>
                                     </Border>
 

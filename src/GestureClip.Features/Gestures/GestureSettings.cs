@@ -13,4 +13,7 @@ public sealed record GestureSettings(
     bool MiddleButtonEnabled = false,
     bool XButton1Enabled = false,
     bool XButton2Enabled = false,
-    bool RightButtonEnabled = true);
+    bool RightButtonEnabled = true,
+    bool WheelGestureEnabled = true,
+    BuiltInGestureAction WheelUpAction = BuiltInGestureAction.PreviousTab,
+    BuiltInGestureAction WheelDownAction = BuiltInGestureAction.NextTab);

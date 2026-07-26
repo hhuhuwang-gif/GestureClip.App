@@ -21,6 +21,8 @@ public partial class App : System.Windows.Application
     {
         var exitAfterStartup = e.Args.Any(
             arg => string.Equals(arg, "--smoke-exit-after-startup", StringComparison.OrdinalIgnoreCase));
+        var openHubOnStartup = e.Args.Any(
+            arg => string.Equals(arg, "--open-hub", StringComparison.OrdinalIgnoreCase));
         _singleInstanceService = new SingleInstanceService();
         _singleInstanceService.ActivationRequested += (_, _) =>
         {
@@ -98,6 +100,12 @@ public partial class App : System.Windows.Application
             else
             {
                 _serviceProvider.GetRequiredService<AppLifecycleService>().ShowSettingsWindow();
+            }
+
+            _serviceProvider.GetRequiredService<AppLifecycleService>().ShowWorkBearWidgetIfEnabled();
+            if (openHubOnStartup)
+            {
+                _serviceProvider.GetRequiredService<AppLifecycleService>().ShowWorkstationDashboardWindow();
             }
 
             logger.LogInformation("GestureClip v{AppVersion} started.", appVersion);

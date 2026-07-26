@@ -53,6 +53,9 @@ public sealed partial class SettingsViewModel : INotifyPropertyChanged
     private bool _gestureCloseWindowEnabled;
     private bool _isSmartPasteEnabled;
     private bool _gestureRightButtonEnabled;
+    private bool _gestureWheelGestureEnabled;
+    private BuiltInGestureAction _gestureWheelUpAction;
+    private BuiltInGestureAction _gestureWheelDownAction;
     private bool _gestureLeftButtonEnabled;
     private bool _gestureMiddleButtonEnabled;
     private bool _gestureXButton1Enabled;
@@ -203,6 +206,9 @@ public sealed partial class SettingsViewModel : INotifyPropertyChanged
         _gestureCloseWindowEnabled = _settingsService.Get(SettingKeys.GestureCloseWindowEnabled, false);
         _isSmartPasteEnabled = _settingsService.Get(SettingKeys.SmartPasteEnabled, true);
         _gestureRightButtonEnabled = _settingsService.Get(SettingKeys.GestureTriggerRightButtonEnabled, true);
+        _gestureWheelGestureEnabled = _settingsService.Get(SettingKeys.GestureWheelGestureEnabled, true);
+        _gestureWheelUpAction = _settingsService.Get(SettingKeys.GestureWheelUpAction, BuiltInGestureAction.PreviousTab);
+        _gestureWheelDownAction = _settingsService.Get(SettingKeys.GestureWheelDownAction, BuiltInGestureAction.NextTab);
         _gestureLeftButtonEnabled = _settingsService.Get(SettingKeys.GestureTriggerLeftButtonEnabled, false);
         _gestureMiddleButtonEnabled = _settingsService.Get(SettingKeys.GestureTriggerMiddleButtonEnabled, false);
         _gestureXButton1Enabled = _settingsService.Get(SettingKeys.GestureTriggerXButton1Enabled, false);
@@ -1754,6 +1760,57 @@ public sealed partial class SettingsViewModel : INotifyPropertyChanged
             OnPropertyChanged();
             OnPropertyChanged(nameof(EnabledGestureTriggerSummary));
             _ = _settingsService.SetAsync(SettingKeys.GestureTriggerRightButtonEnabled, value, CancellationToken.None);
+        }
+    }
+
+    public bool GestureWheelGestureEnabled
+    {
+        get => _gestureWheelGestureEnabled;
+        set
+        {
+            if (_gestureWheelGestureEnabled == value)
+            {
+                return;
+            }
+
+            _gestureWheelGestureEnabled = value;
+            UpdateGestureSettingsSnapshot();
+            OnPropertyChanged();
+            _ = _settingsService.SetAsync(SettingKeys.GestureWheelGestureEnabled, value, CancellationToken.None);
+        }
+    }
+
+    public BuiltInGestureAction GestureWheelUpAction
+    {
+        get => _gestureWheelUpAction;
+        set
+        {
+            if (_gestureWheelUpAction == value)
+            {
+                return;
+            }
+
+            _gestureWheelUpAction = value;
+            UpdateGestureSettingsSnapshot();
+            OnPropertyChanged();
+            _ = _settingsService.SetAsync(SettingKeys.GestureWheelUpAction, value, CancellationToken.None);
+        }
+    }
+
+    public BuiltInGestureAction GestureWheelDownAction
+    {
+        get => _gestureWheelDownAction;
+        set
+        {
+            if (_gestureWheelDownAction == value)
+            {
+                return;
+            }
+
+            _gestureWheelDownAction = value;
+            UpdateGestureSettingsSnapshot();
+            OnPropertyChanged();
+            _ = _settingsService.SetAsync(SettingKeys.GestureWheelDownAction, value, CancellationToken.None);
         }
     }
 

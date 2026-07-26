@@ -183,6 +183,10 @@
                                  Closed="ContextMenu_Closed">
                         <MenuItem Header="复制选中" Click="CopySelectedMenuItem_Click" InputGestureText="Ctrl+C" />
                         <MenuItem Header="复制为纯文本" Click="CopyPlainTextMenuItem_Click" InputGestureText="Ctrl+Shift+C" />
+                        <MenuItem Header="以文件形式复制（可粘贴到文件夹）" Click="CopyAsFilesMenuItem_Click" />
+                        <MenuItem Header="编辑内容（仅文本）" Click="EditItemMenuItem_Click" InputGestureText="F2" />
+                        <MenuItem Header="生成二维码（手机扫码带走）" Click="ShowQrMenuItem_Click" />
+                        <MenuItem Header="贴到桌面（置顶贴图）" Click="PinImageMenuItem_Click" />
                         <MenuItem Header="粘贴选中并关闭" Click="PasteSelectedMenuItem_Click" InputGestureText="Enter" />
                         <MenuItem Header="粘贴选中（不关闭）" Click="PasteKeepOpenMenuItem_Click" InputGestureText="Ctrl+Enter" />
                         <Separator />
@@ -880,6 +884,114 @@
                                        TextWrapping="Wrap" />
                         </ScrollViewer>
                     </DockPanel>
+                </Border>
+            </Border>
+
+            <!-- 编辑记录浮层 -->
+            <Border Grid.RowSpan="5"
+                    Background="#66000000"
+                    CornerRadius="20">
+                <Border.Style>
+                    <Style TargetType="Border">
+                        <Setter Property="Visibility" Value="Collapsed" />
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding IsItemEditorOpen}" Value="True">
+                                <Setter Property="Visibility" Value="Visible" />
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </Border.Style>
+                <Border Width="480"
+                        Margin="24"
+                        Padding="20"
+                        CornerRadius="18"
+                        Background="{DynamicResource BrushOverlayPanel}"
+                        BorderBrush="{DynamicResource BrushBorder}"
+                        BorderThickness="1"
+                        HorizontalAlignment="Center"
+                        VerticalAlignment="Center">
+                    <StackPanel>
+                        <TextBlock Text="编辑剪贴板记录"
+                                   FontSize="18"
+                                   FontWeight="SemiBold" />
+                        <TextBlock Text="保存后直接覆盖这条历史（不新建记录）。"
+                                   Style="{StaticResource MutedTextStyle}"
+                                   FontSize="12"
+                                   TextWrapping="Wrap"
+                                   Margin="0,6,0,10" />
+                        <TextBox x:Name="ItemEditorTextBox"
+                                 MinHeight="140"
+                                 MaxHeight="280"
+                                 AcceptsReturn="True"
+                                 TextWrapping="Wrap"
+                                 VerticalScrollBarVisibility="Auto"
+                                 Padding="10,8"
+                                 FontSize="14"
+                                 Text="{Binding EditingItemText, UpdateSourceTrigger=PropertyChanged}" />
+                        <StackPanel Orientation="Horizontal"
+                                    HorizontalAlignment="Right"
+                                    Margin="0,14,0,0">
+                            <Button Content="取消"
+                                    Style="{StaticResource SecondaryButtonStyle}"
+                                    MinWidth="80"
+                                    Margin="0,0,10,0"
+                                    Click="ItemEditorCancelButton_Click" />
+                            <Button Content="保存修改"
+                                    Style="{StaticResource PrimaryButtonStyle}"
+                                    MinWidth="100"
+                                    Click="ItemEditorSaveButton_Click" />
+                        </StackPanel>
+                    </StackPanel>
+                </Border>
+            </Border>
+
+            <!-- 二维码浮层 -->
+            <Border Grid.RowSpan="5"
+                    Background="#66000000"
+                    CornerRadius="20">
+                <Border.Style>
+                    <Style TargetType="Border">
+                        <Setter Property="Visibility" Value="Collapsed" />
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding IsQrOpen}" Value="True">
+                                <Setter Property="Visibility" Value="Visible" />
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </Border.Style>
+                <Border Width="340"
+                        Margin="24"
+                        Padding="20"
+                        CornerRadius="18"
+                        Background="{DynamicResource BrushOverlayPanel}"
+                        BorderBrush="{DynamicResource BrushBorder}"
+                        BorderThickness="1"
+                        HorizontalAlignment="Center"
+                        VerticalAlignment="Center">
+                    <StackPanel>
+                        <TextBlock Text="手机扫码带走"
+                                   FontSize="18"
+                                   FontWeight="SemiBold" />
+                        <TextBlock Text="二维码在本机生成，内容不上传。"
+                                   Style="{StaticResource MutedTextStyle}"
+                                   FontSize="12"
+                                   Margin="0,6,0,12" />
+                        <Border Background="#FFFFFF"
+                                CornerRadius="12"
+                                Padding="12"
+                                HorizontalAlignment="Center">
+                            <Image Source="{Binding QrImageSource}"
+                                   Width="220"
+                                   Height="220"
+                                   RenderOptions.BitmapScalingMode="NearestNeighbor" />
+                        </Border>
+                        <Button Content="关闭"
+                                Style="{StaticResource SecondaryButtonStyle}"
+                                MinWidth="80"
+                                HorizontalAlignment="Right"
+                                Margin="0,14,0,0"
+                                Click="QrCloseButton_Click" />
+                    </StackPanel>
                 </Border>
             </Border>
 

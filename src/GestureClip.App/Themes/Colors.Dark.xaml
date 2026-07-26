@@ -65,6 +65,13 @@
     <Color x:Key="ColorContentBackground">#151C2C</Color>
     <Color x:Key="ColorHintYellow">#2A2418</Color>
     <Color x:Key="ColorBackdropWash">#A80B1220</Color>
+    <!-- Liquid glass: specular rim border (white glint on dark), inner sheen, ambient washes -->
+    <Color x:Key="ColorGlassRimTop">#47FFFFFF</Color>
+    <Color x:Key="ColorGlassRimBottom">#17FFFFFF</Color>
+    <Color x:Key="ColorGlassSheen">#1CFFFFFF</Color>
+    <Color x:Key="ColorAmbientBlue">#333B82F6</Color>
+    <Color x:Key="ColorAmbientViolet">#2E8B5CF6</Color>
+    <Color x:Key="ColorAmbientTeal">#262DD4BF</Color>
     <!-- Hub metric tiles: gradient glass in blue / green / amber, tuned per theme -->
     <Color x:Key="ColorTileBlueBgTop">#3D1D4ED8</Color>
     <Color x:Key="ColorTileBlueBgBottom">#1A1E3A8A</Color>

@@ -15,8 +15,7 @@ public partial class WorkstationDashboardWindow : Window
     private readonly IAppLifecycleService _appLifecycleService;
     private readonly AppThemeService _themeService;
     private readonly DispatcherTimer _refreshTimer;
-    private string _lastEarned = "";
-    private string _lastOffWork = "";
+    private readonly DispatcherTimer _tickTimer;
     private bool _micaApplied;
 
     public WorkstationDashboardWindow(
@@ -29,10 +28,12 @@ public partial class WorkstationDashboardWindow : Window
         _themeService = themeService;
         InitializeComponent();
         DataContext = viewModel;
-        _viewModel.PropertyChanged += ViewModel_PropertyChanged;
         _themeService.Changed += ThemeService_Changed;
         _refreshTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(5) };
         _refreshTimer.Tick += async (_, _) => await _viewModel.RefreshAsync();
+        // Per-second live tick: extrapolates earnings/countdown locally, no DB access.
+        _tickTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(1) };
+        _tickTimer.Tick += (_, _) => _viewModel.TickRealtime();
     }
 
     protected override void OnSourceInitialized(EventArgs e)
@@ -50,15 +51,14 @@ public partial class WorkstationDashboardWindow : Window
     {
         PlayOpenAnimation();
         await _viewModel.RefreshAsync();
-        _lastEarned = _viewModel.TodayEarnedText;
-        _lastOffWork = _viewModel.OffWorkCountdownText;
         _refreshTimer.Start();
+        _tickTimer.Start();
     }
 
     private void Window_Closing(object sender, CancelEventArgs e)
     {
         _refreshTimer.Stop();
-        _viewModel.PropertyChanged -= ViewModel_PropertyChanged;
+        _tickTimer.Stop();
         _themeService.Changed -= ThemeService_Changed;
     }
 
@@ -91,48 +91,6 @@ public partial class WorkstationDashboardWindow : Window
         }
     }
 
-    private void ViewModel_PropertyChanged(object? sender, PropertyChangedEventArgs e)
-    {
-        if (e.PropertyName is nameof(WorkstationDashboardViewModel.TodayEarnedText)
-            or nameof(WorkstationDashboardViewModel.OffWorkCountdownText))
-        {
-            FlashMetricIfChanged();
-        }
-    }
-
-    private void FlashMetricIfChanged()
-    {
-        if (!IsLoaded)
-        {
-            return;
-        }
-
-        if (!string.Equals(_lastEarned, _viewModel.TodayEarnedText, StringComparison.Ordinal)
-            && TodayEarnedMetric is not null)
-        {
-            _lastEarned = _viewModel.TodayEarnedText;
-            FlashElement(TodayEarnedMetric);
-        }
-
-        if (!string.Equals(_lastOffWork, _viewModel.OffWorkCountdownText, StringComparison.Ordinal)
-            && OffWorkMetric is not null)
-        {
-            _lastOffWork = _viewModel.OffWorkCountdownText;
-            FlashElement(OffWorkMetric);
-        }
-    }
-
-    private static void FlashElement(UIElement element)
-    {
-        var animation = new DoubleAnimation
-        {
-            From = 0.55,
-            To = 1,
-            Duration = TimeSpan.FromMilliseconds(180)
-        };
-        element.BeginAnimation(UIElement.OpacityProperty, animation);
-    }
-
     private void WindowBackground_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
     {
         if (e.ButtonState == MouseButtonState.Pressed)
@@ -161,5 +119,10 @@ public partial class WorkstationDashboardWindow : Window
     private void OpenSettingsButton_Click(object sender, RoutedEventArgs e)
     {
         _appLifecycleService.ShowSettingsWindow();
+    }
+
+    private void ToggleWidgetButton_Click(object sender, RoutedEventArgs e)
+    {
+        _appLifecycleService.ToggleWorkBearWidget();
     }
 }

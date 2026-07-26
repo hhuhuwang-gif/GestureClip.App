@@ -64,6 +64,18 @@ public interface IClipboardRepository
         return Task.CompletedTask;
     }
 
+    /// <summary>Rewrites a text item's content (with recomputed hashes/preview). Default no-op.</summary>
+    Task UpdateTextContentAsync(
+        Guid id,
+        string text,
+        string hash,
+        string? plainTextHash,
+        string preview,
+        CancellationToken cancellationToken)
+    {
+        return Task.CompletedTask;
+    }
+
     Task<bool> IsProcessBlockedAsync(string? processName, CancellationToken cancellationToken);
 
     Task<int> GetCountAsync(CancellationToken cancellationToken);
