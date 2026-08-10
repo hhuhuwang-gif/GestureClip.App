@@ -86,6 +86,21 @@ public sealed class ClipboardOverlayService : IClipboardOverlayService
         });
     }
 
+    public Task WarmUpAsync()
+    {
+        try
+        {
+            EnsureWindow();
+        }
+        catch (Exception ex)
+        {
+            // Optional pre-warm only; a failure here must not break startup.
+            _logger.LogWarning(ex, "Clipboard overlay warm-up failed.");
+        }
+
+        return Task.CompletedTask;
+    }
+
     private ClipboardOverlayWindow EnsureWindow()
     {
         if (_window is not null)

@@ -869,7 +869,7 @@ public partial class ClipboardOverlayWindow : Window
         PrepareForExternalPaste();
         try
         {
-            await Task.Delay(90);
+            await Task.Delay(50);
             await _viewModel.PasteSelectedAsync(keepOverlayOpen);
         }
         finally
@@ -886,7 +886,7 @@ public partial class ClipboardOverlayWindow : Window
         PrepareForExternalPaste();
         try
         {
-            await Task.Delay(90);
+            await Task.Delay(50);
             await _viewModel.PasteByIndexAsync(index);
         }
         finally

@@ -7,7 +7,7 @@ namespace GestureClip.Features.Clipboard;
 
 public sealed class PlainTextPasteService : IPlainTextPasteService
 {
-    private static readonly TimeSpan ClipboardSettleDelay = TimeSpan.FromMilliseconds(70);
+    private static readonly TimeSpan ClipboardSettleDelay = TimeSpan.FromMilliseconds(20);
 
     private readonly IClipboardService _clipboardService;
     private readonly IClipboardTextReader _clipboardTextReader;
@@ -48,9 +48,9 @@ public sealed class PlainTextPasteService : IPlainTextPasteService
 
         try
         {
-            _clipboardService.SuppressCaptureFor(TimeSpan.FromMilliseconds(1500));
+            _clipboardService.RegisterInternalWrite(plain);
             await _clipboardWriter.SetTextAsync(plain, cancellationToken);
-            await Task.Delay(ClipboardSettleDelay, cancellationToken);
+            await Task.Delay(20, cancellationToken);
             await _clipboardWriter.SendPasteHotkeyAsync(cancellationToken);
             _logger.LogInformation("Plain text paste completed. Length={Length}", plain.Length);
         }

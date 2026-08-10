@@ -4,7 +4,7 @@
     <TargetFramework>net8.0-windows10.0.19041.0</TargetFramework>
     <AssemblyName>GestureClip</AssemblyName>
     <Product>GestureClip</Product>
-    <Version>0.6.39-beta</Version>
+    <Version>0.6.40-beta</Version>
     <FileVersion>0.6.39.0</FileVersion>
     <AssemblyVersion>0.6.39.0</AssemblyVersion>
     <InformationalVersion>0.6.39 Beta</InformationalVersion>

@@ -517,10 +517,12 @@ public sealed class GestureBuiltInActionExecutor : IMouseGestureActionExecutor
                 return;
             }
 
-            _clipboardService.SuppressCaptureFor(TimeSpan.FromMilliseconds(1500));
+            _clipboardService.RegisterInternalWrite(pasteText);
             await _clipboardWriter.SetTextAsync(pasteText, cancellationToken);
+            // Time-window suppression (tests/legacy) + exact-hash echo suppression.
+            _clipboardService.SuppressCaptureFor(TimeSpan.FromMilliseconds(1200));
             // Clipboard ownership / viewer notify must settle before Ctrl+V.
-            await Task.Delay(100, cancellationToken);
+            await Task.Delay(20, cancellationToken);
             _logger.LogInformation(
                 "Smart paste rewrote clipboard. Process={ProcessName} Strategy={Strategy} Length={Length}",
                 app.ProcessName,
@@ -555,7 +557,7 @@ public sealed class GestureBuiltInActionExecutor : IMouseGestureActionExecutor
     {
         _clipboardService.SuppressCaptureFor(TimeSpan.FromMilliseconds(1200));
         _keyboardInputSender.SendShortcut(KeyboardInputNativeMethods.VkControl, KeyboardInputNativeMethods.VkC);
-        await Task.Delay(80, cancellationToken);
+        await Task.Delay(40, cancellationToken);
 
         var text = _clipboardTextReader.TryReadText();
         if (string.IsNullOrWhiteSpace(text))
@@ -564,6 +566,7 @@ public sealed class GestureBuiltInActionExecutor : IMouseGestureActionExecutor
             return;
         }
 
+        _clipboardService.RegisterInternalWrite(text);
         var encoded = Uri.EscapeDataString(text.Trim());
         _urlLauncher.OpenUrl(string.Format(System.Globalization.CultureInfo.InvariantCulture, urlFormat, encoded));
     }
@@ -617,9 +620,9 @@ public sealed class GestureBuiltInActionExecutor : IMouseGestureActionExecutor
 
         try
         {
-            _clipboardService.SuppressCaptureFor(TimeSpan.FromMilliseconds(1500));
+            _clipboardService.RegisterInternalWrite(text);
             await _clipboardWriter.SetTextAsync(text, cancellationToken);
-            await Task.Delay(70, cancellationToken);
+            await Task.Delay(20, cancellationToken);
             await _clipboardWriter.SendPasteHotkeyAsync(cancellationToken);
             await RecordPasteAsync(cancellationToken);
             _logger.LogInformation("Inserted text via clipboard paste. Length={Length}", text.Length);

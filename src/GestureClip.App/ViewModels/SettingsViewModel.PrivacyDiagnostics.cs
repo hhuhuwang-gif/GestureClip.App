@@ -66,7 +66,7 @@ public sealed partial class SettingsViewModel
     private async Task CopyDiagnosticsAsync()
     {
         var report = await _diagnosticsService.BuildReportAsync(CancellationToken.None);
-        _clipboardService.SuppressCaptureFor(TimeSpan.FromMilliseconds(1000));
+        _clipboardService.RegisterInternalWrite(report);
         await _clipboardWriter.SetTextAsync(report, CancellationToken.None);
     }
 

@@ -293,6 +293,7 @@ public sealed class GestureBuiltInActionExecutorTests
         public Task ShowAsync() => Task.CompletedTask;
         public Task ToggleAsync() => Task.CompletedTask;
         public Task RefreshAsync() => Task.CompletedTask;
+        public Task WarmUpAsync() => Task.CompletedTask;
     }
 
     private sealed class FakeRightClickSynthesizer : IRightClickSynthesizer

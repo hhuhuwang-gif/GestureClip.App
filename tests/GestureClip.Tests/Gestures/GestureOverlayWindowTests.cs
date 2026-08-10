@@ -464,28 +464,24 @@ public sealed class GestureOverlayWindowTests
 
 
     [Fact]
-    public void GestureOverlayWindow_exposes_unbind_bind_action_bar()
+    public void GestureOverlayWindow_draws_only_never_intercepts_mouse_and_hides_on_fixed_delay()
     {
         var path = FindRepositoryFile("src", "GestureClip.App", "GestureOverlayWindow.xaml");
         var xaml = File.ReadAllText(path);
         var vm = File.ReadAllText(FindRepositoryFile("src", "GestureClip.App", "ViewModels", "GestureOverlayViewModel.cs"));
-        var life = File.ReadAllText(FindRepositoryFile("src", "GestureClip.Core", "Abstractions", "IAppLifecycleService.cs"));
         var overlay = File.ReadAllText(FindRepositoryFile("src", "GestureClip.App", "Services", "GestureOverlayService.cs"));
         var mouse = File.ReadAllText(FindRepositoryFile("src", "GestureClip.Features", "Gestures", "MouseGestureService.cs"));
-        var settingsVm = File.ReadAllText(FindRepositoryFile("src", "GestureClip.App", "ViewModels", "SettingsViewModel.Gestures.cs"));
 
-        Assert.Contains("BindActionBar", xaml);
-        Assert.Contains("ShowBindAction", xaml);
-        Assert.Contains("BindUnboundGestureCommand", xaml);
-        Assert.Contains("去绑定", vm);
-        Assert.Contains("BindActionButtonText", xaml);
-        Assert.Contains("ShowBindAction", vm);
-        Assert.Contains("ShowGestureBindingEditor", vm);
-        Assert.Contains("ShowGestureBindingEditor", life);
-        Assert.Contains("_holdForBindAction", overlay);
-        Assert.Contains("4500", overlay);
+        // Bind CTA was removed in P1: HUD is draw-only and must never intercept input.
+        Assert.DoesNotContain("BindActionBar", xaml);
+        Assert.DoesNotContain("ShowBindAction", xaml);
+        Assert.DoesNotContain("BindUnboundGestureCommand", xaml);
+        Assert.DoesNotContain("去绑定", vm);
+        Assert.DoesNotContain("_holdForBindAction", overlay);
+        Assert.DoesNotContain("4500", overlay);
+        Assert.Contains("IsHitTestVisible = false", overlay);
+        Assert.Contains("HideDelayMilliseconds", overlay);
         Assert.Contains("resolvedAction != BuiltInGestureAction.None", mouse);
-        Assert.Contains("FocusGestureBinding", settingsVm);
     }
 
     private static string FindRepositoryFile(params string[] segments)

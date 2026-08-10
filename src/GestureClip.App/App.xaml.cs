@@ -90,6 +90,7 @@ public partial class App : System.Windows.Application
             // Hotkeys first (user-facing), then secondary services without blocking first paint too long.
             _serviceProvider.GetRequiredService<IGlobalHotkeyService>().Start();
             _ = StartSecondaryServicesAsync(logger);
+            WarmUpOverlayWindows();
 
             var onboarding = _serviceProvider.GetRequiredService<IFirstRunOnboardingService>();
             if (onboarding.ShouldShowOnboarding())
@@ -127,6 +128,21 @@ public partial class App : System.Windows.Application
         }
     }
 
+
+    private void WarmUpOverlayWindows()
+    {
+        Dispatcher.InvokeAsync(() =>
+        {
+            try
+            {
+                _serviceProvider?.GetService<IClipboardOverlayService>()?.WarmUpAsync();
+            }
+            catch (Exception ex)
+            {
+                _serviceProvider?.GetService<ILogger<App>>()?.LogWarning(ex, "Clipboard overlay warm-up failed.");
+            }
+        }, System.Windows.Threading.DispatcherPriority.Background);
+    }
 
     private async Task StartSecondaryServicesAsync(ILogger logger)
     {

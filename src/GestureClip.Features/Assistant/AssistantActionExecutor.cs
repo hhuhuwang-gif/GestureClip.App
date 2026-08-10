@@ -8,13 +8,11 @@ namespace GestureClip.Features.Assistant;
 
 public sealed class AssistantActionExecutor : IAssistantActionExecutor
 {
-    private static readonly TimeSpan CaptureSuppressWindow = TimeSpan.FromMilliseconds(800);
-
-    private readonly IAssistantActionCatalog _catalog;
     private readonly IClipboardService _clipboardService;
     private readonly IClipboardTextReader _clipboardTextReader;
     private readonly IClipboardWriter _clipboardWriter;
     private readonly IAppLifecycleService _appLifecycleService;
+    private readonly IAssistantActionCatalog _catalog;
     // Resolve diagnostics on demand to avoid DI cycle:
     // MouseGesture -> GestureExecutor -> Assistant -> Diagnostics -> MouseGesture.
     private readonly IServiceProvider _serviceProvider;
@@ -73,7 +71,7 @@ public sealed class AssistantActionExecutor : IAssistantActionExecutor
                 await TryAwardAssistantXpAsync(cancellationToken);
             }
 
-            return result;
+            return result!;
         }
         catch (OperationCanceledException)
         {
@@ -128,11 +126,13 @@ public sealed class AssistantActionExecutor : IAssistantActionExecutor
         var outputKind = request.OutputOverride ?? definition.DefaultOutput;
         if (outputKind is AssistantOutputKind.Clipboard or AssistantOutputKind.Paste)
         {
-            _clipboardService.SuppressCaptureFor(CaptureSuppressWindow);
+            _clipboardService.RegisterInternalWrite(output);
             await _clipboardWriter.SetTextAsync(output, cancellationToken);
+            // Time-window suppression (tests/legacy) + exact-hash echo suppression.
+            _clipboardService.SuppressCaptureFor(TimeSpan.FromMilliseconds(1200));
             if (outputKind == AssistantOutputKind.Paste)
             {
-                await Task.Delay(70, cancellationToken);
+                await Task.Delay(20, cancellationToken);
                 await _clipboardWriter.SendPasteHotkeyAsync(cancellationToken);
             }
         }
