@@ -9,10 +9,10 @@ public sealed class ReleaseEngineeringTests
     {
         var project = File.ReadAllText(FindRepositoryFile("src", "GestureClip.App", "GestureClip.App.csproj"));
 
-        Assert.Contains("<Version>0.6.39-beta</Version>", project);
-        Assert.Contains("<FileVersion>0.6.39.0</FileVersion>", project);
-        Assert.Contains("<AssemblyVersion>0.6.39.0</AssemblyVersion>", project);
-        Assert.Contains("<InformationalVersion>0.6.39 Beta</InformationalVersion>", project);
+        Assert.Contains("<Version>0.6.40-beta</Version>", project);
+        Assert.Contains("<FileVersion>0.6.40.0</FileVersion>", project);
+        Assert.Contains("<AssemblyVersion>0.6.40.0</AssemblyVersion>", project);
+        Assert.Contains("<InformationalVersion>0.6.40 Beta</InformationalVersion>", project);
     }
 
     [Fact]

@@ -5,9 +5,9 @@
     <AssemblyName>GestureClip</AssemblyName>
     <Product>GestureClip</Product>
     <Version>0.6.40-beta</Version>
-    <FileVersion>0.6.39.0</FileVersion>
-    <AssemblyVersion>0.6.39.0</AssemblyVersion>
-    <InformationalVersion>0.6.39 Beta</InformationalVersion>
+    <FileVersion>0.6.40.0</FileVersion>
+    <AssemblyVersion>0.6.40.0</AssemblyVersion>
+    <InformationalVersion>0.6.40 Beta</InformationalVersion>
     <UseWPF>true</UseWPF>
     <UseWindowsForms>true</UseWindowsForms>
     <ApplicationIcon>Assets\GestureClip.ico</ApplicationIcon>
