@@ -137,16 +137,18 @@ public sealed class ThemeResourceTests
     }
 
     [Fact]
-    public void ClipboardOverlayWindow_uses_glass_panel_styling()
+    public void ClipboardOverlayWindow_uses_lightweight_nontransparent_styling()
     {
         var path = FindRepositoryFile("src", "GestureClip.App", "ClipboardOverlayWindow.xaml");
         var xaml = File.ReadAllText(path);
 
         Assert.Contains("Width=\"860\"", xaml);
         Assert.Contains("Height=\"760\"", xaml);
-        Assert.Contains("AllowsTransparency=\"True\"", xaml);
+        Assert.DoesNotContain("AllowsTransparency=\"True\"", xaml);
+        Assert.Contains("AllowsTransparency=\"False\"", xaml);
         Assert.Contains("CornerRadius=\"18\"", xaml);
         Assert.Contains("Background=\"{DynamicResource BrushOverlayPanel}\"", xaml);
+        Assert.DoesNotContain("DropShadowEffect", xaml);
         Assert.Contains("IsSelected", xaml);
         Assert.Contains("ShortcutNumberConverter", xaml);
         Assert.Contains("VirtualizingPanel.IsVirtualizing=\"True\"", xaml);
@@ -543,7 +545,7 @@ public sealed class ThemeResourceTests
         var xaml = File.ReadAllText(path);
 
         Assert.Contains("工位小熊", xaml);
-        Assert.Contains("v0.6.39 · 本地", xaml);
+        Assert.Contains("v0.6.41 · 本地", xaml);
         Assert.Contains("UniformGrid", xaml);
         Assert.Contains("OffWorkCountdownText", xaml);
         Assert.Contains("TodayEarnedText", xaml);
@@ -563,6 +565,7 @@ public sealed class ThemeResourceTests
         Assert.Contains("DailyReportDisplayText", xaml);
         Assert.Contains("GlassScrollViewerStyle", xaml);
         Assert.DoesNotContain("#FBFBFD", xaml);
+        Assert.DoesNotContain("DropShadowEffect", xaml);
         Assert.DoesNotContain("#EAF3FF", xaml);
     }
 

@@ -3,6 +3,7 @@ using System.ComponentModel;
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using System.Text.RegularExpressions;
+using GestureClip.App.Collections;
 using GestureClip.Core.Abstractions;
 using GestureClip.Core.Clipboard;
 using GestureClip.Features.Assistant;
@@ -74,7 +75,7 @@ public sealed class ClipboardOverlayViewModel : INotifyPropertyChanged
 
     public event PropertyChangedEventHandler? PropertyChanged;
 
-    public ObservableCollection<ClipboardItem> Items { get; } = [];
+    public RangeObservableCollection<ClipboardItem> Items { get; } = [];
 
     public IReadOnlyList<ClipboardOverlayFilterOption> FilterOptions { get; } =
     [
@@ -921,11 +922,7 @@ public sealed class ClipboardOverlayViewModel : INotifyPropertyChanged
         var refreshWatch = Stopwatch.StartNew();
         var previousSelectedId = keepSelection ? SelectedItem?.Id : null;
         var filtered = _lastSearchResults.Where(MatchesSelectedFilter).ToArray();
-        Items.Clear();
-        foreach (var item in filtered)
-        {
-            Items.Add(item);
-        }
+        Items.Reset(filtered);
 
         SelectedItem = previousSelectedId is { } id
             ? Items.FirstOrDefault(item => item.Id == id) ?? Items.FirstOrDefault()

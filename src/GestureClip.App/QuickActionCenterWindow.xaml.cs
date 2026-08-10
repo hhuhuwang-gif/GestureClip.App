@@ -1,5 +1,6 @@
 using System.Windows;
 using System.Windows.Input;
+using GestureClip.App.Services;
 using GestureClip.App.ViewModels;
 
 namespace GestureClip.App;
@@ -13,6 +14,15 @@ public partial class QuickActionCenterWindow : Window
         InitializeComponent();
         _viewModel = viewModel;
         DataContext = _viewModel;
+    }
+
+    protected override void OnSourceInitialized(EventArgs e)
+    {
+        base.OnSourceInitialized(e);
+        if (WindowBackdrop.TryApplyMica(this, isDark: true))
+        {
+            RootBorder.SetResourceReference(BackgroundProperty, "BrushBackdropWash");
+        }
     }
 
     public void PrepareForShow(string? hotkeyHint = null)

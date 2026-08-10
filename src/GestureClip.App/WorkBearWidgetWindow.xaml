@@ -15,6 +15,7 @@
         MouseLeftButtonUp="Window_MouseLeftButtonUp"
         MouseDoubleClick="Window_MouseDoubleClick"
         Loaded="Window_Loaded"
+        IsVisibleChanged="Window_IsVisibleChanged"
         Closing="Window_Closing">
     <Window.ContextMenu>
         <ContextMenu>
@@ -33,9 +34,6 @@
             BorderThickness="1"
             SnapsToDevicePixels="True"
             ToolTip="拖动移动 · 双击打开 Hub · 右键换桌宠 / 关闭">
-        <Border.Effect>
-            <DropShadowEffect Color="#000000" BlurRadius="20" ShadowDepth="3" Opacity="0.18" Direction="270" />
-        </Border.Effect>
         <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
             <Image x:Name="PetImage"
                    Width="30"

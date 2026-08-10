@@ -17,6 +17,7 @@
         TextOptions.TextFormattingMode="Display"
         TextOptions.TextRenderingMode="Grayscale"
         Loaded="Window_Loaded"
+        IsVisibleChanged="Window_IsVisibleChanged"
         Closing="Window_Closing"
         KeyDown="Window_KeyDown">
     <WindowChrome.WindowChrome>
@@ -39,22 +40,6 @@
                 <RowDefinition Height="*" />
                 <RowDefinition Height="Auto" />
             </Grid.RowDefinitions>
-
-            <!-- Ambient color washes behind the glass surfaces -->
-            <Grid Grid.Row="0" Grid.RowSpan="3" IsHitTestVisible="False">
-                <Ellipse Width="560" Height="440"
-                         Fill="{DynamicResource BrushAmbientBlue}"
-                         HorizontalAlignment="Left" VerticalAlignment="Top"
-                         Margin="-160,-140,0,0" />
-                <Ellipse Width="520" Height="420"
-                         Fill="{DynamicResource BrushAmbientViolet}"
-                         HorizontalAlignment="Right" VerticalAlignment="Top"
-                         Margin="0,-100,-180,0" />
-                <Ellipse Width="640" Height="460"
-                         Fill="{DynamicResource BrushAmbientTeal}"
-                         HorizontalAlignment="Center" VerticalAlignment="Bottom"
-                         Margin="0,0,0,-220" />
-            </Grid>
 
             <!-- Header: floats directly on the backdrop -->
             <Border Grid.Row="0"
@@ -99,7 +84,7 @@
                                 BorderThickness="1"
                                 CornerRadius="999"
                                 Padding="12,6">
-                            <TextBlock Text="v0.6.39 · 本地"
+                            <TextBlock Text="v0.6.41 · 本地"
                                        Style="{StaticResource HubRootTextStyle}"
                                        FontSize="12"
                                        FontWeight="Bold"
@@ -253,9 +238,6 @@
                             BorderBrush="{Binding FishingBorderBrush}"
                             BorderThickness="{Binding FishingBorderThickness}"
                             Background="{DynamicResource BrushGlassHighlight}">
-                        <Border.Effect>
-                            <DropShadowEffect Color="#000000" BlurRadius="40" ShadowDepth="6" Opacity="0.12" Direction="270" />
-                        </Border.Effect>
                         <Grid>
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="8" />

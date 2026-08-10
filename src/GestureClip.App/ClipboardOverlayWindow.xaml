@@ -7,8 +7,8 @@
         MinWidth="420"
         MinHeight="380"
         WindowStyle="None"
-        AllowsTransparency="True"
-        Background="Transparent"
+        AllowsTransparency="False"
+        Background="#FF1F2126"
         ShowInTaskbar="False"
         ResizeMode="NoResize"
         WindowStartupLocation="CenterScreen"
@@ -16,16 +16,127 @@
         Deactivated="Window_Deactivated">
     <Window.Resources>
         <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter" />
+
+        <!-- Shared list-row badge styles (one Style instance per badge type instead of
+             one inline Style object per item per row → cheaper item templating) -->
+        <Style x:Key="ListRowBadgeStyle" TargetType="Border" BasedOn="{StaticResource PillBadgeStyle}">
+            <Setter Property="Visibility" Value="Collapsed" />
+        </Style>
+        <Style x:Key="BadgePinnedStyle" TargetType="Border" BasedOn="{StaticResource ListRowBadgeStyle}">
+            <Style.Triggers>
+                <DataTrigger Binding="{Binding IsPinned}" Value="True">
+                    <Setter Property="Visibility" Value="Visible" />
+                </DataTrigger>
+            </Style.Triggers>
+        </Style>
+        <Style x:Key="BadgeSensitiveStyle" TargetType="Border" BasedOn="{StaticResource ListRowBadgeStyle}">
+            <Setter Property="Background" Value="{DynamicResource BrushDangerSoft}" />
+            <Style.Triggers>
+                <DataTrigger Binding="{Binding IsSensitive}" Value="True">
+                    <Setter Property="Visibility" Value="Visible" />
+                </DataTrigger>
+            </Style.Triggers>
+        </Style>
+        <Style x:Key="BadgeFavoriteStyle" TargetType="Border" BasedOn="{StaticResource ListRowBadgeStyle}">
+            <Style.Triggers>
+                <DataTrigger Binding="{Binding IsFavorite}" Value="True">
+                    <Setter Property="Visibility" Value="Visible" />
+                </DataTrigger>
+            </Style.Triggers>
+        </Style>
+        <Style x:Key="BadgeLinkStyle" TargetType="Border" BasedOn="{StaticResource ListRowBadgeStyle}">
+            <Setter Property="Background" Value="#1A14B8A6" />
+            <Style.Triggers>
+                <DataTrigger Binding="{Binding IsLink}" Value="True">
+                    <Setter Property="Visibility" Value="Visible" />
+                </DataTrigger>
+            </Style.Triggers>
+        </Style>
+        <Style x:Key="BadgeSessionCopiedStyle" TargetType="Border" BasedOn="{StaticResource ListRowBadgeStyle}">
+            <Setter Property="Background" Value="#1A34C759" />
+            <Style.Triggers>
+                <DataTrigger Binding="{Binding IsSessionCopied}" Value="True">
+                    <Setter Property="Visibility" Value="Visible" />
+                </DataTrigger>
+            </Style.Triggers>
+        </Style>
+
+        <!-- Thumbnail frame: flat fill, no checker pattern -->
+        <Style x:Key="ThumbnailFrameStyle" TargetType="Border">
+            <Setter Property="Width" Value="64" />
+            <Setter Property="Height" Value="42" />
+            <Setter Property="CornerRadius" Value="10" />
+            <Setter Property="Margin" Value="0,0,10,0" />
+            <Setter Property="Background" Value="{DynamicResource BrushFillTertiary}" />
+            <Setter Property="BorderBrush" Value="{DynamicResource BrushBorder}" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="ClipToBounds" Value="True" />
+            <Setter Property="Visibility" Value="Collapsed" />
+            <Style.Triggers>
+                <DataTrigger Binding="{Binding IsImage}" Value="True">
+                    <Setter Property="Visibility" Value="Visible" />
+                </DataTrigger>
+            </Style.Triggers>
+        </Style>
+
+        <!-- Dual preview text: text rows show preview, image rows show the image hint -->
+        <Style x:Key="TextPreviewStyle" TargetType="TextBlock">
+            <Setter Property="Foreground" Value="{DynamicResource BrushTextPrimary}" />
+            <Setter Property="FontSize" Value="13" />
+            <Setter Property="LineHeight" Value="17" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="TextWrapping" Value="Wrap" />
+            <Setter Property="TextTrimming" Value="CharacterEllipsis" />
+            <Setter Property="MaxHeight" Value="34" />
+            <Setter Property="Visibility" Value="Visible" />
+            <Style.Triggers>
+                <DataTrigger Binding="{Binding IsImage}" Value="True">
+                    <Setter Property="Visibility" Value="Collapsed" />
+                </DataTrigger>
+            </Style.Triggers>
+        </Style>
+        <Style x:Key="ImageHintStyle" TargetType="TextBlock">
+            <Setter Property="Foreground" Value="{DynamicResource BrushTextPrimary}" />
+            <Setter Property="FontSize" Value="13" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="TextWrapping" Value="Wrap" />
+            <Setter Property="Visibility" Value="Collapsed" />
+            <Style.Triggers>
+                <DataTrigger Binding="{Binding IsImage}" Value="True">
+                    <Setter Property="Visibility" Value="Visible" />
+                </DataTrigger>
+            </Style.Triggers>
+        </Style>
+
+        <!-- Type accent bar: blue/text · purple/image · orange/pin · green = 本会话已复制 -->
+        <Style x:Key="TypeAccentBarStyle" TargetType="Border">
+            <Setter Property="Background" Value="{DynamicResource BrushPrimaryBright}" />
+            <Setter Property="Width" Value="3" />
+            <Setter Property="CornerRadius" Value="2" />
+            <Setter Property="Margin" Value="0,2,10,2" />
+            <Setter Property="VerticalAlignment" Value="Stretch" />
+            <Style.Triggers>
+                <DataTrigger Binding="{Binding IsImage}" Value="True">
+                    <Setter Property="Background" Value="#AF52DE" />
+                </DataTrigger>
+                <DataTrigger Binding="{Binding IsPinned}" Value="True">
+                    <Setter Property="Background" Value="#FF9F0A" />
+                </DataTrigger>
+                <!-- Last wins: multi-select copy progress is most actionable -->
+                <DataTrigger Binding="{Binding IsSessionCopied}" Value="True">
+                    <Setter Property="Background" Value="{DynamicResource BrushSuccess}" />
+                    <Setter Property="Width" Value="4" />
+                </DataTrigger>
+            </Style.Triggers>
+        </Style>
     </Window.Resources>
-    <Border CornerRadius="18"
+    <Border x:Name="RootBorder"
+            CornerRadius="18"
             Margin="16"
             Padding="20"
             Background="{DynamicResource BrushOverlayPanel}"
             BorderBrush="{DynamicResource BrushBorder}"
             BorderThickness="1">
-        <Border.Effect>
-            <DropShadowEffect Color="#000000" BlurRadius="28" ShadowDepth="4" Opacity="0.10" Direction="270" />
-        </Border.Effect>
         <Grid>
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto" />
@@ -217,47 +328,21 @@
                 <ListBox.ItemTemplate>
                     <DataTemplate>
                         <Border x:Name="ItemCard"
-                                Background="{DynamicResource BrushCardElevated}"
-                                BorderBrush="{DynamicResource BrushBorder}"
-                                BorderThickness="1"
-                                CornerRadius="16"
-                                Padding="12,10"
-                                MinHeight="58"
-                                Margin="0,0,0,7">
+                                Background="Transparent"
+                                CornerRadius="10"
+                                Padding="8,8"
+                                MinHeight="54"
+                                Margin="0,0,0,2"
+                                SnapsToDevicePixels="True">
                             <Grid>
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="Auto" />
                                     <ColumnDefinition Width="32" />
                                     <ColumnDefinition Width="*" />
                                 </Grid.ColumnDefinitions>
-                                <!-- Type accent bar: blue/text · purple/image · orange/pin · green = 本会话已复制 -->
                                 <Border x:Name="TypeAccentBar"
-                                        Width="3"
-                                        CornerRadius="2"
-                                        Background="{DynamicResource BrushPrimaryBright}"
-                                        Margin="0,2,10,2"
-                                        VerticalAlignment="Stretch"
-                                        ToolTip="左侧色条：蓝=文本 紫=图片 橙=置顶 绿=本会话已从历史复制">
-                                    <Border.Style>
-                                        <Style TargetType="Border">
-                                            <Setter Property="Background" Value="{DynamicResource BrushPrimaryBright}" />
-                                            <Setter Property="Width" Value="3" />
-                                            <Style.Triggers>
-                                                <DataTrigger Binding="{Binding IsImage}" Value="True">
-                                                    <Setter Property="Background" Value="#AF52DE" />
-                                                </DataTrigger>
-                                                <DataTrigger Binding="{Binding IsPinned}" Value="True">
-                                                    <Setter Property="Background" Value="#FF9F0A" />
-                                                </DataTrigger>
-                                                <!-- Last wins: multi-select copy progress is most actionable -->
-                                                <DataTrigger Binding="{Binding IsSessionCopied}" Value="True">
-                                                    <Setter Property="Background" Value="{DynamicResource BrushSuccess}" />
-                                                    <Setter Property="Width" Value="4" />
-                                                </DataTrigger>
-                                            </Style.Triggers>
-                                        </Style>
-                                    </Border.Style>
-                                </Border>
+                                        Style="{StaticResource TypeAccentBarStyle}"
+                                        ToolTip="左侧色条：蓝=文本 紫=图片 橙=置顶 绿=本会话已从历史复制" />
                                 <Border Grid.Column="1"
                                         Width="26"
                                         Height="26"
@@ -279,36 +364,7 @@
                                         <ColumnDefinition Width="Auto" />
                                         <ColumnDefinition Width="*" />
                                     </Grid.ColumnDefinitions>
-                                    <Border Width="64"
-                                            Height="42"
-                                            CornerRadius="10"
-                                            BorderBrush="#55111827"
-                                            BorderThickness="1.5"
-                                            Margin="0,0,10,0"
-                                            ClipToBounds="True">
-                                        <Border.Background>
-                                            <DrawingBrush TileMode="Tile"
-                                                          Viewport="0,0,12,12"
-                                                          ViewportUnits="Absolute">
-                                                <DrawingBrush.Drawing>
-                                                    <DrawingGroup>
-                                                        <GeometryDrawing Brush="#FFFFFFFF">
-                                                            <GeometryDrawing.Geometry>
-                                                                <RectangleGeometry Rect="0,0,12,12" />
-                                                            </GeometryDrawing.Geometry>
-                                                        </GeometryDrawing>
-                                                        <GeometryDrawing Brush="#FFE8ECF3">
-                                                            <GeometryDrawing.Geometry>
-                                                                <GeometryGroup>
-                                                                    <RectangleGeometry Rect="0,0,6,6" />
-                                                                    <RectangleGeometry Rect="6,6,6,6" />
-                                                                </GeometryGroup>
-                                                            </GeometryDrawing.Geometry>
-                                                        </GeometryDrawing>
-                                                    </DrawingGroup>
-                                                </DrawingBrush.Drawing>
-                                            </DrawingBrush>
-                                        </Border.Background>
+                                    <Border Style="{StaticResource ThumbnailFrameStyle}">
                                         <Grid>
                                             <TextBlock Text="图片缩略图"
                                                        Foreground="#7C8596"
@@ -319,56 +375,15 @@
                                                    Stretch="Uniform"
                                                    RenderOptions.BitmapScalingMode="LowQuality" />
                                         </Grid>
-                                        <Border.Style>
-                                            <Style TargetType="Border">
-                                                <Setter Property="Visibility" Value="Collapsed" />
-                                                <Style.Triggers>
-                                                    <DataTrigger Binding="{Binding IsImage}" Value="True">
-                                                        <Setter Property="Visibility" Value="Visible" />
-                                                    </DataTrigger>
-                                                </Style.Triggers>
-                                            </Style>
-                                        </Border.Style>
                                     </Border>
                                     <StackPanel Grid.Column="1"
                                                 VerticalAlignment="Center">
                                         <TextBlock x:Name="PreviewTextBlock"
                                                    Text="{Binding PreviewText}"
-                                                   Foreground="{DynamicResource BrushTextPrimary}"
-                                                   FontSize="13"
-                                                   LineHeight="17"
-                                                   FontWeight="SemiBold"
-                                                   TextWrapping="Wrap"
-                                                   TextTrimming="CharacterEllipsis"
-                                                   MaxHeight="34">
-                                            <TextBlock.Style>
-                                                <Style TargetType="TextBlock">
-                                                    <Setter Property="Visibility" Value="Visible" />
-                                                    <Style.Triggers>
-                                                        <DataTrigger Binding="{Binding IsImage}" Value="True">
-                                                            <Setter Property="Visibility" Value="Collapsed" />
-                                                        </DataTrigger>
-                                                    </Style.Triggers>
-                                                </Style>
-                                            </TextBlock.Style>
-                                        </TextBlock>
+                                                   Style="{StaticResource TextPreviewStyle}" />
                                         <TextBlock x:Name="ImageItemPreviewTextBlock"
                                                    Text="图片记录 · 双击复制并关闭，可放回系统剪贴板"
-                                                   Foreground="{DynamicResource BrushTextPrimary}"
-                                                   FontSize="13"
-                                                   FontWeight="SemiBold"
-                                                   TextWrapping="Wrap">
-                                            <TextBlock.Style>
-                                                <Style TargetType="TextBlock">
-                                                    <Setter Property="Visibility" Value="Collapsed" />
-                                                    <Style.Triggers>
-                                                        <DataTrigger Binding="{Binding IsImage}" Value="True">
-                                                            <Setter Property="Visibility" Value="Visible" />
-                                                        </DataTrigger>
-                                                    </Style.Triggers>
-                                                </Style>
-                                            </TextBlock.Style>
-                                        </TextBlock>
+                                                   Style="{StaticResource ImageHintStyle}" />
                                         <StackPanel Orientation="Horizontal"
                                                     Margin="0,4,0,0">
                                             <TextBlock x:Name="SourceProcessBlock"
@@ -382,76 +397,23 @@
                                             <TextBlock x:Name="CreatedAtBlock"
                                                        Text="{Binding CreatedAt, Converter={StaticResource RelativeTimeConverter}}"
                                                        Style="{StaticResource Caption11Style}" />
-                                            <Border Margin="8,0,0,0">
-                                                <Border.Style>
-                                                    <Style TargetType="Border" BasedOn="{StaticResource PillBadgeStyle}">
-                                                        <Setter Property="Visibility" Value="Collapsed" />
-                                                        <Style.Triggers>
-                                                            <DataTrigger Binding="{Binding IsPinned}" Value="True">
-                                                                <Setter Property="Visibility" Value="Visible" />
-                                                            </DataTrigger>
-                                                        </Style.Triggers>
-                                                    </Style>
-                                                </Border.Style>
+                                            <Border Style="{StaticResource BadgePinnedStyle}" Margin="8,0,6,0">
                                                 <TextBlock Text="固定" FontSize="10" FontWeight="SemiBold"
                                                            Foreground="{DynamicResource BrushPrimaryBright}" />
                                             </Border>
-                                            <Border Margin="0,0,6,0">
-                                                <Border.Style>
-                                                    <Style TargetType="Border" BasedOn="{StaticResource PillBadgeStyle}">
-                                                        <Setter Property="Background" Value="{DynamicResource BrushDangerSoft}" />
-                                                        <Setter Property="Visibility" Value="Collapsed" />
-                                                        <Style.Triggers>
-                                                            <DataTrigger Binding="{Binding IsSensitive}" Value="True">
-                                                                <Setter Property="Visibility" Value="Visible" />
-                                                            </DataTrigger>
-                                                        </Style.Triggers>
-                                                    </Style>
-                                                </Border.Style>
+                                            <Border Style="{StaticResource BadgeSensitiveStyle}">
                                                 <TextBlock Text="敏感" FontSize="10" FontWeight="SemiBold"
                                                            Foreground="{DynamicResource BrushDanger}" />
                                             </Border>
-                                            <Border>
-                                                <Border.Style>
-                                                    <Style TargetType="Border" BasedOn="{StaticResource PillBadgeStyle}">
-                                                        <Setter Property="Visibility" Value="Collapsed" />
-                                                        <Style.Triggers>
-                                                            <DataTrigger Binding="{Binding IsFavorite}" Value="True">
-                                                                <Setter Property="Visibility" Value="Visible" />
-                                                            </DataTrigger>
-                                                        </Style.Triggers>
-                                                    </Style>
-                                                </Border.Style>
+                                            <Border Style="{StaticResource BadgeFavoriteStyle}">
                                                 <TextBlock Text="片段" FontSize="10" FontWeight="SemiBold"
                                                            Foreground="{DynamicResource BrushPrimaryBright}" />
                                             </Border>
-                                            <Border Margin="0,0,6,0">
-                                                <Border.Style>
-                                                    <Style TargetType="Border" BasedOn="{StaticResource PillBadgeStyle}">
-                                                        <Setter Property="Background" Value="#1A14B8A6" />
-                                                        <Setter Property="Visibility" Value="Collapsed" />
-                                                        <Style.Triggers>
-                                                            <DataTrigger Binding="{Binding IsLink}" Value="True">
-                                                                <Setter Property="Visibility" Value="Visible" />
-                                                            </DataTrigger>
-                                                        </Style.Triggers>
-                                                    </Style>
-                                                </Border.Style>
+                                            <Border Style="{StaticResource BadgeLinkStyle}">
                                                 <TextBlock Text="链接" FontSize="10" FontWeight="SemiBold"
                                                            Foreground="#0D9488" />
                                             </Border>
-                                            <Border>
-                                                <Border.Style>
-                                                    <Style TargetType="Border" BasedOn="{StaticResource PillBadgeStyle}">
-                                                        <Setter Property="Visibility" Value="Collapsed" />
-                                                        <Setter Property="Background" Value="#1A34C759" />
-                                                        <Style.Triggers>
-                                                            <DataTrigger Binding="{Binding IsSessionCopied}" Value="True">
-                                                                <Setter Property="Visibility" Value="Visible" />
-                                                            </DataTrigger>
-                                                        </Style.Triggers>
-                                                    </Style>
-                                                </Border.Style>
+                                            <Border Style="{StaticResource BadgeSessionCopiedStyle}">
                                                 <TextBlock Text="已复制" FontSize="10" FontWeight="SemiBold"
                                                            Foreground="{DynamicResource BrushSuccess}" />
                                             </Border>
@@ -500,12 +462,10 @@
                         </Border>
                         <DataTemplate.Triggers>
                             <DataTrigger Binding="{Binding IsMouseOver, RelativeSource={RelativeSource AncestorType=ListBoxItem}}" Value="True">
-                                <Setter TargetName="ItemCard" Property="BorderBrush" Value="{DynamicResource BrushPrimaryBright}" />
                                 <Setter TargetName="ItemCard" Property="Background" Value="{DynamicResource BrushListHover}" />
                             </DataTrigger>
                             <DataTrigger Binding="{Binding IsSelected, RelativeSource={RelativeSource AncestorType=ListBoxItem}}" Value="True">
                                 <Setter TargetName="ItemCard" Property="Background" Value="{DynamicResource BrushControlSelected}" />
-                                <Setter TargetName="ItemCard" Property="BorderBrush" Value="{DynamicResource BrushPrimaryBright}" />
                                 <Setter TargetName="TypeAccentBar" Property="Width" Value="5" />
                                 <Setter TargetName="PreviewTextBlock" Property="Foreground" Value="{DynamicResource BrushTextPrimary}" />
                                 <Setter TargetName="SourceProcessBlock" Property="Foreground" Value="{DynamicResource BrushTextSecondary}" />

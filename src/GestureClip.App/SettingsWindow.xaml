@@ -219,9 +219,6 @@
             BorderThickness="1"
             ClipToBounds="True"
             MouseLeftButtonDown="WindowBackground_MouseLeftButtonDown">
-        <Border.Effect>
-            <DropShadowEffect Color="#000000" BlurRadius="24" ShadowDepth="2" Opacity="0.10" Direction="270" RenderingBias="Performance" />
-        </Border.Effect>
     <Grid Margin="16">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />

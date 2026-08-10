@@ -2,6 +2,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
+using GestureClip.App.Services;
 using GestureClip.App.ViewModels;
 using GestureClip.Core.Abstractions;
 using GestureClip.Core.Clipboard;
@@ -16,6 +17,7 @@ public partial class ClipboardOverlayWindow : Window
     private readonly IConfirmationService _confirmationService;
     private bool _alwaysVisible;
     private bool _isContextMenuOpen;
+    private bool _micaApplied;
 
     public ClipboardOverlayWindow(
         ClipboardOverlayViewModel viewModel,
@@ -30,6 +32,17 @@ public partial class ClipboardOverlayWindow : Window
         HistoryList.AlternationCount = 10;
         SetAlwaysVisible(_settingsService.Get(SettingKeys.ClipboardOverlayAlwaysVisible, false), persist: false);
         IsVisibleChanged += ClipboardOverlayWindow_IsVisibleChanged;
+    }
+
+    protected override void OnSourceInitialized(EventArgs e)
+    {
+        base.OnSourceInitialized(e);
+        var isDark = _settingsService.Get(SettingKeys.UiThemeMode, "Dark") != "Light";
+        _micaApplied = WindowBackdrop.TryApplyMica(this, isDark);
+        if (_micaApplied)
+        {
+            RootBorder.SetResourceReference(BackgroundProperty, "BrushBackdropWash");
+        }
     }
 
     private void ClipboardOverlayWindow_IsVisibleChanged(object sender, DependencyPropertyChangedEventArgs e)

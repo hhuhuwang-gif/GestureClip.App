@@ -86,20 +86,31 @@ public sealed class ClipboardOverlayService : IClipboardOverlayService
         });
     }
 
+    /// <summary>
+    /// Warms the data layer (DB connection, query plan, item pool) at startup without
+    /// constructing the overlay's visual tree. The window itself is built on first Show,
+    /// where a non-layered Mica surface + batched item binding keeps the first frame fast.
+    /// </summary>
     public Task WarmUpAsync()
     {
         try
         {
-            EnsureWindow();
+            _ = Task.Run(async () =>
+            {
+                await _serviceProvider.GetRequiredService<IClipboardService>().SearchAsync(
+                    "", SmartSearchPoolSize, 0, CancellationToken.None);
+            });
         }
         catch (Exception ex)
         {
             // Optional pre-warm only; a failure here must not break startup.
-            _logger.LogWarning(ex, "Clipboard overlay warm-up failed.");
+            _logger.LogWarning(ex, "Clipboard data warm-up failed.");
         }
 
         return Task.CompletedTask;
     }
+
+    private const int SmartSearchPoolSize = 200;
 
     private ClipboardOverlayWindow EnsureWindow()
     {

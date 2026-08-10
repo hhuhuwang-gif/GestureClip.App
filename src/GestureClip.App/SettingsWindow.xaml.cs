@@ -71,6 +71,13 @@ public partial class SettingsWindow : Window
         SizeChanged += (_, _) => SaveWindowPlacement();
         StateChanged += (_, _) => SaveWindowPlacement();
         Closed += (_, _) => SaveWindowPlacement();
+        IsVisibleChanged += (_, e) =>
+        {
+            if (e.NewValue is true && DataContext is SettingsViewModel settingsViewModel)
+            {
+                settingsViewModel.SetDiagnosticsActive(active: true);
+            }
+        };
     }
 
     protected override void OnSourceInitialized(EventArgs e)
@@ -90,6 +97,7 @@ public partial class SettingsWindow : Window
         if (!_appLifecycleService.IsExplicitExit)
         {
             e.Cancel = true;
+            (DataContext as SettingsViewModel)?.SetDiagnosticsActive(active: false);
             Hide();
             return;
         }

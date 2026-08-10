@@ -337,10 +337,8 @@ public sealed partial class SettingsViewModel : INotifyPropertyChanged
         OpenDataDirectoryCommand = new RelayCommand(_ => OpenDirectory(AppDataPath));
         _diagnosticsTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(500) };
         _diagnosticsTimer.Tick += (_, _) => RefreshGestureDiagnostics();
-        _diagnosticsTimer.Start();
-        _ = LoadBlacklistAsync();
-        _ = LoadSmartPasteRulesAsync();
-        _ = RefreshDiagnosticsAsync();
+        _diagnosticsTimer.Start();        _ = LoadBlacklistAsync();
+        _ = LoadSmartPasteRulesAsync();        _ = RefreshDiagnosticsAsync();
         _ = RefreshClipboardStatsAsync();
         RefreshGestureBindingCards();
         RefreshLeftButtonEnhancedBindings();
@@ -349,6 +347,23 @@ public sealed partial class SettingsViewModel : INotifyPropertyChanged
     }
 
     public event PropertyChangedEventHandler? PropertyChanged;
+
+    /// <summary>
+    /// Pauses/resumes the 500ms gesture diagnostics polling. The settings window hides
+    /// instead of closing, so the timer must not keep firing while the window is hidden.
+    /// </summary>
+    public void SetDiagnosticsActive(bool active)
+    {
+        if (active)
+        {
+            RefreshGestureDiagnostics();
+            _diagnosticsTimer.Start();
+        }
+        else
+        {
+            _diagnosticsTimer.Stop();
+        }
+    }
 
     public PermissionStatus PermissionStatus { get; }
 

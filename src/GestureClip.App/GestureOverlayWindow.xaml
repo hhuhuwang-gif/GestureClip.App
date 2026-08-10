@@ -105,9 +105,6 @@
                 SnapsToDevicePixels="True"
                 UseLayoutRounding="True"
                 IsHitTestVisible="True">
-            <Border.Effect>
-                <DropShadowEffect Color="#101827" BlurRadius="22" ShadowDepth="5" Opacity="0.22" />
-            </Border.Effect>
             <Grid x:Name="GestureActionStrip" SnapsToDevicePixels="True">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="86" />

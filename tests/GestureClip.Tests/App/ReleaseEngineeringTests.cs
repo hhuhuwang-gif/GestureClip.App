@@ -5,14 +5,14 @@ namespace GestureClip.Tests.App;
 public sealed class ReleaseEngineeringTests
 {
     [Fact]
-    public void App_project_uses_v0632_beta_version_metadata()
+    public void App_project_uses_v0641_beta_version_metadata()
     {
         var project = File.ReadAllText(FindRepositoryFile("src", "GestureClip.App", "GestureClip.App.csproj"));
 
-        Assert.Contains("<Version>0.6.40-beta</Version>", project);
-        Assert.Contains("<FileVersion>0.6.40.0</FileVersion>", project);
-        Assert.Contains("<AssemblyVersion>0.6.40.0</AssemblyVersion>", project);
-        Assert.Contains("<InformationalVersion>0.6.40 Beta</InformationalVersion>", project);
+        Assert.Contains("<Version>0.6.41-beta</Version>", project);
+        Assert.Contains("<FileVersion>0.6.41.0</FileVersion>", project);
+        Assert.Contains("<AssemblyVersion>0.6.41.0</AssemblyVersion>", project);
+        Assert.Contains("<InformationalVersion>0.6.41 Beta</InformationalVersion>", project);
     }
 
     [Fact]
