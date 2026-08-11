@@ -23,9 +23,9 @@
 <p align="center">
   <a href="https://github.com/hhuhuwang-gif/GestureClip.App/releases/latest"><strong>⬇ 下载最新版（Latest）</strong></a>
   ·
-  <a href="https://github.com/hhuhuwang-gif/GestureClip.App/releases/download/v0.6.39-beta/GestureClip-v0.6.39-beta-win-x64.zip"><strong>v0.6.39 Beta zip</strong></a>
+  <a href="https://github.com/hhuhuwang-gif/GestureClip.App/releases/download/v0.6.41-beta/GestureClip-v0.6.41-beta-win-x64.zip"><strong>v0.6.41 Beta zip</strong></a>
   ·
-  <a href="https://github.com/hhuhuwang-gif/GestureClip.App/releases/tag/v0.6.39-beta">Release 说明</a>
+  <a href="https://github.com/hhuhuwang-gif/GestureClip.App/releases/tag/v0.6.41-beta">Release 说明</a>
   ·
   <a href="CHANGELOG.md">更新日志</a>
 </p>
@@ -63,24 +63,24 @@
 
 ---
 
-## 当前版本：v0.6.39 Beta
+## 当前版本：v0.6.41 Beta
 
 | 资源 | 链接 |
 | --- | --- |
 | **推荐下载（Latest）** | [Releases / latest](https://github.com/hhuhuwang-gif/GestureClip.App/releases/latest) |
-| 安装包 | [GestureClip-v0.6.39-beta-win-x64.zip](https://github.com/hhuhuwang-gif/GestureClip.App/releases/download/v0.6.39-beta/GestureClip-v0.6.39-beta-win-x64.zip) |
-| 校验文件 | [SHA256SUMS.txt](https://github.com/hhuhuwang-gif/GestureClip.App/releases/download/v0.6.39-beta/SHA256SUMS.txt) |
+| 安装包 | [GestureClip-v0.6.41-beta-win-x64.zip](https://github.com/hhuhuwang-gif/GestureClip.App/releases/download/v0.6.41-beta/GestureClip-v0.6.41-beta-win-x64.zip) |
+| 校验文件 | [SHA256SUMS.txt](https://github.com/hhuhuwang-gif/GestureClip.App/releases/download/v0.6.41-beta/SHA256SUMS.txt) |
 | 历史版本 | 旧版在 Releases 里标记为 **Pre-release**，默认请用 Latest |
 
-### 本版亮点（v0.6.39）
+### 本版亮点（v0.6.41 · 性能与轻量视觉）
 
-- **滚轮手势**：按住右键滚滚轮切标签（动作可改、可连发、不弹菜单）
-- **剪贴板增强**：以文件形式复制（.txt/.png）、F2 就地编辑、二维码扫码带走、**图片贴图置顶**
-- **小熊迷你挂件**：桌面常驻已赚 + 倒计时小胶囊，可换自定义桌宠 GIF
-- **小熊升级**：节假日倒计时、收益秒级跳动、活动驱动休息判断、加班统计
-- **Hub 液态玻璃视觉升级**：镜面高光描边、内部光泽、环境色晕（亮 / 暗双主题）
-- 修复暗色主题无 Mica 回退时窗口背景误用浅色
-- **含 0.6.38**：剪贴板搜索修复与增强（拼音首字母、`re:` 正则、链接筛选）、文本工具
+- **浮层全面轻量化**：剪贴板 / 快捷动作 / 设置 / Hub 去掉透明窗口 + 重型阴影，改用 Win11 Mica 系统背景（不支持时自动回退纯色），打开与拖动不再软件渲染
+- **列表批量绑定**：搜索 / 翻页一次成批刷新，50 条记录从「逐条通知」改为单次批量，首帧与输入响应明显变快
+- **启动预热改数据层**：后台预取剪贴板历史缓存，不再预建整棵界面树，冷启动无突发卡顿
+- **后台轮询自动暂停**：Hub、小熊挂件、设置诊断在窗口隐藏时停掉定时器，空闲不再空转
+- **列表行视觉精简**：历史条目从重卡片改轻量分组行，滚动更流畅
+- **精确回声抑制**：复制与本机自己刚粘贴/写回的内容不再产生重复记录（0.6.40 起）
+- **含 0.6.40**：HUD / overlay 性能修复，移除无绑定手势引导文案
 
 ---
 
@@ -210,7 +210,7 @@ v0.6.37 起历史再复制会统一写成纯文本；也可用「复制为纯文
 可手动到 [Latest](https://github.com/hhuhuwang-gif/GestureClip.App/releases/latest) 下载。
 
 **为什么 GitHub 上还有很多旧版本？**  
-历史包仍保留下载；已标为 Pre-release。日常请只用 **Latest = v0.6.39 Beta**。
+历史包仍保留下载；已标为 Pre-release。日常请只用 **Latest = v0.6.41 Beta**。
 
 ---
 
@@ -236,7 +236,7 @@ powershell -ExecutionPolicy Bypass -File .\scripts\publish-win-x64.ps1
 - 本地快捷动作：Ctrl+Shift+Q 做去空格、JSON、URL 等
 - 工位小熊（可选）：下班倒计时、复制统计
 
-v0.6.39 Beta，解压双击 GestureClip.exe。
+v0.6.41 Beta，解压双击 GestureClip.exe。
 
 项目：https://github.com/hhuhuwang-gif/GestureClip.App
 下载：https://github.com/hhuhuwang-gif/GestureClip.App/releases/latest
