@@ -78,7 +78,7 @@ public sealed class ReleaseEngineeringTests
         var clipboardOverlayXaml = File.ReadAllText(FindRepositoryFile("src", "GestureClip.App", "ClipboardOverlayWindow.xaml"));
         var clipboardOverlayCode = File.ReadAllText(FindRepositoryFile("src", "GestureClip.App", "ClipboardOverlayWindow.xaml.cs"));
         Assert.Contains("双击复制", clipboardOverlayXaml);
-        Assert.Contains("SegmentedFilter", clipboardOverlayXaml);
+        Assert.Contains("ModernSegmentStyle", clipboardOverlayXaml);
         Assert.Contains("CopyItemAndHideAsync", clipboardOverlayCode);
         Assert.Contains("ConfirmDeleteSelectedItems", clipboardOverlayCode);
     }

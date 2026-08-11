@@ -56,9 +56,11 @@ public sealed class GestureOverlayWindowTests
 
         Assert.Contains("HorizontalAlignment=\"Center\"", xaml);
 
-        Assert.Contains("MinWidth=\"720\"", xaml);
+        Assert.Contains("MinWidth=\"380\"", xaml);
 
-        Assert.Contains("MinHeight=\"200\"", xaml);
+        Assert.Contains("MaxWidth=\"520\"", xaml);
+
+        Assert.Contains("MinHeight=\"104\"", xaml);
 
         Assert.Contains("BorderThickness=\"1\"", xaml);
 
@@ -88,15 +90,17 @@ public sealed class GestureOverlayWindowTests
 
         Assert.Contains("CompactGameHud", xaml);
 
-        Assert.Contains("GestureActionStrip", xaml);
+        Assert.Contains("DirectionText", xaml);
 
-        Assert.Contains("TodayStatsLine", xaml);
+        Assert.Contains("ActionName", xaml);
 
-        Assert.Contains("松开右键执行", xaml);
+        Assert.Contains("ShortcutText", xaml);
 
-        Assert.Contains("普通右键不显示", xaml);
+        Assert.Contains("WorkStatusText", xaml);
 
-        Assert.Contains("MinHeight=\"200\"", xaml);
+        Assert.Contains("HudCardBrush", xaml);
+
+        Assert.DoesNotContain("MinHeight=\"200\"", xaml);
 
         Assert.DoesNotContain("MaxHeight=", xaml);
 
@@ -107,6 +111,10 @@ public sealed class GestureOverlayWindowTests
         Assert.DoesNotContain("UniformGrid", xaml);
 
         Assert.DoesNotContain("PIXEL STATUS", xaml);
+
+        Assert.DoesNotContain("TodayStatsLine", xaml);
+
+        Assert.DoesNotContain("GestureActionStrip", xaml);
 
     }
 
@@ -132,7 +140,9 @@ public sealed class GestureOverlayWindowTests
 
         Assert.Contains("ShortcutText", xaml);
 
-        Assert.Contains("PresetName", xaml);
+        Assert.Contains("WorkStatusText", xaml);
+
+        Assert.DoesNotContain("PresetName", xaml);
 
     }
 
@@ -152,41 +162,27 @@ public sealed class GestureOverlayWindowTests
 
 
 
-        Assert.Contains("工位小熊", xaml);
-
         Assert.Contains("WorkStatusText", xaml);
 
-        Assert.Contains("GestureCountText", xaml);
-
-        Assert.Contains("CopyCountText", xaml);
-
-        Assert.Contains("PasteCountText", xaml);
-
-        Assert.Contains("SavedClicksCountText", xaml);
+        Assert.Contains("HudAccentBrush", xaml);
 
         Assert.Contains("Microsoft YaHei UI", xaml);
 
-        Assert.Contains("WorkSummaryText", xaml);
-
         Assert.Contains("SnapsToDevicePixels=\"True\"", xaml);
 
-        Assert.Contains("WorkSummaryText", xaml);
+        Assert.DoesNotContain("GestureCountText", xaml);
 
-        Assert.Contains("FunText", xaml);
+        Assert.DoesNotContain("CopyCountText", xaml);
 
-        Assert.Contains("LevelText", xaml);
+        Assert.DoesNotContain("PasteCountText", xaml);
 
-        Assert.Contains("XpText", xaml);
+        Assert.DoesNotContain("SavedClicksCountText", xaml);
 
-        Assert.Contains("GainedXpText", xaml);
-
-        Assert.Contains("GestureCountText", xaml);
+        Assert.DoesNotContain("WorkSummaryText", xaml);
 
         Assert.DoesNotContain("TodayFishingValueText", xaml);
 
-        Assert.Contains("WorkSummaryText", xaml);
-
-        Assert.Contains("GestureCountText", xaml);
+        Assert.DoesNotContain("FunText", xaml);
 
     }
 
@@ -212,9 +208,11 @@ public sealed class GestureOverlayWindowTests
 
         Assert.DoesNotContain("MaxHeight=", xaml);
 
-        Assert.Contains("MinWidth=\"720\"", xaml);
+        Assert.Contains("DirectionText", xaml);
 
-        Assert.Contains("MinHeight=\"200\"", xaml);
+        Assert.Contains("TextTrimming=\"CharacterEllipsis\"", xaml);
+
+        Assert.Contains("MinHeight=\"104\"", xaml);
 
     }
 
@@ -222,7 +220,7 @@ public sealed class GestureOverlayWindowTests
 
     [Fact]
 
-    public void GestureOverlayWindow_reserves_enough_vertical_space_for_workstation_cards()
+    public void GestureOverlayWindow_reserves_enough_vertical_space_for_direction_and_status()
 
     {
 
@@ -234,9 +232,11 @@ public sealed class GestureOverlayWindowTests
 
 
 
-        Assert.Contains("MinHeight=\"200\"", xaml);
+        Assert.Contains("MinHeight=\"104\"", xaml);
 
-        Assert.Contains("MinWidth=\"720\"", xaml);
+        Assert.Contains("Width=\"56\"", xaml);
+
+        Assert.Contains("Height=\"56\"", xaml);
 
         Assert.DoesNotContain("Height=\"150\"", xaml);
 
@@ -420,7 +420,7 @@ public sealed class GestureOverlayWindowTests
 
     [Fact]
 
-    public void GestureOverlayWindow_shows_fun_report_level_and_xp()
+    public void GestureOverlayWindow_keeps_fun_report_level_fields_off_canvas()
 
     {
 
@@ -436,29 +436,17 @@ public sealed class GestureOverlayWindowTests
 
 
 
-        Assert.Contains("FunText", xaml);
+        Assert.DoesNotContain("FunText", xaml);
 
-        Assert.Contains("GainedXpText", xaml);
+        Assert.DoesNotContain("GainedXpText", xaml);
 
-        Assert.Contains("LevelText", xaml);
-
-        Assert.Contains("XpText", xaml);
-
-        Assert.Contains("WorkSummaryText", xaml);
-
-        Assert.Contains("GestureCountText", xaml);
+        Assert.DoesNotContain("LevelText", xaml);
 
         Assert.Contains("FunText", viewModel);
 
         Assert.Contains("LevelText", viewModel);
 
         Assert.Contains("XpProgressPercent", viewModel);
-
-        Assert.Contains("ProgressBar", xaml);
-
-        Assert.Contains("Maximum=\"1\"", xaml);
-
-        Assert.Contains("Value=\"{Binding XpProgressPercent}\"", xaml);
 
     }
 

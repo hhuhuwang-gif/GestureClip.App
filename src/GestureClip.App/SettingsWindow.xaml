@@ -351,7 +351,7 @@
             <Grid.ColumnDefinitions>
                 <ColumnDefinition x:Name="NavColumn" Width="200" />
                 <ColumnDefinition Width="*" />
-                <ColumnDefinition x:Name="RailColumn" Width="240" />
+                <ColumnDefinition x:Name="RailColumn" Width="208" />
             </Grid.ColumnDefinitions>
 
             <!-- Left navigation with groups -->
@@ -424,106 +424,126 @@
                         </Style>
                     </TabControl.Resources>
 
-                <TabItem Header="首页">
+<TabItem Header="首页">
                     <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" ClipToBounds="True">
                         <StackPanel Margin="28,24,36,36" HorizontalAlignment="Stretch">
                             <Border x:Name="HomePageIntro" Style="{StaticResource SettingsIntroCardStyle}">
                                 <StackPanel>
-                                    <TextBlock Text="总览" Style="{StaticResource SettingsIntroTitleStyle}" />
-                                    <TextBlock Text="确认权限、数据位置与运行状态。这里不改变功能，只帮你判断 GestureClip 当前是否正常。"
+                                    <TextBlock Text="首页" Style="{StaticResource SettingsIntroTitleStyle}" />
+                                    <TextBlock Text="GestureClip 本地优先：剪贴板历史与鼠标手势都在本机运行，不上传任何内容。"
                                                Style="{StaticResource SettingsPageSubtitleStyle}" />
                                 </StackPanel>
                             </Border>
 
-                            <Border x:Name="SmartPasteRecommendationCard"
-                                    Padding="24,20"
-                                    Margin="0,0,0,28"
-                                    Background="{DynamicResource BrushGlassAccent}"
-                                    BorderBrush="{DynamicResource BrushPrimarySoft}"
-                                    BorderThickness="1"
-                                    CornerRadius="14"
-                                    ClipToBounds="True"
-                                    HorizontalAlignment="Stretch"
-                                    SnapsToDevicePixels="True">
-                                <Grid>
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="*" />
-                                        <ColumnDefinition Width="Auto" />
-                                    </Grid.ColumnDefinitions>
-                                    <StackPanel Margin="0,0,24,0" VerticalAlignment="Center">
-                                        <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
-                                            <TextBlock Text="智能粘贴"
-                                                       FontSize="16"
-                                                       FontWeight="SemiBold"
-                                                       LineHeight="22"
-                                                       LineStackingStrategy="BlockLineHeight"
-                                                       Foreground="{DynamicResource BrushTextPrimary}"
-                                                       VerticalAlignment="Center" />
-                                            <Border Style="{StaticResource StatusBadgeStyle}"
-                                                    Margin="10,0,0,0"
-                                                    VerticalAlignment="Center">
-                                                <TextBlock Text="推荐"
-                                                           FontSize="11"
-                                                           LineHeight="14"
-                                                           VerticalAlignment="Center"
-                                                           HorizontalAlignment="Center"
-                                                           TextAlignment="Center"
-                                                           Foreground="{DynamicResource BrushPrimaryBright}"
-                                                           FontWeight="SemiBold" />
-                                            </Border>
-                                        </StackPanel>
-                                        <TextBlock Text="只净化剪贴板内容，粘贴方式与关闭时相同。开启后按当前应用尽力改写为纯文本/干净文本，再统一发送 Ctrl+V。"
-                                                   Style="{StaticResource MutedTextStyle}"
-                                                   FontSize="13"
-                                                   LineHeight="20"
-                                                   TextWrapping="Wrap" />
-                                    </StackPanel>
-                                    <CheckBox Grid.Column="1"
-                                              Style="{StaticResource SettingsToggleCheckBoxStyle}"
-                                              ToolTip="开启智能粘贴（推荐）"
-                                              IsChecked="{Binding IsSmartPasteEnabled, Mode=TwoWay}" />
-                                </Grid>
-                            </Border>
-
-                            <Border x:Name="WhatsNewCard"
-                                    Padding="24,20"
-                                    Margin="0,0,0,28"
-                                    Background="{DynamicResource BrushGlassCard}"
-                                    BorderBrush="{DynamicResource BrushGlassRim}"
-                                    BorderThickness="1"
-                                    CornerRadius="14"
-                                    ClipToBounds="True"
-                                    HorizontalAlignment="Stretch"
-                                    SnapsToDevicePixels="True">
-                                <StackPanel>
-                                    <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
-                                        <TextBlock Text="v0.6.39 新功能"
-                                                   FontSize="16"
-                                                   FontWeight="SemiBold"
-                                                   Foreground="{DynamicResource BrushTextPrimary}"
-                                                   VerticalAlignment="Center" />
-                                        <Border Style="{StaticResource StatusBadgeStyle}"
-                                                Margin="10,0,0,0"
-                                                VerticalAlignment="Center">
-                                            <TextBlock Text="NEW"
-                                                       FontSize="11"
-                                                       LineHeight="14"
-                                                       VerticalAlignment="Center"
-                                                       Foreground="{DynamicResource BrushPrimaryBright}"
-                                                       FontWeight="SemiBold" />
-                                        </Border>
-                                    </StackPanel>
-                                    <TextBlock Text="🖱 滚轮手势：按住右键滚滚轮 = 上一个 / 下一个标签页，滚一格切一次，松开不弹菜单。想换动作或关闭：设置 → 手势。"
-                                               Style="{StaticResource MutedTextStyle}" FontSize="13" LineHeight="20" TextWrapping="Wrap" Margin="0,0,0,8" />
-                                    <TextBlock Text="📋 剪贴板历史（Ctrl + `）右键新招：「以文件形式复制」把文字 / 图片变 .txt / .png 直接粘到文件夹；选中按 F2 就地编辑；「生成二维码」手机扫码带走（本机生成，不上传）。"
-                                               Style="{StaticResource MutedTextStyle}" FontSize="13" LineHeight="20" TextWrapping="Wrap" Margin="0,0,0,8" />
-                                    <TextBlock Text="🐻 工位小熊：顶部新增距周末 / 节假日倒计时；「今日已赚」每秒跳动；离开电脑 5 分钟自动算休息（只看键鼠空闲，不看内容）；过点干活会显示加班账。"
-                                               Style="{StaticResource MutedTextStyle}" FontSize="13" LineHeight="20" TextWrapping="Wrap" Margin="0,0,0,8" />
-                                    <TextBlock Text="📌 贴图置顶：剪贴板历史里的图片右键「贴到桌面」→ 置顶悬浮参考图（拖动移动 / 滚轮缩放 / 双击关闭），对照文档、抄数据神器。"
-                                               Style="{StaticResource MutedTextStyle}" FontSize="13" LineHeight="20" TextWrapping="Wrap" Margin="0,0,0,8" />
-                                    <TextBlock Text="🧸 迷你挂件：Hub 底部点「迷你挂件」→ 桌面常驻小胶囊，实时跳「已赚 + 下班倒计时」；右键可换成你自己的桌宠图（GIF 会动，可去 codex-pet.org 之类的桌宠站下载素材）。"
-                                               Style="{StaticResource MutedTextStyle}" FontSize="13" LineHeight="20" TextWrapping="Wrap" />
+                            <DockPanel Margin="0,0,0,16">
+                                <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Center">
+                                    <Border Style="{StaticResource StatusBadgeStyle}" VerticalAlignment="Center">
+                                        <TextBlock Text="{Binding StartupStatus}"
+                                                   Foreground="{DynamicResource BrushPrimaryBright}"
+                                                   FontSize="12" FontWeight="SemiBold" />
+                                    </Border>
                                 </StackPanel>
+                                <StackPanel>
+                                    <TextBlock Text="GestureClip" Style="{StaticResource ModernPageTitleStyle}" LineHeight="28" />
+                                    <TextBlock Text="{Binding HotkeyStatusText}"
+                                               Style="{StaticResource ModernSecondaryStyle}"
+                                               Margin="0,4,0,0" />
+                                </StackPanel>
+                            </DockPanel>
+
+                            <TextBlock Text="核心功能" Style="{StaticResource SettingsGroupTitleStyle}" Margin="2,0,0,10" />
+                            <UniformGrid Columns="3" Margin="0,0,-12,0" HorizontalAlignment="Stretch">
+                                <Border Padding="16,14"
+                                        Margin="0,0,12,12"
+                                        Background="{DynamicResource SurfaceBrush}"
+                                        BorderBrush="{DynamicResource SeparatorBrush}"
+                                        BorderThickness="1"
+                                        CornerRadius="14"
+                                        Cursor="Hand"
+                                        Tag="clipboard"
+                                        MouseLeftButtonUp="FeatureMapCard_MouseLeftButtonUp"
+                                        ToolTip="前往剪贴板设置">
+                                    <StackPanel>
+                                        <TextBlock Text="剪贴板记录" FontSize="14" FontWeight="SemiBold" />
+                                        <TextBlock Text="{Binding ClipboardCaptureStatusText}"
+                                                   FontSize="13" FontWeight="SemiBold"
+                                                   Foreground="{DynamicResource AccentBrush}"
+                                                   Margin="0,6,0,0" />
+                                        <TextBlock Text="Ctrl + ` 打开历史 · 双击复制"
+                                                   Style="{StaticResource MutedTextStyle}"
+                                                   FontSize="12" Margin="0,4,0,0" />
+                                    </StackPanel>
+                                </Border>
+                                <Border Padding="16,14"
+                                        Margin="0,0,12,12"
+                                        Background="{DynamicResource SurfaceBrush}"
+                                        BorderBrush="{DynamicResource SeparatorBrush}"
+                                        BorderThickness="1"
+                                        CornerRadius="14"
+                                        Cursor="Hand"
+                                        Tag="gestures"
+                                        MouseLeftButtonUp="FeatureMapCard_MouseLeftButtonUp"
+                                        ToolTip="前往手势设置">
+                                    <StackPanel>
+                                        <TextBlock Text="鼠标手势" FontSize="14" FontWeight="SemiBold" />
+                                        <TextBlock Text="{Binding GestureStatusText}"
+                                                   FontSize="13" FontWeight="SemiBold"
+                                                   Foreground="{DynamicResource AccentBrush}"
+                                                   Margin="0,6,0,0" />
+                                        <TextBlock Text="按住右键划一下，松开即执行"
+                                                   Style="{StaticResource MutedTextStyle}"
+                                                   FontSize="12" Margin="0,4,0,0" />
+                                    </StackPanel>
+                                </Border>
+                                <Border Padding="16,14"
+                                        Margin="0,0,12,12"
+                                        Background="{DynamicResource SurfaceBrush}"
+                                        BorderBrush="{DynamicResource SeparatorBrush}"
+                                        BorderThickness="1"
+                                        CornerRadius="14"
+                                        Cursor="Hand"
+                                        Tag="clipboard"
+                                        MouseLeftButtonUp="FeatureMapCard_MouseLeftButtonUp"
+                                        ToolTip="前往剪贴板页设置快速动作">
+                                    <StackPanel>
+                                        <TextBlock Text="快速动作" FontSize="14" FontWeight="SemiBold" />
+                                        <TextBlock Text="{Binding OpenQuickActionHotkeyText}"
+                                                   FontSize="13" FontWeight="SemiBold"
+                                                   Foreground="{DynamicResource AccentBrush}"
+                                                   Margin="0,6,0,0" />
+                                        <TextBlock Text="一键打开常用工具面板"
+                                                   Style="{StaticResource MutedTextStyle}"
+                                                   FontSize="12" Margin="0,4,0,0" />
+                                    </StackPanel>
+                                </Border>
+                            </UniformGrid>
+
+                            <TextBlock Text="今日统计" Style="{StaticResource SettingsGroupTitleStyle}" Margin="2,12,0,10" />
+                            <Border Padding="20,16"
+                                    Margin="0,0,0,16"
+                                    Background="{DynamicResource SurfaceBrush}"
+                                    BorderBrush="{DynamicResource SeparatorBrush}"
+                                    BorderThickness="1"
+                                    CornerRadius="14">
+                                <DockPanel>
+                                    <StackPanel DockPanel.Dock="Right" VerticalAlignment="Center">
+                                        <TextBlock Text="今日已赚"
+                                                   Style="{StaticResource ModernMutedStyle}"
+                                                   HorizontalAlignment="Right" />
+                                        <TextBlock Text="{Binding TodayEarnedText}"
+                                                   FontSize="24" FontWeight="Bold"
+                                                   Foreground="{DynamicResource AccentBrush}"
+                                                   Margin="0,4,0,0" />
+                                    </StackPanel>
+                                    <StackPanel VerticalAlignment="Center">
+                                        <TextBlock Text="{Binding TodayStatsText}"
+                                                   FontSize="14" FontWeight="SemiBold"
+                                                   Foreground="{DynamicResource BrushTextPrimary}" />
+                                        <TextBlock Text="本地统计，可随时清空或重置"
+                                                   Style="{StaticResource MutedTextStyle}"
+                                                   FontSize="12" Margin="0,6,0,0" />
+                                    </StackPanel>
+                                </DockPanel>
                             </Border>
 
                             <TextBlock Text="我能帮你做什么"
@@ -613,7 +633,40 @@
                                 </Border>
                             </UniformGrid>
 
-                            <TextBlock x:Name="SectionSystemInfo" Text="系统信息" Style="{StaticResource SettingsGroupTitleStyle}" Margin="0,28,0,10" />
+                            <TextBlock Text="{Binding AppVersionText, StringFormat={}{0} 本版本亮点}"
+                                       Style="{StaticResource SettingsGroupTitleStyle}"
+                                       Margin="0,28,0,10" />
+                            <Border Padding="24,20"
+                                    Margin="0,0,0,28"
+                                    Background="{DynamicResource SurfaceBrush}"
+                                    BorderBrush="{DynamicResource SeparatorBrush}"
+                                    BorderThickness="1"
+                                    CornerRadius="14"
+                                    ClipToBounds="True"
+                                    HorizontalAlignment="Stretch"
+                                    SnapsToDevicePixels="True">
+                                <StackPanel>
+                                    <TextBlock Text="🖱 剪贴板面板全新外观：单表面列表、悬停出现操作菜单、选中柔和高亮，打开更快。"
+                                               Style="{StaticResource MutedTextStyle}" FontSize="13" LineHeight="20" TextWrapping="Wrap" Margin="0,0,0,8" />
+                                    <TextBlock Text="📋 手势 HUD 极简化：只显示方向、动作名、快捷键和执行状态，120ms 轻快入场。"
+                                               Style="{StaticResource MutedTextStyle}" FontSize="13" LineHeight="20" TextWrapping="Wrap" Margin="0,0,0,8" />
+                                    <TextBlock Text="🏠 设置首页重做：核心功能状态、今日统计、快速入口一目了然，版本号自动读取不再写死。"
+                                               Style="{StaticResource MutedTextStyle}" FontSize="13" LineHeight="20" TextWrapping="Wrap" Margin="0,0,0,8" />
+                                    <TextBlock Text="🐻 工位小熊 Hub 新版式：顶部状态、今日、本周动作与快捷操作分区布局。"
+                                               Style="{StaticResource MutedTextStyle}" FontSize="13" LineHeight="20" TextWrapping="Wrap" Margin="0,0,0,8" />
+                                    <TextBlock Text="⚡ 性能优化：剪贴板首帧与可交互时间进一步缩短，列表加载更快。"
+                                               Style="{StaticResource MutedTextStyle}" FontSize="13" LineHeight="20" TextWrapping="Wrap" Margin="0,0,0,8" />
+                                    <Button Content="查看更新内容"
+                                            Style="{StaticResource ModernLinkButtonStyle}"
+                                            DockPanel.Dock="Right"
+                                            HorizontalAlignment="Left"
+                                            Margin="-8,4,0,0"
+                                            Click="WhatsNew_ViewChangelog_Click"
+                                            ToolTip="跳到「关于」页查看完整更新说明" />
+                                </StackPanel>
+                            </Border>
+
+                            <TextBlock x:Name="SectionSystemInfo" Text="系统信息" Style="{StaticResource SettingsGroupTitleStyle}" Margin="0,4,0,10" />
                             <Border Style="{StaticResource SettingsListContainerStyle}">
                                 <StackPanel>
                                     <Border Style="{StaticResource SettingsFormRowStyle}">
@@ -734,7 +787,6 @@
                         </StackPanel>
                     </ScrollViewer>
                 </TabItem>
-
                 <TabItem Header="剪贴板">
                     <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" ClipToBounds="True">
                         <StackPanel Margin="28,24,36,36" HorizontalAlignment="Stretch">

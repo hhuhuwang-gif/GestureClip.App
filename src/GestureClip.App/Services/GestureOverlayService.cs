@@ -202,6 +202,27 @@ public sealed class GestureOverlayService : IGestureOverlayService
         _window.BeginAnimation(UIElement.OpacityProperty, null);
         _window.Opacity = 1;
         _window.Show();
+
+        // Quick iOS-style entrance: fade + 6px rise in 120ms (kept GPU-cheap: window-level transform).
+        const double entranceMilliseconds = 120;
+        var ease = new System.Windows.Media.Animation.QuadraticEase
+        {
+            EasingMode = System.Windows.Media.Animation.EasingMode.EaseOut
+        };
+        var fade = new System.Windows.Media.Animation.DoubleAnimation(0, 1, TimeSpan.FromMilliseconds(entranceMilliseconds))
+        {
+            EasingFunction = ease
+        };
+        _window.BeginAnimation(UIElement.OpacityProperty, fade);
+
+        _window.RenderTransformOrigin = new System.Windows.Point(0.5, 1);
+        var slide = new System.Windows.Media.TranslateTransform();
+        _window.RenderTransform = slide;
+        slide.BeginAnimation(System.Windows.Media.TranslateTransform.YProperty,
+            new System.Windows.Media.Animation.DoubleAnimation(6, 0, TimeSpan.FromMilliseconds(entranceMilliseconds))
+            {
+                EasingFunction = ease
+            });
     }
 
     private void FadeOutAndHideWindow()

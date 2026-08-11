@@ -13,6 +13,8 @@ public sealed class ClipboardOverlayService : IClipboardOverlayService
     private readonly IWorkstationDashboardService _workstationDashboardService;
     private readonly ILogger<ClipboardOverlayService> _logger;
     private readonly bool _perfLogEnabled;
+    private static readonly Stopwatch PerfClock = Stopwatch.StartNew();
+    private long _lastHotkeyTicks;
     private ClipboardOverlayWindow? _window;
 
     public ClipboardOverlayService(
@@ -30,9 +32,11 @@ public sealed class ClipboardOverlayService : IClipboardOverlayService
 
     public async Task ShowAsync()
     {
+        MarkHotkeyReceived();
         await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
         {
             var window = EnsureWindow();
+            AttachFirstFrameHook(window);
             window.Show();
             window.Activate();
             window.FocusSearchBox();
@@ -43,6 +47,7 @@ public sealed class ClipboardOverlayService : IClipboardOverlayService
 
     public async Task ToggleAsync()
     {
+        MarkHotkeyReceived();
         await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
         {
             var window = EnsureWindow();
@@ -52,12 +57,38 @@ public sealed class ClipboardOverlayService : IClipboardOverlayService
                 return;
             }
 
+            AttachFirstFrameHook(window);
             window.Show();
             window.Activate();
             window.FocusSearchBox();
             RecordOpenInBackground();
             _ = LoadHistoryWithPerfAsync(window);
         });
+    }
+
+    private void MarkHotkeyReceived()
+    {
+        _lastHotkeyTicks = PerfClock.ElapsedTicks;
+    }
+
+    private void AttachFirstFrameHook(ClipboardOverlayWindow window)
+    {
+        if (!_perfLogEnabled)
+        {
+            return;
+        }
+
+        window.ContentRendered -= OnFirstFrameRendered;
+        window.ContentRendered += OnFirstFrameRendered;
+    }
+
+    private void OnFirstFrameRendered(object? sender, EventArgs e)
+    {
+        var window = (ClipboardOverlayWindow)sender;
+        _logger.LogInformation(
+            "ClipboardPerf HotkeyToFirstFrameMs ElapsedMs={ElapsedMs}",
+            PerfClock.ElapsedMilliseconds - _lastHotkeyTicks);
+        window.ContentRendered -= OnFirstFrameRendered;
     }
 
     private void RecordOpenInBackground()
@@ -137,6 +168,7 @@ public sealed class ClipboardOverlayService : IClipboardOverlayService
             if (_perfLogEnabled)
             {
                 _logger.LogInformation("ClipboardPerf OverlayLoadMs ElapsedMs={ElapsedMs}", watch.ElapsedMilliseconds);
+                _logger.LogInformation("ClipboardPerf HotkeyToInteractiveMs ElapsedMs={ElapsedMs}", PerfClock.ElapsedMilliseconds - _lastHotkeyTicks);
             }
         }
     }

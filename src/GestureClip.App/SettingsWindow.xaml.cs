@@ -76,6 +76,7 @@ public partial class SettingsWindow : Window
             if (e.NewValue is true && DataContext is SettingsViewModel settingsViewModel)
             {
                 settingsViewModel.SetDiagnosticsActive(active: true);
+                _ = settingsViewModel.RefreshTodayStatsAsync();
             }
         };
     }
@@ -103,6 +104,11 @@ public partial class SettingsWindow : Window
         }
 
         base.OnClosing(e);
+    }
+
+    private void WhatsNew_ViewChangelog_Click(object sender, RoutedEventArgs e)
+    {
+        NavAbout.IsChecked = true;
     }
 
     private void TitleBar_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)

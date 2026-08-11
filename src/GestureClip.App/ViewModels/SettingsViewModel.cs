@@ -44,6 +44,7 @@ public sealed partial class SettingsViewModel : INotifyPropertyChanged
     private readonly IGestureConfigTransferService _gestureConfigTransferService;
     private readonly IEdgeTriggerService _edgeTriggerService;
     private readonly IWorkerLevelService _workerLevelService;
+    private readonly IWorkstationDashboardService? _workstationDashboardService;
     private int _themeModeIndex;
     private string _uiAccentColor = string.Empty;
     private bool _clipboardCaptureEnabled;
@@ -170,6 +171,7 @@ public sealed partial class SettingsViewModel : INotifyPropertyChanged
         IGestureConfigTransferService gestureConfigTransferService,
         IEdgeTriggerService edgeTriggerService,
         IWorkerLevelService workerLevelService,
+        IWorkstationDashboardService? workstationDashboardService = null,
         AppThemeService? themeService = null)
     {
         _settingsService = settingsService;
@@ -192,6 +194,7 @@ public sealed partial class SettingsViewModel : INotifyPropertyChanged
         _gestureConfigTransferService = gestureConfigTransferService;
         _edgeTriggerService = edgeTriggerService;
         _workerLevelService = workerLevelService;
+        _workstationDashboardService = workstationDashboardService;
         GestureActionOptionsView = CollectionViewSource.GetDefaultView(GestureActionOptions);
         GestureActionOptionsView.GroupDescriptions.Add(new PropertyGroupDescription(nameof(GestureActionOptionViewModel.Category)));
         DatabasePath = paths.DatabasePath;
