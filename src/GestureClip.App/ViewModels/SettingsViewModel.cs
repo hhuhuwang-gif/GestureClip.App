@@ -44,7 +44,6 @@ public sealed partial class SettingsViewModel : INotifyPropertyChanged
     private readonly IGestureConfigTransferService _gestureConfigTransferService;
     private readonly IEdgeTriggerService _edgeTriggerService;
     private readonly IWorkerLevelService _workerLevelService;
-    private readonly IWorkstationDashboardService? _workstationDashboardService;
     private int _themeModeIndex;
     private string _uiAccentColor = string.Empty;
     private bool _clipboardCaptureEnabled;
@@ -171,7 +170,6 @@ public sealed partial class SettingsViewModel : INotifyPropertyChanged
         IGestureConfigTransferService gestureConfigTransferService,
         IEdgeTriggerService edgeTriggerService,
         IWorkerLevelService workerLevelService,
-        IWorkstationDashboardService? workstationDashboardService = null,
         AppThemeService? themeService = null)
     {
         _settingsService = settingsService;
@@ -194,7 +192,6 @@ public sealed partial class SettingsViewModel : INotifyPropertyChanged
         _gestureConfigTransferService = gestureConfigTransferService;
         _edgeTriggerService = edgeTriggerService;
         _workerLevelService = workerLevelService;
-        _workstationDashboardService = workstationDashboardService;
         GestureActionOptionsView = CollectionViewSource.GetDefaultView(GestureActionOptions);
         GestureActionOptionsView.GroupDescriptions.Add(new PropertyGroupDescription(nameof(GestureActionOptionViewModel.Category)));
         DatabasePath = paths.DatabasePath;
@@ -340,8 +337,10 @@ public sealed partial class SettingsViewModel : INotifyPropertyChanged
         OpenDataDirectoryCommand = new RelayCommand(_ => OpenDirectory(AppDataPath));
         _diagnosticsTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(500) };
         _diagnosticsTimer.Tick += (_, _) => RefreshGestureDiagnostics();
-        _diagnosticsTimer.Start();        _ = LoadBlacklistAsync();
-        _ = LoadSmartPasteRulesAsync();        _ = RefreshDiagnosticsAsync();
+        _diagnosticsTimer.Start();
+        _ = LoadBlacklistAsync();
+        _ = LoadSmartPasteRulesAsync();
+        _ = RefreshDiagnosticsAsync();
         _ = RefreshClipboardStatsAsync();
         RefreshGestureBindingCards();
         RefreshLeftButtonEnhancedBindings();
@@ -350,23 +349,6 @@ public sealed partial class SettingsViewModel : INotifyPropertyChanged
     }
 
     public event PropertyChangedEventHandler? PropertyChanged;
-
-    /// <summary>
-    /// Pauses/resumes the 500ms gesture diagnostics polling. The settings window hides
-    /// instead of closing, so the timer must not keep firing while the window is hidden.
-    /// </summary>
-    public void SetDiagnosticsActive(bool active)
-    {
-        if (active)
-        {
-            RefreshGestureDiagnostics();
-            _diagnosticsTimer.Start();
-        }
-        else
-        {
-            _diagnosticsTimer.Stop();
-        }
-    }
 
     public PermissionStatus PermissionStatus { get; }
 

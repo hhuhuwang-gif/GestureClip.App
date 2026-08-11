@@ -41,12 +41,11 @@ public sealed class FeatureToggleServiceTests
     }
 
     [Fact]
-    public async Task ToggleGestureAsync_uses_current_settings_state()
+    public async Task ToggleGestureAsync_uses_current_runtime_state()
     {
         var gesture = new FakeMouseGestureService { IsEnabled = false };
         var edge = new FakeEdgeTriggerService();
         var provider = new FakeGestureSettingsProvider();
-        provider.Update(provider.Current with { Enabled = false });
         var service = CreateService(gesture: gesture, edge: edge, provider: provider);
 
         await service.ToggleGestureAsync(CancellationToken.None);
@@ -54,33 +53,6 @@ public sealed class FeatureToggleServiceTests
         Assert.True(provider.Current.Enabled);
         Assert.Equal(1, gesture.StartCount);
         Assert.Equal(1, edge.StartCount);
-    }
-
-    [Fact]
-    public async Task SetGestureEnabledAsync_off_then_on_restarts_services_like_tray_toggle()
-    {
-        // Mirrors tray: GetSnapshot uses IsEnabled, then SetGestureEnabled(!snapshot).
-        var gesture = new FakeMouseGestureService { IsEnabled = true };
-        var edge = new FakeEdgeTriggerService();
-        var provider = new FakeGestureSettingsProvider();
-        var service = CreateService(gesture: gesture, edge: edge, provider: provider);
-
-        Assert.True(service.GetSnapshot().GestureEnabled);
-
-        await service.SetGestureEnabledAsync(false, CancellationToken.None);
-        Assert.False(gesture.IsEnabled);
-        Assert.False(provider.Current.Enabled);
-        Assert.Equal(1, gesture.StopCount);
-
-        // Snapshot must report disabled so the next tray click enables instead of disabling again.
-        Assert.False(service.GetSnapshot().GestureEnabled);
-
-        await service.SetGestureEnabledAsync(true, CancellationToken.None);
-        Assert.True(gesture.IsEnabled);
-        Assert.True(provider.Current.Enabled);
-        Assert.Equal(1, gesture.StartCount);
-        Assert.Equal(1, edge.StartCount);
-        Assert.True(service.GetSnapshot().GestureEnabled);
     }
 
     private static FeatureToggleService CreateService(

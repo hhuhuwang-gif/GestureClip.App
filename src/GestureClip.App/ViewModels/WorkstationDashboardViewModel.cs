@@ -32,14 +32,6 @@ public sealed class WorkstationDashboardViewModel : INotifyPropertyChanged
     private string _periodReportText = "点下面按钮生成本地周报或近 30 天总结，不上传。";
     private bool _periodExpanded = true;
 
-    public string AppVersionText =>
-        System.Reflection.CustomAttributeExtensions
-            .GetCustomAttribute<System.Reflection.AssemblyInformationalVersionAttribute>(
-                typeof(WorkstationDashboardViewModel).Assembly)?
-            .InformationalVersion
-            .Split('+')[0]
-        ?? "0.0.0";
-
     public WorkstationDashboardViewModel(
         IWorkstationDashboardService dashboardService,
         ISettingsService? settingsService = null,

@@ -56,11 +56,9 @@ public sealed class GestureOverlayWindowTests
 
         Assert.Contains("HorizontalAlignment=\"Center\"", xaml);
 
-        Assert.Contains("MinWidth=\"380\"", xaml);
+        Assert.Contains("MinWidth=\"720\"", xaml);
 
-        Assert.Contains("MaxWidth=\"520\"", xaml);
-
-        Assert.Contains("MinHeight=\"104\"", xaml);
+        Assert.Contains("MinHeight=\"200\"", xaml);
 
         Assert.Contains("BorderThickness=\"1\"", xaml);
 
@@ -90,17 +88,15 @@ public sealed class GestureOverlayWindowTests
 
         Assert.Contains("CompactGameHud", xaml);
 
-        Assert.Contains("DirectionText", xaml);
+        Assert.Contains("GestureActionStrip", xaml);
 
-        Assert.Contains("ActionName", xaml);
+        Assert.Contains("TodayStatsLine", xaml);
 
-        Assert.Contains("ShortcutText", xaml);
+        Assert.Contains("松开右键执行", xaml);
 
-        Assert.Contains("WorkStatusText", xaml);
+        Assert.Contains("普通右键不显示", xaml);
 
-        Assert.Contains("HudCardBrush", xaml);
-
-        Assert.DoesNotContain("MinHeight=\"200\"", xaml);
+        Assert.Contains("MinHeight=\"200\"", xaml);
 
         Assert.DoesNotContain("MaxHeight=", xaml);
 
@@ -111,10 +107,6 @@ public sealed class GestureOverlayWindowTests
         Assert.DoesNotContain("UniformGrid", xaml);
 
         Assert.DoesNotContain("PIXEL STATUS", xaml);
-
-        Assert.DoesNotContain("TodayStatsLine", xaml);
-
-        Assert.DoesNotContain("GestureActionStrip", xaml);
 
     }
 
@@ -140,9 +132,7 @@ public sealed class GestureOverlayWindowTests
 
         Assert.Contains("ShortcutText", xaml);
 
-        Assert.Contains("WorkStatusText", xaml);
-
-        Assert.DoesNotContain("PresetName", xaml);
+        Assert.Contains("PresetName", xaml);
 
     }
 
@@ -162,27 +152,41 @@ public sealed class GestureOverlayWindowTests
 
 
 
+        Assert.Contains("工位小熊", xaml);
+
         Assert.Contains("WorkStatusText", xaml);
 
-        Assert.Contains("HudAccentBrush", xaml);
+        Assert.Contains("GestureCountText", xaml);
+
+        Assert.Contains("CopyCountText", xaml);
+
+        Assert.Contains("PasteCountText", xaml);
+
+        Assert.Contains("SavedClicksCountText", xaml);
 
         Assert.Contains("Microsoft YaHei UI", xaml);
 
+        Assert.Contains("WorkSummaryText", xaml);
+
         Assert.Contains("SnapsToDevicePixels=\"True\"", xaml);
 
-        Assert.DoesNotContain("GestureCountText", xaml);
+        Assert.Contains("WorkSummaryText", xaml);
 
-        Assert.DoesNotContain("CopyCountText", xaml);
+        Assert.Contains("FunText", xaml);
 
-        Assert.DoesNotContain("PasteCountText", xaml);
+        Assert.Contains("LevelText", xaml);
 
-        Assert.DoesNotContain("SavedClicksCountText", xaml);
+        Assert.Contains("XpText", xaml);
 
-        Assert.DoesNotContain("WorkSummaryText", xaml);
+        Assert.Contains("GainedXpText", xaml);
+
+        Assert.Contains("GestureCountText", xaml);
 
         Assert.DoesNotContain("TodayFishingValueText", xaml);
 
-        Assert.DoesNotContain("FunText", xaml);
+        Assert.Contains("WorkSummaryText", xaml);
+
+        Assert.Contains("GestureCountText", xaml);
 
     }
 
@@ -208,11 +212,9 @@ public sealed class GestureOverlayWindowTests
 
         Assert.DoesNotContain("MaxHeight=", xaml);
 
-        Assert.Contains("DirectionText", xaml);
+        Assert.Contains("MinWidth=\"720\"", xaml);
 
-        Assert.Contains("TextTrimming=\"CharacterEllipsis\"", xaml);
-
-        Assert.Contains("MinHeight=\"104\"", xaml);
+        Assert.Contains("MinHeight=\"200\"", xaml);
 
     }
 
@@ -220,7 +222,7 @@ public sealed class GestureOverlayWindowTests
 
     [Fact]
 
-    public void GestureOverlayWindow_reserves_enough_vertical_space_for_direction_and_status()
+    public void GestureOverlayWindow_reserves_enough_vertical_space_for_workstation_cards()
 
     {
 
@@ -232,11 +234,9 @@ public sealed class GestureOverlayWindowTests
 
 
 
-        Assert.Contains("MinHeight=\"104\"", xaml);
+        Assert.Contains("MinHeight=\"200\"", xaml);
 
-        Assert.Contains("Width=\"56\"", xaml);
-
-        Assert.Contains("Height=\"56\"", xaml);
+        Assert.Contains("MinWidth=\"720\"", xaml);
 
         Assert.DoesNotContain("Height=\"150\"", xaml);
 
@@ -420,7 +420,7 @@ public sealed class GestureOverlayWindowTests
 
     [Fact]
 
-    public void GestureOverlayWindow_keeps_fun_report_level_fields_off_canvas()
+    public void GestureOverlayWindow_shows_fun_report_level_and_xp()
 
     {
 
@@ -436,11 +436,17 @@ public sealed class GestureOverlayWindowTests
 
 
 
-        Assert.DoesNotContain("FunText", xaml);
+        Assert.Contains("FunText", xaml);
 
-        Assert.DoesNotContain("GainedXpText", xaml);
+        Assert.Contains("GainedXpText", xaml);
 
-        Assert.DoesNotContain("LevelText", xaml);
+        Assert.Contains("LevelText", xaml);
+
+        Assert.Contains("XpText", xaml);
+
+        Assert.Contains("WorkSummaryText", xaml);
+
+        Assert.Contains("GestureCountText", xaml);
 
         Assert.Contains("FunText", viewModel);
 
@@ -448,28 +454,38 @@ public sealed class GestureOverlayWindowTests
 
         Assert.Contains("XpProgressPercent", viewModel);
 
+        Assert.Contains("ProgressBar", xaml);
+
+        Assert.Contains("Maximum=\"1\"", xaml);
+
+        Assert.Contains("Value=\"{Binding XpProgressPercent}\"", xaml);
+
     }
 
 
     [Fact]
-    public void GestureOverlayWindow_draws_only_never_intercepts_mouse_and_hides_on_fixed_delay()
+    public void GestureOverlayWindow_exposes_unbind_bind_action_bar()
     {
         var path = FindRepositoryFile("src", "GestureClip.App", "GestureOverlayWindow.xaml");
         var xaml = File.ReadAllText(path);
         var vm = File.ReadAllText(FindRepositoryFile("src", "GestureClip.App", "ViewModels", "GestureOverlayViewModel.cs"));
+        var life = File.ReadAllText(FindRepositoryFile("src", "GestureClip.Core", "Abstractions", "IAppLifecycleService.cs"));
         var overlay = File.ReadAllText(FindRepositoryFile("src", "GestureClip.App", "Services", "GestureOverlayService.cs"));
         var mouse = File.ReadAllText(FindRepositoryFile("src", "GestureClip.Features", "Gestures", "MouseGestureService.cs"));
+        var settingsVm = File.ReadAllText(FindRepositoryFile("src", "GestureClip.App", "ViewModels", "SettingsViewModel.Gestures.cs"));
 
-        // Bind CTA was removed in P1: HUD is draw-only and must never intercept input.
-        Assert.DoesNotContain("BindActionBar", xaml);
-        Assert.DoesNotContain("ShowBindAction", xaml);
-        Assert.DoesNotContain("BindUnboundGestureCommand", xaml);
-        Assert.DoesNotContain("去绑定", vm);
-        Assert.DoesNotContain("_holdForBindAction", overlay);
-        Assert.DoesNotContain("4500", overlay);
-        Assert.Contains("IsHitTestVisible = false", overlay);
-        Assert.Contains("HideDelayMilliseconds", overlay);
+        Assert.Contains("BindActionBar", xaml);
+        Assert.Contains("ShowBindAction", xaml);
+        Assert.Contains("BindUnboundGestureCommand", xaml);
+        Assert.Contains("去绑定", vm);
+        Assert.Contains("BindActionButtonText", xaml);
+        Assert.Contains("ShowBindAction", vm);
+        Assert.Contains("ShowGestureBindingEditor", vm);
+        Assert.Contains("ShowGestureBindingEditor", life);
+        Assert.Contains("_holdForBindAction", overlay);
+        Assert.Contains("4500", overlay);
         Assert.Contains("resolvedAction != BuiltInGestureAction.None", mouse);
+        Assert.Contains("FocusGestureBinding", settingsVm);
     }
 
     private static string FindRepositoryFile(params string[] segments)

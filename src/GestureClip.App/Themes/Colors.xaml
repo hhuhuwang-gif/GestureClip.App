@@ -92,31 +92,4 @@
     <Color x:Key="ColorTileAmberBorder">#55F59E0B</Color>
     <Color x:Key="ColorTileAmberLabel">#D97706</Color>
     <Color x:Key="ColorTileAmberValue">#B45309</Color>
-    <!-- ===== Modern iOS semantic palette (Light) ===== -->
-    <Color x:Key="ColorModernAppBackground">#F5F5F7</Color>
-    <Color x:Key="ColorModernSurface">#FFFFFF</Color>
-    <Color x:Key="ColorModernSurfaceSecondary">#F2F2F4</Color>
-    <Color x:Key="ColorModernSurfaceElevated">#FFFFFF</Color>
-    <Color x:Key="ColorModernSurfaceHover">#EEEEF2</Color>
-    <Color x:Key="ColorModernSurfacePressed">#E5E5EA</Color>
-    <Color x:Key="ColorModernTextPrimary">#1C1C1E</Color>
-    <Color x:Key="ColorModernTextSecondary">#6E6E73</Color>
-    <Color x:Key="ColorModernTextTertiary">#A1A1A6</Color>
-    <Color x:Key="ColorModernSeparator">#E5E5EA</Color>
-    <Color x:Key="ColorModernAccent">#3478F6</Color>
-    <Color x:Key="ColorModernAccentSoft">#E9F0FE</Color>
-    <Color x:Key="ColorModernAccentSoftPressed">#DCE7FD</Color>
-    <Color x:Key="ColorModernAccentText">#FFFFFF</Color>
-    <Color x:Key="ColorModernDanger">#FF3B30</Color>
-    <Color x:Key="ColorModernDangerSoft">#FFEBEA</Color>
-    <Color x:Key="ColorModernSuccess">#34C759</Color>
-    <Color x:Key="ColorModernSuccessSoft">#E7F8EC</Color>
-    <Color x:Key="ColorModernWarning">#FF9F0A</Color>
-    <Color x:Key="ColorModernWarningSoft">#FFF3E0</Color>
-    <Color x:Key="ColorModernFill">#F2F2F7</Color>
-    <Color x:Key="ColorModernFillHover">#E9E9EF</Color>
-    <Color x:Key="ColorModernRowSeparator">#1A1C1C1E</Color>
-    <Color x:Key="ColorModernScrim">#59000000</Color>
-    <Color x:Key="ColorModernWindowEdge">#14000000</Color>
-    <Color x:Key="ColorModernHudCard">#E6FFFFFF</Color>
 </ResourceDictionary>

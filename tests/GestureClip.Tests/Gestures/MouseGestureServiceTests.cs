@@ -25,28 +25,6 @@ public sealed class MouseGestureServiceTests
     }
 
     [Fact]
-    public async Task StopAsync_clears_IsEnabled_so_feature_toggle_can_restart()
-    {
-        var hook = new FakeLowLevelMouseHook();
-        var service = CreateService(hook);
-
-        await service.StartAsync(CancellationToken.None);
-        Assert.True(service.IsEnabled);
-
-        await service.StopAsync(CancellationToken.None);
-        Assert.False(service.IsEnabled);
-
-        // Idempotent stop must keep the flag false (tray may call stop twice).
-        await service.StopAsync(CancellationToken.None);
-        Assert.False(service.IsEnabled);
-
-        await service.StartAsync(CancellationToken.None);
-        Assert.True(service.IsEnabled);
-        Assert.Equal(2, hook.StartCount);
-        Assert.Equal(1, hook.StopCount);
-    }
-
-    [Fact]
     public async Task Right_click_without_threshold_suppresses_original_events_and_synthesizes_normal_right_click()
     {
         var hook = new FakeLowLevelMouseHook();

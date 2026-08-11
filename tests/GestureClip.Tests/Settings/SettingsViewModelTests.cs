@@ -967,7 +967,6 @@ public sealed class SettingsViewModelTests
             RefreshCount++;
             return Task.CompletedTask;
         }
-        public Task WarmUpAsync() => Task.CompletedTask;
     }
 
     private sealed class FakeSettingsService : ISettingsService

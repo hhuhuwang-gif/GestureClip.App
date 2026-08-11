@@ -17,7 +17,6 @@ public sealed class ThemeResourceTests
         Assert.Contains("Themes/Brushes.xaml", appXaml);
         Assert.Contains("Themes/Controls.xaml", appXaml);
         Assert.Contains("Themes/GlassStyles.xaml", appXaml);
-        Assert.Contains("Themes/ModernStyles.xaml", appXaml);
     }
 
     [Fact]
@@ -138,18 +137,16 @@ public sealed class ThemeResourceTests
     }
 
     [Fact]
-    public void ClipboardOverlayWindow_uses_lightweight_nontransparent_styling()
+    public void ClipboardOverlayWindow_uses_glass_panel_styling()
     {
         var path = FindRepositoryFile("src", "GestureClip.App", "ClipboardOverlayWindow.xaml");
         var xaml = File.ReadAllText(path);
 
         Assert.Contains("Width=\"860\"", xaml);
         Assert.Contains("Height=\"760\"", xaml);
-        Assert.DoesNotContain("AllowsTransparency=\"True\"", xaml);
-        Assert.Contains("AllowsTransparency=\"False\"", xaml);
+        Assert.Contains("AllowsTransparency=\"True\"", xaml);
         Assert.Contains("CornerRadius=\"18\"", xaml);
-        Assert.Contains("Background=\"{DynamicResource AppBackgroundBrush}\"", xaml);
-        Assert.DoesNotContain("DropShadowEffect", xaml);
+        Assert.Contains("Background=\"{DynamicResource BrushOverlayPanel}\"", xaml);
         Assert.Contains("IsSelected", xaml);
         Assert.Contains("ShortcutNumberConverter", xaml);
         Assert.Contains("VirtualizingPanel.IsVirtualizing=\"True\"", xaml);
@@ -158,6 +155,7 @@ public sealed class ThemeResourceTests
         Assert.Contains("ScrollViewer.IsDeferredScrollingEnabled=\"True\"", xaml);
         Assert.Contains("<VirtualizingStackPanel />", xaml);
         Assert.Contains("Binding ThumbnailContent, IsAsync=True", xaml);
+        Assert.Contains("Binding SelectedItem.ThumbnailContent, IsAsync=True", xaml);
     }
 
 
@@ -175,45 +173,40 @@ public sealed class ThemeResourceTests
     }
 
     [Fact]
-    public void ClipboardOverlayWindow_exposes_row_more_button_menus()
+    public void ClipboardOverlayWindow_exposes_detail_action_buttons()
     {
-        var xamlPath = FindRepositoryFile("src", "GestureClip.App", "ClipboardOverlayWindow.xaml");
-        var sourcePath = FindRepositoryFile("src", "GestureClip.App", "ClipboardOverlayWindow.xaml.cs");
-        var xaml = File.ReadAllText(xamlPath);
-        var source = File.ReadAllText(sourcePath);
+        var path = FindRepositoryFile("src", "GestureClip.App", "ClipboardOverlayWindow.xaml");
+        var xaml = File.ReadAllText(path);
 
-        Assert.Contains("x:Name=\"RowMoreButton\"", xaml);
-        Assert.Contains("Click=\"RowMoreButton_Click\"", xaml);
-        Assert.Contains("RowMoreButton_Click", source);
-        Assert.Contains("ContextMenu_Opened", xaml);
-        Assert.Contains("ContextMenu_Closed", xaml);
-        Assert.Contains("ContextMenu_Opened", source);
-        Assert.Contains("TogglePinnedMenuItem_Click", xaml);
-        Assert.Contains("ToggleFavoriteMenuItem_Click", xaml);
-        Assert.Contains("DeleteSelectedMenuItem_Click", xaml);
+        Assert.Contains("x:Name=\"DetailCopyButton\"", xaml);
+        Assert.Contains("x:Name=\"DetailPasteButton\"", xaml);
+        Assert.Contains("x:Name=\"DetailPinButton\"", xaml);
+        Assert.Contains("x:Name=\"DetailFavoriteButton\"", xaml);
+        Assert.Contains("x:Name=\"DetailDeleteButton\"", xaml);
     }
 
     [Fact]
-    public void ClipboardOverlayWindow_exposes_per_item_context_menu_with_delete()
+    public void ClipboardOverlayWindow_exposes_per_item_quick_action_buttons()
     {
         var xamlPath = FindRepositoryFile("src", "GestureClip.App", "ClipboardOverlayWindow.xaml");
         var sourcePath = FindRepositoryFile("src", "GestureClip.App", "ClipboardOverlayWindow.xaml.cs");
         var xaml = File.ReadAllText(xamlPath);
         var source = File.ReadAllText(sourcePath);
 
-        Assert.Contains("<ListBox.ContextMenu>", xaml);
-        Assert.Contains("PlacementTarget.DataContext", xaml);
-        Assert.Contains("RowMoreButton_Click", source);
+        Assert.Contains("x:Name=\"ItemQuickCopyButton\"", xaml);
+        Assert.Contains("x:Name=\"ItemQuickPasteButton\"", xaml);
+        Assert.Contains("x:Name=\"ItemQuickPinButton\"", xaml);
+        Assert.Contains("x:Name=\"ItemQuickDeleteButton\"", xaml);
+        Assert.Contains("QuickCopyItemButton_Click", source);
+        Assert.Contains("QuickPasteItemButton_Click", source);
+        Assert.Contains("QuickPinItemButton_Click", source);
+        Assert.Contains("QuickDeleteItemButton_Click", source);
         Assert.Contains("ConfirmDeleteSelectedItems", source);
         Assert.Contains("删除剪贴板记录", source);
         Assert.Contains("这会从本机剪贴板历史里删除", source);
         Assert.Contains("SelectSingleItem", source);
         Assert.Contains("CopyItemAndHideAsync", source);
         Assert.Contains("OriginalSource", source);
-        Assert.DoesNotContain("ItemQuickCopyButton", xaml);
-        Assert.DoesNotContain("ItemQuickPasteButton", xaml);
-        Assert.DoesNotContain("ItemQuickPinButton", xaml);
-        Assert.DoesNotContain("ItemQuickDeleteButton", xaml);
     }
 
     [Fact]
@@ -261,11 +254,10 @@ public sealed class ThemeResourceTests
         var xaml = File.ReadAllText(path);
 
         Assert.Contains("ShortcutHintText", xaml);
-        Assert.Contains("ModernSegmentStyle", xaml);
-        Assert.Contains("SegmentedBarStyle", xaml);
+        Assert.Contains("IconToolbarButtonStyle", xaml);
+        Assert.Contains("SegmentedFilter", xaml);
         Assert.Contains("EmptyStatePanelStyle", xaml);
         Assert.Contains("ShortcutHelpText", xaml);
-        Assert.Contains("ModernIconButtonStyle", xaml);
     }
 
     [Fact]
@@ -361,7 +353,7 @@ public sealed class ThemeResourceTests
     }
 
     [Fact]
-    public void ClipboardOverlay_uses_async_image_thumbnails_without_base64_text_for_images()
+    public void ClipboardOverlay_uses_large_image_preview_cards_without_base64_text_for_images()
     {
         var path = FindRepositoryFile("src", "GestureClip.App", "ClipboardOverlayWindow.xaml");
         var codeBehindPath = FindRepositoryFile("src", "GestureClip.App", "ClipboardOverlayWindow.xaml.cs");
@@ -369,13 +361,18 @@ public sealed class ThemeResourceTests
         var codeBehind = File.ReadAllText(codeBehindPath);
 
         Assert.Contains("图片缩略图", xaml);
-        Assert.Contains("图片记录 · 双击复制并关闭，可放回系统剪贴板", xaml);
+        Assert.Contains("双击复制并关闭，可放回系统剪贴板", xaml);
         Assert.Contains("CopySelectedAsync(GetSelectedItems())", codeBehind);
+        Assert.Contains("SelectedImagePreviewPanel", xaml);
         Assert.Contains("ImageItemPreviewTextBlock", xaml);
+        Assert.Contains("Height=\"260\"", xaml);
+        Assert.Contains("IsSelectedImage", xaml);
         Assert.Contains("Image Source=\"{Binding ThumbnailContent, IsAsync=True", xaml);
+        Assert.Contains("Image Source=\"{Binding SelectedItem.ThumbnailContent, IsAsync=True", xaml);
         Assert.DoesNotContain("Image Source=\"{Binding TextContent", xaml);
         Assert.DoesNotContain("Image Source=\"{Binding SelectedItem.TextContent", xaml);
-        Assert.DoesNotContain("SelectedImagePreviewPanel", xaml);
+        Assert.DoesNotContain("_viewModel.SelectedItem?.IsImage == true", codeBehind);
+        Assert.Contains("CopySelectedAsync(GetSelectedItems())", codeBehind);
     }
 
     [Fact]
@@ -477,7 +474,7 @@ public sealed class ThemeResourceTests
         Assert.Contains("WorkstationPageIntro", xaml);
         Assert.Contains("DiagnosticsPageIntro", xaml);
         Assert.Contains("AboutPageIntro", xaml);
-        Assert.Contains("GestureClip 本地优先：剪贴板历史与鼠标手势都在本机运行，不上传任何内容。", xaml);
+        Assert.Contains("确认权限、数据位置与运行状态", xaml);
         Assert.Contains("控制是否记录历史", xaml);
         Assert.Contains("去设计 / 更换动作", xaml);
         Assert.Contains("规则只在本机生效", xaml);
@@ -511,6 +508,7 @@ public sealed class ThemeResourceTests
         Assert.Contains("Style=\"{StaticResource SettingsCompactActionButtonStyle}\"", xaml);
         Assert.Contains("Style=\"{StaticResource SettingsGestureTemplateButtonStyle}\"", xaml);
         Assert.Contains("Width=\"200\"", xaml);
+        Assert.Contains("Width=\"240\"", xaml);
         Assert.Contains("NavColumn", xaml);
         Assert.Contains("RailColumn", xaml);
         Assert.Contains("SettingsSearchBox", xaml);
@@ -545,8 +543,7 @@ public sealed class ThemeResourceTests
         var xaml = File.ReadAllText(path);
 
         Assert.Contains("工位小熊", xaml);
-        Assert.Contains("AppVersionText", xaml);
-        Assert.Contains("AppVersionText, StringFormat={}{0} · 本地", xaml);
+        Assert.Contains("v0.6.39 · 本地", xaml);
         Assert.Contains("UniformGrid", xaml);
         Assert.Contains("OffWorkCountdownText", xaml);
         Assert.Contains("TodayEarnedText", xaml);
@@ -566,7 +563,6 @@ public sealed class ThemeResourceTests
         Assert.Contains("DailyReportDisplayText", xaml);
         Assert.Contains("GlassScrollViewerStyle", xaml);
         Assert.DoesNotContain("#FBFBFD", xaml);
-        Assert.DoesNotContain("DropShadowEffect", xaml);
         Assert.DoesNotContain("#EAF3FF", xaml);
     }
 
@@ -848,7 +844,8 @@ public sealed class ThemeResourceTests
         var path = FindRepositoryFile("src", "GestureClip.App", "GestureOverlayWindow.xaml");
         var xaml = File.ReadAllText(path);
 
-        Assert.Contains("Background=\"{DynamicResource HudCardBrush}\"", xaml);
+        Assert.Contains("Background=\"{Binding HudBackgroundBrush}\"", xaml);
+        Assert.Contains("Foreground=\"{Binding HudAccentBrush}\"", xaml);
         Assert.Contains("Foreground=\"{Binding HudAccentBrush}\"", xaml);
         Assert.Contains("HudAccentBrush", xaml);
     }
@@ -859,18 +856,17 @@ public sealed class ThemeResourceTests
         var path = FindRepositoryFile("src", "GestureClip.App", "GestureOverlayWindow.xaml");
         var xaml = File.ReadAllText(path);
 
-        Assert.Contains("HudCardBrush", xaml);
+        Assert.Contains("Background=\"#F0111724\"", xaml);
+        Assert.Contains("手势码", xaml);
         Assert.Contains("Microsoft YaHei UI", xaml);
         Assert.Contains("TextRenderingMode=\"Grayscale\"", xaml);
-        Assert.Contains("DirectionText", xaml);
-        Assert.Contains("ActionName", xaml);
-        Assert.Contains("ShortcutText", xaml);
-        Assert.Contains("WorkStatusText", xaml);
-        Assert.Contains("HudMonoText", xaml);
+        Assert.Contains("GestureCountText", xaml);
+        Assert.Contains("CopyCountText", xaml);
+        Assert.Contains("PasteCountText", xaml);
+        Assert.Contains("SavedClicksCountText", xaml);
+        Assert.Contains("HudStatChip", xaml);
+        Assert.Contains("TodayStatsLine", xaml);
         Assert.DoesNotContain("Pattern: ", xaml);
-        Assert.DoesNotContain("GestureCountText", xaml);
-        Assert.DoesNotContain("HudStatChip", xaml);
-        Assert.DoesNotContain("TodayStatsLine", xaml);
     }
 
     [Fact]

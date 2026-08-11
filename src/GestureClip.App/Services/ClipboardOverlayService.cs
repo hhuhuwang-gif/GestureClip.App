@@ -13,8 +13,6 @@ public sealed class ClipboardOverlayService : IClipboardOverlayService
     private readonly IWorkstationDashboardService _workstationDashboardService;
     private readonly ILogger<ClipboardOverlayService> _logger;
     private readonly bool _perfLogEnabled;
-    private static readonly Stopwatch PerfClock = Stopwatch.StartNew();
-    private long _lastHotkeyTicks;
     private ClipboardOverlayWindow? _window;
 
     public ClipboardOverlayService(
@@ -32,11 +30,9 @@ public sealed class ClipboardOverlayService : IClipboardOverlayService
 
     public async Task ShowAsync()
     {
-        MarkHotkeyReceived();
         await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
         {
             var window = EnsureWindow();
-            AttachFirstFrameHook(window);
             window.Show();
             window.Activate();
             window.FocusSearchBox();
@@ -47,7 +43,6 @@ public sealed class ClipboardOverlayService : IClipboardOverlayService
 
     public async Task ToggleAsync()
     {
-        MarkHotkeyReceived();
         await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
         {
             var window = EnsureWindow();
@@ -57,38 +52,12 @@ public sealed class ClipboardOverlayService : IClipboardOverlayService
                 return;
             }
 
-            AttachFirstFrameHook(window);
             window.Show();
             window.Activate();
             window.FocusSearchBox();
             RecordOpenInBackground();
             _ = LoadHistoryWithPerfAsync(window);
         });
-    }
-
-    private void MarkHotkeyReceived()
-    {
-        _lastHotkeyTicks = PerfClock.ElapsedTicks;
-    }
-
-    private void AttachFirstFrameHook(ClipboardOverlayWindow window)
-    {
-        if (!_perfLogEnabled)
-        {
-            return;
-        }
-
-        window.ContentRendered -= OnFirstFrameRendered;
-        window.ContentRendered += OnFirstFrameRendered;
-    }
-
-    private void OnFirstFrameRendered(object? sender, EventArgs e)
-    {
-        var window = (ClipboardOverlayWindow)sender;
-        _logger.LogInformation(
-            "ClipboardPerf HotkeyToFirstFrameMs ElapsedMs={ElapsedMs}",
-            PerfClock.ElapsedMilliseconds - _lastHotkeyTicks);
-        window.ContentRendered -= OnFirstFrameRendered;
     }
 
     private void RecordOpenInBackground()
@@ -117,32 +86,6 @@ public sealed class ClipboardOverlayService : IClipboardOverlayService
         });
     }
 
-    /// <summary>
-    /// Warms the data layer (DB connection, query plan, item pool) at startup without
-    /// constructing the overlay's visual tree. The window itself is built on first Show,
-    /// where a non-layered Mica surface + batched item binding keeps the first frame fast.
-    /// </summary>
-    public Task WarmUpAsync()
-    {
-        try
-        {
-            _ = Task.Run(async () =>
-            {
-                await _serviceProvider.GetRequiredService<IClipboardService>().SearchAsync(
-                    "", SmartSearchPoolSize, 0, CancellationToken.None);
-            });
-        }
-        catch (Exception ex)
-        {
-            // Optional pre-warm only; a failure here must not break startup.
-            _logger.LogWarning(ex, "Clipboard data warm-up failed.");
-        }
-
-        return Task.CompletedTask;
-    }
-
-    private const int SmartSearchPoolSize = 200;
-
     private ClipboardOverlayWindow EnsureWindow()
     {
         if (_window is not null)
@@ -168,7 +111,6 @@ public sealed class ClipboardOverlayService : IClipboardOverlayService
             if (_perfLogEnabled)
             {
                 _logger.LogInformation("ClipboardPerf OverlayLoadMs ElapsedMs={ElapsedMs}", watch.ElapsedMilliseconds);
-                _logger.LogInformation("ClipboardPerf HotkeyToInteractiveMs ElapsedMs={ElapsedMs}", PerfClock.ElapsedMilliseconds - _lastHotkeyTicks);
             }
         }
     }

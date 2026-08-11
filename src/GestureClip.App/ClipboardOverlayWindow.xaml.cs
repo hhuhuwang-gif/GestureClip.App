@@ -2,7 +2,6 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
-using GestureClip.App.Services;
 using GestureClip.App.ViewModels;
 using GestureClip.Core.Abstractions;
 using GestureClip.Core.Clipboard;
@@ -17,7 +16,6 @@ public partial class ClipboardOverlayWindow : Window
     private readonly IConfirmationService _confirmationService;
     private bool _alwaysVisible;
     private bool _isContextMenuOpen;
-    private bool _micaApplied;
 
     public ClipboardOverlayWindow(
         ClipboardOverlayViewModel viewModel,
@@ -32,17 +30,6 @@ public partial class ClipboardOverlayWindow : Window
         HistoryList.AlternationCount = 10;
         SetAlwaysVisible(_settingsService.Get(SettingKeys.ClipboardOverlayAlwaysVisible, false), persist: false);
         IsVisibleChanged += ClipboardOverlayWindow_IsVisibleChanged;
-    }
-
-    protected override void OnSourceInitialized(EventArgs e)
-    {
-        base.OnSourceInitialized(e);
-        var isDark = _settingsService.Get(SettingKeys.UiThemeMode, "Dark") != "Light";
-        _micaApplied = WindowBackdrop.TryApplyMica(this, isDark);
-        if (_micaApplied)
-        {
-            RootBorder.SetResourceReference(BackgroundProperty, "BrushBackdropWash");
-        }
     }
 
     private void ClipboardOverlayWindow_IsVisibleChanged(object sender, DependencyPropertyChangedEventArgs e)
@@ -391,26 +378,14 @@ public partial class ClipboardOverlayWindow : Window
         _isContextMenuOpen = false;
     }
 
+    private void ScrollTopButton_Click(object sender, RoutedEventArgs e)
+    {
+        ScrollToTopAndSelectLatest();
+    }
+
     private void ShortcutHelpButton_Click(object sender, RoutedEventArgs e)
     {
         _viewModel.ToggleShortcutHelp();
-    }
-
-    private void RowMoreButton_Click(object sender, RoutedEventArgs e)
-    {
-        if (sender is FrameworkElement { DataContext: ClipboardItem item })
-        {
-            SelectSingleItem(item);
-            HistoryList.ScrollIntoView(item);
-        }
-
-        if (HistoryList.ContextMenu is { } menu)
-        {
-            menu.PlacementTarget = HistoryList;
-            menu.Placement = System.Windows.Controls.Primitives.PlacementMode.MousePoint;
-            menu.IsOpen = true;
-            e.Handled = true;
-        }
     }
 
     private void ShortcutHelpBackdrop_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
@@ -556,6 +531,11 @@ public partial class ClipboardOverlayWindow : Window
 
     private async void HistoryList_ScrollChanged(object sender, ScrollChangedEventArgs e)
     {
+        if (ScrollTopButton is not null)
+        {
+            ScrollTopButton.Opacity = e.VerticalOffset > 24 ? 1.0 : 0.55;
+        }
+
         if (e.VerticalChange <= 0 || !_viewModel.CanLoadMore)
         {
             return;
@@ -767,6 +747,30 @@ public partial class ClipboardOverlayWindow : Window
         await _viewModel.TransformSelectedTextAsync(ClipboardTextTransform.UrlDecode);
     }
 
+    private async void QuickCopyItemButton_Click(object sender, RoutedEventArgs e)
+    {
+        if (GetItemFromSender(sender) is not { } item)
+        {
+            return;
+        }
+
+        SelectSingleItem(item);
+        await _viewModel.CopySelectedAsync([item]);
+        e.Handled = true;
+    }
+
+    private async void QuickPasteItemButton_Click(object sender, RoutedEventArgs e)
+    {
+        if (GetItemFromSender(sender) is not { } item)
+        {
+            return;
+        }
+
+        SelectSingleItem(item);
+        await PasteWithFocusRestoreAsync(keepOverlayOpen: false);
+        e.Handled = true;
+    }
+
     private async Task CopyItemAndHideAsync(ClipboardItem item)
     {
         SelectSingleItem(item);
@@ -774,6 +778,35 @@ public partial class ClipboardOverlayWindow : Window
         {
             HideOverlayAndReleaseFocus();
         }
+    }
+
+    private async void QuickPinItemButton_Click(object sender, RoutedEventArgs e)
+    {
+        if (GetItemFromSender(sender) is not { } item)
+        {
+            return;
+        }
+
+        SelectSingleItem(item);
+        await _viewModel.ToggleSelectedPinnedAsync();
+        e.Handled = true;
+    }
+
+    private async void QuickDeleteItemButton_Click(object sender, RoutedEventArgs e)
+    {
+        if (GetItemFromSender(sender) is not { } item)
+        {
+            return;
+        }
+
+        SelectSingleItem(item);
+        if (ConfirmDeleteSelectedItems([item]))
+        {
+            await _viewModel.DeleteItemsAsync([item]);
+            SyncListSelectionFromViewModel();
+        }
+
+        e.Handled = true;
     }
 
     private bool ConfirmDeleteSelectedItems(IReadOnlyList<ClipboardItem> selectedItems)
@@ -799,6 +832,13 @@ public partial class ClipboardOverlayWindow : Window
         HistoryList.SelectedItems.Clear();
         HistoryList.SelectedItem = item;
         _viewModel.SelectedItem = item;
+    }
+
+    private static ClipboardItem? GetItemFromSender(object sender)
+    {
+        return sender is FrameworkElement { DataContext: ClipboardItem item }
+            ? item
+            : null;
     }
 
     private static ClipboardItem? GetItemFromOriginalSource(object source)
@@ -829,7 +869,7 @@ public partial class ClipboardOverlayWindow : Window
         PrepareForExternalPaste();
         try
         {
-            await Task.Delay(50);
+            await Task.Delay(90);
             await _viewModel.PasteSelectedAsync(keepOverlayOpen);
         }
         finally
@@ -846,7 +886,7 @@ public partial class ClipboardOverlayWindow : Window
         PrepareForExternalPaste();
         try
         {
-            await Task.Delay(50);
+            await Task.Delay(90);
             await _viewModel.PasteByIndexAsync(index);
         }
         finally

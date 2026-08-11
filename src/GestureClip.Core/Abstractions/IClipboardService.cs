@@ -16,15 +16,6 @@ public interface IClipboardService
 
     void SuppressCaptureFor(TimeSpan duration);
 
-    /// <summary>
-    /// Registers content GestureClip itself just wrote to the system clipboard so the
-    /// capture pipeline can ignore only that exact content (hash match), never a
-    /// different user copy that happens right after.
-    /// </summary>
-    void RegisterInternalWrite(string content)
-    {
-    }
-
     Task CaptureTextAsync(ClipboardCapture capture, CancellationToken cancellationToken);
 
     Task<IReadOnlyList<ClipboardItem>> SearchAsync(string keyword, int limit, CancellationToken cancellationToken);

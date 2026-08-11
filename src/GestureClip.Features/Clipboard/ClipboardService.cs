@@ -36,9 +36,6 @@ public sealed class ClipboardService : IClipboardService
     private readonly object _usageSync = new();
     private readonly Dictionary<Guid, int> _pendingUseCounts = [];
     private Task? _usageFlushTask;
-    private readonly object _internalWriteSync = new();
-    private readonly List<InternalWrite> _internalWrites = [];
-    private DateTimeOffset _unknownSuppressUntil = DateTimeOffset.MinValue;
 
     public ClipboardService(
         IClipboardListener clipboardListener,
@@ -151,77 +148,9 @@ public sealed class ClipboardService : IClipboardService
         _logger.LogInformation("Clipboard capture state changed to {CaptureEnabled}.", enabled);
     }
 
-    /// <summary>
-    /// Legacy time-window suppression, kept for callers that cannot name the content
-    /// they write (diagnostics export etc.). It blocks captures ONLY while no exact
-    /// content match is possible; callers that know their content should prefer
-    /// <see cref="RegisterInternalWrite"/> which never blocks a different user copy.
-    /// </summary>
     public void SuppressCaptureFor(TimeSpan duration)
     {
         SuppressCaptureUntil = DateTimeOffset.UtcNow.Add(duration);
-        _unknownSuppressUntil = SuppressCaptureUntil.Value;
-    }
-
-    public void RegisterInternalWrite(string content)
-    {
-        if (string.IsNullOrWhiteSpace(content))
-        {
-            return;
-        }
-
-        var hash = _clipboardHashService.ComputeHash(content);
-        lock (_internalWriteSync)
-        {
-            var now = DateTimeOffset.UtcNow;
-            _internalWrites.RemoveAll(write => write.ExpiresAt <= now);
-            _internalWrites.Add(new InternalWrite(hash, now.AddSeconds(3), Consumed: false));
-        }
-
-        // Content is known now: a blind time window must not swallow a different
-        // user copy that happens right after this internal write.
-        _unknownSuppressUntil = DateTimeOffset.MinValue;
-    }
-
-    /// <summary>
-    /// Returns true (and consumes the registration) when the captured content is the
-    /// exact echo of an internal GestureClip clipboard write that has not been seen yet.
-    /// A different content is never suppressed here.
-    /// </summary>
-    private bool ConsumeInternalWrite(string? textHash, string? plainTextHash)
-    {
-        if (string.IsNullOrEmpty(textHash))
-        {
-            return false;
-        }
-
-        lock (_internalWriteSync)
-        {
-            var now = DateTimeOffset.UtcNow;
-            for (var index = 0; index < _internalWrites.Count; index++)
-            {
-                var write = _internalWrites[index];
-                if (write.ExpiresAt <= now)
-                {
-                    continue;
-                }
-
-                if (string.Equals(write.Hash, textHash, StringComparison.Ordinal) ||
-                    (!string.IsNullOrEmpty(plainTextHash) &&
-                        string.Equals(write.Hash, plainTextHash, StringComparison.Ordinal)))
-                {
-                    _internalWrites.RemoveAt(index);
-                    return true;
-                }
-            }
-        }
-
-        return false;
-    }
-
-    private bool IsUnknownSuppressionActive()
-    {
-        return DateTimeOffset.UtcNow < _unknownSuppressUntil;
     }
 
     public async Task CaptureTextAsync(ClipboardCapture capture, CancellationToken cancellationToken)
@@ -229,6 +158,12 @@ public sealed class ClipboardService : IClipboardService
         if (!IsCaptureEnabled)
         {
             _logger.LogInformation("Clipboard capture skipped: disabled.");
+            return;
+        }
+
+        if (SuppressCaptureUntil is { } suppressUntil && DateTimeOffset.UtcNow < suppressUntil)
+        {
+            _logger.LogInformation("Clipboard capture skipped: suppressed after internal paste.");
             return;
         }
 
@@ -255,20 +190,6 @@ public sealed class ClipboardService : IClipboardService
         var plainTextHash = _clipboardHashService.ComputePlainTextHash(capture.Text);
         hashWatch.Stop();
         LogPerf("HashMs", hashWatch.ElapsedMilliseconds, ("ContentType", "text"));
-
-        // Only an exact echo of our own write is ignored; a different user copy right
-        // after an internal paste/copy is always captured.
-        if (ConsumeInternalWrite(hash, plainTextHash))
-        {
-            _logger.LogDebug("Clipboard capture skipped: echo of internal GestureClip write.");
-            return;
-        }
-
-        if (IsUnknownSuppressionActive())
-        {
-            _logger.LogInformation("Clipboard capture skipped: suppressed after internal write with unknown content.");
-            return;
-        }
 
         var dedupWatch = Stopwatch.StartNew();
         var existing = await _clipboardRepository.FindByHashAsync(hash, cancellationToken);
@@ -435,10 +356,9 @@ public sealed class ClipboardService : IClipboardService
                 return;
             }
 
-            RegisterInternalWrite(image.TextContent);
-            SuppressCaptureUntil = DateTimeOffset.UtcNow.AddSeconds(2);
+            SuppressCaptureFor(TimeSpan.FromMilliseconds(1500));
             await _clipboardWriter.SetImagePngBase64Async(image.TextContent, cancellationToken);
-            await Task.Delay(15, cancellationToken);
+            await Task.Delay(70, cancellationToken);
             await _clipboardWriter.SendPasteHotkeyAsync(cancellationToken);
             await RecordPasteUsageAsync(image.Id, DateTimeOffset.UtcNow, cancellationToken);
             pasteWatch.Stop();
@@ -468,10 +388,9 @@ public sealed class ClipboardService : IClipboardService
             pasteText = SmartPastePolicy.TransformForStrategy(pasteText, strategy);
         }
 
-        RegisterInternalWrite(pasteText);
-        SuppressCaptureUntil = DateTimeOffset.UtcNow.AddSeconds(2);
+        SuppressCaptureFor(TimeSpan.FromMilliseconds(1500));
         await _clipboardWriter.SetTextAsync(pasteText, cancellationToken);
-        await Task.Delay(15, cancellationToken);
+        await Task.Delay(70, cancellationToken);
         await _clipboardWriter.SendPasteHotkeyAsync(cancellationToken);
         await RecordPasteUsageAsync(textItem.Id, DateTimeOffset.UtcNow, cancellationToken);
         pasteWatch.Stop();
@@ -495,6 +414,7 @@ public sealed class ClipboardService : IClipboardService
                 "不能同时选文字和图片一起复制。请只选文本（可多条合并），或只选一张图片。");
         }
 
+        SuppressCaptureFor(TimeSpan.FromMilliseconds(1000));
         if (hasImage)
         {
             if (items.Count > 1)
@@ -509,7 +429,6 @@ public sealed class ClipboardService : IClipboardService
                 return;
             }
 
-            RegisterInternalWrite(image.TextContent);
             await _clipboardWriter.SetImagePngBase64Async(image.TextContent, cancellationToken);
             RecordUseCountInBackground([image.Id]);
             copyWatch.Stop();
@@ -539,11 +458,8 @@ public sealed class ClipboardService : IClipboardService
             return;
         }
 
-        RegisterInternalWrite(text);
-        SuppressCaptureUntil = DateTimeOffset.UtcNow.AddSeconds(2);
         await _clipboardWriter.SetTextAsync(text, cancellationToken);
-        // Let the new clipboard content settle so an immediate Ctrl+V sees it.
-        await Task.Delay(45, cancellationToken);
+        await WaitForClipboardSettleAsync(cancellationToken);
         RecordUseCountInBackground(textItems.Select(item => item.Id).ToArray());
         copyWatch.Stop();
         LogPerf("ClipboardCopyDurationMs", copyWatch.ElapsedMilliseconds, ("ContentType", "text"), ("ItemCount", items.Count));
@@ -655,27 +571,6 @@ public sealed class ClipboardService : IClipboardService
             if (imagePngBase64 is not null)
             {
                 await CaptureImageAsync(imagePngBase64, e.ChangedAt, cancellationToken);
-                return;
-            }
-
-            // Bounded retry for the WM_CLIPBOARDUPDATE ↔ content race: the system
-            // notifies us before the writing process has finished exposing formats,
-            // or another process briefly holds the clipboard lock. Never unlimited.
-            await Task.Delay(40, cancellationToken);
-            var retriedText = _clipboardTextReader.TryReadText();
-            if (!string.IsNullOrWhiteSpace(retriedText))
-            {
-                var foreground = _foregroundAppService.GetCurrent();
-                await CaptureTextAsync(
-                    new ClipboardCapture(retriedText, foreground.WindowTitle, foreground.ProcessName, e.ChangedAt),
-                    cancellationToken);
-                return;
-            }
-
-            var retriedImage = _clipboardTextReader.TryReadImagePngBase64();
-            if (retriedImage is not null)
-            {
-                await CaptureImageAsync(retriedImage, e.ChangedAt, cancellationToken);
             }
         }
         catch (OperationCanceledException)
@@ -695,15 +590,9 @@ public sealed class ClipboardService : IClipboardService
             return;
         }
 
-        if (ConsumeInternalWrite(_clipboardHashService.ComputeHash(pngBase64), plainTextHash: null))
+        if (SuppressCaptureUntil is { } suppressUntil && DateTimeOffset.UtcNow < suppressUntil)
         {
-            _logger.LogDebug("Clipboard image capture skipped: echo of internal GestureClip write.");
-            return;
-        }
-
-        if (IsUnknownSuppressionActive())
-        {
-            _logger.LogInformation("Clipboard image capture skipped: suppressed after internal write with unknown content.");
+            _logger.LogInformation("Clipboard image capture skipped: suppressed after internal paste.");
             return;
         }
 
@@ -829,6 +718,11 @@ public sealed class ClipboardService : IClipboardService
     {
         RecordUseCountInBackground([itemId]);
         await RecordPasteStatsAsync(now, cancellationToken);
+    }
+
+    private static Task WaitForClipboardSettleAsync(CancellationToken cancellationToken)
+    {
+        return Task.Delay(TimeSpan.FromMilliseconds(60), cancellationToken);
     }
 
     private void RecordUseCountInBackground(IReadOnlyList<Guid> itemIds)
@@ -979,6 +873,4 @@ public sealed class ClipboardService : IClipboardService
 
         return compact.Length <= 200 ? compact : compact[..200];
     }
-
-    private readonly record struct InternalWrite(string Hash, DateTimeOffset ExpiresAt, bool Consumed);
 }

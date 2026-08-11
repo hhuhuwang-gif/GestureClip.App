@@ -321,8 +321,6 @@ public sealed class GlobalHotkeyServiceTests
             RefreshCount++;
             return Task.CompletedTask;
         }
-
-        public Task WarmUpAsync() => Task.CompletedTask;
     }
 
     private sealed class FakeQuickActionCenterService : IQuickActionCenterService

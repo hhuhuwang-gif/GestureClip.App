@@ -52,26 +52,6 @@ public partial class WorkBearWidgetWindow : Window
         _tickTimer.Start();
     }
 
-    private void Window_IsVisibleChanged(object sender, DependencyPropertyChangedEventArgs e)
-    {
-        // A hidden widget (Show/Hide toggle) must not keep three timers running.
-        if (e.NewValue is true)
-        {
-            _refreshTimer.Start();
-            _tickTimer.Start();
-            if (_petFrames.Count > 1)
-            {
-                _petTimer.Start();
-            }
-        }
-        else
-        {
-            _refreshTimer.Stop();
-            _tickTimer.Stop();
-            _petTimer.Stop();
-        }
-    }
-
     private void Window_Closing(object sender, System.ComponentModel.CancelEventArgs e)
     {
         _refreshTimer.Stop();

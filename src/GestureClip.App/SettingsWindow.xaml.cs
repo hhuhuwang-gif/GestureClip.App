@@ -71,14 +71,6 @@ public partial class SettingsWindow : Window
         SizeChanged += (_, _) => SaveWindowPlacement();
         StateChanged += (_, _) => SaveWindowPlacement();
         Closed += (_, _) => SaveWindowPlacement();
-        IsVisibleChanged += (_, e) =>
-        {
-            if (e.NewValue is true && DataContext is SettingsViewModel settingsViewModel)
-            {
-                settingsViewModel.SetDiagnosticsActive(active: true);
-                _ = settingsViewModel.RefreshTodayStatsAsync();
-            }
-        };
     }
 
     protected override void OnSourceInitialized(EventArgs e)
@@ -98,17 +90,11 @@ public partial class SettingsWindow : Window
         if (!_appLifecycleService.IsExplicitExit)
         {
             e.Cancel = true;
-            (DataContext as SettingsViewModel)?.SetDiagnosticsActive(active: false);
             Hide();
             return;
         }
 
         base.OnClosing(e);
-    }
-
-    private void WhatsNew_ViewChangelog_Click(object sender, RoutedEventArgs e)
-    {
-        NavAbout.IsChecked = true;
     }
 
     private void TitleBar_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
@@ -182,6 +168,18 @@ public partial class SettingsWindow : Window
     /// <summary>
     /// Open a settings tab by header keyword / alias. Safe to call after show.
     /// </summary>
+
+    /// <summary>Navigate to bindings and select/create card for pattern.</summary>
+    public void FocusGestureBinding(string? pattern)
+    {
+        NavigateToPage("bindings", "SectionGestureEditor");
+        if (DataContext is SettingsViewModel vm)
+        {
+            Dispatcher.BeginInvoke(
+                new Action(() => vm.FocusGestureBinding(pattern)),
+                System.Windows.Threading.DispatcherPriority.Loaded);
+        }
+    }
 
     public void NavigateToPage(string page, string? targetElementName = null)
     {

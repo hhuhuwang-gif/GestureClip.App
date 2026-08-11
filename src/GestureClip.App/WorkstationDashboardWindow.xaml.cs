@@ -55,21 +55,6 @@ public partial class WorkstationDashboardWindow : Window
         _tickTimer.Start();
     }
 
-    private void Window_IsVisibleChanged(object sender, DependencyPropertyChangedEventArgs e)
-    {
-        // Hidden (not closed) windows must not keep two timers alive on the UI thread.
-        if (e.NewValue is true)
-        {
-            _refreshTimer.Start();
-            _tickTimer.Start();
-        }
-        else
-        {
-            _refreshTimer.Stop();
-            _tickTimer.Stop();
-        }
-    }
-
     private void Window_Closing(object sender, CancelEventArgs e)
     {
         _refreshTimer.Stop();

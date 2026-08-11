@@ -51,9 +51,8 @@ public sealed class SettingsGestureUxContractTests
         Assert.Contains("ShowSettingsWindow(string? page = null)", life);
         Assert.Contains("NavigateToPage(page)", life);
         Assert.Contains("ShowSettingsWindow(string? page = null)", iface);
-        // P1 removed the HUD bind CTA; the shortcut method is gone.
-        Assert.DoesNotContain("ShowGestureBindingEditor", iface);
-        Assert.DoesNotContain("ShowGestureBindingEditor", life);
+        Assert.Contains("ShowGestureBindingEditor", iface);
+        Assert.Contains("ShowGestureBindingEditor", life);
     }
 
 

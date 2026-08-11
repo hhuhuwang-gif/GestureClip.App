@@ -33,10 +33,7 @@ public sealed class FeatureToggleService : IFeatureToggleService
 
     public FeatureToggleSnapshot GetSnapshot()
     {
-        // Prefer the persisted/in-memory settings flag for tray menu state.
-        // Runtime IsEnabled can lag if a service forgets to clear it on Stop.
-        var gestureEnabled = _gestureSettingsProvider.GetCurrent().Enabled;
-        return new FeatureToggleSnapshot(_clipboardService.IsCaptureEnabled, gestureEnabled);
+        return new FeatureToggleSnapshot(_clipboardService.IsCaptureEnabled, _mouseGestureService.IsEnabled);
     }
 
     public Task ToggleClipboardCaptureAsync(CancellationToken cancellationToken)
@@ -46,7 +43,7 @@ public sealed class FeatureToggleService : IFeatureToggleService
 
     public Task ToggleGestureAsync(CancellationToken cancellationToken)
     {
-        return SetGestureEnabledAsync(!_gestureSettingsProvider.GetCurrent().Enabled, cancellationToken);
+        return SetGestureEnabledAsync(!_mouseGestureService.IsEnabled, cancellationToken);
     }
 
     public Task SetClipboardCaptureEnabledAsync(bool enabled, CancellationToken cancellationToken)

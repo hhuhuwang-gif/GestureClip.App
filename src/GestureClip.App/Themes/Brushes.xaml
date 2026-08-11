@@ -153,32 +153,4 @@
         <GradientStop Color="#CCDBEAFE" Offset="0" />
         <GradientStop Color="#B8EFF6FF" Offset="1" />
     </LinearGradientBrush>
-
-    <!-- ===== Modern iOS semantic brushes (themeable via Colors*.xaml) ===== -->
-    <SolidColorBrush x:Key="AppBackgroundBrush" Color="{StaticResource ColorModernAppBackground}" />
-    <SolidColorBrush x:Key="SurfaceBrush" Color="{StaticResource ColorModernSurface}" />
-    <SolidColorBrush x:Key="SurfaceSecondaryBrush" Color="{StaticResource ColorModernSurfaceSecondary}" />
-    <SolidColorBrush x:Key="SurfaceElevatedBrush" Color="{StaticResource ColorModernSurfaceElevated}" />
-    <SolidColorBrush x:Key="SurfaceHoverBrush" Color="{StaticResource ColorModernSurfaceHover}" />
-    <SolidColorBrush x:Key="SurfacePressedBrush" Color="{StaticResource ColorModernSurfacePressed}" />
-    <SolidColorBrush x:Key="TextPrimaryBrush" Color="{StaticResource ColorModernTextPrimary}" />
-    <SolidColorBrush x:Key="TextSecondaryBrush" Color="{StaticResource ColorModernTextSecondary}" />
-    <SolidColorBrush x:Key="TextTertiaryBrush" Color="{StaticResource ColorModernTextTertiary}" />
-    <SolidColorBrush x:Key="SeparatorBrush" Color="{StaticResource ColorModernSeparator}" />
-    <SolidColorBrush x:Key="AccentBrush" Color="{StaticResource ColorModernAccent}" />
-    <SolidColorBrush x:Key="AccentSoftBrush" Color="{StaticResource ColorModernAccentSoft}" />
-    <SolidColorBrush x:Key="AccentSoftPressedBrush" Color="{StaticResource ColorModernAccentSoftPressed}" />
-    <SolidColorBrush x:Key="AccentTextBrush" Color="{StaticResource ColorModernAccentText}" />
-    <SolidColorBrush x:Key="DangerBrush" Color="{StaticResource ColorModernDanger}" />
-    <SolidColorBrush x:Key="DangerSoftBrush" Color="{StaticResource ColorModernDangerSoft}" />
-    <SolidColorBrush x:Key="SuccessBrush" Color="{StaticResource ColorModernSuccess}" />
-    <SolidColorBrush x:Key="SuccessSoftBrush" Color="{StaticResource ColorModernSuccessSoft}" />
-    <SolidColorBrush x:Key="WarningBrush" Color="{StaticResource ColorModernWarning}" />
-    <SolidColorBrush x:Key="WarningSoftBrush" Color="{StaticResource ColorModernWarningSoft}" />
-    <SolidColorBrush x:Key="FillBrush" Color="{StaticResource ColorModernFill}" />
-    <SolidColorBrush x:Key="FillHoverBrush" Color="{StaticResource ColorModernFillHover}" />
-    <SolidColorBrush x:Key="RowSeparatorBrush" Color="{StaticResource ColorModernRowSeparator}" />
-    <SolidColorBrush x:Key="ScrimBrush" Color="{StaticResource ColorModernScrim}" />
-    <SolidColorBrush x:Key="WindowEdgeBrush" Color="{StaticResource ColorModernWindowEdge}" />
-    <SolidColorBrush x:Key="HudCardBrush" Color="{StaticResource ColorModernHudCard}" />
 </ResourceDictionary>

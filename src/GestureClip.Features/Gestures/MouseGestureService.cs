@@ -38,10 +38,6 @@ public sealed class MouseGestureService : IMouseGestureService
     /// </summary>
     private DateTimeOffset _suppressRightButtonUntil = DateTimeOffset.MinValue;
     private DateTimeOffset _lastMoveDebugLogAt = DateTimeOffset.MinValue;
-    /// <summary>Throttle HUD recognition/refresh so a frantic drag cannot flood the UI thread.</summary>
-    private DateTimeOffset _lastHudRefreshAt = DateTimeOffset.MinValue;
-    private int _lastHudRefreshPointCount = -1;
-    private bool _traceDirty;
     private bool _synthesizeRightClickOnNextRightButtonUp;
     private GestureTriggerButton _pendingSyntheticClickButton = GestureTriggerButton.Right;
     private GesturePoint? _pendingSyntheticClickPoint;
@@ -160,11 +156,6 @@ public sealed class MouseGestureService : IMouseGestureService
 
     public Task StopAsync(CancellationToken cancellationToken)
     {
-        // Always clear the public enabled flag so tray / feature-toggle snapshots
-        // can re-enable gestures. Previously only the hook refcount was cleared,
-        // so IsEnabled stayed true and tray "turn on" kept calling SetGestureEnabled(false).
-        IsEnabled = false;
-
         if (Interlocked.Exchange(ref _started, 0) == 0)
         {
             return Task.CompletedTask;
@@ -206,7 +197,6 @@ public sealed class MouseGestureService : IMouseGestureService
                 ResetState("ExceptionReset");
             }
 
-            _ = _gestureOverlayService.HideAsync(CancellationToken.None);
             _logger.LogError(ex, "Mouse gesture event handling failed.");
         }
     }
@@ -324,7 +314,6 @@ public sealed class MouseGestureService : IMouseGestureService
                 {
                     _points.Add(movePoint);
                     TrimTrackedPoints();
-                    _traceDirty = true;
                 }
 
                 if (_state == GestureRuntimeState.Tracking &&
@@ -342,24 +331,12 @@ public sealed class MouseGestureService : IMouseGestureService
                 LogMoveDebug(_activeSettings, mouseEvent.X, mouseEvent.Y, distanceFromStart, _state);
                 if (_activeSettings.ShowOverlay && _state == GestureRuntimeState.GestureActive)
                 {
-                    // Throttle: refresh at most every ~40ms, or sooner when the trace
-                    // grew 4+ points (fast drag still tracks) or hit the 96-point cap.
-                    if (_traceDirty &&
-                        ((DateTimeOffset.UtcNow - _lastHudRefreshAt).TotalMilliseconds >= 40 ||
-                         _lastHudRefreshPointCount < 0 ||
-                         _points.Count - _lastHudRefreshPointCount >= 4 ||
-                         _points.Count >= MaxTrackedPoints))
-                    {
-                        var preview = _recognizer.Recognize(_points, _activeSettings.Options);
-                        var previewPattern = NormalizePreviewPattern(preview.Pattern);
-                        var hudInfo = previewPattern is null
-                            ? _hudInfoProvider.GetInfo(_activeSettings.Preset, previewPattern)
-                            : _hudInfoProvider.GetInfo(_activeSettings.Preset, new GestureExecutionContext(previewPattern, _leftButtonModifier));
-                        _lastHudRefreshAt = DateTimeOffset.UtcNow;
-                        _lastHudRefreshPointCount = _points.Count;
-                        _traceDirty = false;
-                        _ = _gestureOverlayService.UpdateGestureAsync([.. _points], hudInfo, CancellationToken.None);
-                    }
+                    var preview = _recognizer.Recognize(_points, _activeSettings.Options);
+                    var previewPattern = NormalizePreviewPattern(preview.Pattern);
+                    var hudInfo = previewPattern is null
+                        ? _hudInfoProvider.GetInfo(_activeSettings.Preset, previewPattern)
+                        : _hudInfoProvider.GetInfo(_activeSettings.Preset, new GestureExecutionContext(previewPattern, _leftButtonModifier));
+                    _ = _gestureOverlayService.UpdateGestureAsync([.. _points], hudInfo, CancellationToken.None);
                 }
 
                 return null;
@@ -551,16 +528,10 @@ public sealed class MouseGestureService : IMouseGestureService
                         // Brief complete flash then hide immediately so paste does not land in HUD.
                         await _gestureOverlayService.CompleteGestureAsync(hudInfo, CancellationToken.None);
                         await _gestureOverlayService.HideAsync(CancellationToken.None);
-                        await Task.Delay(20, CancellationToken.None);
-                    }
-                    else if (resolvedAction != BuiltInGestureAction.None)
-                    {
-                        await _gestureOverlayService.CompleteGestureAsync(hudInfo, CancellationToken.None);
-                        await _gestureOverlayService.HideAsync(CancellationToken.None);
+                        await Task.Delay(40, CancellationToken.None);
                     }
                     else
                     {
-                        // Unbound stroke: complete flash, auto-hide shortly after.
                         await _gestureOverlayService.CompleteGestureAsync(hudInfo, CancellationToken.None);
                     }
                 }
@@ -572,6 +543,13 @@ public sealed class MouseGestureService : IMouseGestureService
                 }
 
                 await ExecuteGestureAsync(executionContext);
+                // Keep HUD visible longer when unbound so user can click 「去绑定」.
+                if (pendingGesture.ShowOverlay
+                    && !IsPasteFamilyAction(resolvedAction)
+                    && resolvedAction != BuiltInGestureAction.None)
+                {
+                    await _gestureOverlayService.HideAsync(CancellationToken.None);
+                }
 
                 return;
             }
@@ -589,7 +567,6 @@ public sealed class MouseGestureService : IMouseGestureService
                 ResetState("ExceptionReset");
             }
 
-            _ = _gestureOverlayService.HideAsync(CancellationToken.None);
             _logger.LogError(ex, "Gesture recognition failed.");
         }
     }
@@ -630,7 +607,7 @@ public sealed class MouseGestureService : IMouseGestureService
                     }
                 }
 
-                await Task.Delay(25, CancellationToken.None);
+                await Task.Delay(50, CancellationToken.None);
                 lock (_syncRoot)
                 {
                     _suppressRightButtonUntil = DateTimeOffset.UtcNow.AddMilliseconds(500);
@@ -649,7 +626,6 @@ public sealed class MouseGestureService : IMouseGestureService
                 ResetState("ExceptionReset");
             }
 
-            _ = _gestureOverlayService.HideAsync(CancellationToken.None);
             _logger.LogError(ex, "Gesture action execution failed.");
         }
     }
@@ -709,9 +685,6 @@ public sealed class MouseGestureService : IMouseGestureService
         _wheelGestureFired = false;
         _leftClickConfirmDown = false;
         _leftButtonModifier = false;
-        _lastHudRefreshAt = DateTimeOffset.MinValue;
-        _lastHudRefreshPointCount = -1;
-        _traceDirty = false;
         // Keep _gestureTargetHwnd until pending gesture is built; cleared after copy into PendingGesture via reset after return.
         // Intentionally NOT cleared here when called after PendingGesture construction — value already copied.
         _gestureTargetHwnd = 0;
