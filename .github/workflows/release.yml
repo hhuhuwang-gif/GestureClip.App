@@ -28,13 +28,17 @@ jobs:
         run: .\scripts\publish-win-x64.ps1
 
       - name: Sign (optional)
-        if: ${{ secrets.GESTURECLIP_SIGN_PFX_BASE64 != '' }}
         shell: pwsh
         env:
+          GESTURECLIP_SIGN_PFX_BASE64: ${{ secrets.GESTURECLIP_SIGN_PFX_BASE64 }}
           GESTURECLIP_SIGN_PASSWORD: ${{ secrets.GESTURECLIP_SIGN_PASSWORD }}
         run: |
+          if ([string]::IsNullOrWhiteSpace($env:GESTURECLIP_SIGN_PFX_BASE64)) {
+            Write-Host "No signing certificate configured; skipping."
+            exit 0
+          }
           $pfxPath = Join-Path $env:RUNNER_TEMP "gestureclip-codesign.pfx"
-          $bytes = [Convert]::FromBase64String("${{ secrets.GESTURECLIP_SIGN_PFX_BASE64 }}")
+          $bytes = [Convert]::FromBase64String($env:GESTURECLIP_SIGN_PFX_BASE64)
           [IO.File]::WriteAllBytes($pfxPath, $bytes)
           $env:GESTURECLIP_SIGN_PFX = $pfxPath
           .\scripts\sign-release.ps1 -Path .\artifacts\release\GestureClip

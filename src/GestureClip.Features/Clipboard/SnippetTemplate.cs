@@ -25,7 +25,9 @@ public static partial class SnippetTemplate
             return text;
         }
 
-        var local = now.ToLocalTime();
+        // The caller supplies the intended wall-clock offset (DateTimeOffset.Now in production).
+        // Converting again makes templates timezone-dependent in CI and remote sessions.
+        var local = now;
         return VariablePattern().Replace(text, match => match.Groups[1].Value.ToLowerInvariant() switch
         {
             "date" => local.ToString("yyyy-MM-dd"),
