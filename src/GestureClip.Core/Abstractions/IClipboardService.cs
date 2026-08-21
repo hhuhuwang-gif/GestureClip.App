@@ -8,6 +8,12 @@ public interface IClipboardService
 
     DateTimeOffset? SuppressCaptureUntil { get; }
 
+    /// <summary>
+    /// Monotonically increases whenever persisted clipboard history changes.
+    /// Consumers can reuse an already loaded page while this value is unchanged.
+    /// </summary>
+    long HistoryRevision => 0;
+
     Task StartAsync(CancellationToken cancellationToken);
 
     Task StopAsync(CancellationToken cancellationToken);

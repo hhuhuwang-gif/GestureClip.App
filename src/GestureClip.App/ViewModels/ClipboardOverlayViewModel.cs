@@ -45,6 +45,8 @@ public sealed class ClipboardOverlayViewModel : INotifyPropertyChanged
     private bool _isLoading;
     private bool _isLoadingMore;
     private bool _hasMoreItems;
+    private bool _hasLoaded;
+    private long _loadedHistoryRevision = -1;
     private string? _errorMessage;
     private bool _isShortcutHelpVisible;
     private bool _isSnippetEditorOpen;
@@ -351,12 +353,26 @@ public sealed class ClipboardOverlayViewModel : INotifyPropertyChanged
 
     public bool HasError => !string.IsNullOrWhiteSpace(ErrorMessage);
 
-    public async Task LoadAsync()
+    public async Task<bool> LoadAsync(bool force = false)
     {
-        DebugPerf("OVERLAY_LOAD_BEGIN");
-        await SearchAsync();
+        var currentRevision = _clipboardService.HistoryRevision;
+        if (!force && _hasLoaded && _loadedHistoryRevision == currentRevision)
+        {
+            DebugPerf("OVERLAY_CACHE_HIT", $"Revision={currentRevision}");
+            return false;
+        }
+
+        DebugPerf("OVERLAY_LOAD_BEGIN", $"Force={force} Revision={currentRevision}");
+        var cancellation = ReplaceSearchCancellation();
+        var refreshed = await SearchCoreAsync(cancellation.Token);
+        if (!refreshed)
+        {
+            return false;
+        }
+
         SelectLatestItem();
         DebugPerf("OVERLAY_READY");
+        return true;
     }
 
     public async Task SearchAsync()
@@ -726,9 +742,10 @@ public sealed class ClipboardOverlayViewModel : INotifyPropertyChanged
         }
     }
 
-    private async Task SearchCoreAsync(CancellationToken cancellationToken)
+    private async Task<bool> SearchCoreAsync(CancellationToken cancellationToken)
     {
         var version = Interlocked.Increment(ref _searchVersion);
+        var queriedRevision = _clipboardService.HistoryRevision;
         IReadOnlyList<ClipboardItem> results;
         var primaryCount = 0;
         var hasMore = false;
@@ -736,24 +753,24 @@ public sealed class ClipboardOverlayViewModel : INotifyPropertyChanged
         DebugPerf("OVERLAY_QUERY_BEGIN");
         try
         {
-            IsLoading = true;
+            // Keep the already rendered page interactive while a changed history revision
+            // refreshes in the background. Only the first load needs the blocking badge.
+            IsLoading = Items.Count == 0;
             ErrorMessage = null;
             var keyword = SearchText;
             var filter = ToContentFilter(SelectedFilter);
             if (TryGetRegexPattern(keyword, out var regexPattern))
             {
                 // "re:" prefix → client-side regex over the most recent records.
-                var pool = await Task.Run(
-                    () => _clipboardService.SearchAsync("", SmartSearchScanLimit, 0, filter, cancellationToken),
-                    cancellationToken);
+                var pool = await _clipboardService.SearchAsync(
+                    "", SmartSearchScanLimit, 0, filter, cancellationToken);
                 (results, statusOverride) = FilterByRegex(pool, regexPattern);
                 primaryCount = results.Count;
             }
             else
             {
-                results = await Task.Run(
-                    () => _clipboardService.SearchAsync(keyword, PageSize, 0, filter, cancellationToken),
-                    cancellationToken);
+                results = await _clipboardService.SearchAsync(
+                    keyword, PageSize, 0, filter, cancellationToken);
                 primaryCount = results.Count;
                 hasMore = results.Count == PageSize;
 
@@ -761,9 +778,8 @@ public sealed class ClipboardOverlayViewModel : INotifyPropertyChanged
                 {
                     // Supplemental pass: fetch recent records once and add pinyin-initial matches
                     // (e.g. "wx" → 微信) that the SQL LIKE search cannot find.
-                    var pool = await Task.Run(
-                        () => _clipboardService.SearchAsync("", SmartSearchScanLimit, 0, filter, cancellationToken),
-                        cancellationToken);
+                    var pool = await _clipboardService.SearchAsync(
+                        "", SmartSearchScanLimit, 0, filter, cancellationToken);
                     var knownIds = results.Select(item => item.Id).ToHashSet();
                     var pinyinMatches = pool
                         .Where(item => knownIds.Add(item.Id) && MatchesPinyinInitials(item, keyword))
@@ -778,13 +794,13 @@ public sealed class ClipboardOverlayViewModel : INotifyPropertyChanged
         }
         catch (OperationCanceledException)
         {
-            return;
+            return false;
         }
         catch (Exception ex)
         {
             ErrorMessage = $"加载剪贴板历史失败：{ex.Message}";
             StatusText = "加载失败";
-            return;
+            return false;
         }
         finally
         {
@@ -796,7 +812,7 @@ public sealed class ClipboardOverlayViewModel : INotifyPropertyChanged
 
         if (cancellationToken.IsCancellationRequested || version != Volatile.Read(ref _searchVersion))
         {
-            return;
+            return false;
         }
 
         _lastSearchResults = results.Select(WithSessionCopiedFlag).ToArray();
@@ -805,6 +821,9 @@ public sealed class ClipboardOverlayViewModel : INotifyPropertyChanged
         DebugPerf("OVERLAY_QUERY_END", $"ResultCount={_lastSearchResults.Count}");
         ApplyFilter();
         StatusText = statusOverride;
+        _loadedHistoryRevision = queriedRevision;
+        _hasLoaded = true;
+        return true;
     }
 
     private static bool TryGetRegexPattern(string keyword, out string pattern)

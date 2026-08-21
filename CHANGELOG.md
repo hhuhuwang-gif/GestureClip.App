@@ -16,13 +16,16 @@
 
 - 快速连续剪贴板事件进入顺序队列，避免忙碌期间直接丢弃后续复制
 - 临时读取失败按有限退避重试；纯图片复制不会因文本为空提前返回
+- 剪贴板面板在应用空闲时预创建并预载首屏，首次快捷键打开不再临时解析整棵 XAML
+- 历史增加轻量修订号：数据未变化时重复打开直接复用内存页，不再重复查库、重绑 50 条记录
+- 数据变化时保留旧列表可操作并后台刷新；移除重复 Task.Run 调度、透明窗大范围模糊阴影和重复 150ms 淡入
 - 列表批量 ReplaceRange，减少逐条 ObservableCollection 通知造成的 UI 卡顿
-- 增加调试性能节点：热键、查询、批量提交与 HUD 帧耗时
+- 增加调试性能节点：热键、查询、缓存命中、批量提交与 HUD 帧耗时
 
 ### 发布与验证
 
 - 覆盖更新 v0.6.41-beta，用户数据仍保存在 %LOCALAPPDATA%\GestureClip\
-- dotnet test GestureClip.sln -c Release：729 个测试通过
+- dotnet test GestureClip.sln -c Release：732 个测试通过
 - 安装包：
   - GestureClip-v0.6.41-beta-win-x64.zip
   - GestureClip-Setup-v0.6.41-beta-win-x64.zip

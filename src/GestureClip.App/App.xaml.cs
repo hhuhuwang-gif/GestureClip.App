@@ -108,6 +108,11 @@ public partial class App : System.Windows.Application
                 _serviceProvider.GetRequiredService<AppLifecycleService>().ShowWorkstationDashboardWindow();
             }
 
+            if (!exitAfterStartup)
+            {
+                _ = WarmUpClipboardOverlayAsync(logger);
+            }
+
             logger.LogInformation("GestureClip v{AppVersion} started.", appVersion);
             if (exitAfterStartup)
             {
@@ -127,6 +132,18 @@ public partial class App : System.Windows.Application
         }
     }
 
+
+    private async Task WarmUpClipboardOverlayAsync(ILogger logger)
+    {
+        try
+        {
+            await _serviceProvider!.GetRequiredService<IClipboardOverlayService>().WarmUpAsync();
+        }
+        catch (Exception ex)
+        {
+            logger.LogDebug(ex, "Clipboard overlay warm-up failed.");
+        }
+    }
 
     private async Task StartSecondaryServicesAsync(ILogger logger)
     {

@@ -16,6 +16,7 @@ public partial class ClipboardOverlayWindow : Window
     private readonly IConfirmationService _confirmationService;
     private bool _alwaysVisible;
     private bool _isContextMenuOpen;
+    private bool _hasBeenShown;
 
     public ClipboardOverlayWindow(
         ClipboardOverlayViewModel viewModel,
@@ -39,8 +40,15 @@ public partial class ClipboardOverlayWindow : Window
             return;
         }
 
-        // Gentle fade-in every time the overlay is shown.
-        var fade = new System.Windows.Media.Animation.DoubleAnimation(0.0, 1.0, TimeSpan.FromMilliseconds(150))
+        if (_hasBeenShown)
+        {
+            BeginAnimation(OpacityProperty, null);
+            Opacity = 1.0;
+            return;
+        }
+
+        _hasBeenShown = true;
+        var fade = new System.Windows.Media.Animation.DoubleAnimation(0.0, 1.0, TimeSpan.FromMilliseconds(70))
         {
             EasingFunction = new System.Windows.Media.Animation.QuadraticEase
             {
@@ -50,10 +58,15 @@ public partial class ClipboardOverlayWindow : Window
         BeginAnimation(OpacityProperty, fade);
     }
 
-    public async Task LoadHistoryAsync()
+    public async Task<bool> LoadHistoryAsync(bool force = false)
     {
-        await _viewModel.LoadAsync();
-        ScrollToTopAndSelectLatest();
+        var refreshed = await _viewModel.LoadAsync(force);
+        if (refreshed)
+        {
+            ScrollToTopAndSelectLatest();
+        }
+
+        return refreshed;
     }
 
     public void FocusSearchBox()

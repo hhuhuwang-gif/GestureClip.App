@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using System.Windows;
+using System.Windows.Threading;
 using GestureClip.Core.Abstractions;
 using GestureClip.Core.Settings;
 using Microsoft.Extensions.DependencyInjection;
@@ -13,7 +14,9 @@ public sealed class ClipboardOverlayService : IClipboardOverlayService
     private readonly IWorkstationDashboardService _workstationDashboardService;
     private readonly ILogger<ClipboardOverlayService> _logger;
     private readonly bool _perfLogEnabled;
+    private readonly object _warmUpSync = new();
     private ClipboardOverlayWindow? _window;
+    private Task? _warmUpTask;
 
     public ClipboardOverlayService(
         IServiceProvider serviceProvider,
@@ -62,6 +65,14 @@ public sealed class ClipboardOverlayService : IClipboardOverlayService
         });
     }
 
+    public Task WarmUpAsync()
+    {
+        lock (_warmUpSync)
+        {
+            return _warmUpTask ??= WarmUpCoreAsync();
+        }
+    }
+
     [System.Diagnostics.Conditional("DEBUG")]
     private static void DebugPerf(string eventName)
     {
@@ -85,13 +96,50 @@ public sealed class ClipboardOverlayService : IClipboardOverlayService
 
     public async Task RefreshAsync()
     {
-        await System.Windows.Application.Current.Dispatcher.InvokeAsync(async () =>
+        Task<bool>? refreshTask = null;
+        await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
         {
             if (_window is not null)
             {
-                await _window.LoadHistoryAsync();
+                refreshTask = _window.LoadHistoryAsync(force: true);
             }
         });
+
+        if (refreshTask is not null)
+        {
+            await refreshTask;
+        }
+    }
+
+    private async Task WarmUpCoreAsync()
+    {
+        var watch = Stopwatch.StartNew();
+        try
+        {
+            Task<bool>? loadTask = null;
+            await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
+            {
+                loadTask = EnsureWindow().LoadHistoryAsync();
+            }, DispatcherPriority.ApplicationIdle);
+
+            if (loadTask is not null)
+            {
+                await loadTask;
+            }
+        }
+        catch (Exception ex)
+        {
+            // Warm-up is optional. A failed warm-up must not affect hotkeys or startup.
+            _logger.LogDebug(ex, "Clipboard overlay warm-up failed.");
+        }
+        finally
+        {
+            watch.Stop();
+            if (_perfLogEnabled)
+            {
+                _logger.LogInformation("ClipboardPerf OverlayWarmUpMs ElapsedMs={ElapsedMs}", watch.ElapsedMilliseconds);
+            }
+        }
     }
 
     private ClipboardOverlayWindow EnsureWindow()

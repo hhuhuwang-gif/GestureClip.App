@@ -101,6 +101,51 @@ public sealed class ClipboardOverlayViewModelTests
     }
 
     [Fact]
+    public async Task LoadAsync_reuses_loaded_page_when_history_revision_is_unchanged()
+    {
+        var service = new FakeClipboardService([TextItem("first")])
+        {
+            HistoryRevision = 7
+        };
+        var viewModel = new ClipboardOverlayViewModel(service, TimeSpan.Zero);
+
+        var firstLoad = await viewModel.LoadAsync();
+        var secondLoad = await viewModel.LoadAsync();
+
+        Assert.True(firstLoad);
+        Assert.False(secondLoad);
+        Assert.Single(service.SearchLimits);
+    }
+
+    [Fact]
+    public async Task LoadAsync_refreshes_without_clearing_visible_page_when_history_revision_changes()
+    {
+        var first = TextItem("first");
+        var updated = TextItem("updated");
+        var service = new FakeClipboardService([first])
+        {
+            HistoryRevision = 3
+        };
+        var viewModel = new ClipboardOverlayViewModel(service, TimeSpan.Zero);
+        await viewModel.LoadAsync();
+
+        var refreshResult = new TaskCompletionSource<IReadOnlyList<ClipboardItem>>(
+            TaskCreationOptions.RunContinuationsAsynchronously);
+        service.HistoryRevision = 4;
+        service.SearchHandler = (_, _, _, _) => refreshResult.Task;
+
+        var refreshTask = viewModel.LoadAsync();
+
+        Assert.False(viewModel.IsLoading);
+        Assert.Equal("first", viewModel.Items.Single().TextContent);
+
+        refreshResult.SetResult([updated]);
+        Assert.True(await refreshTask);
+        Assert.Equal("updated", viewModel.Items.Single().TextContent);
+        Assert.Equal(2, service.SearchLimits.Count);
+    }
+
+    [Fact]
     public async Task LoadAsync_with_1000_text_items_keeps_first_page_to_50()
     {
         var items = Enumerable.Range(0, 1000)
@@ -840,6 +885,8 @@ public sealed class ClipboardOverlayViewModelTests
         }
 
         public bool IsCaptureEnabled => true;
+
+        public long HistoryRevision { get; set; }
 
         public List<string> SearchKeywords { get; } = [];
 

@@ -66,6 +66,24 @@ public sealed class ClipboardServiceTests
     }
 
     [Fact]
+    public async Task HistoryRevision_changes_after_persisted_capture_and_duplicate_touch()
+    {
+        var repository = new FakeClipboardRepository();
+        var service = CreateService(repository);
+
+        Assert.Equal(0, service.HistoryRevision);
+
+        await service.CaptureTextAsync(Capture("normal"), CancellationToken.None);
+        Assert.Equal(1, service.HistoryRevision);
+
+        await service.CaptureTextAsync(Capture("normal"), CancellationToken.None);
+        Assert.Equal(2, service.HistoryRevision);
+
+        await service.CaptureTextAsync(Capture("   "), CancellationToken.None);
+        Assert.Equal(2, service.HistoryRevision);
+    }
+
+    [Fact]
     public async Task UpdateTextContentAsync_edits_text_item_in_place()
     {
         var repository = new FakeClipboardRepository();

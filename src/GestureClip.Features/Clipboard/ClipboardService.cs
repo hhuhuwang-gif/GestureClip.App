@@ -44,6 +44,7 @@ public sealed class ClipboardService : IClipboardService
     private readonly object _usageSync = new();
     private readonly Dictionary<Guid, int> _pendingUseCounts = [];
     private Task? _usageFlushTask;
+    private long _historyRevision;
     private readonly object _internalWriteLock = new();
     /// <summary>Hash of the most recent content this app wrote to the system clipboard
     /// (text hash or image base64 hash). Only the hash is kept, never the content.
@@ -87,6 +88,8 @@ public sealed class ClipboardService : IClipboardService
     public bool IsCaptureEnabled { get; private set; }
 
     public DateTimeOffset? SuppressCaptureUntil { get; private set; }
+
+    public long HistoryRevision => Interlocked.Read(ref _historyRevision);
 
     public Task StartAsync(CancellationToken cancellationToken)
     {
@@ -268,6 +271,7 @@ public sealed class ClipboardService : IClipboardService
         if (existing is not null)
         {
             await _clipboardRepository.TouchAsync(existing.Id, cancellationToken);
+            MarkHistoryChanged();
             RecordCopyInBackground(DateTimeOffset.UtcNow);
             _logger.LogInformation("Clipboard duplicate item refreshed.");
             return;
@@ -300,6 +304,7 @@ public sealed class ClipboardService : IClipboardService
 
         var insertWatch = Stopwatch.StartNew();
         await _clipboardRepository.InsertAsync(item, cancellationToken);
+        MarkHistoryChanged();
         insertWatch.Stop();
         LogPerf("InsertMs", insertWatch.ElapsedMilliseconds, ("ContentType", "text"));
         RecordCopyInBackground(now);
@@ -321,6 +326,7 @@ public sealed class ClipboardService : IClipboardService
         {
             await _clipboardRepository.SetFavoriteAsync(existing.Id, true, cancellationToken);
             await _clipboardRepository.TouchAsync(existing.Id, cancellationToken);
+            MarkHistoryChanged();
             _logger.LogInformation("Snippet already in history; marked as favorite.");
             return existing with { IsFavorite = true };
         }
@@ -343,6 +349,7 @@ public sealed class ClipboardService : IClipboardService
             now,
             null);
         await _clipboardRepository.InsertAsync(item, cancellationToken);
+        MarkHistoryChanged();
         _logger.LogInformation("User snippet added as favorite.");
         return item;
     }
@@ -365,6 +372,7 @@ public sealed class ClipboardService : IClipboardService
         var plainTextHash = _clipboardHashService.ComputePlainTextHash(trimmed);
         var preview = CreatePreview(trimmed);
         await _clipboardRepository.UpdateTextContentAsync(id, trimmed, hash, plainTextHash, preview, cancellationToken);
+        MarkHistoryChanged();
         _logger.LogInformation("Clipboard text item edited in place.");
         return existing with
         {
@@ -545,6 +553,11 @@ public sealed class ClipboardService : IClipboardService
     public async Task<int> DeleteItemsAsync(IReadOnlyList<Guid> ids, CancellationToken cancellationToken)
     {
         var deleted = await _clipboardRepository.DeleteAsync(ids, cancellationToken);
+        if (deleted > 0)
+        {
+            MarkHistoryChanged();
+        }
+
         _logger.LogInformation("Clipboard items deleted. Count={ClipboardItemCount}", deleted);
         return deleted;
     }
@@ -556,6 +569,7 @@ public sealed class ClipboardService : IClipboardService
             return;
         }
 
+        var restored = 0;
         foreach (var item in items)
         {
             var existing = await _clipboardRepository.GetByIdAsync(item.Id, cancellationToken);
@@ -565,20 +579,28 @@ public sealed class ClipboardService : IClipboardService
             }
 
             await _clipboardRepository.InsertAsync(item, cancellationToken);
+            restored++;
         }
 
-        _logger.LogInformation("Clipboard items restored. Count={ClipboardItemCount}", items.Count);
+        if (restored > 0)
+        {
+            MarkHistoryChanged();
+        }
+
+        _logger.LogInformation("Clipboard items restored. Count={ClipboardItemCount}", restored);
     }
 
     public async Task SetPinnedAsync(Guid id, bool isPinned, CancellationToken cancellationToken)
     {
         await _clipboardRepository.SetPinnedAsync(id, isPinned, cancellationToken);
+        MarkHistoryChanged();
         _logger.LogInformation("Clipboard item pin state changed. IsPinned={IsPinned}", isPinned);
     }
 
     public async Task SetFavoriteAsync(Guid id, bool isFavorite, CancellationToken cancellationToken)
     {
         await _clipboardRepository.SetFavoriteAsync(id, isFavorite, cancellationToken);
+        MarkHistoryChanged();
         _logger.LogInformation("Clipboard item favorite state changed. IsFavorite={IsFavorite}", isFavorite);
     }
 
@@ -722,6 +744,7 @@ public sealed class ClipboardService : IClipboardService
         if (duplicate is not null)
         {
             await _clipboardRepository.TouchAsync(duplicate.Id, cancellationToken);
+            MarkHistoryChanged();
             _logger.LogInformation("Clipboard image capture skipped: duplicate hash; item refreshed.");
             return;
         }
@@ -779,6 +802,7 @@ public sealed class ClipboardService : IClipboardService
                 thumbnailContent,
                 ocrText),
             cancellationToken);
+        MarkHistoryChanged();
         insertWatch.Stop();
         LogPerf("InsertMs", insertWatch.ElapsedMilliseconds, ("ContentType", "image/png"));
         RecordCopyInBackground(now);
@@ -879,6 +903,7 @@ public sealed class ClipboardService : IClipboardService
         {
             var watch = Stopwatch.StartNew();
             await _clipboardRepository.IncrementUseCountsAsync(snapshot, cancellationToken);
+            MarkHistoryChanged();
             watch.Stop();
             LogPerf("DbUpdateDurationMs", watch.ElapsedMilliseconds, ("Operation", "IncrementUseCounts"), ("ItemCount", snapshot.Count));
         }
@@ -898,6 +923,11 @@ public sealed class ClipboardService : IClipboardService
         {
             _logger.LogDebug(ex, "Clipboard paste stats recording failed.");
         }
+    }
+
+    private void MarkHistoryChanged()
+    {
+        Interlocked.Increment(ref _historyRevision);
     }
 
     private bool IsPerfLogEnabled()

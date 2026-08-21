@@ -7,4 +7,6 @@ public interface IClipboardOverlayService
     Task ToggleAsync();
 
     Task RefreshAsync();
+
+    Task WarmUpAsync() => Task.CompletedTask;
 }
