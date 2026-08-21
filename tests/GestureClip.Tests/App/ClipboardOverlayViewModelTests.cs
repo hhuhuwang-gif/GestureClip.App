@@ -596,7 +596,10 @@ public sealed class ClipboardOverlayViewModelTests
 
         await viewModel.LoadAsync();
         viewModel.SelectedFilter = ClipboardOverlayFilter.Images;
-        await WaitForAsync(() => service.SearchFilters.Contains(ClipboardContentFilter.Images));
+        await WaitForAsync(() =>
+            viewModel.Items.Count == 1 &&
+            viewModel.Items[0].PreviewText == "图片 001" &&
+            service.SearchFilters.Contains(ClipboardContentFilter.Images));
 
         Assert.Equal([ClipboardContentFilter.All, ClipboardContentFilter.Images], service.SearchFilters);
         Assert.Equal(["图片 001"], viewModel.Items.Select(item => item.PreviewText ?? "").ToArray());

@@ -25,6 +25,52 @@ public sealed class MouseGestureServiceTests
     }
 
     [Fact]
+    public async Task StopAsync_clears_enabled_state_for_fast_restart()
+    {
+        var hook = new FakeLowLevelMouseHook();
+        var service = CreateService(hook);
+
+        await service.StartAsync(CancellationToken.None);
+        await service.StopAsync(CancellationToken.None);
+
+        Assert.False(service.IsEnabled);
+
+        await service.StartAsync(CancellationToken.None);
+
+        Assert.True(service.IsEnabled);
+        Assert.Equal(2, hook.StartCount);
+    }
+
+    [Fact]
+    public async Task High_frequency_moves_are_coalesced_and_trace_is_bounded()
+    {
+        var hook = new FakeLowLevelMouseHook();
+        var executor = new FakeMouseGestureActionExecutor();
+        var overlay = new FakeGestureOverlayService();
+        var service = CreateService(hook, executor, overlay: overlay);
+        await service.StartAsync(CancellationToken.None);
+
+        var startedAt = DateTimeOffset.UtcNow;
+        hook.Raise(MouseHookEventType.RightButtonDown, 100, 500, time: startedAt);
+        for (var index = 1; index <= 120; index++)
+        {
+            hook.Raise(
+                MouseHookEventType.Move,
+                100,
+                500 - (index * 17),
+                time: startedAt.AddMilliseconds(index * 2));
+        }
+
+        hook.Raise(MouseHookEventType.RightButtonUp, 100, -1560, time: startedAt.AddMilliseconds(245));
+        await WaitForAsync(() => executor.Actions.Count == 1);
+
+        var updateCount = overlay.Events.Count(item => item.StartsWith("update:", StringComparison.Ordinal));
+        Assert.InRange(updateCount, 1, 12);
+        Assert.All(overlay.PointCounts, count => Assert.InRange(count, 1, 96));
+        Assert.Equal(BuiltInGestureAction.Copy, executor.Actions.Single());
+    }
+
+    [Fact]
     public async Task Right_click_without_threshold_suppresses_original_events_and_synthesizes_normal_right_click()
     {
         var hook = new FakeLowLevelMouseHook();
@@ -688,7 +734,8 @@ public sealed class MouseGestureServiceTests
         var service = CreateService(hook, executor, overlay: overlay);
         await service.StartAsync(CancellationToken.None);
 
-        hook.Raise(MouseHookEventType.RightButtonDown, 100, 100);
+        var startedAt = DateTimeOffset.UtcNow;
+        hook.Raise(MouseHookEventType.RightButtonDown, 100, 100, time: startedAt);
         for (var i = 0; i < 200; i++)
         {
             var x = 100 + (i % 4 switch
@@ -699,16 +746,16 @@ public sealed class MouseGestureServiceTests
                 _ => 80
             });
             var y = 100 + (i * 18 % 260);
-            hook.Raise(MouseHookEventType.Move, x, y);
+            hook.Raise(MouseHookEventType.Move, x, y, time: startedAt.AddMilliseconds(i * 2));
         }
 
-        hook.Raise(MouseHookEventType.RightButtonUp, 120, 120);
+        hook.Raise(MouseHookEventType.RightButtonUp, 120, 120, time: startedAt.AddMilliseconds(405));
         await WaitForAsync(() => overlay.Events.Contains("hide"));
 
         Assert.Empty(executor.Actions);
         Assert.Equal(GestureRuntimeState.Idle, service.Diagnostics.State);
         Assert.All(overlay.PointCounts, count => Assert.InRange(count, 1, 96));
-        Assert.Contains(overlay.PointSnapshots, points => points.Count == 96 && points[0] != new GesturePoint(100, 100, points[0].Time));
+        Assert.Contains(overlay.PointSnapshots, points => points.Count == 96 && (points[0].X != 100 || points[0].Y != 100));
     }
 
     [Fact]

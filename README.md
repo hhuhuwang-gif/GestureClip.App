@@ -23,9 +23,9 @@
 <p align="center">
   <a href="https://github.com/hhuhuwang-gif/GestureClip.App/releases/latest"><strong>⬇ 下载最新版（Latest）</strong></a>
   ·
-  <a href="https://github.com/hhuhuwang-gif/GestureClip.App/releases/download/v0.6.39-beta/GestureClip-v0.6.39-beta-win-x64.zip"><strong>v0.6.39 Beta zip</strong></a>
+  <a href="https://github.com/hhuhuwang-gif/GestureClip.App/releases/download/v0.6.41-beta/GestureClip-v0.6.41-beta-win-x64.zip"><strong>v0.6.41 Beta zip</strong></a>
   ·
-  <a href="https://github.com/hhuhuwang-gif/GestureClip.App/releases/tag/v0.6.39-beta">Release 说明</a>
+  <a href="https://github.com/hhuhuwang-gif/GestureClip.App/releases/tag/v0.6.41-beta">Release 说明</a>
   ·
   <a href="CHANGELOG.md">更新日志</a>
 </p>
@@ -37,7 +37,7 @@
 ## 目录
 
 - [30 秒上手](#30-秒上手)
-- [当前版本](#当前版本v0624-beta)
+- [当前版本](#当前版本v0641-beta)
 - [核心功能](#核心功能)
 - [数据与隐私](#数据与隐私)
 - [安装与更新](#安装与更新)
@@ -63,17 +63,21 @@
 
 ---
 
-## 当前版本：v0.6.39 Beta
+## 当前版本：v0.6.41 Beta
 
 | 资源 | 链接 |
 | --- | --- |
 | **推荐下载（Latest）** | [Releases / latest](https://github.com/hhuhuwang-gif/GestureClip.App/releases/latest) |
-| 安装包 | [GestureClip-v0.6.39-beta-win-x64.zip](https://github.com/hhuhuwang-gif/GestureClip.App/releases/download/v0.6.39-beta/GestureClip-v0.6.39-beta-win-x64.zip) |
-| 校验文件 | [SHA256SUMS.txt](https://github.com/hhuhuwang-gif/GestureClip.App/releases/download/v0.6.39-beta/SHA256SUMS.txt) |
+| 安装包 | [GestureClip-v0.6.41-beta-win-x64.zip](https://github.com/hhuhuwang-gif/GestureClip.App/releases/download/v0.6.41-beta/GestureClip-v0.6.41-beta-win-x64.zip) |
+| 校验文件 | [SHA256SUMS.txt](https://github.com/hhuhuwang-gif/GestureClip.App/releases/download/v0.6.41-beta/SHA256SUMS.txt) |
 | 历史版本 | 旧版在 Releases 里标记为 **Pre-release**，默认请用 Latest |
 
-### 本版亮点（v0.6.39）
+### 本版亮点（v0.6.41）
 
+- **手势响应专项优化**：全局鼠标钩子迁到独立线程，UI 忙碌时仍能及时接收手势
+- **高频轨迹合帧**：HUD 约 24ms 刷新一次，只绘制最新帧，快速拖动不再淹没 UI 队列
+- **轻量轨迹渲染**：移除全屏实时模糊阴影，保留双层发光效果并降低 GPU / 软件渲染压力
+- **剪贴板稳定性增强**：快速连续复制按顺序处理，图片与瞬时读取失败不再容易丢失
 - **滚轮手势**：按住右键滚滚轮切标签（动作可改、可连发、不弹菜单）
 - **剪贴板增强**：以文件形式复制（.txt/.png）、F2 就地编辑、二维码扫码带走、**图片贴图置顶**
 - **小熊迷你挂件**：桌面常驻已赚 + 倒计时小胶囊，可换自定义桌宠 GIF
@@ -210,7 +214,7 @@ v0.6.37 起历史再复制会统一写成纯文本；也可用「复制为纯文
 可手动到 [Latest](https://github.com/hhuhuwang-gif/GestureClip.App/releases/latest) 下载。
 
 **为什么 GitHub 上还有很多旧版本？**  
-历史包仍保留下载；已标为 Pre-release。日常请只用 **Latest = v0.6.39 Beta**。
+历史包仍保留下载；已标为 Pre-release。日常请只用 **Latest = v0.6.41 Beta**。
 
 ---
 
@@ -236,7 +240,7 @@ powershell -ExecutionPolicy Bypass -File .\scripts\publish-win-x64.ps1
 - 本地快捷动作：Ctrl+Shift+Q 做去空格、JSON、URL 等
 - 工位小熊（可选）：下班倒计时、复制统计
 
-v0.6.39 Beta，解压双击 GestureClip.exe。
+v0.6.41 Beta，解压双击 GestureClip.exe。
 
 项目：https://github.com/hhuhuwang-gif/GestureClip.App
 下载：https://github.com/hhuhuwang-gif/GestureClip.App/releases/latest

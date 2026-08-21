@@ -14,6 +14,14 @@ public sealed class ClipboardService : IClipboardService
     private const int DefaultMaxImageBytes = 5 * 1024 * 1024;
     private const int MinMaxImageBytes = 128 * 1024;
     private const int MaxMaxImageBytes = 20 * 1024 * 1024;
+    /// <summary>How long an internal clipboard write fingerprint stays valid. Long enough to
+    /// cover the 1.0-1.5s suppression window plus paste settle, short enough not to treat
+    /// a later user copy of the same content as an echo.</summary>
+    private static readonly TimeSpan InternalWriteFingerprintLifetime = TimeSpan.FromSeconds(3);
+    /// <summary>Total read attempts per clipboard change event: initial + 2 short retries
+    /// (10ms + 20ms) for transient clipboard unavailability (COM/ExternalException).</summary>
+    private const int MaxClipboardReadAttempts = 3;
+    private static readonly TimeSpan[] ClipboardReadRetryDelays = [TimeSpan.FromMilliseconds(10), TimeSpan.FromMilliseconds(20)];
 
     private readonly IClipboardListener _clipboardListener;
     private readonly IClipboardTextReader _clipboardTextReader;
@@ -36,6 +44,12 @@ public sealed class ClipboardService : IClipboardService
     private readonly object _usageSync = new();
     private readonly Dictionary<Guid, int> _pendingUseCounts = [];
     private Task? _usageFlushTask;
+    private readonly object _internalWriteLock = new();
+    /// <summary>Hash of the most recent content this app wrote to the system clipboard
+    /// (text hash or image base64 hash). Only the hash is kept, never the content.
+    /// Consumed at most once: when the WM_CLIPBOARDUPDATE echo matches, that echo is
+    /// ignored; when the read content differs, the user's copy is allowed through.</summary>
+    private (string? TextHash, string? ImageHash, DateTimeOffset ExpiresAt)? _pendingInternalWrite;
 
     public ClipboardService(
         IClipboardListener clipboardListener,
@@ -153,29 +167,67 @@ public sealed class ClipboardService : IClipboardService
         SuppressCaptureUntil = DateTimeOffset.UtcNow.Add(duration);
     }
 
+    /// <summary>
+    /// Remember the hash of content this app just wrote to the system clipboard so its
+    /// own WM_CLIPBOARDUPDATE echo can be ignored exactly once. Only the hash is stored.
+    /// </summary>
+    private void RecordInternalWrite(string? textHash = null, string? imageHash = null)
+    {
+        lock (_internalWriteLock)
+        {
+            _pendingInternalWrite = (textHash, imageHash, DateTimeOffset.UtcNow + InternalWriteFingerprintLifetime);
+        }
+    }
+
+    /// <summary>
+    /// Decide whether an incoming clipboard read is the echo of our own last write.
+    /// Matching echo: skip and consume the fingerprint (at most once).
+    /// Different content while the fingerprint is still live: consume the fingerprint
+    /// (the old echo can no longer arrive) and let the user's copy through.
+    /// No live fingerprint: fall back to the v0.6.39 time-window behavior, which is what
+    /// external modules (gesture actions, assistant) rely on when they write the clipboard
+    /// themselves and only call <see cref="SuppressCaptureFor"/>.
+    /// </summary>
+    private bool ShouldSkipAsInternalEcho(string? textHash, string? imageHash)
+    {
+        if (textHash is null && imageHash is null)
+        {
+            return false;
+        }
+
+        lock (_internalWriteLock)
+        {
+            if (_pendingInternalWrite is { } pending && DateTimeOffset.UtcNow <= pending.ExpiresAt)
+            {
+                _pendingInternalWrite = null;
+                if ((textHash is not null && pending.TextHash == textHash) ||
+                    (imageHash is not null && pending.ImageHash == imageHash))
+                {
+                    _logger.LogInformation("Clipboard capture skipped: internal write echo consumed.");
+                    return true;
+                }
+
+                // Content differs from our own write: never swallow a user copy,
+                // even while the old suppression window would still be open.
+                return false;
+            }
+
+            _pendingInternalWrite = null;
+            if (SuppressCaptureUntil is { } suppressUntil && DateTimeOffset.UtcNow < suppressUntil)
+            {
+                _logger.LogInformation("Clipboard capture skipped: suppressed after internal paste.");
+                return true;
+            }
+
+            return false;
+        }
+    }
+
     public async Task CaptureTextAsync(ClipboardCapture capture, CancellationToken cancellationToken)
     {
         if (!IsCaptureEnabled)
         {
             _logger.LogInformation("Clipboard capture skipped: disabled.");
-            return;
-        }
-
-        if (SuppressCaptureUntil is { } suppressUntil && DateTimeOffset.UtcNow < suppressUntil)
-        {
-            _logger.LogInformation("Clipboard capture skipped: suppressed after internal paste.");
-            return;
-        }
-
-        if (await _appBlacklistService.IsClipboardBlockedAsync(capture.SourceProcess, cancellationToken))
-        {
-            _logger.LogInformation("Clipboard capture skipped: source process is blacklisted.");
-            return;
-        }
-
-        if (_sensitiveCaptureGate?.ShouldSkipCapture(capture.SourceProcess, capture.SourceApp) == true)
-        {
-            _logger.LogInformation("Clipboard capture skipped: sensitive UI context (password/login).");
             return;
         }
 
@@ -190,6 +242,24 @@ public sealed class ClipboardService : IClipboardService
         var plainTextHash = _clipboardHashService.ComputePlainTextHash(capture.Text);
         hashWatch.Stop();
         LogPerf("HashMs", hashWatch.ElapsedMilliseconds, ("ContentType", "text"));
+
+        if (ShouldSkipAsInternalEcho(hash, imageHash: null))
+        {
+            DebugPerf("CAPTURE_SUPPRESSED_INTERNAL", "ContentType=text");
+            return;
+        }
+
+        if (await _appBlacklistService.IsClipboardBlockedAsync(capture.SourceProcess, cancellationToken))
+        {
+            _logger.LogInformation("Clipboard capture skipped: source process is blacklisted.");
+            return;
+        }
+
+        if (_sensitiveCaptureGate?.ShouldSkipCapture(capture.SourceProcess, capture.SourceApp) == true)
+        {
+            _logger.LogInformation("Clipboard capture skipped: sensitive UI context (password/login).");
+            return;
+        }
 
         var dedupWatch = Stopwatch.StartNew();
         var existing = await _clipboardRepository.FindByHashAsync(hash, cancellationToken);
@@ -233,6 +303,7 @@ public sealed class ClipboardService : IClipboardService
         insertWatch.Stop();
         LogPerf("InsertMs", insertWatch.ElapsedMilliseconds, ("ContentType", "text"));
         RecordCopyInBackground(now);
+        DebugPerf("CAPTURE_SAVED", "ContentType=text");
         _logger.LogInformation("Clipboard text item captured.");
     }
 
@@ -357,6 +428,7 @@ public sealed class ClipboardService : IClipboardService
             }
 
             SuppressCaptureFor(TimeSpan.FromMilliseconds(1500));
+            RecordInternalWrite(imageHash: _clipboardHashService.ComputeHash(image.TextContent));
             await _clipboardWriter.SetImagePngBase64Async(image.TextContent, cancellationToken);
             await Task.Delay(70, cancellationToken);
             await _clipboardWriter.SendPasteHotkeyAsync(cancellationToken);
@@ -389,6 +461,7 @@ public sealed class ClipboardService : IClipboardService
         }
 
         SuppressCaptureFor(TimeSpan.FromMilliseconds(1500));
+        RecordInternalWrite(textHash: _clipboardHashService.ComputeHash(pasteText));
         await _clipboardWriter.SetTextAsync(pasteText, cancellationToken);
         await Task.Delay(70, cancellationToken);
         await _clipboardWriter.SendPasteHotkeyAsync(cancellationToken);
@@ -429,6 +502,7 @@ public sealed class ClipboardService : IClipboardService
                 return;
             }
 
+            RecordInternalWrite(imageHash: _clipboardHashService.ComputeHash(image.TextContent));
             await _clipboardWriter.SetImagePngBase64Async(image.TextContent, cancellationToken);
             RecordUseCountInBackground([image.Id]);
             copyWatch.Stop();
@@ -458,6 +532,7 @@ public sealed class ClipboardService : IClipboardService
             return;
         }
 
+        RecordInternalWrite(textHash: _clipboardHashService.ComputeHash(text));
         await _clipboardWriter.SetTextAsync(text, cancellationToken);
         await WaitForClipboardSettleAsync(cancellationToken);
         RecordUseCountInBackground(textItems.Select(item => item.Id).ToArray());
@@ -509,6 +584,7 @@ public sealed class ClipboardService : IClipboardService
 
     private void OnClipboardChanged(object? sender, ClipboardChangedEventArgs e)
     {
+        DebugPerf("CAPTURE_EVENT");
         LogPerf("ListenerReceived", 0);
         if (_captureQueue is { } queue && queue.Writer.TryWrite(e))
         {
@@ -551,26 +627,46 @@ public sealed class ClipboardService : IClipboardService
     {
         try
         {
-            var textWatch = Stopwatch.StartNew();
-            var text = _clipboardTextReader.TryReadText();
-            textWatch.Stop();
-            LogPerf("TextReadMs", textWatch.ElapsedMilliseconds, ("HasText", text is not null));
-            if (!string.IsNullOrWhiteSpace(text))
+            for (var attempt = 1; ; attempt++)
             {
-                var foreground = _foregroundAppService.GetCurrent();
-                await CaptureTextAsync(
-                    new ClipboardCapture(text, foreground.WindowTitle, foreground.ProcessName, e.ChangedAt),
-                    cancellationToken);
-                return;
-            }
+                DebugPerf("CAPTURE_READ_BEGIN", $"Attempt={attempt}");
+                var textWatch = Stopwatch.StartNew();
+                var text = _clipboardTextReader.TryReadText();
+                textWatch.Stop();
+                LogPerf("TextReadMs", textWatch.ElapsedMilliseconds, ("HasText", text is not null));
+                if (!string.IsNullOrWhiteSpace(text))
+                {
+                    DebugPerf("CAPTURE_READ_END", "HasText=true");
+                    var foreground = _foregroundAppService.GetCurrent();
+                    await CaptureTextAsync(
+                        new ClipboardCapture(text, foreground.WindowTitle, foreground.ProcessName, e.ChangedAt),
+                        cancellationToken);
+                    return;
+                }
 
-            var imageWatch = Stopwatch.StartNew();
-            var imagePngBase64 = _clipboardTextReader.TryReadImagePngBase64();
-            imageWatch.Stop();
-            LogPerf("ImageReadMs", imageWatch.ElapsedMilliseconds, ("HasImage", imagePngBase64 is not null));
-            if (imagePngBase64 is not null)
-            {
-                await CaptureImageAsync(imagePngBase64, e.ChangedAt, cancellationToken);
+                var imageWatch = Stopwatch.StartNew();
+                var imagePngBase64 = _clipboardTextReader.TryReadImagePngBase64();
+                imageWatch.Stop();
+                LogPerf("ImageReadMs", imageWatch.ElapsedMilliseconds, ("HasImage", imagePngBase64 is not null));
+                if (imagePngBase64 is not null)
+                {
+                    DebugPerf("CAPTURE_READ_END", "HasImage=true");
+                    await CaptureImageAsync(imagePngBase64, e.ChangedAt, cancellationToken);
+                    return;
+                }
+
+                if (attempt >= MaxClipboardReadAttempts)
+                {
+                    DebugPerf("CAPTURE_READ_END", "HasContent=false");
+                    _logger.LogDebug("Clipboard changed event produced no readable content after {Attempt} attempts.",
+                        attempt);
+                    return;
+                }
+
+                // Clipboard may be transiently held by another app (Excel/Chrome/screenshot tools).
+                // Retry briefly; never block the UI thread and never retry forever.
+                DebugPerf("CAPTURE_RETRY", $"Attempt={attempt}");
+                await Task.Delay(ClipboardReadRetryDelays[attempt - 1], cancellationToken);
             }
         }
         catch (OperationCanceledException)
@@ -590,12 +686,6 @@ public sealed class ClipboardService : IClipboardService
             return;
         }
 
-        if (SuppressCaptureUntil is { } suppressUntil && DateTimeOffset.UtcNow < suppressUntil)
-        {
-            _logger.LogInformation("Clipboard image capture skipped: suppressed after internal paste.");
-            return;
-        }
-
         var imageBytes = EstimateBase64DecodedByteCount(pngBase64);
         var maxImageBytes = GetMaxImageBytes();
         if (imageBytes > maxImageBytes)
@@ -607,6 +697,17 @@ public sealed class ClipboardService : IClipboardService
             return;
         }
 
+        var hashWatch = Stopwatch.StartNew();
+        var hash = _clipboardHashService.ComputeHash(pngBase64);
+        hashWatch.Stop();
+        LogPerf("HashMs", hashWatch.ElapsedMilliseconds, ("ContentType", "image/png"));
+
+        if (ShouldSkipAsInternalEcho(textHash: null, imageHash: hash))
+        {
+            DebugPerf("CAPTURE_SUPPRESSED_INTERNAL", "ContentType=image/png");
+            return;
+        }
+
         var foreground = _foregroundAppService.GetCurrent();
         if (await _appBlacklistService.IsClipboardBlockedAsync(foreground.ProcessName, cancellationToken))
         {
@@ -614,18 +715,14 @@ public sealed class ClipboardService : IClipboardService
             return;
         }
 
-        var hashWatch = Stopwatch.StartNew();
-        var hash = _clipboardHashService.ComputeHash(pngBase64);
-        hashWatch.Stop();
-        LogPerf("HashMs", hashWatch.ElapsedMilliseconds, ("ContentType", "image/png"));
-
         var dedupWatch = Stopwatch.StartNew();
         var duplicate = await _clipboardRepository.FindByHashAsync(hash, cancellationToken);
         dedupWatch.Stop();
         LogPerf("DedupQueryMs", dedupWatch.ElapsedMilliseconds, ("ContentType", "image/png"));
         if (duplicate is not null)
         {
-            _logger.LogInformation("Clipboard image capture skipped: duplicate hash.");
+            await _clipboardRepository.TouchAsync(duplicate.Id, cancellationToken);
+            _logger.LogInformation("Clipboard image capture skipped: duplicate hash; item refreshed.");
             return;
         }
 
@@ -685,6 +782,7 @@ public sealed class ClipboardService : IClipboardService
         insertWatch.Stop();
         LogPerf("InsertMs", insertWatch.ElapsedMilliseconds, ("ContentType", "image/png"));
         RecordCopyInBackground(now);
+        DebugPerf("CAPTURE_SAVED", "ContentType=image/png");
         _logger.LogInformation("Clipboard image item captured. OcrChars={OcrChars}", ocrText?.Length ?? 0);
     }
 
@@ -805,6 +903,13 @@ public sealed class ClipboardService : IClipboardService
     private bool IsPerfLogEnabled()
     {
         return _perfLogEnabled;
+    }
+
+    [System.Diagnostics.Conditional("DEBUG")]
+    private static void DebugPerf(string eventName, string detail = "")
+    {
+        var suffix = detail.Length == 0 ? string.Empty : $" {detail}";
+        System.Diagnostics.Trace.WriteLine($"ClipboardPerf {eventName}{suffix}");
     }
 
     private void LogPerf(string eventName, long elapsedMs, params (string Key, object? Value)[] values)

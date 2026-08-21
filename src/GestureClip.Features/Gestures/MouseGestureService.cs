@@ -9,6 +9,7 @@ public sealed class MouseGestureService : IMouseGestureService
 {
     private const int MaxTrackedPoints = 96;
     private const int MaxPreviewPatternLength = 2;
+    private const int HudRefreshIntervalMs = 24;
 
     private readonly ILowLevelMouseHook _mouseHook;
     private readonly IMouseGestureRecognizer _recognizer;
@@ -38,6 +39,8 @@ public sealed class MouseGestureService : IMouseGestureService
     /// </summary>
     private DateTimeOffset _suppressRightButtonUntil = DateTimeOffset.MinValue;
     private DateTimeOffset _lastMoveDebugLogAt = DateTimeOffset.MinValue;
+    private DateTimeOffset _lastHudRefreshAt = DateTimeOffset.MinValue;
+    private bool _traceDirty;
     private bool _synthesizeRightClickOnNextRightButtonUp;
     private GestureTriggerButton _pendingSyntheticClickButton = GestureTriggerButton.Right;
     private GesturePoint? _pendingSyntheticClickPoint;
@@ -156,6 +159,7 @@ public sealed class MouseGestureService : IMouseGestureService
 
     public Task StopAsync(CancellationToken cancellationToken)
     {
+        IsEnabled = false;
         if (Interlocked.Exchange(ref _started, 0) == 0)
         {
             return Task.CompletedTask;
@@ -177,11 +181,17 @@ public sealed class MouseGestureService : IMouseGestureService
     {
         try
         {
-            PendingGesture? pendingGesture = null;
+            PendingGesture? pendingGesture;
+            PendingClick? pendingClick;
 
             lock (_syncRoot)
             {
-                pendingGesture = HandleMouseEvent(args);
+                pendingGesture = HandleMouseEvent(args, out pendingClick);
+            }
+
+            if (pendingClick is not null)
+            {
+                SynthesizeClick(pendingClick.Button, pendingClick.X, pendingClick.Y);
             }
 
             if (pendingGesture is not null)
@@ -197,12 +207,14 @@ public sealed class MouseGestureService : IMouseGestureService
                 ResetState("ExceptionReset");
             }
 
+            _ = _gestureOverlayService.HideAsync(CancellationToken.None);
             _logger.LogError(ex, "Mouse gesture event handling failed.");
         }
     }
 
-    private PendingGesture? HandleMouseEvent(MouseHookEventArgs args)
+    private PendingGesture? HandleMouseEvent(MouseHookEventArgs args, out PendingClick? pendingClick)
     {
+        pendingClick = null;
         if (!IsEnabled)
         {
             return null;
@@ -308,16 +320,18 @@ public sealed class MouseGestureService : IMouseGestureService
                 }
 
                 var movePoint = ToPoint(mouseEvent);
-                var distanceFromStart = Distance(_startPoint, movePoint);
+                var distanceSquaredFromStart = DistanceSquared(_startPoint, movePoint);
                 var lastPoint = _points[^1];
-                if (Distance(lastPoint, movePoint) >= _activeSettings.Options.SegmentThreshold)
+                var segmentThresholdSquared = Square(_activeSettings.Options.SegmentThreshold);
+                if (DistanceSquared(lastPoint, movePoint) >= segmentThresholdSquared)
                 {
                     _points.Add(movePoint);
                     TrimTrackedPoints();
+                    _traceDirty = true;
                 }
 
                 if (_state == GestureRuntimeState.Tracking &&
-                    distanceFromStart >= _activeSettings.Options.TriggerThreshold)
+                    distanceSquaredFromStart >= Square(_activeSettings.Options.TriggerThreshold))
                 {
                     _state = GestureRuntimeState.GestureActive;
                     LogDebug(_activeSettings, "GestureActive entered");
@@ -328,14 +342,28 @@ public sealed class MouseGestureService : IMouseGestureService
                     }
                 }
 
-                LogMoveDebug(_activeSettings, mouseEvent.X, mouseEvent.Y, distanceFromStart, _state);
-                if (_activeSettings.ShowOverlay && _state == GestureRuntimeState.GestureActive)
+                if (_activeSettings.DebugEnabled)
+                {
+                    LogMoveDebug(
+                        _activeSettings,
+                        mouseEvent.X,
+                        mouseEvent.Y,
+                        Math.Sqrt(distanceSquaredFromStart),
+                        _state);
+                }
+
+                if (_activeSettings.ShowOverlay &&
+                    _state == GestureRuntimeState.GestureActive &&
+                    _traceDirty &&
+                    (mouseEvent.Time - _lastHudRefreshAt).TotalMilliseconds >= HudRefreshIntervalMs)
                 {
                     var preview = _recognizer.Recognize(_points, _activeSettings.Options);
                     var previewPattern = NormalizePreviewPattern(preview.Pattern);
                     var hudInfo = previewPattern is null
                         ? _hudInfoProvider.GetInfo(_activeSettings.Preset, previewPattern)
                         : _hudInfoProvider.GetInfo(_activeSettings.Preset, new GestureExecutionContext(previewPattern, _leftButtonModifier));
+                    _lastHudRefreshAt = mouseEvent.Time;
+                    _traceDirty = false;
                     _ = _gestureOverlayService.UpdateGestureAsync([.. _points], hudInfo, CancellationToken.None);
                 }
 
@@ -406,7 +434,7 @@ public sealed class MouseGestureService : IMouseGestureService
                     var clickPoint = _pendingSyntheticClickPoint ?? ToPoint(mouseEvent);
                     _pendingSyntheticClickPoint = null;
                     _pendingSyntheticClickButton = GestureTriggerButton.Right;
-                    _ = Task.Run(() => SynthesizeClickAsync(buttonToSynthesize, clickPoint.X, clickPoint.Y));
+                    pendingClick = new PendingClick(buttonToSynthesize, clickPoint.X, clickPoint.Y);
                     return null;
                 }
 
@@ -445,7 +473,7 @@ public sealed class MouseGestureService : IMouseGestureService
                 }
 
                 var upPoint = ToPoint(mouseEvent);
-                if (Distance(_points[^1], upPoint) >= 1)
+                if (DistanceSquared(_points[^1], upPoint) >= 1)
                 {
                     _points.Add(upPoint);
                     TrimTrackedPoints();
@@ -463,7 +491,7 @@ public sealed class MouseGestureService : IMouseGestureService
                         _ = _gestureOverlayService.HideAsync(CancellationToken.None);
                     }
 
-                    _ = Task.Run(() => SynthesizeClickAsync(clickButton, clickPoint.X, clickPoint.Y));
+                    pendingClick = new PendingClick(clickButton, clickPoint.X, clickPoint.Y);
                     return null;
                 }
 
@@ -528,7 +556,7 @@ public sealed class MouseGestureService : IMouseGestureService
                         // Brief complete flash then hide immediately so paste does not land in HUD.
                         await _gestureOverlayService.CompleteGestureAsync(hudInfo, CancellationToken.None);
                         await _gestureOverlayService.HideAsync(CancellationToken.None);
-                        await Task.Delay(40, CancellationToken.None);
+                        await Task.Delay(20, CancellationToken.None);
                     }
                     else
                     {
@@ -567,6 +595,7 @@ public sealed class MouseGestureService : IMouseGestureService
                 ResetState("ExceptionReset");
             }
 
+            _ = _gestureOverlayService.HideAsync(CancellationToken.None);
             _logger.LogError(ex, "Gesture recognition failed.");
         }
     }
@@ -607,7 +636,7 @@ public sealed class MouseGestureService : IMouseGestureService
                     }
                 }
 
-                await Task.Delay(50, CancellationToken.None);
+                await Task.Delay(25, CancellationToken.None);
                 lock (_syncRoot)
                 {
                     _suppressRightButtonUntil = DateTimeOffset.UtcNow.AddMilliseconds(500);
@@ -626,6 +655,7 @@ public sealed class MouseGestureService : IMouseGestureService
                 ResetState("ExceptionReset");
             }
 
+            _ = _gestureOverlayService.HideAsync(CancellationToken.None);
             _logger.LogError(ex, "Gesture action execution failed.");
         }
     }
@@ -685,6 +715,8 @@ public sealed class MouseGestureService : IMouseGestureService
         _wheelGestureFired = false;
         _leftClickConfirmDown = false;
         _leftButtonModifier = false;
+        _lastHudRefreshAt = DateTimeOffset.MinValue;
+        _traceDirty = false;
         // Keep _gestureTargetHwnd until pending gesture is built; cleared after copy into PendingGesture via reset after return.
         // Intentionally NOT cleared here when called after PendingGesture construction — value already copied.
         _gestureTargetHwnd = 0;
@@ -726,7 +758,7 @@ public sealed class MouseGestureService : IMouseGestureService
         args.Suppress = true;
         LogDebug(_activeSettings, "Suppressed original Left button for gesture click confirm");
         var upPoint = ToPoint(mouseEvent);
-        if (_points.Count > 0 && Distance(_points[^1], upPoint) >= 1)
+        if (_points.Count > 0 && DistanceSquared(_points[^1], upPoint) >= 1)
         {
             _points.Add(upPoint);
             TrimTrackedPoints();
@@ -809,7 +841,7 @@ public sealed class MouseGestureService : IMouseGestureService
         return pattern is { Length: > MaxPreviewPatternLength } ? null : pattern;
     }
 
-    private Task SynthesizeClickAsync(GestureTriggerButton button, int x, int y)
+    private void SynthesizeClick(GestureTriggerButton button, int x, int y)
     {
         try
         {
@@ -833,7 +865,6 @@ public sealed class MouseGestureService : IMouseGestureService
             _logger.LogError(ex, "Failed to synthesize mouse click.");
         }
 
-        return Task.CompletedTask;
     }
 
     private static bool IsPasteFamilyAction(BuiltInGestureAction action) => action is
@@ -944,12 +975,16 @@ public sealed class MouseGestureService : IMouseGestureService
         return new GesturePoint(mouseEvent.X, mouseEvent.Y, mouseEvent.Time);
     }
 
-    private static double Distance(GesturePoint first, GesturePoint second)
+    private static double DistanceSquared(GesturePoint first, GesturePoint second)
     {
-        var dx = second.X - first.X;
-        var dy = second.Y - first.Y;
-        return Math.Sqrt(dx * dx + dy * dy);
+        var dx = (double)second.X - first.X;
+        var dy = (double)second.Y - first.Y;
+        return (dx * dx) + (dy * dy);
     }
+
+    private static double Square(int value) => (double)value * value;
+
+    private sealed record PendingClick(GestureTriggerButton Button, int X, int Y);
 
     private sealed record PendingGesture(
         IReadOnlyList<GesturePoint> Points,

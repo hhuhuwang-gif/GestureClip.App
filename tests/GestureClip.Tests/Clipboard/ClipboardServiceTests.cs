@@ -630,6 +630,155 @@ public sealed class ClipboardServiceTests
 
         Assert.Equal(code, writer.Text);
     }
+
+    private const string OnePixelPngBase64 =
+        "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+/p9sAAAAASUVORK5CYII=";
+
+    [Fact]
+    public async Task CaptureTextAsync_allows_user_copy_during_internal_suppress_window_when_content_differs()
+    {
+        // Internal write "A" sets the fingerprint; a user copy "B" inside the same window
+        // must NOT be swallowed just because the time window is still open.
+        var repository = new FakeClipboardRepository();
+        var writer = new FakeClipboardWriter();
+        var service = CreateService(repository, writer: writer);
+
+        await service.CopyItemsAsync([Item("A")], CancellationToken.None);
+        Assert.True(service.SuppressCaptureUntil > DateTimeOffset.UtcNow);
+        await service.CaptureTextAsync(Capture("B"), CancellationToken.None);
+
+        var saved = Assert.Single(repository.Items);
+        Assert.Equal("B", saved.TextContent);
+    }
+
+    [Fact]
+    public async Task CaptureTextAsync_swallows_only_the_internal_write_echo_once()
+    {
+        // Internal write "A" → its own echo "A" must not create a duplicate history entry.
+        var repository = new FakeClipboardRepository();
+        var writer = new FakeClipboardWriter();
+        var service = CreateService(repository, writer: writer);
+
+        await service.CopyItemsAsync([Item("A")], CancellationToken.None);
+        await service.CaptureTextAsync(Capture("A"), CancellationToken.None);
+
+        Assert.Empty(repository.Items);
+    }
+
+    [Fact]
+    public async Task Clipboard_changed_rapid_sequence_a_b_c_all_reach_handling()
+    {
+        var repository = new FakeClipboardRepository();
+        var listener = new FakeClipboardListener();
+        var reader = new FakeClipboardTextReader();
+        reader.TextQueue.Enqueue("A");
+        reader.TextQueue.Enqueue("B");
+        reader.TextQueue.Enqueue("C");
+        var service = CreateService(repository, listener: listener, reader: reader);
+
+        await service.StartAsync(CancellationToken.None);
+        listener.Raise();
+        listener.Raise();
+        listener.Raise();
+        await WaitForAsync(() => repository.Items.Count == 3);
+
+        Assert.Equal(new[] { "A", "B", "C" }, repository.Items.Select(item => item.TextContent).ToArray());
+    }
+
+    [Fact]
+    public async Task Clipboard_changed_retries_when_first_read_fails_and_saves_on_retry()
+    {
+        // First read returns nothing (transient clipboard unavailability), the retry
+        // succeeds: the copy must still be saved.
+        var repository = new FakeClipboardRepository();
+        var listener = new FakeClipboardListener();
+        var reader = new FakeClipboardTextReader();
+        reader.TextQueue.Enqueue(null);
+        reader.TextQueue.Enqueue("B");
+        var service = CreateService(repository, listener: listener, reader: reader);
+
+        await service.StartAsync(CancellationToken.None);
+        listener.Raise();
+        await WaitForAsync(() => repository.Items.Count == 1);
+
+        Assert.Equal("B", repository.Items[0].TextContent);
+    }
+
+    [Fact]
+    public async Task Clipboard_changed_retry_exhausts_without_spinning_or_saving()
+    {
+        var repository = new FakeClipboardRepository();
+        var listener = new FakeClipboardListener();
+        var reader = new FakeClipboardTextReader();
+        reader.TextQueue.Enqueue(null);
+        reader.TextQueue.Enqueue(null);
+        reader.TextQueue.Enqueue(null);
+        var service = CreateService(repository, listener: listener, reader: reader);
+
+        await service.StartAsync(CancellationToken.None);
+        listener.Raise();
+        await Task.Delay(400);
+
+        Assert.Empty(repository.Items);
+    }
+
+    [Fact]
+    public async Task Clipboard_changed_saves_png_image_with_thumbnail_contract()
+    {
+        var repository = new FakeClipboardRepository();
+        var listener = new FakeClipboardListener();
+        var reader = new FakeClipboardTextReader { Text = null, ImagePngBase64 = OnePixelPngBase64 };
+        var service = CreateService(repository, listener: listener, reader: reader);
+
+        await service.StartAsync(CancellationToken.None);
+        listener.Raise();
+        await WaitForAsync(() => repository.Items.Count == 1);
+
+        var saved = Assert.Single(repository.Items);
+        Assert.Equal("image/png", saved.ContentType);
+        Assert.Equal(OnePixelPngBase64, saved.TextContent);
+        Assert.False(string.IsNullOrWhiteSpace(saved.ThumbnailContent));
+        Assert.False(string.IsNullOrWhiteSpace(saved.Hash));
+    }
+
+    [Fact]
+    public async Task Clipboard_changed_image_only_copy_is_not_lost_when_text_read_is_null()
+    {
+        // Pure image clipboard (no text): the text-null path must fall through to the
+        // image path instead of returning early.
+        var repository = new FakeClipboardRepository();
+        var listener = new FakeClipboardListener();
+        var reader = new FakeClipboardTextReader { Text = null, ImagePngBase64 = OnePixelPngBase64 };
+        var service = CreateService(repository, listener: listener, reader: reader);
+
+        await service.StartAsync(CancellationToken.None);
+        listener.Raise();
+        await WaitForAsync(() => repository.Items.Count == 1);
+
+        Assert.True(repository.Items[0].IsImage);
+        Assert.Equal(OnePixelPngBase64, repository.Items[0].TextContent);
+    }
+
+    [Fact]
+    public async Task Capture_duplicate_image_refreshes_existing_item_but_does_not_duplicate()
+    {
+        var repository = new FakeClipboardRepository();
+        var listener = new FakeClipboardListener();
+        var reader = new FakeClipboardTextReader { Text = null, ImagePngBase64 = OnePixelPngBase64 };
+        var service = CreateService(repository, listener: listener, reader: reader);
+
+        await service.StartAsync(CancellationToken.None);
+        listener.Raise();
+        await WaitForAsync(() => repository.Items.Count == 1);
+        var existing = repository.Items[0];
+
+        listener.Raise();
+        await WaitForAsync(() => repository.TouchedId == existing.Id);
+
+        Assert.Single(repository.Items);
+        Assert.Equal(existing.Id, repository.TouchedId);
+    }
+
     private static ClipboardService CreateService(
         FakeClipboardRepository repository,
         FakeClipboardWriter? writer = null,

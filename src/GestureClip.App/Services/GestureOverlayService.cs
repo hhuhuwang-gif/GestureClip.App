@@ -1,8 +1,8 @@
 using System.Windows;
-using System.Diagnostics;
 using System.Globalization;
 using System.Windows.Media;
 using System.Windows.Media.Animation;
+using System.Windows.Threading;
 using GestureClip.App.ViewModels;
 using GestureClip.Core.Abstractions;
 using GestureClip.Core.Gestures;
@@ -14,7 +14,8 @@ namespace GestureClip.App.Services;
 public sealed class GestureOverlayService : IGestureOverlayService
 {
     private const int MaxVisiblePointCount = 96;
-    private const int HideFadeMilliseconds = 140;
+    private const int HideFadeMilliseconds = 120;
+    private const int HudFrameIntervalMs = 24;
 
     private readonly IServiceProvider _serviceProvider;
     private readonly ISettingsService _settingsService;
@@ -26,6 +27,7 @@ public sealed class GestureOverlayService : IGestureOverlayService
     private IReadOnlyList<GesturePoint>? _pendingUpdatePoints;
     private GestureHudInfo? _pendingUpdateHudInfo;
     private bool _updateQueued;
+    private int _generation;
     private readonly IWorkstationHudService _workstationHudService;
     private readonly IAppLifecycleService _appLifecycleService;
     private bool _holdForBindAction;
@@ -53,6 +55,7 @@ public sealed class GestureOverlayService : IGestureOverlayService
 
     public async Task ShowGestureStartAsync(GesturePoint point, GestureHudInfo hudInfo, CancellationToken cancellationToken)
     {
+        Interlocked.Increment(ref _generation);
         await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
         {
             cancellationToken.ThrowIfCancellationRequested();
@@ -60,47 +63,43 @@ public sealed class GestureOverlayService : IGestureOverlayService
             EnsureWindow();
             PositionWindow();
             _hideCts?.Cancel();
-            ApplyHudInfo(hudInfo);
+            ApplyHudInfo(hudInfo, refreshStyle: true, allowBindInteraction: false);
             _viewModel!.Points = ToPointCollection([point]);
             ShowWindow();
         });
     }
 
-    public async Task UpdateGestureAsync(IReadOnlyList<GesturePoint> points, GestureHudInfo hudInfo, CancellationToken cancellationToken)
+    public Task UpdateGestureAsync(IReadOnlyList<GesturePoint> points, GestureHudInfo hudInfo, CancellationToken cancellationToken)
     {
+        cancellationToken.ThrowIfCancellationRequested();
         points = TrimVisiblePoints(points);
+        var generation = Volatile.Read(ref _generation);
 
-        var now = DateTimeOffset.UtcNow;
-        if ((now - _lastUpdateAt).TotalMilliseconds < 33)
-        {
-            StorePendingUpdate(points, hudInfo);
-            return;
-        }
-
-        _lastUpdateAt = now;
         lock (_updateSyncRoot)
         {
             _pendingUpdatePoints = points;
             _pendingUpdateHudInfo = hudInfo;
             if (_updateQueued)
             {
-                return;
+                return Task.CompletedTask;
             }
 
             _updateQueued = true;
         }
 
-        await System.Windows.Application.Current.Dispatcher.InvokeAsync(() => FlushPendingUpdate(cancellationToken));
+        _ = QueuePendingUpdateAsync(generation);
+        return Task.CompletedTask;
     }
 
     public async Task CompleteGestureAsync(GestureHudInfo hudInfo, CancellationToken cancellationToken)
     {
+        Interlocked.Increment(ref _generation);
         await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
         {
             cancellationToken.ThrowIfCancellationRequested();
             ClearPendingUpdate();
             EnsureWindow();
-            ApplyHudInfo(hudInfo);
+            ApplyHudInfo(hudInfo, refreshStyle: false, allowBindInteraction: IsUnboundHud(hudInfo));
             ShowWindow();
             _window?.PlayTrailFeedback(!IsUnboundHud(hudInfo));
             _hideCts?.Cancel();
@@ -111,6 +110,7 @@ public sealed class GestureOverlayService : IGestureOverlayService
 
     public async Task ShowPatternAsync(string pattern, CancellationToken cancellationToken)
     {
+        Interlocked.Increment(ref _generation);
         await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
         {
             cancellationToken.ThrowIfCancellationRequested();
@@ -130,6 +130,7 @@ public sealed class GestureOverlayService : IGestureOverlayService
 
     public async Task HideAsync(CancellationToken cancellationToken)
     {
+        Interlocked.Increment(ref _generation);
         await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
         {
             cancellationToken.ThrowIfCancellationRequested();
@@ -146,18 +147,40 @@ public sealed class GestureOverlayService : IGestureOverlayService
         });
     }
 
-    private void StorePendingUpdate(IReadOnlyList<GesturePoint> points, GestureHudInfo hudInfo)
+    private async Task QueuePendingUpdateAsync(int generation)
     {
-        lock (_updateSyncRoot)
+        try
         {
-            _pendingUpdatePoints = points;
-            _pendingUpdateHudInfo = hudInfo;
+            var elapsedMs = (DateTimeOffset.UtcNow - _lastUpdateAt).TotalMilliseconds;
+            var delayMs = Math.Max(0, HudFrameIntervalMs - (int)elapsedMs);
+            if (delayMs > 0)
+            {
+                await Task.Delay(delayMs).ConfigureAwait(false);
+            }
+
+            var dispatcher = System.Windows.Application.Current?.Dispatcher;
+            if (dispatcher is null)
+            {
+                ClearPendingUpdate();
+                return;
+            }
+
+            await dispatcher.InvokeAsync(
+                () => FlushPendingUpdate(generation),
+                DispatcherPriority.Render);
+        }
+        catch (Exception ex)
+        {
+            ClearPendingUpdate();
+            System.Diagnostics.Trace.TraceError("Gesture HUD frame update failed: {0}", ex);
         }
     }
 
-    private void FlushPendingUpdate(CancellationToken cancellationToken)
+    private void FlushPendingUpdate(int generation)
     {
-        var hudWatch = Stopwatch.StartNew();
+#if DEBUG
+        var hudWatch = System.Diagnostics.Stopwatch.StartNew();
+#endif
         IReadOnlyList<GesturePoint>? points;
         GestureHudInfo? hudInfo;
         lock (_updateSyncRoot)
@@ -169,19 +192,21 @@ public sealed class GestureOverlayService : IGestureOverlayService
             _updateQueued = false;
         }
 
-        if (points is null || hudInfo is null)
+        if (points is null || hudInfo is null || generation != Volatile.Read(ref _generation))
         {
             return;
         }
 
-        cancellationToken.ThrowIfCancellationRequested();
+        _lastUpdateAt = DateTimeOffset.UtcNow;
         EnsureWindow();
-        PositionWindow();
-        ApplyHudInfo(hudInfo);
+        ApplyHudInfo(hudInfo, refreshStyle: false, allowBindInteraction: false);
         _viewModel!.Points = ToPointCollection(points);
         ShowWindow();
+#if DEBUG
         hudWatch.Stop();
-        Trace.WriteLine($"GesturePerf HudUpdateDurationMs ElapsedMs={hudWatch.ElapsedMilliseconds} PointCount={points.Count}");
+        System.Diagnostics.Trace.WriteLine(
+            $"GesturePerf HudUpdateDurationMs ElapsedMs={hudWatch.ElapsedMilliseconds} PointCount={points.Count}");
+#endif
     }
 
     private void ShowWindow()
@@ -255,19 +280,22 @@ public sealed class GestureOverlayService : IGestureOverlayService
         };
     }
 
-    private void ApplyHudInfo(GestureHudInfo hudInfo)
+    private void ApplyHudInfo(GestureHudInfo hudInfo, bool refreshStyle, bool allowBindInteraction)
     {
         _viewModel!.DirectionText = hudInfo.DirectionText;
         _viewModel.Pattern = hudInfo.Pattern;
         _viewModel.ActionName = hudInfo.ActionName;
         _viewModel.ShortcutText = hudInfo.ShortcutText;
         _viewModel.PresetName = hudInfo.PresetName;
-        _viewModel.StrokeBrush = GetStrokeBrush(_settingsService.Get(SettingKeys.GestureStrokeColor, "#8CC8FF"));
+        if (refreshStyle || _lastStrokeBrush is null)
+        {
+            _viewModel.StrokeBrush = GetStrokeBrush(_settingsService.Get(SettingKeys.GestureStrokeColor, "#8CC8FF"));
+        }
         if (_viewModel.StrokeBrush is SolidColorBrush strokeSolid)
         {
             _viewModel.StrokeGlowColor = strokeSolid.Color;
         }
-        _holdForBindAction = IsUnboundHud(hudInfo);
+        _holdForBindAction = allowBindInteraction;
         if (_window is not null)
         {
             // Allow clicking 「去绑定」 only when unbound; keep drawing pass-through otherwise.
@@ -383,6 +411,7 @@ public sealed class GestureOverlayService : IGestureOverlayService
             collection.Add(ToOverlayPoint(point));
         }
 
+        collection.Freeze();
         return collection;
     }
 

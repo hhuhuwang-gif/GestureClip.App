@@ -12,6 +12,13 @@ namespace GestureClip.App.ViewModels;
 
 public sealed class ClipboardOverlayViewModel : INotifyPropertyChanged
 {
+    [System.Diagnostics.Conditional("DEBUG")]
+    private static void DebugPerf(string eventName, string detail = "")
+    {
+        var suffix = detail.Length == 0 ? string.Empty : $" {detail}";
+        System.Diagnostics.Trace.WriteLine($"ClipboardPerf {eventName}{suffix}");
+    }
+
     private const int PageSize = 50;
     private const int SelectedImagePreviewPixelWidth = 320;
     private const int MaxInlineImagePreviewBytes = 512 * 1024;
@@ -74,7 +81,7 @@ public sealed class ClipboardOverlayViewModel : INotifyPropertyChanged
 
     public event PropertyChangedEventHandler? PropertyChanged;
 
-    public ObservableCollection<ClipboardItem> Items { get; } = [];
+    public RangeObservableCollection<ClipboardItem> Items { get; } = [];
 
     public IReadOnlyList<ClipboardOverlayFilterOption> FilterOptions { get; } =
     [
@@ -346,8 +353,10 @@ public sealed class ClipboardOverlayViewModel : INotifyPropertyChanged
 
     public async Task LoadAsync()
     {
+        DebugPerf("OVERLAY_LOAD_BEGIN");
         await SearchAsync();
         SelectLatestItem();
+        DebugPerf("OVERLAY_READY");
     }
 
     public async Task SearchAsync()
@@ -724,6 +733,7 @@ public sealed class ClipboardOverlayViewModel : INotifyPropertyChanged
         var primaryCount = 0;
         var hasMore = false;
         var statusOverride = "";
+        DebugPerf("OVERLAY_QUERY_BEGIN");
         try
         {
             IsLoading = true;
@@ -792,6 +802,7 @@ public sealed class ClipboardOverlayViewModel : INotifyPropertyChanged
         _lastSearchResults = results.Select(WithSessionCopiedFlag).ToArray();
         _primaryResultCount = primaryCount;
         HasMoreItems = hasMore;
+        DebugPerf("OVERLAY_QUERY_END", $"ResultCount={_lastSearchResults.Count}");
         ApplyFilter();
         StatusText = statusOverride;
     }
@@ -921,11 +932,7 @@ public sealed class ClipboardOverlayViewModel : INotifyPropertyChanged
         var refreshWatch = Stopwatch.StartNew();
         var previousSelectedId = keepSelection ? SelectedItem?.Id : null;
         var filtered = _lastSearchResults.Where(MatchesSelectedFilter).ToArray();
-        Items.Clear();
-        foreach (var item in filtered)
-        {
-            Items.Add(item);
-        }
+        Items.ReplaceRange(filtered);
 
         SelectedItem = previousSelectedId is { } id
             ? Items.FirstOrDefault(item => item.Id == id) ?? Items.FirstOrDefault()
@@ -939,6 +946,7 @@ public sealed class ClipboardOverlayViewModel : INotifyPropertyChanged
         OnPropertyChanged(nameof(EmptyStateHint));
         refreshWatch.Stop();
         Trace.WriteLine($"ClipboardPerf UiRefreshDurationMs ElapsedMs={refreshWatch.ElapsedMilliseconds} ItemCount={Items.Count} Filter={SelectedFilter}");
+        DebugPerf("OVERLAY_ITEMS_COMMIT", $"ItemCount={Items.Count} ElapsedMs={refreshWatch.ElapsedMilliseconds}");
     }
 
     public void UpdateSelectedCount(int selectedCount)

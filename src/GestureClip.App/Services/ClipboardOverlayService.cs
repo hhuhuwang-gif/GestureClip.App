@@ -30,6 +30,7 @@ public sealed class ClipboardOverlayService : IClipboardOverlayService
 
     public async Task ShowAsync()
     {
+        DebugPerf("CLIPBOARD_HOTKEY");
         await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
         {
             var window = EnsureWindow();
@@ -43,6 +44,7 @@ public sealed class ClipboardOverlayService : IClipboardOverlayService
 
     public async Task ToggleAsync()
     {
+        DebugPerf("CLIPBOARD_HOTKEY");
         await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
         {
             var window = EnsureWindow();
@@ -58,6 +60,12 @@ public sealed class ClipboardOverlayService : IClipboardOverlayService
             RecordOpenInBackground();
             _ = LoadHistoryWithPerfAsync(window);
         });
+    }
+
+    [System.Diagnostics.Conditional("DEBUG")]
+    private static void DebugPerf(string eventName)
+    {
+        System.Diagnostics.Trace.WriteLine($"ClipboardPerf {eventName}");
     }
 
     private void RecordOpenInBackground()

@@ -1,5 +1,33 @@
 # CHANGELOG
 
+## GestureClip v0.6.41 Beta
+
+### 手势性能与灵敏度
+
+- 全局低级鼠标钩子迁移到独立 Dispatcher 线程，不再让所有鼠标事件与 WPF UI 渲染争抢主线程
+- 高频移动事件按约 24ms 合帧，连续轨迹只提交最新 HUD 帧；120 个合成移动事件的回归测试限制为最多 12 次 HUD 更新
+- 手势距离判断改用平方距离，热路径避免重复 Math.Sqrt；仅调试日志需要时计算真实距离
+- 普通右键恢复改为锁外立即合成，不再等待线程池调度；粘贴前等待缩短到 20–25ms
+- HUD 增加代际保护，手势结束或隐藏后不会被旧更新重新弹出
+- 手势绘制期间 HUD 始终鼠标穿透，完成未绑定手势后才开放「去绑定」交互
+- 移除实时轨迹 DropShadowEffect，冻结 PointCollection，降低全屏透明窗口的渲染开销
+
+### 剪贴板稳定性与列表性能
+
+- 快速连续剪贴板事件进入顺序队列，避免忙碌期间直接丢弃后续复制
+- 临时读取失败按有限退避重试；纯图片复制不会因文本为空提前返回
+- 列表批量 ReplaceRange，减少逐条 ObservableCollection 通知造成的 UI 卡顿
+- 增加调试性能节点：热键、查询、批量提交与 HUD 帧耗时
+
+### 发布与验证
+
+- 覆盖更新 v0.6.41-beta，用户数据仍保存在 %LOCALAPPDATA%\GestureClip\
+- dotnet test GestureClip.sln -c Release：729 个测试通过
+- 安装包：
+  - GestureClip-v0.6.41-beta-win-x64.zip
+  - GestureClip-Setup-v0.6.41-beta-win-x64.zip
+  - SHA256SUMS.txt
+
 ## GestureClip v0.6.39 Beta
 
 ### 小熊新功能

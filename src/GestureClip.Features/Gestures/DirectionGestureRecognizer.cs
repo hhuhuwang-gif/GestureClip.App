@@ -20,7 +20,7 @@ public sealed class DirectionGestureRecognizer : IMouseGestureRecognizer
             return GestureResult.Invalid();
         }
 
-        if (MaxDistanceFromStart(points) < options.TriggerThreshold)
+        if (MaxDistanceSquaredFromStart(points) < Square(options.TriggerThreshold))
         {
             return GestureResult.Invalid();
         }
@@ -38,7 +38,7 @@ public sealed class DirectionGestureRecognizer : IMouseGestureRecognizer
             var dx = current.X - previous.X;
             var dy = current.Y - previous.Y;
 
-            if (Math.Sqrt(dx * dx + dy * dy) < options.SegmentThreshold)
+            if (((double)dx * dx) + ((double)dy * dy) < Square(options.SegmentThreshold))
             {
                 continue;
             }
@@ -109,22 +109,19 @@ public sealed class DirectionGestureRecognizer : IMouseGestureRecognizer
         return false;
     }
 
-    private static double Distance(GesturePoint first, GesturePoint second)
+    private static double MaxDistanceSquaredFromStart(IReadOnlyList<GesturePoint> points)
     {
-        var dx = second.X - first.X;
-        var dy = second.Y - first.Y;
-        return Math.Sqrt(dx * dx + dy * dy);
-    }
-
-    private static double MaxDistanceFromStart(IReadOnlyList<GesturePoint> points)
-    {
-        var maxDistance = 0d;
+        var maxDistanceSquared = 0d;
         var start = points[0];
         for (var i = 1; i < points.Count; i++)
         {
-            maxDistance = Math.Max(maxDistance, Distance(start, points[i]));
+            var dx = (double)points[i].X - start.X;
+            var dy = (double)points[i].Y - start.Y;
+            maxDistanceSquared = Math.Max(maxDistanceSquared, (dx * dx) + (dy * dy));
         }
 
-        return maxDistance;
+        return maxDistanceSquared;
     }
+
+    private static double Square(int value) => (double)value * value;
 }

@@ -402,9 +402,13 @@ public sealed class GestureOverlayWindowTests
 
 
 
-        Assert.Contains("TotalMilliseconds < 33", source);
+        Assert.Contains("HudFrameIntervalMs", source);
 
-        Assert.Contains("StorePendingUpdate(points, hudInfo)", source);
+        Assert.Contains("QueuePendingUpdateAsync", source);
+
+        Assert.Contains("DispatcherPriority.Render", source);
+
+        Assert.Contains("Volatile.Read(ref _generation)", source);
 
         Assert.Contains("Task.Run(async () =>", source);
 

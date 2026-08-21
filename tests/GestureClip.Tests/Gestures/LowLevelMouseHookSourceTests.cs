@@ -14,6 +14,16 @@ public sealed class LowLevelMouseHookSourceTests
     }
 
     [Fact]
+    public void LowLevelMouseHook_runs_on_a_dedicated_dispatcher_thread()
+    {
+        var source = File.ReadAllText(FindRepositoryFile("src", "GestureClip.Infrastructure", "Gestures", "LowLevelMouseHook.cs"));
+
+        Assert.Contains("GestureClip.MouseHook", source);
+        Assert.Contains("Dispatcher.Run()", source);
+        Assert.DoesNotContain("Application.Current.Dispatcher", source);
+    }
+
+    [Fact]
     public void LowLevelMouseHook_does_not_write_each_mouse_event_at_information_level()
     {
         var source = File.ReadAllText(FindRepositoryFile("src", "GestureClip.Infrastructure", "Gestures", "LowLevelMouseHook.cs"));
