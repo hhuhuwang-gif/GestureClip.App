@@ -717,7 +717,7 @@ public sealed class MouseGestureServiceTests
         hook.Raise(MouseHookEventType.Move, 80, 40);
         hook.Raise(MouseHookEventType.RightButtonUp, 80, 40);
 
-        // Unbound strokes keep the HUD for 「去绑定」; do not force-hide immediately.
+        // Unbound strokes show brief failure feedback; the real overlay owns its auto-hide timer.
         await WaitForAsync(() => overlay.Events.Any(e => e.StartsWith("complete:", StringComparison.Ordinal)));
 
         Assert.Empty(executor.Actions);

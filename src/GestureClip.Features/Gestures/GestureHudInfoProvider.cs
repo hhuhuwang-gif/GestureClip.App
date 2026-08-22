@@ -148,7 +148,7 @@ public sealed class GestureHudInfoProvider : IGestureHudInfoProvider
             BuiltInGestureAction.SearchSelectedTextWithBing => "复制选中并搜索",
             BuiltInGestureAction.OpenGoogle => "google.com",
             BuiltInGestureAction.OpenBaidu => "baidu.com",
-            _ => "松开后可点「去绑定」"
+            _ => "暂无动作"
         };
     }
 

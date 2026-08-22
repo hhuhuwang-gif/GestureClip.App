@@ -571,7 +571,8 @@ public sealed class MouseGestureService : IMouseGestureService
                 }
 
                 await ExecuteGestureAsync(executionContext);
-                // Keep HUD visible longer when unbound so user can click 「去绑定」.
+                // Bound actions can hide as soon as execution finishes. Unbound feedback
+                // uses the overlay's short result timer so the red status remains visible briefly.
                 if (pendingGesture.ShowOverlay
                     && !IsPasteFamilyAction(resolvedAction)
                     && resolvedAction != BuiltInGestureAction.None)

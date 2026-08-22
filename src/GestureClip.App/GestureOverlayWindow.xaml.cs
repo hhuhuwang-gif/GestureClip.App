@@ -1,5 +1,4 @@
 using System.Windows;
-using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Animation;
 using GestureClip.App.ViewModels;
@@ -31,12 +30,4 @@ public partial class GestureOverlayWindow : Window
         TrailFeedbackLine.BeginAnimation(OpacityProperty, pulse);
     }
 
-    private void BindActionBar_MouseLeftButtonUp(object sender, MouseButtonEventArgs e)
-    {
-        if (DataContext is GestureOverlayViewModel vm && vm.BindUnboundGestureCommand.CanExecute(null))
-        {
-            vm.BindUnboundGestureCommand.Execute(null);
-            e.Handled = true;
-        }
-    }
 }

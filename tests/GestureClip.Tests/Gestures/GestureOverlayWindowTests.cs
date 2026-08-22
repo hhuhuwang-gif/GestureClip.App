@@ -382,7 +382,9 @@ public sealed class GestureOverlayWindowTests
 
 
 
-        Assert.Contains("PointFromScreen", source);
+        Assert.DoesNotContain("PointFromScreen", source);
+        Assert.Contains("point.X - originX", source);
+        Assert.Contains("point.Y - originY", source);
 
     }
 
@@ -417,6 +419,11 @@ public sealed class GestureOverlayWindowTests
         Assert.Contains("TotalMilliseconds < 750", source);
 
         Assert.Contains("gesture drawing must stay smooth", source);
+
+        var applyStart = source.IndexOf("private void ApplyHudInfo", StringComparison.Ordinal);
+        var applyEnd = source.IndexOf("private static bool IsUnboundHud", applyStart, StringComparison.Ordinal);
+        var applyMethod = source[applyStart..applyEnd];
+        Assert.DoesNotContain("QueueWorkstationSnapshotRefresh", applyMethod);
 
     }
 
@@ -468,28 +475,25 @@ public sealed class GestureOverlayWindowTests
 
 
     [Fact]
-    public void GestureOverlayWindow_exposes_unbind_bind_action_bar()
+    public void GestureOverlayWindow_removes_unbound_quick_bind_interaction()
     {
-        var path = FindRepositoryFile("src", "GestureClip.App", "GestureOverlayWindow.xaml");
-        var xaml = File.ReadAllText(path);
+        var xaml = File.ReadAllText(FindRepositoryFile("src", "GestureClip.App", "GestureOverlayWindow.xaml"));
+        var window = File.ReadAllText(FindRepositoryFile("src", "GestureClip.App", "GestureOverlayWindow.xaml.cs"));
         var vm = File.ReadAllText(FindRepositoryFile("src", "GestureClip.App", "ViewModels", "GestureOverlayViewModel.cs"));
-        var life = File.ReadAllText(FindRepositoryFile("src", "GestureClip.Core", "Abstractions", "IAppLifecycleService.cs"));
         var overlay = File.ReadAllText(FindRepositoryFile("src", "GestureClip.App", "Services", "GestureOverlayService.cs"));
-        var mouse = File.ReadAllText(FindRepositoryFile("src", "GestureClip.Features", "Gestures", "MouseGestureService.cs"));
-        var settingsVm = File.ReadAllText(FindRepositoryFile("src", "GestureClip.App", "ViewModels", "SettingsViewModel.Gestures.cs"));
+        var hud = File.ReadAllText(FindRepositoryFile("src", "GestureClip.Features", "Gestures", "GestureHudInfoProvider.cs"));
 
-        Assert.Contains("BindActionBar", xaml);
-        Assert.Contains("ShowBindAction", xaml);
-        Assert.Contains("BindUnboundGestureCommand", xaml);
-        Assert.Contains("去绑定", vm);
-        Assert.Contains("BindActionButtonText", xaml);
-        Assert.Contains("ShowBindAction", vm);
-        Assert.Contains("ShowGestureBindingEditor", vm);
-        Assert.Contains("ShowGestureBindingEditor", life);
-        Assert.Contains("_holdForBindAction", overlay);
-        Assert.Contains("4500", overlay);
-        Assert.Contains("resolvedAction != BuiltInGestureAction.None", mouse);
-        Assert.Contains("FocusGestureBinding", settingsVm);
+        Assert.DoesNotContain("BindActionBar", xaml);
+        Assert.DoesNotContain("BindUnboundGestureCommand", xaml);
+        Assert.DoesNotContain("BindActionBar_MouseLeftButtonUp", window);
+        Assert.DoesNotContain("ShowBindAction", vm);
+        Assert.DoesNotContain("NotifyBindActionChanged", vm);
+        Assert.DoesNotContain("ShowGestureBindingEditor", vm);
+        Assert.DoesNotContain("_holdForBindAction", overlay);
+        Assert.DoesNotContain("4500", overlay);
+        Assert.DoesNotContain("去绑定", hud);
+        Assert.Contains("暂无动作", hud);
+        Assert.Contains("Task.Delay(700", overlay);
     }
 
     private static string FindRepositoryFile(params string[] segments)

@@ -14,7 +14,7 @@ namespace GestureClip.App.Services;
 public sealed class GestureOverlayService : IGestureOverlayService
 {
     private const int MaxVisiblePointCount = 96;
-    private const int HideFadeMilliseconds = 120;
+    private const int HideFadeMilliseconds = 90;
     private const int HudFrameIntervalMs = 24;
 
     private readonly IServiceProvider _serviceProvider;
@@ -29,8 +29,6 @@ public sealed class GestureOverlayService : IGestureOverlayService
     private bool _updateQueued;
     private int _generation;
     private readonly IWorkstationHudService _workstationHudService;
-    private readonly IAppLifecycleService _appLifecycleService;
-    private bool _holdForBindAction;
     private DateTimeOffset _lastWorkstationSnapshotAt = DateTimeOffset.MinValue;
     private int _workstationSnapshotQueued;
     private Rect _lastWindowBounds = Rect.Empty;
@@ -44,13 +42,11 @@ public sealed class GestureOverlayService : IGestureOverlayService
     public GestureOverlayService(
         IServiceProvider serviceProvider,
         ISettingsService settingsService,
-        IWorkstationHudService workstationHudService,
-        IAppLifecycleService appLifecycleService)
+        IWorkstationHudService workstationHudService)
     {
         _serviceProvider = serviceProvider;
         _settingsService = settingsService;
         _workstationHudService = workstationHudService;
-        _appLifecycleService = appLifecycleService;
     }
 
     public async Task ShowGestureStartAsync(GesturePoint point, GestureHudInfo hudInfo, CancellationToken cancellationToken)
@@ -63,7 +59,7 @@ public sealed class GestureOverlayService : IGestureOverlayService
             EnsureWindow();
             PositionWindow();
             _hideCts?.Cancel();
-            ApplyHudInfo(hudInfo, refreshStyle: true, allowBindInteraction: false);
+            ApplyHudInfo(hudInfo, refreshStyle: true);
             _viewModel!.Points = ToPointCollection([point]);
             ShowWindow();
         });
@@ -99,9 +95,11 @@ public sealed class GestureOverlayService : IGestureOverlayService
             cancellationToken.ThrowIfCancellationRequested();
             ClearPendingUpdate();
             EnsureWindow();
-            ApplyHudInfo(hudInfo, refreshStyle: false, allowBindInteraction: IsUnboundHud(hudInfo));
+            var isUnbound = IsUnboundHud(hudInfo);
+            ApplyHudInfo(hudInfo, refreshStyle: false);
             ShowWindow();
-            _window?.PlayTrailFeedback(!IsUnboundHud(hudInfo));
+            _window?.PlayTrailFeedback(!isUnbound);
+            QueueWorkstationSnapshotRefresh(hudInfo);
             _hideCts?.Cancel();
             _hideCts = new CancellationTokenSource();
             _ = HideLaterAsync(_hideCts.Token);
@@ -136,7 +134,6 @@ public sealed class GestureOverlayService : IGestureOverlayService
             cancellationToken.ThrowIfCancellationRequested();
             ClearPendingUpdate();
             _hideCts?.Cancel();
-            _holdForBindAction = false;
             if (_window is not null)
             {
                 _window.IsHitTestVisible = false;
@@ -199,7 +196,7 @@ public sealed class GestureOverlayService : IGestureOverlayService
 
         _lastUpdateAt = DateTimeOffset.UtcNow;
         EnsureWindow();
-        ApplyHudInfo(hudInfo, refreshStyle: false, allowBindInteraction: false);
+        ApplyHudInfo(hudInfo, refreshStyle: false);
         _viewModel!.Points = ToPointCollection(points);
         ShowWindow();
 #if DEBUG
@@ -267,20 +264,16 @@ public sealed class GestureOverlayService : IGestureOverlayService
         _viewModel = _serviceProvider.GetRequiredService<GestureOverlayViewModel>();
         _window = _serviceProvider.GetRequiredService<GestureOverlayWindow>();
         _window.DataContext = _viewModel;
-        _viewModel.SetBindActionHandler(() =>
-        {
-            _holdForBindAction = false;
-            _ = HideAsync(CancellationToken.None);
-        });
+        _window.IsHitTestVisible = false;
+        _window.Focusable = false;
         _window.Closed += (_, _) =>
         {
             _window = null;
             _viewModel = null;
-            _holdForBindAction = false;
         };
     }
 
-    private void ApplyHudInfo(GestureHudInfo hudInfo, bool refreshStyle, bool allowBindInteraction)
+    private void ApplyHudInfo(GestureHudInfo hudInfo, bool refreshStyle)
     {
         _viewModel!.DirectionText = hudInfo.DirectionText;
         _viewModel.Pattern = hudInfo.Pattern;
@@ -295,15 +288,6 @@ public sealed class GestureOverlayService : IGestureOverlayService
         {
             _viewModel.StrokeGlowColor = strokeSolid.Color;
         }
-        _holdForBindAction = allowBindInteraction;
-        if (_window is not null)
-        {
-            // Allow clicking 「去绑定」 only when unbound; keep drawing pass-through otherwise.
-            _window.IsHitTestVisible = _holdForBindAction;
-            _window.Focusable = _holdForBindAction;
-        }
-
-        QueueWorkstationSnapshotRefresh(hudInfo);
     }
 
     private static bool IsUnboundHud(GestureHudInfo hudInfo)
@@ -417,12 +401,9 @@ public sealed class GestureOverlayService : IGestureOverlayService
 
     private System.Windows.Point ToOverlayPoint(GesturePoint point)
     {
-        if (_window is null)
-        {
-            return new System.Windows.Point(point.X, point.Y);
-        }
-
-        return _window.PointFromScreen(new System.Windows.Point(point.X, point.Y));
+        var originX = _lastWindowBounds.IsEmpty ? SystemParameters.VirtualScreenLeft : _lastWindowBounds.Left;
+        var originY = _lastWindowBounds.IsEmpty ? SystemParameters.VirtualScreenTop : _lastWindowBounds.Top;
+        return new System.Windows.Point(point.X - originX, point.Y - originY);
     }
 
     private static IReadOnlyList<GesturePoint> TrimVisiblePoints(IReadOnlyList<GesturePoint> points)
@@ -548,9 +529,7 @@ public sealed class GestureOverlayService : IGestureOverlayService
     {
         try
         {
-            // Give user time to click 「去绑定」 when the stroke has no action.
-            var delayMs = _holdForBindAction ? 4500 : 800;
-            await Task.Delay(delayMs, cancellationToken);
+            await Task.Delay(700, cancellationToken);
             await HideAsync(cancellationToken);
         }
         catch (OperationCanceledException)
