@@ -111,6 +111,31 @@ WHERE type = 'index'
     }
 
     [Fact]
+    public async Task ClipboardRecentActivityIndexMigration_creates_ordering_index()
+    {
+        await using var connection = new SqliteConnection("Data Source=:memory:");
+        await connection.OpenAsync();
+
+        var runner = new SqlMigrationRunner(NullLogger<SqlMigrationRunner>.Instance);
+
+        await runner.RunAsync(connection, new[]
+        {
+            new SqlMigration(1, "initial", InitialMigration.Sql),
+            new SqlMigration(8, "clipboard_recent_activity_index", ClipboardRecentActivityIndexMigration.Sql)
+        }, CancellationToken.None);
+
+        var indexSql = await connection.ExecuteScalarAsync<string>(
+            """
+SELECT sql
+FROM sqlite_master
+WHERE type = 'index'
+  AND name = 'IX_ClipboardItems_Pinned_Activity_CreatedAt';
+""");
+
+        Assert.Contains("COALESCE(LastUsedAt, CreatedAt)", indexSql);
+    }
+
+    [Fact]
     public async Task ClipboardThumbnailMigration_adds_thumbnail_column()
     {
         await using var connection = new SqliteConnection("Data Source=:memory:");

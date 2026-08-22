@@ -18,6 +18,9 @@
 - 临时读取失败按有限退避重试；纯图片复制不会因文本为空提前返回
 - 剪贴板面板在应用空闲时预创建并预载首屏，首次快捷键打开不再临时解析整棵 XAML
 - 历史增加轻量修订号：数据未变化时重复打开直接复用内存页，不再重复查库、重绑 50 条记录
+- 启动预热与快捷键打开若撞上同一历史版本，现在合并为同一个查询，不再互相取消后重新查库
+- 加载更多直接等待 SQLite 异步查询，移除多余线程池跳转；批量复制后的使用状态改为单次扫描更新
+- 新增“置顶 + 最近使用时间”表达式索引，最近记录首屏查询不再全表扫描后临时排序
 - 数据变化时保留旧列表可操作并后台刷新；移除重复 Task.Run 调度、透明窗大范围模糊阴影和重复 150ms 淡入
 - 列表批量 ReplaceRange，减少逐条 ObservableCollection 通知造成的 UI 卡顿
 - 增加调试性能节点：热键、查询、缓存命中、批量提交与 HUD 帧耗时
@@ -42,7 +45,7 @@
 ### 发布与验证
 
 - 覆盖更新 v0.6.41-beta，用户数据仍保存在 %LOCALAPPDATA%\GestureClip\
-- dotnet test GestureClip.sln -c Release：742 个测试通过
+- dotnet test GestureClip.sln -c Release：744 个测试通过
 - 安装包：
   - GestureClip-v0.6.41-beta-win-x64.zip
   - GestureClip-Setup-v0.6.41-beta-win-x64.zip

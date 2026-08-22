@@ -36,7 +36,8 @@ public sealed class DatabaseInitializer
         await _migrationRunner.RunAsync(connection, new[]
         {
             new SqlMigration(6, "workstation_hub_stats", WorkstationHubMigration.Sql),
-            new SqlMigration(7, "clipboard_ocr_text", ClipboardOcrMigration.Sql)
+            new SqlMigration(7, "clipboard_ocr_text", ClipboardOcrMigration.Sql),
+            new SqlMigration(8, "clipboard_recent_activity_index", ClipboardRecentActivityIndexMigration.Sql)
         }, cancellationToken);
 
         _logger.LogInformation("Database migrations initialized.");

@@ -47,6 +47,9 @@ public sealed class ClipboardOverlayViewModel : INotifyPropertyChanged
     private bool _hasMoreItems;
     private bool _hasLoaded;
     private long _loadedHistoryRevision = -1;
+    private readonly object _loadSync = new();
+    private Task<bool>? _inFlightLoad;
+    private long _inFlightLoadRevision = -1;
     private string? _errorMessage;
     private bool _isShortcutHelpVisible;
     private bool _isSnippetEditorOpen;
@@ -353,15 +356,32 @@ public sealed class ClipboardOverlayViewModel : INotifyPropertyChanged
 
     public bool HasError => !string.IsNullOrWhiteSpace(ErrorMessage);
 
-    public async Task<bool> LoadAsync(bool force = false)
+    public Task<bool> LoadAsync(bool force = false)
     {
         var currentRevision = _clipboardService.HistoryRevision;
         if (!force && _hasLoaded && _loadedHistoryRevision == currentRevision)
         {
             DebugPerf("OVERLAY_CACHE_HIT", $"Revision={currentRevision}");
-            return false;
+            return Task.FromResult(false);
         }
 
+        lock (_loadSync)
+        {
+            if (!force &&
+                _inFlightLoad is { IsCompleted: false } inFlight &&
+                _inFlightLoadRevision == currentRevision)
+            {
+                DebugPerf("OVERLAY_LOAD_JOIN", $"Revision={currentRevision}");
+                return inFlight;
+            }
+
+            _inFlightLoadRevision = currentRevision;
+            return _inFlightLoad = LoadCoreAsync(force, currentRevision);
+        }
+    }
+
+    private async Task<bool> LoadCoreAsync(bool force, long currentRevision)
+    {
         DebugPerf("OVERLAY_LOAD_BEGIN", $"Force={force} Revision={currentRevision}");
         var cancellation = ReplaceSearchCancellation();
         var refreshed = await SearchCoreAsync(cancellation.Token);
@@ -912,9 +932,9 @@ public sealed class ClipboardOverlayViewModel : INotifyPropertyChanged
             ErrorMessage = null;
             var keyword = SearchText;
             var filter = ToContentFilter(SelectedFilter);
-            var nextPage = await Task.Run(
-                () => _clipboardService.SearchAsync(keyword, PageSize, offset, filter, cancellation),
-                cancellation);
+            // Repository access is already asynchronous I/O; avoid an extra thread-pool hop.
+            var nextPage = await _clipboardService.SearchAsync(
+                keyword, PageSize, offset, filter, cancellation);
             if (cancellation.IsCancellationRequested || version != Volatile.Read(ref _searchVersion))
             {
                 return false;
@@ -1486,18 +1506,60 @@ public sealed class ClipboardOverlayViewModel : INotifyPropertyChanged
 
     private void MarkItemsUsed(IReadOnlyList<Guid> ids)
     {
-        var now = DateTimeOffset.UtcNow;
-        foreach (var id in ids)
+        if (ids.Count == 0)
+        {
+            return;
+        }
+
+        var uniqueIds = ids.ToHashSet();
+        foreach (var id in uniqueIds)
         {
             _sessionCopiedIds.Add(id);
-            UpdateItem(id, item => item with
-            {
-                UseCount = item.UseCount + 1,
-                LastUsedAt = now,
-                UpdatedAt = now,
-                IsSessionCopied = true
-            });
         }
+
+        var now = DateTimeOffset.UtcNow;
+        var updatedById = new Dictionary<Guid, ClipboardItem>(uniqueIds.Count);
+        _lastSearchResults = _lastSearchResults
+            .Select(item =>
+            {
+                if (!uniqueIds.Contains(item.Id))
+                {
+                    return item;
+                }
+
+                var updated = item with
+                {
+                    UseCount = item.UseCount + 1,
+                    LastUsedAt = now,
+                    UpdatedAt = now,
+                    IsSessionCopied = true
+                };
+                updatedById[item.Id] = updated;
+                return updated;
+            })
+            .ToArray();
+
+        ClipboardItem? selectedUpdate = null;
+        for (var index = 0; index < Items.Count; index++)
+        {
+            if (!updatedById.TryGetValue(Items[index].Id, out var updated))
+            {
+                continue;
+            }
+
+            Items[index] = updated;
+            if (SelectedItem?.Id == updated.Id)
+            {
+                selectedUpdate = updated;
+            }
+        }
+
+        if (selectedUpdate is not null)
+        {
+            SelectedItem = selectedUpdate;
+        }
+
+        OnPropertyChanged(nameof(SummaryText));
     }
 
     private ClipboardItem WithSessionCopiedFlag(ClipboardItem item)

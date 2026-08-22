@@ -118,6 +118,30 @@ public sealed class ClipboardOverlayViewModelTests
     }
 
     [Fact]
+    public async Task LoadAsync_coalesces_concurrent_requests_for_the_same_revision()
+    {
+        var item = TextItem("first");
+        var query = new TaskCompletionSource<IReadOnlyList<ClipboardItem>>(
+            TaskCreationOptions.RunContinuationsAsynchronously);
+        var service = new FakeClipboardService([item])
+        {
+            HistoryRevision = 7,
+            SearchHandler = (_, _, _, _) => query.Task
+        };
+        var viewModel = new ClipboardOverlayViewModel(service, TimeSpan.Zero);
+
+        var firstLoad = viewModel.LoadAsync();
+        var secondLoad = viewModel.LoadAsync();
+
+        Assert.Same(firstLoad, secondLoad);
+        Assert.Single(service.SearchLimits);
+
+        query.SetResult([item]);
+        Assert.True(await firstLoad);
+        Assert.Single(viewModel.Items);
+    }
+
+    [Fact]
     public async Task LoadAsync_refreshes_without_clearing_visible_page_when_history_revision_changes()
     {
         var first = TextItem("first");
@@ -517,6 +541,7 @@ public sealed class ClipboardOverlayViewModelTests
         Assert.Empty(service.SearchKeywords);
         Assert.Equal(20, service.CopyCount);
         Assert.Equal(20, viewModel.Items.Count(item => item.IsSessionCopied));
+        Assert.All(viewModel.Items.Take(20), item => Assert.Equal(1, item.UseCount));
         Assert.Contains("已复制", viewModel.StatusText);
     }
 
