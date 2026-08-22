@@ -29,7 +29,11 @@ public sealed partial class SensitiveContentDetector : ISensitiveContentDetector
         return BankCardLikeRegex().IsMatch(trimmed) || JwtLikeRegex().IsMatch(trimmed);
     }
 
-    [GeneratedRegex(@"^\d{4,8}$")]
+    // Do not blanket-classify every 4-8 digit clipboard value as an OTP. Years, prices,
+    // document ids and table cells are common clipboard content. Require nearby OTP context;
+    // password/login windows are still protected by ISensitiveCaptureGate.
+    [GeneratedRegex(
+        @"(?ix)(?:(?:验证码|校验码|动态码|一次性密码|otp|verification\s*code|security\s*code|passcode)\D{0,16}\d{4,8}\b|\b\d{4,8}\D{0,24}(?:验证码|校验码|otp|verification\s*code|security\s*code|passcode))")]
     private static partial Regex VerificationCodeRegex();
 
     [GeneratedRegex(@"\b\d{13,19}\b")]

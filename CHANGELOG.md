@@ -22,10 +22,18 @@
 - 列表批量 ReplaceRange，减少逐条 ObservableCollection 通知造成的 UI 卡顿
 - 增加调试性能节点：热键、查询、缓存命中、批量提交与 HUD 帧耗时
 
+### 剪贴板兼容覆盖修复
+
+- 大于配置上限的有效 PNG 不再直接丢弃，后台按比例降采样到限制内后保存；历史日志中 7–20MB 图片被 5MB 上限跳过的问题已修复
+- 图片读取补齐 PNG/image/png、JPEG/JFIF、GIF、TIFF、DIBV5、图片文件拖放和 HTML data URI，并在图片自带 URL/替代文字时优先保存真实图片
+- 文字读取补齐 StringFormat、Text/OEM、CSV、UTF8_STRING、text/plain 和 RTF 转纯文本回退
+- Office、Chromium、截图工具的延迟渲染读取窗口由 30ms 扩展到约 355ms，仍在后台有限重试
+- 不再把所有 4–8 位纯数字一律当验证码丢弃；仅有验证码/OTP 上下文时标记敏感，登录和密码窗口保护保持不变
+
 ### 发布与验证
 
 - 覆盖更新 v0.6.41-beta，用户数据仍保存在 %LOCALAPPDATA%\GestureClip\
-- dotnet test GestureClip.sln -c Release：732 个测试通过
+- dotnet test GestureClip.sln -c Release：742 个测试通过
 - 安装包：
   - GestureClip-v0.6.41-beta-win-x64.zip
   - GestureClip-Setup-v0.6.41-beta-win-x64.zip

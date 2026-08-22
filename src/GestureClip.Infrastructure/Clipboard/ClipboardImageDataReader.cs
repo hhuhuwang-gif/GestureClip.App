@@ -23,12 +23,44 @@ public static class ClipboardImageDataReader
         }
     }
 
+    public static string? TryEncodeImageAsPngBase64(object? data)
+    {
+        try
+        {
+            var bytes = ToBytes(data);
+            if (bytes is null || bytes.Length == 0)
+            {
+                return null;
+            }
+
+            if (LooksLikePng(bytes))
+            {
+                return Convert.ToBase64String(bytes);
+            }
+
+            using var input = new MemoryStream(bytes);
+            var decoder = BitmapDecoder.Create(
+                input,
+                BitmapCreateOptions.PreservePixelFormat,
+                BitmapCacheOption.OnLoad);
+            var encoder = new PngBitmapEncoder();
+            encoder.Frames.Add(BitmapFrame.Create(decoder.Frames[0]));
+            using var output = new MemoryStream();
+            encoder.Save(output);
+            return Convert.ToBase64String(output.ToArray());
+        }
+        catch
+        {
+            return null;
+        }
+    }
+
     public static string? TryEncodeDibAsPngBase64(object? data)
     {
         try
         {
             var dibBytes = ToBytes(data);
-            if (dibBytes is null || dibBytes.Length < 40)
+            if (dibBytes is null || dibBytes.Length < 12)
             {
                 return null;
             }
@@ -93,10 +125,42 @@ public static class ClipboardImageDataReader
             throw new InvalidDataException("Invalid DIB header.");
         }
 
-        var bitCount = BitConverter.ToUInt16(dibBytes, 14);
-        var colorsUsed = dibBytes.Length >= 40 ? BitConverter.ToInt32(dibBytes, 32) : 0;
-        var paletteSize = GetPaletteSize(bitCount, colorsUsed);
-        var pixelOffset = 14 + headerSize + paletteSize;
+        ushort bitCount;
+        var colorsUsed = 0;
+        var paletteEntrySize = 4;
+        var extraMaskBytes = 0;
+        if (headerSize == 12)
+        {
+            bitCount = BitConverter.ToUInt16(dibBytes, 10);
+            paletteEntrySize = 3;
+        }
+        else
+        {
+            if (headerSize < 40 || dibBytes.Length < 40)
+            {
+                throw new InvalidDataException("Unsupported DIB header.");
+            }
+
+            bitCount = BitConverter.ToUInt16(dibBytes, 14);
+            colorsUsed = BitConverter.ToInt32(dibBytes, 32);
+            var compression = BitConverter.ToInt32(dibBytes, 16);
+            if (headerSize == 40)
+            {
+                extraMaskBytes = compression switch
+                {
+                    3 => 12, // BI_BITFIELDS
+                    6 => 16, // BI_ALPHABITFIELDS
+                    _ => 0
+                };
+            }
+        }
+
+        var paletteSize = GetPaletteSize(bitCount, colorsUsed, paletteEntrySize);
+        var pixelOffset = 14 + headerSize + extraMaskBytes + paletteSize;
+        if (pixelOffset > 14 + dibBytes.Length)
+        {
+            throw new InvalidDataException("DIB pixel offset exceeds payload.");
+        }
         var fileSize = 14 + dibBytes.Length;
 
         using var stream = new MemoryStream(fileSize);
@@ -112,7 +176,7 @@ public static class ClipboardImageDataReader
         return stream.ToArray();
     }
 
-    private static int GetPaletteSize(ushort bitCount, int colorsUsed)
+    private static int GetPaletteSize(ushort bitCount, int colorsUsed, int entrySize)
     {
         if (bitCount > 8)
         {
@@ -120,6 +184,6 @@ public static class ClipboardImageDataReader
         }
 
         var colors = colorsUsed > 0 ? colorsUsed : 1 << bitCount;
-        return colors * 4;
+        return checked(colors * entrySize);
     }
 }

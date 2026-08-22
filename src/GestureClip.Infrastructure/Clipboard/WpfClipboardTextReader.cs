@@ -1,14 +1,48 @@
+using System.Collections.Specialized;
 using System.IO;
+using System.Text.RegularExpressions;
 using System.Windows;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using GestureClip.Core.Abstractions;
+using GestureClip.Core.Clipboard;
 using Microsoft.Extensions.Logging;
 
 namespace GestureClip.Infrastructure.Clipboard;
 
 public sealed class WpfClipboardTextReader : IClipboardTextReader, IDisposable
 {
+    private const int DibV5ClipboardFormatId = 17;
+    private const long MaxClipboardImageFileBytes = 50L * 1024 * 1024;
+    private static readonly string[] ExtraTextFormats =
+    [
+        System.Windows.DataFormats.StringFormat,
+        System.Windows.DataFormats.Text,
+        System.Windows.DataFormats.OemText,
+        System.Windows.DataFormats.CommaSeparatedValue,
+        "UTF8_STRING",
+        "text/plain",
+        "text/plain;charset=utf-8",
+        "System.String"
+    ];
+    private static readonly string[] EncodedImageFormats =
+    [
+        "JFIF",
+        "image/jpeg",
+        "image/jpg",
+        System.Windows.DataFormats.Tiff,
+        "GIF",
+        "image/gif",
+        "image/bmp"
+    ];
+    private static readonly HashSet<string> SupportedImageFileExtensions = new(StringComparer.OrdinalIgnoreCase)
+    {
+        ".png", ".jpg", ".jpeg", ".bmp", ".gif", ".tif", ".tiff"
+    };
+    private static readonly Regex HtmlDataImageRegex = new(
+        @"data:image/(?:png|jpe?g|gif|bmp|tiff);base64,(?<data>[A-Za-z0-9+/=\s]+)",
+        RegexOptions.IgnoreCase | RegexOptions.Compiled);
+
     private readonly ClipboardStaDispatcher _clipboardStaThread;
     private readonly ILogger<WpfClipboardTextReader> _logger;
 
@@ -21,6 +55,30 @@ public sealed class WpfClipboardTextReader : IClipboardTextReader, IDisposable
     public void Dispose()
     {
         _clipboardStaThread.Dispose();
+    }
+
+    public ClipboardReadSnapshot TryReadSnapshot()
+    {
+        try
+        {
+            var captured = _clipboardStaThread.Invoke(CaptureContentSnapshot);
+            var image = captured.Image is null ? null : EncodeImageSnapshot(captured.Image);
+            if (image is null && captured.Image is not null)
+            {
+                var fallback = _clipboardStaThread.Invoke(CaptureFallbackImageSnapshot);
+                image = fallback is null ? null : EncodeImageSnapshot(fallback);
+            }
+
+            return new ClipboardReadSnapshot(
+                captured.Text,
+                image,
+                captured.PreferImage && image is not null);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Failed to read clipboard snapshot.");
+            return new ClipboardReadSnapshot(null, null);
+        }
     }
 
     public string? TryReadText()
@@ -37,8 +95,8 @@ public sealed class WpfClipboardTextReader : IClipboardTextReader, IDisposable
     }
 
     /// <summary>
-    /// Prefer Unicode text, then any text format, then HTML→plain for browsers that only expose CF_HTML.
-    /// Must stay on the clipboard STA thread.
+    /// Prefer Unicode text, then auto-converted text, common native/custom text formats,
+    /// RTF and finally HTML-to-plain. Must stay on the clipboard STA thread.
     /// </summary>
     private string? ReadBestEffortText()
     {
@@ -71,7 +129,35 @@ public sealed class WpfClipboardTextReader : IClipboardTextReader, IDisposable
         }
         catch (Exception ex)
         {
-            _logger.LogDebug(ex, "Generic text clipboard read failed; trying HTML.");
+            _logger.LogDebug(ex, "Generic text clipboard read failed; trying native formats.");
+        }
+
+        foreach (var format in ExtraTextFormats)
+        {
+            var text = TryReadTextFormat(format);
+            if (!string.IsNullOrEmpty(text))
+            {
+                return text;
+            }
+        }
+
+        try
+        {
+            if (System.Windows.Clipboard.ContainsData(System.Windows.DataFormats.Rtf))
+            {
+                var rtf = ClipboardTextDataReader.TryGetText(
+                    System.Windows.Clipboard.GetData(System.Windows.DataFormats.Rtf),
+                    System.Windows.DataFormats.Rtf);
+                var plain = ClipboardRtfText.ExtractPlain(rtf);
+                if (!string.IsNullOrEmpty(plain))
+                {
+                    return plain;
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogDebug(ex, "RTF clipboard read failed; trying HTML.");
         }
 
         try
@@ -93,12 +179,38 @@ public sealed class WpfClipboardTextReader : IClipboardTextReader, IDisposable
 
         return null;
     }
+
+    private string? TryReadTextFormat(string format)
+    {
+        try
+        {
+            if (!System.Windows.Clipboard.ContainsData(format))
+            {
+                return null;
+            }
+
+            return ClipboardTextDataReader.TryGetText(System.Windows.Clipboard.GetData(format), format);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogDebug(ex, "Clipboard text format {Format} read failed.", format);
+            return null;
+        }
+    }
+
     public string? TryReadImagePngBase64()
     {
         try
         {
             var snapshot = _clipboardStaThread.Invoke(CaptureImageSnapshot);
-            return EncodeImageSnapshot(snapshot);
+            var image = EncodeImageSnapshot(snapshot);
+            if (image is not null)
+            {
+                return image;
+            }
+
+            var fallback = _clipboardStaThread.Invoke(CaptureFallbackImageSnapshot);
+            return fallback is null ? null : EncodeImageSnapshot(fallback);
         }
         catch (Exception ex)
         {
@@ -107,7 +219,32 @@ public sealed class WpfClipboardTextReader : IClipboardTextReader, IDisposable
         }
     }
 
+    private CapturedClipboardSnapshot CaptureContentSnapshot()
+    {
+        var text = ReadBestEffortText();
+        var explicitImage = CaptureExplicitImageSnapshot();
+        if (explicitImage is not null)
+        {
+            return new CapturedClipboardSnapshot(text, explicitImage, PreferImage: true);
+        }
+
+        if (!string.IsNullOrWhiteSpace(text))
+        {
+            return new CapturedClipboardSnapshot(text, null, PreferImage: false);
+        }
+
+        var fallbackImage = CaptureFallbackImageSnapshot();
+        return new CapturedClipboardSnapshot(null, fallbackImage, PreferImage: fallbackImage is not null);
+    }
+
     private ImageClipboardSnapshot CaptureImageSnapshot()
+    {
+        return CaptureExplicitImageSnapshot()
+            ?? CaptureFallbackImageSnapshot()
+            ?? ImageClipboardSnapshot.Empty;
+    }
+
+    private ImageClipboardSnapshot? CaptureExplicitImageSnapshot()
     {
         var rawPngBytes = TryReadRawPngBytes();
         if (rawPngBytes is not null)
@@ -115,6 +252,32 @@ public sealed class WpfClipboardTextReader : IClipboardTextReader, IDisposable
             return new ImageClipboardSnapshot(rawPngBytes, null, null, null);
         }
 
+        var encodedImageBytes = TryReadEncodedImageBytes();
+        if (encodedImageBytes is not null)
+        {
+            return new ImageClipboardSnapshot(encodedImageBytes, null, null, null);
+        }
+
+        var dibV5Bytes = TryReadDibV5Bytes();
+        if (dibV5Bytes is not null)
+        {
+            return new ImageClipboardSnapshot(null, dibV5Bytes, null, null);
+        }
+
+        var fileImageBytes = TryReadFileDropImageBytes();
+        if (fileImageBytes is not null)
+        {
+            return new ImageClipboardSnapshot(fileImageBytes, null, null, null);
+        }
+
+        var htmlImageBytes = TryReadHtmlDataImageBytes();
+        return htmlImageBytes is null
+            ? null
+            : new ImageClipboardSnapshot(htmlImageBytes, null, null, null);
+    }
+
+    private ImageClipboardSnapshot? CaptureFallbackImageSnapshot()
+    {
         var dibBytes = TryReadDibBytes();
         if (dibBytes is not null)
         {
@@ -127,12 +290,16 @@ public sealed class WpfClipboardTextReader : IClipboardTextReader, IDisposable
             return new ImageClipboardSnapshot(null, null, wpfImage, null);
         }
 
-        return new ImageClipboardSnapshot(null, null, null, TryReadWinFormsImageClone());
+        var winFormsImage = TryReadWinFormsImageClone();
+        return winFormsImage is null
+            ? null
+            : new ImageClipboardSnapshot(null, null, null, winFormsImage);
     }
 
     private string? EncodeImageSnapshot(ImageClipboardSnapshot snapshot)
     {
-        return ClipboardImageDataReader.TryGetPngBase64(snapshot.RawPngBytes)
+        return ClipboardImageDataReader.TryGetPngBase64(snapshot.RawImageBytes)
+            ?? ClipboardImageDataReader.TryEncodeImageAsPngBase64(snapshot.RawImageBytes)
             ?? ClipboardImageDataReader.TryEncodeDibAsPngBase64(snapshot.DibBytes)
             ?? (snapshot.WpfImage is null ? null : EncodeBitmapSource(snapshot.WpfImage))
             ?? (snapshot.WinFormsImage is null ? null : EncodeDrawingImage(snapshot.WinFormsImage));
@@ -140,19 +307,76 @@ public sealed class WpfClipboardTextReader : IClipboardTextReader, IDisposable
 
     private byte[]? TryReadRawPngBytes()
     {
+        foreach (var format in new[] { "PNG", "image/png" })
+        {
+            try
+            {
+                if (format == "PNG" && !System.Windows.Clipboard.ContainsData("PNG"))
+                {
+                    continue;
+                }
+
+                if (format != "PNG" && !System.Windows.Clipboard.ContainsData(format))
+                {
+                    continue;
+                }
+
+                var bytes = TryCopyBytes(System.Windows.Clipboard.GetData(format));
+                if (bytes is { Length: > 0 })
+                {
+                    return bytes;
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogDebug(ex, "Failed to read PNG clipboard format {Format}.", format);
+            }
+        }
+
+        return null;
+    }
+
+    private byte[]? TryReadEncodedImageBytes()
+    {
+        foreach (var format in EncodedImageFormats)
+        {
+            try
+            {
+                if (!System.Windows.Clipboard.ContainsData(format))
+                {
+                    continue;
+                }
+
+                var bytes = TryCopyBytes(System.Windows.Clipboard.GetData(format));
+                if (bytes is { Length: > 0 })
+                {
+                    return bytes;
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogDebug(ex, "Failed to read encoded clipboard image format {Format}.", format);
+            }
+        }
+
+        return null;
+    }
+
+    private byte[]? TryReadDibV5Bytes()
+    {
         try
         {
-            if (!System.Windows.Clipboard.ContainsData("PNG"))
+            var format = System.Windows.DataFormats.GetDataFormat(DibV5ClipboardFormatId).Name;
+            if (!System.Windows.Clipboard.ContainsData(format))
             {
                 return null;
             }
 
-            var data = System.Windows.Clipboard.GetData("PNG");
-            return TryCopyBytes(data);
+            return TryCopyBytes(System.Windows.Clipboard.GetData(format));
         }
         catch (Exception ex)
         {
-            _logger.LogWarning(ex, "Failed to read PNG clipboard data.");
+            _logger.LogDebug(ex, "Failed to read DIBV5 clipboard data.");
             return null;
         }
     }
@@ -172,6 +396,67 @@ public sealed class WpfClipboardTextReader : IClipboardTextReader, IDisposable
         catch (Exception ex)
         {
             _logger.LogWarning(ex, "Failed to read DIB clipboard data.");
+            return null;
+        }
+    }
+
+    private byte[]? TryReadFileDropImageBytes()
+    {
+        try
+        {
+            if (!System.Windows.Clipboard.ContainsFileDropList())
+            {
+                return null;
+            }
+
+            StringCollection files = System.Windows.Clipboard.GetFileDropList();
+            foreach (var path in files.Cast<string>())
+            {
+                var extension = Path.GetExtension(path);
+                if (!SupportedImageFileExtensions.Contains(extension) || !File.Exists(path))
+                {
+                    continue;
+                }
+
+                var info = new FileInfo(path);
+                if (info.Length is <= 0 or > MaxClipboardImageFileBytes)
+                {
+                    continue;
+                }
+
+                return File.ReadAllBytes(path);
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogDebug(ex, "Failed to read image file from clipboard file-drop data.");
+        }
+
+        return null;
+    }
+
+    private byte[]? TryReadHtmlDataImageBytes()
+    {
+        try
+        {
+            if (!System.Windows.Clipboard.ContainsText(System.Windows.TextDataFormat.Html))
+            {
+                return null;
+            }
+
+            var html = System.Windows.Clipboard.GetText(System.Windows.TextDataFormat.Html);
+            var match = HtmlDataImageRegex.Match(html);
+            if (!match.Success)
+            {
+                return null;
+            }
+
+            var compact = new string(match.Groups["data"].Value.Where(character => !char.IsWhiteSpace(character)).ToArray());
+            return Convert.FromBase64String(compact);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogDebug(ex, "Failed to read data-URI image from clipboard HTML.");
             return null;
         }
     }
@@ -284,9 +569,17 @@ public sealed class WpfClipboardTextReader : IClipboardTextReader, IDisposable
         }
     }
 
+    private sealed record CapturedClipboardSnapshot(
+        string? Text,
+        ImageClipboardSnapshot? Image,
+        bool PreferImage);
+
     private sealed record ImageClipboardSnapshot(
-        byte[]? RawPngBytes,
+        byte[]? RawImageBytes,
         byte[]? DibBytes,
         BitmapSource? WpfImage,
-        System.Drawing.Image? WinFormsImage);
+        System.Drawing.Image? WinFormsImage)
+    {
+        public static ImageClipboardSnapshot Empty { get; } = new(null, null, null, null);
+    }
 }

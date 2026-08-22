@@ -6,7 +6,7 @@ namespace GestureClip.Tests.Clipboard;
 public sealed class SensitiveContentDetectorTests
 {
     [Theory]
-    [InlineData("123456")]
+    [InlineData("验证码 123456，请勿泄露")]
     [InlineData("sk-live-secret-token")]
     [InlineData("AKIAIOSFODNN7EXAMPLE")]
     [InlineData("ghp_abcdefghijklmnopqrstuvwxyz")]
@@ -25,5 +25,7 @@ public sealed class SensitiveContentDetectorTests
         var detector = new SensitiveContentDetector();
 
         Assert.False(detector.LooksSensitive("normal clipboard note"));
+        Assert.False(detector.LooksSensitive("123456"));
+        Assert.False(detector.LooksSensitive("20260822"));
     }
 }

@@ -32,10 +32,21 @@ public sealed class ClipboardServiceTests
         await service.CaptureTextAsync(Capture("secret", process: "vault.exe"), CancellationToken.None);
         await service.CaptureTextAsync(Capture("normal"), CancellationToken.None);
         await service.CaptureTextAsync(Capture("normal"), CancellationToken.None);
-        await service.CaptureTextAsync(Capture("123456"), CancellationToken.None);
+        await service.CaptureTextAsync(Capture("验证码 123456"), CancellationToken.None);
 
         Assert.Single(repository.Items);
         Assert.Equal("normal", repository.Items[0].TextContent);
+    }
+
+    [Fact]
+    public async Task CaptureTextAsync_keeps_plain_numeric_text_that_is_not_contextual_otp()
+    {
+        var repository = new FakeClipboardRepository();
+        var service = CreateService(repository);
+
+        await service.CaptureTextAsync(Capture("123456"), CancellationToken.None);
+
+        Assert.Equal("123456", Assert.Single(repository.Items).TextContent);
     }
 
     [Fact]
@@ -531,6 +542,25 @@ public sealed class ClipboardServiceTests
     }
 
     [Fact]
+    public async Task Clipboard_changed_resizes_valid_large_image_instead_of_dropping_it()
+    {
+        var repository = new FakeClipboardRepository();
+        var listener = new FakeClipboardListener();
+        var settings = new FakeSettingsService();
+        settings.Values[SettingKeys.ClipboardMaxImageBytes] = 128 * 1024;
+        var reader = new FakeClipboardTextReader { ImagePngBase64 = CreateNoisyPngBase64(512, 512) };
+        var service = CreateService(repository, listener: listener, reader: reader, settings: settings);
+
+        await service.StartAsync(CancellationToken.None);
+        listener.Raise();
+        await WaitForAsync(() => repository.Items.Count == 1);
+
+        var item = Assert.Single(repository.Items);
+        Assert.True(item.IsImage);
+        Assert.True(Convert.FromBase64String(item.TextContent!).Length <= 128 * 1024);
+    }
+
+    [Fact]
     public async Task Clipboard_changed_events_are_processed_serially()
     {
         var repository = new FakeClipboardRepository();
@@ -723,6 +753,44 @@ public sealed class ClipboardServiceTests
     }
 
     [Fact]
+    public async Task Clipboard_changed_retries_long_enough_for_delayed_rendering()
+    {
+        var repository = new FakeClipboardRepository();
+        var listener = new FakeClipboardListener();
+        var reader = new FakeClipboardTextReader();
+        reader.TextQueue.Enqueue(null);
+        reader.TextQueue.Enqueue(null);
+        reader.TextQueue.Enqueue(null);
+        reader.TextQueue.Enqueue(null);
+        reader.TextQueue.Enqueue("late Office text");
+        var service = CreateService(repository, listener: listener, reader: reader);
+
+        await service.StartAsync(CancellationToken.None);
+        listener.Raise();
+        await WaitForAsync(() => repository.Items.Count == 1);
+
+        Assert.Equal("late Office text", repository.Items[0].TextContent);
+    }
+
+    [Fact]
+    public async Task Clipboard_changed_prefers_explicit_image_over_text_fallback()
+    {
+        var repository = new FakeClipboardRepository();
+        var listener = new FakeClipboardListener();
+        var reader = new FakeClipboardTextReader
+        {
+            Snapshot = new ClipboardReadSnapshot("https://example.test/image.png", OnePixelPngBase64, PreferImage: true)
+        };
+        var service = CreateService(repository, listener: listener, reader: reader);
+
+        await service.StartAsync(CancellationToken.None);
+        listener.Raise();
+        await WaitForAsync(() => repository.Items.Count == 1);
+
+        Assert.True(repository.Items[0].IsImage);
+    }
+
+    [Fact]
     public async Task Clipboard_changed_retry_exhausts_without_spinning_or_saving()
     {
         var repository = new FakeClipboardRepository();
@@ -817,6 +885,31 @@ public sealed class ClipboardServiceTests
             settings ?? new FakeSettingsService(),
             dashboard ?? new FakeWorkstationDashboardService(),
             NullLogger<ClipboardService>.Instance);
+    }
+
+    private static string CreateNoisyPngBase64(int width, int height)
+    {
+        var pixels = new byte[width * height * 4];
+        new Random(42).NextBytes(pixels);
+        for (var index = 3; index < pixels.Length; index += 4)
+        {
+            pixels[index] = 255;
+        }
+
+        var bitmap = System.Windows.Media.Imaging.BitmapSource.Create(
+            width,
+            height,
+            96,
+            96,
+            System.Windows.Media.PixelFormats.Bgra32,
+            null,
+            pixels,
+            width * 4);
+        var encoder = new System.Windows.Media.Imaging.PngBitmapEncoder();
+        encoder.Frames.Add(System.Windows.Media.Imaging.BitmapFrame.Create(bitmap));
+        using var output = new MemoryStream();
+        encoder.Save(output);
+        return Convert.ToBase64String(output.ToArray());
     }
 
     private static ClipboardCapture Capture(string text, string process = "notepad.exe")
@@ -1060,11 +1153,25 @@ public sealed class ClipboardServiceTests
     {
         public string? Text { get; set; }
         public string? ImagePngBase64 { get; set; }
+        public ClipboardReadSnapshot? Snapshot { get; set; }
         public Queue<string?> TextQueue { get; } = [];
 
         public string? TryReadText() => TextQueue.TryDequeue(out var text) ? text : Text;
 
         public string? TryReadImagePngBase64() => ImagePngBase64;
+
+        public ClipboardReadSnapshot TryReadSnapshot()
+        {
+            if (Snapshot is not null)
+            {
+                return Snapshot;
+            }
+
+            var text = TryReadText();
+            return !string.IsNullOrWhiteSpace(text)
+                ? new ClipboardReadSnapshot(text, null)
+                : new ClipboardReadSnapshot(null, TryReadImagePngBase64(), ImagePngBase64 is not null);
+        }
     }
 
     private static async Task WaitForAsync(Func<bool> condition)

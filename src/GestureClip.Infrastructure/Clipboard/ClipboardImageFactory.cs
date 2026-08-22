@@ -59,6 +59,66 @@ public static class ClipboardImageFactory
         return bitmapBytes[BitmapFileHeaderSize..];
     }
 
+    public static string? TryFitPngBase64(string pngBase64, int maxBytes)
+    {
+        if (maxBytes <= 0)
+        {
+            return null;
+        }
+
+        try
+        {
+            var bytes = GetPngBytes(pngBase64);
+            if (bytes.Length <= maxBytes)
+            {
+                return Convert.ToBase64String(bytes);
+            }
+
+            using var metadataStream = new MemoryStream(bytes);
+            var decoder = BitmapDecoder.Create(
+                metadataStream,
+                BitmapCreateOptions.PreservePixelFormat,
+                BitmapCacheOption.OnLoad);
+            var originalWidth = Math.Max(1, decoder.Frames[0].PixelWidth);
+            var scale = Math.Sqrt((double)maxBytes / bytes.Length) * 0.9;
+            var targetWidth = Math.Clamp((int)Math.Floor(originalWidth * scale), 64, originalWidth);
+
+            for (var attempt = 0; attempt < 8; attempt++)
+            {
+                using var input = new MemoryStream(bytes);
+                var image = new BitmapImage();
+                image.BeginInit();
+                image.CacheOption = BitmapCacheOption.OnLoad;
+                image.CreateOptions = BitmapCreateOptions.IgnoreColorProfile;
+                image.DecodePixelWidth = targetWidth;
+                image.StreamSource = input;
+                image.EndInit();
+                image.Freeze();
+
+                var encoder = new PngBitmapEncoder();
+                encoder.Frames.Add(BitmapFrame.Create(image));
+                using var output = new MemoryStream();
+                encoder.Save(output);
+                if (output.Length <= maxBytes)
+                {
+                    return Convert.ToBase64String(output.ToArray());
+                }
+
+                if (targetWidth <= 64)
+                {
+                    break;
+                }
+
+                targetWidth = Math.Max(64, (int)Math.Floor(targetWidth * 0.78));
+            }
+        }
+        catch
+        {
+        }
+
+        return null;
+    }
+
     public static string? TryCreateThumbnailPngBase64(string pngBase64, int decodePixelWidth)
     {
         try

@@ -43,6 +43,42 @@ public sealed class ClipboardImageDataReaderTests
     }
 
     [Fact]
+    public void TryEncodeImageAsPngBase64_converts_jpeg_bytes()
+    {
+        var source = ClipboardImageFactory.CreateFrozenBitmapImage(OnePixelPngBase64);
+        var encoder = new System.Windows.Media.Imaging.JpegBitmapEncoder();
+        encoder.Frames.Add(System.Windows.Media.Imaging.BitmapFrame.Create(source));
+        using var jpeg = new MemoryStream();
+        encoder.Save(jpeg);
+
+        var base64 = ClipboardImageDataReader.TryEncodeImageAsPngBase64(jpeg.ToArray());
+
+        Assert.NotNull(base64);
+        var bytes = Convert.FromBase64String(base64);
+        Assert.True(bytes.Take(4).SequenceEqual(new byte[] { 0x89, 0x50, 0x4E, 0x47 }));
+    }
+
+    [Fact]
+    public void TryEncodeDibAsPngBase64_supports_bitmap_v5_header()
+    {
+        var dibV5 = new byte[128];
+        BitConverter.GetBytes(124).CopyTo(dibV5, 0);
+        BitConverter.GetBytes(1).CopyTo(dibV5, 4);
+        BitConverter.GetBytes(1).CopyTo(dibV5, 8);
+        BitConverter.GetBytes((ushort)1).CopyTo(dibV5, 12);
+        BitConverter.GetBytes((ushort)32).CopyTo(dibV5, 14);
+        BitConverter.GetBytes(4).CopyTo(dibV5, 20);
+        dibV5[124] = 0;
+        dibV5[125] = 0;
+        dibV5[126] = 255;
+        dibV5[127] = 255;
+
+        var base64 = ClipboardImageDataReader.TryEncodeDibAsPngBase64(dibV5);
+
+        Assert.NotNull(base64);
+    }
+
+    [Fact]
     public void WpfClipboardTextReader_checks_image_formats_before_reading_heavy_data()
     {
         var sourcePath = Path.GetFullPath(Path.Combine(
@@ -59,6 +95,9 @@ public sealed class ClipboardImageDataReaderTests
         var source = File.ReadAllText(sourcePath);
 
         Assert.Contains("Clipboard.ContainsData(\"PNG\")", source);
+        Assert.Contains("DibV5ClipboardFormatId", source);
+        Assert.Contains("EncodedImageFormats", source);
+        Assert.Contains("Clipboard.ContainsFileDropList()", source);
         Assert.Contains("Clipboard.ContainsData(System.Windows.DataFormats.Dib)", source);
         Assert.Contains("Clipboard.ContainsImage()", source);
         Assert.Contains("ClipboardStaDispatcher", source);

@@ -18,10 +18,17 @@ public sealed class ClipboardService : IClipboardService
     /// cover the 1.0-1.5s suppression window plus paste settle, short enough not to treat
     /// a later user copy of the same content as an echo.</summary>
     private static readonly TimeSpan InternalWriteFingerprintLifetime = TimeSpan.FromSeconds(3);
-    /// <summary>Total read attempts per clipboard change event: initial + 2 short retries
-    /// (10ms + 20ms) for transient clipboard unavailability (COM/ExternalException).</summary>
-    private const int MaxClipboardReadAttempts = 3;
-    private static readonly TimeSpan[] ClipboardReadRetryDelays = [TimeSpan.FromMilliseconds(10), TimeSpan.FromMilliseconds(20)];
+    /// <summary>Total read attempts per clipboard change event. Office, Chromium and screenshot
+    /// tools may expose delayed-rendered formats or hold the clipboard for a few hundred milliseconds.</summary>
+    private const int MaxClipboardReadAttempts = 6;
+    private static readonly TimeSpan[] ClipboardReadRetryDelays =
+    [
+        TimeSpan.FromMilliseconds(15),
+        TimeSpan.FromMilliseconds(30),
+        TimeSpan.FromMilliseconds(60),
+        TimeSpan.FromMilliseconds(100),
+        TimeSpan.FromMilliseconds(150)
+    ];
 
     private readonly IClipboardListener _clipboardListener;
     private readonly IClipboardTextReader _clipboardTextReader;
@@ -652,28 +659,37 @@ public sealed class ClipboardService : IClipboardService
             for (var attempt = 1; ; attempt++)
             {
                 DebugPerf("CAPTURE_READ_BEGIN", $"Attempt={attempt}");
-                var textWatch = Stopwatch.StartNew();
-                var text = _clipboardTextReader.TryReadText();
-                textWatch.Stop();
-                LogPerf("TextReadMs", textWatch.ElapsedMilliseconds, ("HasText", text is not null));
-                if (!string.IsNullOrWhiteSpace(text))
+                var readWatch = Stopwatch.StartNew();
+                var snapshot = _clipboardTextReader.TryReadSnapshot();
+                readWatch.Stop();
+                LogPerf(
+                    "ClipboardReadMs",
+                    readWatch.ElapsedMilliseconds,
+                    ("HasText", !string.IsNullOrWhiteSpace(snapshot.Text)),
+                    ("HasImage", snapshot.ImagePngBase64 is not null),
+                    ("PreferImage", snapshot.PreferImage));
+
+                if (snapshot.PreferImage && snapshot.ImagePngBase64 is not null)
+                {
+                    DebugPerf("CAPTURE_READ_END", "HasImage=true Preferred=true");
+                    await CaptureImageAsync(snapshot.ImagePngBase64, e.ChangedAt, cancellationToken);
+                    return;
+                }
+
+                if (!string.IsNullOrWhiteSpace(snapshot.Text))
                 {
                     DebugPerf("CAPTURE_READ_END", "HasText=true");
                     var foreground = _foregroundAppService.GetCurrent();
                     await CaptureTextAsync(
-                        new ClipboardCapture(text, foreground.WindowTitle, foreground.ProcessName, e.ChangedAt),
+                        new ClipboardCapture(snapshot.Text, foreground.WindowTitle, foreground.ProcessName, e.ChangedAt),
                         cancellationToken);
                     return;
                 }
 
-                var imageWatch = Stopwatch.StartNew();
-                var imagePngBase64 = _clipboardTextReader.TryReadImagePngBase64();
-                imageWatch.Stop();
-                LogPerf("ImageReadMs", imageWatch.ElapsedMilliseconds, ("HasImage", imagePngBase64 is not null));
-                if (imagePngBase64 is not null)
+                if (snapshot.ImagePngBase64 is not null)
                 {
-                    DebugPerf("CAPTURE_READ_END", "HasImage=true");
-                    await CaptureImageAsync(imagePngBase64, e.ChangedAt, cancellationToken);
+                    DebugPerf("CAPTURE_READ_END", "HasImage=true Preferred=false");
+                    await CaptureImageAsync(snapshot.ImagePngBase64, e.ChangedAt, cancellationToken);
                     return;
                 }
 
@@ -712,11 +728,33 @@ public sealed class ClipboardService : IClipboardService
         var maxImageBytes = GetMaxImageBytes();
         if (imageBytes > maxImageBytes)
         {
+            var resizeWatch = Stopwatch.StartNew();
+            var fitted = await Task.Run(
+                () => GestureClip.Infrastructure.Clipboard.ClipboardImageFactory.TryFitPngBase64(pngBase64, maxImageBytes),
+                cancellationToken);
+            resizeWatch.Stop();
+            if (fitted is null)
+            {
+                _logger.LogInformation(
+                    "Clipboard image capture skipped: image could not be fitted to the configured limit. ImageBytes={ImageBytes}, MaxImageBytes={MaxImageBytes}",
+                    imageBytes,
+                    maxImageBytes);
+                return;
+            }
+
+            pngBase64 = fitted;
+            var fittedBytes = EstimateBase64DecodedByteCount(pngBase64);
+            LogPerf(
+                "ImageFitDurationMs",
+                resizeWatch.ElapsedMilliseconds,
+                ("OriginalBytes", imageBytes),
+                ("FittedBytes", fittedBytes),
+                ("MaxImageBytes", maxImageBytes));
             _logger.LogInformation(
-                "Clipboard image capture skipped: image is too large. ImageBytes={ImageBytes}, MaxImageBytes={MaxImageBytes}",
+                "Clipboard image resized for history. OriginalBytes={OriginalBytes}, FittedBytes={FittedBytes}",
                 imageBytes,
-                maxImageBytes);
-            return;
+                fittedBytes);
+            imageBytes = fittedBytes;
         }
 
         var hashWatch = Stopwatch.StartNew();
