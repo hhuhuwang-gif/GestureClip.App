@@ -370,7 +370,7 @@ public sealed class GestureOverlayWindowTests
 
     [Fact]
 
-    public void GestureOverlayService_converts_screen_points_to_overlay_coordinates()
+    public void GestureOverlayService_uses_dpi_aware_screen_coordinate_conversion()
 
     {
 
@@ -382,9 +382,10 @@ public sealed class GestureOverlayWindowTests
 
 
 
-        Assert.DoesNotContain("PointFromScreen", source);
-        Assert.Contains("point.X - originX", source);
-        Assert.Contains("point.Y - originY", source);
+        Assert.Contains("_window.PointFromScreen", source);
+        Assert.Contains("physical screen pixels", source);
+        Assert.DoesNotContain("point.X - originX", source);
+        Assert.DoesNotContain("point.Y - originY", source);
 
     }
 

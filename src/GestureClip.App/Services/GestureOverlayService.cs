@@ -401,9 +401,14 @@ public sealed class GestureOverlayService : IGestureOverlayService
 
     private System.Windows.Point ToOverlayPoint(GesturePoint point)
     {
-        var originX = _lastWindowBounds.IsEmpty ? SystemParameters.VirtualScreenLeft : _lastWindowBounds.Left;
-        var originY = _lastWindowBounds.IsEmpty ? SystemParameters.VirtualScreenTop : _lastWindowBounds.Top;
-        return new System.Windows.Point(point.X - originX, point.Y - originY);
+        if (_window is null)
+        {
+            return new System.Windows.Point(point.X, point.Y);
+        }
+
+        // Hook coordinates are physical screen pixels, while WPF renders in device-independent units.
+        // PointFromScreen keeps the trail attached to the cursor under DPI scaling and multi-monitor layouts.
+        return _window.PointFromScreen(new System.Windows.Point(point.X, point.Y));
     }
 
     private static IReadOnlyList<GesturePoint> TrimVisiblePoints(IReadOnlyList<GesturePoint> points)
