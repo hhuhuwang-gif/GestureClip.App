@@ -31,4 +31,13 @@ jobs:
         run: dotnet build .\GestureClip.sln -c Release --no-restore
 
       - name: Test
-        run: dotnet test .\GestureClip.sln -c Release --no-build --verbosity normal
+        shell: pwsh
+        run: |
+          . .\scripts\build-common.ps1
+          Invoke-DotNetTests (Get-DotNetSdk) @('test', '.\GestureClip.sln', '-c', 'Release', '--no-build', '--no-restore', '--verbosity', 'normal')
+
+      - name: Test release and installer tools
+        shell: powershell
+        run: |
+          .\scripts\tests\Test-ReleaseVerification.ps1
+          .\scripts\tests\Test-InstallCommand.ps1

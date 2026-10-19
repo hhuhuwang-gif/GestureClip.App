@@ -1,3 +1,4 @@
+using System.Globalization;
 using GestureClip.App.Converters;
 using GestureClip.App.ViewModels;
 using GestureClip.Core.Gestures;
@@ -12,7 +13,7 @@ public sealed class GestureActionOptionConverterTests
     [Fact]
     public void Convert_maps_enum_to_catalog_option()
     {
-        var option = _converter.Convert(BuiltInGestureAction.SmartPaste, typeof(object), null, null)
+        var option = _converter.Convert(BuiltInGestureAction.SmartPaste, typeof(object), null, CultureInfo.InvariantCulture)
             as GestureActionOptionViewModel;
 
         Assert.NotNull(option);
@@ -23,7 +24,7 @@ public sealed class GestureActionOptionConverterTests
     public void ConvertBack_maps_option_to_enum()
     {
         var source = GestureActionCatalog.DefaultOptions.First(o => o.Action == BuiltInGestureAction.Copy);
-        var action = (BuiltInGestureAction)_converter.ConvertBack(source, typeof(BuiltInGestureAction), null, null)!;
+        var action = (BuiltInGestureAction)_converter.ConvertBack(source, typeof(BuiltInGestureAction), null, CultureInfo.InvariantCulture)!;
 
         Assert.Equal(BuiltInGestureAction.Copy, action);
     }
@@ -31,7 +32,7 @@ public sealed class GestureActionOptionConverterTests
     [Fact]
     public void ConvertBack_null_returns_None()
     {
-        var action = (BuiltInGestureAction)_converter.ConvertBack(null, typeof(BuiltInGestureAction), null, null)!;
+        var action = (BuiltInGestureAction)_converter.ConvertBack(null, typeof(BuiltInGestureAction), null, CultureInfo.InvariantCulture)!;
         Assert.Equal(BuiltInGestureAction.None, action);
     }
 }

@@ -38,6 +38,13 @@ public sealed class ReleaseEngineeringTests
         Assert.Contains("CHANGELOG.md", script);
         Assert.Contains("Get-FileHash", script);
         Assert.Contains("SHA256SUMS.txt", script);
+        Assert.Contains("PRIVACY.md", script);
+        Assert.True(script.IndexOf("sign-release.ps1", StringComparison.Ordinal)
+            < script.IndexOf("Compress-Archive", StringComparison.Ordinal));
+        Assert.True(script.IndexOf("Compress-Archive", StringComparison.Ordinal)
+            < script.IndexOf("Get-FileHash", StringComparison.Ordinal));
+        var setup = File.ReadAllText(FindRepositoryFile("scripts", "build-setup.ps1"));
+        Assert.DoesNotContain("\"-Path\", $PublishDir", setup);
         Assert.Contains("Remove-Item (Join-Path $output \"gestureclip.db\")", script);
 
         var checkScript = File.ReadAllText(FindRepositoryFile("scripts", "check-release.ps1"));

@@ -3,6 +3,8 @@ param(
 )
 
 $ErrorActionPreference = "Stop"
+. (Join-Path $PSScriptRoot "build-common.ps1")
+$dotnet = Get-DotNetSdk
 $repoRoot = Resolve-Path (Join-Path $PSScriptRoot "..")
 $testProject = Join-Path $repoRoot "tests/GestureClip.Tests/GestureClip.Tests.csproj"
 
@@ -17,10 +19,10 @@ function Invoke-TestScope {
 
     Write-Host ""
     Write-Host "== Gesture optimization regression: $Name =="
-    dotnet test $testProject --nologo --verbosity minimal --configuration $Configuration --filter $Filter
-    if ($LASTEXITCODE -ne 0) {
-        throw "Regression scope failed: $Name"
-    }
+    Invoke-DotNetTests $dotnet @(
+        "test", $testProject, "--nologo", "--verbosity", "minimal",
+        "--configuration", $Configuration, "--filter", $Filter
+    )
 }
 
 Push-Location $repoRoot

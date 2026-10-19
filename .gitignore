@@ -33,3 +33,8 @@ GestureClip-latest.exe
 # OS files
 Thumbs.db
 Desktop.ini
+
+# Local agent task records
+.codex-tasks/
+.hermes/
+.mission/

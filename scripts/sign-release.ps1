@@ -60,7 +60,7 @@ function Get-FilesToSign([string]$Target) {
         Where-Object { $_.Extension -match '^\.(exe|dll|msi)$' -and $_.Name -notmatch '\.vshost\.' })
 }
 
-$hasPfx = -not [string]::IsNullOrWhiteSpace($PfxPath) -and (Test-Path -LiteralPath $PfxPath)
+$hasPfx = -not [string]::IsNullOrWhiteSpace($PfxPath)
 $hasThumb = -not [string]::IsNullOrWhiteSpace($Thumbprint)
 
 if (-not $hasPfx -and -not $hasThumb) {
@@ -68,10 +68,13 @@ if (-not $hasPfx -and -not $hasThumb) {
     exit 0
 }
 
+if ($hasPfx -and -not (Test-Path -LiteralPath $PfxPath -PathType Leaf)) {
+    throw "Signing certificate not found: $PfxPath"
+}
+
 $signtool = Find-SignTool
 if (-not $signtool) {
-    Write-Warning "sign-release: signtool.exe not found. Skipping signing."
-    exit 0
+    throw "sign-release: certificate configured but signtool.exe not found."
 }
 
 $files = Get-FilesToSign $Path
@@ -83,7 +86,7 @@ if ($files.Count -eq 0) {
 Write-Host "sign-release: signing $($files.Count) file(s) with $signtool"
 
 foreach ($file in $files) {
-    $args = @(
+    $signArguments = @(
         "sign",
         "/fd", "SHA256",
         "/td", "SHA256",
@@ -92,16 +95,16 @@ foreach ($file in $files) {
     )
 
     if ($hasPfx) {
-        $args += @("/f", $PfxPath)
+        $signArguments += @("/f", $PfxPath)
         if (-not [string]::IsNullOrWhiteSpace($PfxPassword)) {
-            $args += @("/p", $PfxPassword)
+            $signArguments += @("/p", $PfxPassword)
         }
     } else {
-        $args += @("/sha1", $Thumbprint)
+        $signArguments += @("/sha1", $Thumbprint)
     }
 
-    $args += $file.FullName
-    & $signtool @args
+    $signArguments += $file.FullName
+    & $signtool @signArguments
     if ($LASTEXITCODE -ne 0) {
         throw "signtool failed for $($file.FullName) with exit code $LASTEXITCODE"
     }

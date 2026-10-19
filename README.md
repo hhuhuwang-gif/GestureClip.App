@@ -220,31 +220,16 @@ v0.6.37 起历史再复制会统一写成纯文本；也可用「复制为纯文
 
 ## 开发与发布
 
+安装 .NET 8 SDK，双击 `build-exe.bat` 完成测试和便携版构建，双击 `Start-GestureClip.bat` 启动。
+
 ```powershell
-dotnet build .\GestureClip.sln -c Release
-dotnet test .\GestureClip.sln
-powershell -ExecutionPolicy Bypass -File .\scripts\publish-win-x64.ps1
+# 构建便携版 + 安装包（包含测试；每次测试限时 60 秒）
+powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\build-setup.ps1
+# 校验 SHA256、包内程序一致性与本地数据排除
+powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\check-release.ps1 -RequireSetup
 ```
 
-产物在 `artifacts\release\`。
-
----
-
-## 分享文案（可复制）
-
-```text
-我做了一个 Windows 本地剪贴板历史 + 鼠标手势工具：GestureClip
-
-- 剪贴板历史：文字/图片可找回，本机 SQLite，不上传
-- 右键手势：一划复制、粘贴、前进后退等
-- 本地快捷动作：Ctrl+Shift+Q 做去空格、JSON、URL 等
-- 工位小熊（可选）：下班倒计时、复制统计
-
-v0.6.41 Beta，解压双击 GestureClip.exe。
-
-项目：https://github.com/hhuhuwang-gif/GestureClip.App
-下载：https://github.com/hhuhuwang-gif/GestureClip.App/releases/latest
-```
+产物统一在 `artifacts\release\`，可执行文件为 `GestureClip\GestureClip.exe`。开发命令、目录职责见 [开发指南](docs/DEVELOPMENT.md)。
 
 ---
 

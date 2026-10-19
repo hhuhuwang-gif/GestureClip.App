@@ -1,4 +1,4 @@
-#Requires -Version 5.1
+﻿#Requires -Version 5.1
 <#
 .SYNOPSIS
   Install or upgrade GestureClip for the current user (no admin required by default).
@@ -61,16 +61,23 @@ function New-Shortcut([string]$LinkPath, [string]$TargetPath, [string]$WorkingDi
     $shortcut.Save()
 }
 
+function Get-UninstallCommand([string]$InstallRoot, [switch]$ForAllUsers) {
+    $helperPath = Join-Path $InstallRoot "uninstall.ps1"
+    $scopeArgument = if ($ForAllUsers) { " -AllUsers" } else { "" }
+    return "powershell.exe -NoProfile -ExecutionPolicy Bypass -File `"$helperPath`" -Uninstall -InstallDir `"$InstallRoot`"$scopeArgument"
+}
+
+function Get-UninstallRegistryPath {
+    $hive = if ($AllUsers) { "HKLM:" } else { "HKCU:" }
+    return "$hive\Software\Microsoft\Windows\CurrentVersion\Uninstall\$AppId"
+}
+
 function Register-UninstallEntry(
     [string]$InstallRoot,
     [string]$Version,
     [string]$UninstallCommand
 ) {
-    $keyPath = if ($AllUsers) {
-        "HKLM:\Software\Microsoft\Windows\CurrentVersion\Uninstall\$AppId"
-    } else {
-        "HKCU:\Software\Microsoft\Windows\CurrentVersion\Uninstall\$AppId"
-    }
+    $keyPath = Get-UninstallRegistryPath
 
     if (-not (Test-Path $keyPath)) {
         New-Item -Path $keyPath -Force | Out-Null
@@ -96,14 +103,9 @@ function Register-UninstallEntry(
 }
 
 function Unregister-UninstallEntry {
-    $paths = @(
-        "HKCU:\Software\Microsoft\Windows\CurrentVersion\Uninstall\$AppId",
-        "HKLM:\Software\Microsoft\Windows\CurrentVersion\Uninstall\$AppId"
-    )
-    foreach ($path in $paths) {
-        if (Test-Path $path) {
-            Remove-Item -Path $path -Recurse -Force -ErrorAction SilentlyContinue
-        }
+    $keyPath = Get-UninstallRegistryPath
+    if (Test-Path -LiteralPath $keyPath) {
+        Remove-Item -LiteralPath $keyPath -Recurse -Force -ErrorAction SilentlyContinue
     }
 }
 
@@ -210,7 +212,7 @@ New-Shortcut -LinkPath (Join-Path $programs "$ProductName.lnk") -TargetPath $exe
 # Uninstall helper next to app
 $uninstallPs1 = Join-Path $InstallDir "uninstall.ps1"
 Copy-Item -LiteralPath $PSCommandPath -Destination $uninstallPs1 -Force
-$uninstallCmd = "powershell.exe -NoProfile -ExecutionPolicy Bypass -File `"$uninstallPs1`" -Uninstall"
+$uninstallCmd = Get-UninstallCommand -InstallRoot $InstallDir -ForAllUsers:$AllUsers
 Register-UninstallEntry -InstallRoot $InstallDir -Version $version -UninstallCommand $uninstallCmd
 
 Write-Info ""

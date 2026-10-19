@@ -24,6 +24,7 @@ param(
 )
 
 $ErrorActionPreference = "Stop"
+. (Join-Path $PSScriptRoot "build-common.ps1")
 $repoRoot = Split-Path -Parent $PSScriptRoot
 $project = Join-Path $repoRoot "src\GestureClip.App\GestureClip.App.csproj"
 $releaseRoot = Join-Path $repoRoot "artifacts\release"
@@ -32,10 +33,9 @@ $signScript = Join-Path $repoRoot "scripts\sign-release.ps1"
 
 if (-not $SkipPublish) {
     Write-Host "Publishing app first..."
-    & powershell -NoProfile -ExecutionPolicy Bypass -File $publishScript
-    if ($LASTEXITCODE -ne 0) {
-        throw "publish-win-x64.ps1 failed with exit code $LASTEXITCODE"
-    }
+    Invoke-Checked "powershell.exe" @(
+        "-NoProfile", "-ExecutionPolicy", "Bypass", "-File", $publishScript
+    ) "publish-win-x64.ps1"
 }
 
 $projectXml = [xml](Get-Content -LiteralPath $project -Raw)
@@ -46,17 +46,13 @@ if ([string]::IsNullOrWhiteSpace($PublishDir)) {
     $PublishDir = Join-Path $releaseRoot "GestureClip"
 }
 if (-not (Test-Path (Join-Path $PublishDir "GestureClip.exe"))) {
-    throw "Published app not found: $PublishDir\GestureClip.exe — run publish-win-x64.ps1 first."
-}
-
-# Sign published binaries when cert is configured (no-op if missing).
-if (Test-Path -LiteralPath $signScript) {
-    & powershell -NoProfile -ExecutionPolicy Bypass -File $signScript -Path $PublishDir
+    throw "Published app not found: $PublishDir\GestureClip.exe; run publish-win-x64.ps1 first."
 }
 
 $setupRoot = Join-Path $releaseRoot "setup-staging"
+Assert-BuildPath $setupRoot $repoRoot
 $payload = Join-Path $setupRoot "payload"
-Remove-Item $setupRoot -Recurse -Force -ErrorAction SilentlyContinue
+if (Test-Path -LiteralPath $setupRoot) { Remove-Item -LiteralPath $setupRoot -Recurse -Force }
 New-Item -ItemType Directory -Force -Path $payload | Out-Null
 
 Copy-Item (Join-Path $PublishDir "*") $payload -Recurse -Force
@@ -65,16 +61,21 @@ Copy-Item (Join-Path $repoRoot "scripts\install\Setup.cmd") (Join-Path $setupRoo
 
 # Install instructions are shown by install.ps1 / Setup.cmd console only (no popup .txt).
 
+foreach ($pattern in @("GestureClip-Setup-v*-win-x64.zip", "GestureClip-Setup-v*-win-x64.exe")) {
+    foreach ($artifact in (Get-ChildItem -LiteralPath $releaseRoot -Filter $pattern -File)) {
+        Assert-BuildPath $artifact.FullName $repoRoot
+        Remove-Item -LiteralPath $artifact.FullName -Force
+    }
+}
 $setupZip = Join-Path $releaseRoot "GestureClip-Setup-v$packageVersion-win-x64.zip"
-Remove-Item $setupZip -Force -ErrorAction SilentlyContinue
 Compress-Archive -Path (Join-Path $setupRoot "*") -DestinationPath $setupZip -Force
 
 # Optional Inno Setup script for true single-file Setup.exe when ISCC is available
 $issDir = Join-Path $releaseRoot "installer"
 New-Item -ItemType Directory -Force -Path $issDir | Out-Null
 $issPath = Join-Path $issDir "GestureClip.iss"
-$payloadEscaped = $payload.Replace("\", "\\")
-$releaseRootEscaped = $releaseRoot.Replace("\", "\\")
+$payloadEscaped = $payload
+$releaseRootEscaped = $releaseRoot
 @"
 ; GestureClip Inno Setup script
 ; Build (if Inno Setup installed):
@@ -140,22 +141,16 @@ if (-not $iscc) {
 }
 
 if ($iscc) {
-    Write-Host "Inno Setup found — building Setup.exe..."
+    Write-Host "Inno Setup found; building Setup.exe..."
     $isccPath = if ($iscc.Source) { $iscc.Source } else { $iscc.Path }
-    & $isccPath $issPath
-    if ($LASTEXITCODE -ne 0) {
-        Write-Warning "iscc failed with exit code $LASTEXITCODE — Setup.zip is still available."
-    } else {
-        $candidate = Join-Path $releaseRoot "GestureClip-Setup-v$packageVersion-win-x64.exe"
-        if (Test-Path $candidate) {
-            $setupExe = $candidate
-            if (Test-Path -LiteralPath $signScript) {
-                & powershell -NoProfile -ExecutionPolicy Bypass -File $signScript -Path $setupExe
-            }
-        }
-    }
+    Invoke-Checked $isccPath @($issPath) "Inno Setup"
+    $setupExe = Join-Path $releaseRoot "GestureClip-Setup-v$packageVersion-win-x64.exe"
+    if (-not (Test-Path -LiteralPath $setupExe)) { throw "Inno Setup output missing: $setupExe" }
+    Invoke-Checked "powershell.exe" @(
+        "-NoProfile", "-ExecutionPolicy", "Bypass", "-File", $signScript, "-Path", $setupExe
+    ) "sign-release.ps1"
 } else {
-    Write-Host "Inno Setup (iscc) not found — Setup.zip is ready; install Inno Setup to also produce Setup.exe."
+    Write-Host "Inno Setup (iscc) not found; Setup.zip is ready; install Inno Setup to also produce Setup.exe."
 }
 
 # Update SHA256SUMS to include setup package(s) while keeping portable zip line.

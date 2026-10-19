@@ -23,11 +23,7 @@ jobs:
         with:
           dotnet-version: 8.0.x
 
-      - name: Package
-        shell: pwsh
-        run: .\scripts\publish-win-x64.ps1
-
-      - name: Sign (optional)
+      - name: Configure signing (optional)
         shell: pwsh
         env:
           GESTURECLIP_SIGN_PFX_BASE64: ${{ secrets.GESTURECLIP_SIGN_PFX_BASE64 }}
@@ -40,17 +36,26 @@ jobs:
           $pfxPath = Join-Path $env:RUNNER_TEMP "gestureclip-codesign.pfx"
           $bytes = [Convert]::FromBase64String($env:GESTURECLIP_SIGN_PFX_BASE64)
           [IO.File]::WriteAllBytes($pfxPath, $bytes)
-          $env:GESTURECLIP_SIGN_PFX = $pfxPath
-          .\scripts\sign-release.ps1 -Path .\artifacts\release\GestureClip
-          if (Test-Path .\artifacts\release\GestureClip-Setup-*.exe) {
-            Get-ChildItem .\artifacts\release\GestureClip-Setup-*.exe | ForEach-Object {
-              .\scripts\sign-release.ps1 -Path $_.FullName
-            }
-          }
+          "GESTURECLIP_SIGN_PFX=$pfxPath" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
 
       - name: Build Setup package
         shell: pwsh
-        run: .\scripts\build-setup.ps1 -SkipPublish
+        env:
+          GESTURECLIP_SIGN_PASSWORD: ${{ secrets.GESTURECLIP_SIGN_PASSWORD }}
+        run: .\scripts\build-setup.ps1
+
+      - name: Verify release artifacts
+        shell: pwsh
+        run: .\scripts\check-release.ps1 -RequireSetup
+
+      - name: Remove signing certificate
+        if: always()
+        shell: pwsh
+        run: |
+          $pfxPath = Join-Path $env:RUNNER_TEMP "gestureclip-codesign.pfx"
+          if (Test-Path -LiteralPath $pfxPath) {
+            Remove-Item -LiteralPath $pfxPath -Force
+          }
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4

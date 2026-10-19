@@ -39,7 +39,11 @@ $env:GESTURECLIP_SIGN_THUMBPRINT = "ABCDEF..."
 [Convert]::ToBase64String([IO.File]::ReadAllBytes("C:\path\cert.pfx")) | Set-Clipboard
 ```
 
-配置后，推送 `v*` 标签触发 `release.yml` 会在打包后自动签名，并构建 Setup zip。
+配置后，推送 `v*` 标签触发 `release.yml`：先签名程序，再生成便携 ZIP、Setup 包与 SHA256。安装包复用同一份已签名程序，不重复签名。
+
+配置了证书但文件不存在、缺少 `signtool.exe` 或签名失败时，构建会报错退出。只有完全未配置证书时才明确跳过签名。
+
+单独签名会改变文件内容；签名后必须重新生成 ZIP 和 SHA256，不要直接修改已生成安装包的发布目录。
 
 ## 注意
 

@@ -1,4 +1,6 @@
+#Requires -Version 5.1
 $ErrorActionPreference = "Stop"
+. (Join-Path $PSScriptRoot "build-common.ps1")
 
 $repoRoot = Split-Path -Parent $PSScriptRoot
 $solution = Join-Path $repoRoot "GestureClip.sln"
@@ -11,116 +13,53 @@ $version = [string]$projectXml.Project.PropertyGroup.Version
 $packageVersion = $version.ToLowerInvariant()
 $fullZipPath = Join-Path $releaseRoot "GestureClip-v$packageVersion-win-x64.zip"
 $hashPath = Join-Path $releaseRoot "SHA256SUMS.txt"
-$rootExe = Join-Path $repoRoot "GestureClip.exe"
-$latestExe = Join-Path $repoRoot "GestureClip-latest.exe"
+$dotnet = Get-DotNetSdk
+Assert-BuildPath $staging $repoRoot
+Assert-BuildPath $output $repoRoot
+Write-Host "Using .NET SDK host: $dotnet"
+Assert-PublishOutputAvailable $output
 
-function Invoke-Checked {
-    param(
-        [Parameter(Mandatory = $true)]
-        [scriptblock]$Command,
-        [Parameter(Mandatory = $true)]
-        [string]$Name
-    )
+Invoke-Checked $dotnet @("restore", $solution) "dotnet restore"
+Invoke-DotNetTests $dotnet @("test", $solution, "--no-restore")
 
-    & $Command
-    if ($LASTEXITCODE -ne 0) {
-        throw "$Name failed with exit code $LASTEXITCODE"
-    }
-}
-
-function Copy-ReleaseDocument {
-    param(
-        [Parameter(Mandatory = $true)]
-        [string]$Name
-    )
-
-    $source = Join-Path $repoRoot $Name
-    if (Test-Path -LiteralPath $source) {
-        Copy-Item -LiteralPath $source -Destination (Join-Path $output $Name) -Force
-    }
-}
-
-Invoke-Checked { dotnet restore $solution } "dotnet restore"
-Invoke-Checked { dotnet test $solution --no-restore } "dotnet test"
-
-Remove-Item $staging -Recurse -Force -ErrorAction SilentlyContinue
+if (Test-Path -LiteralPath $staging) { Remove-Item -LiteralPath $staging -Recurse -Force }
 New-Item -ItemType Directory -Force -Path $staging | Out-Null
+Invoke-Checked $dotnet @(
+    "publish", $project, "-c", "Release", "-r", "win-x64",
+    "--self-contained", "true", "-p:PublishSingleFile=true",
+    "-p:IncludeNativeLibrariesForSelfExtract=true", "-o", $staging
+) "dotnet publish"
 
-Invoke-Checked {
-    dotnet publish $project `
-        -c Release `
-        -r win-x64 `
-        --self-contained true `
-        -p:PublishSingleFile=true `
-        -p:IncludeNativeLibrariesForSelfExtract=true `
-        -o $staging
-} "dotnet publish"
+$signScript = Join-Path $PSScriptRoot "sign-release.ps1"
+Invoke-Checked "powershell.exe" @(
+    "-NoProfile", "-ExecutionPolicy", "Bypass", "-File", $signScript, "-Path", $staging
+) "sign-release.ps1"
 
-Remove-Item $output -Recurse -Force -ErrorAction SilentlyContinue
-New-Item -ItemType Directory -Force -Path $output | Out-Null
-Copy-Item (Join-Path $staging "*") $output -Recurse -Force
-Remove-Item $staging -Recurse -Force -ErrorAction SilentlyContinue
-
-Copy-ReleaseDocument "README.md"
-Copy-ReleaseDocument "UPDATE.md"
-Copy-ReleaseDocument "HELP.md"
-Copy-ReleaseDocument "BETA_TEST.md"
-Copy-ReleaseDocument "KNOWN_ISSUES.md"
-Copy-ReleaseDocument "CHANGELOG.md"
-Copy-ReleaseDocument "LICENSE"
-
-Remove-Item (Join-Path $output "*.pdb") -Force -ErrorAction SilentlyContinue
-Remove-Item (Join-Path $output "gestureclip.db") -Force -ErrorAction SilentlyContinue
-Remove-Item (Join-Path $output "gestureclip.db-shm") -Force -ErrorAction SilentlyContinue
-Remove-Item (Join-Path $output "gestureclip.db-wal") -Force -ErrorAction SilentlyContinue
-Remove-Item (Join-Path $output "logs") -Recurse -Force -ErrorAction SilentlyContinue
-
-Remove-Item (Join-Path $releaseRoot "GestureClip-v*-win-x64.zip") -Force -ErrorAction SilentlyContinue
-Remove-Item (Join-Path $releaseRoot "GestureClip-v*-update-win-x64.zip") -Force -ErrorAction SilentlyContinue
+if (Test-Path -LiteralPath $output) { Remove-Item -LiteralPath $output -Recurse -Force }
+Move-Item -LiteralPath $staging -Destination $output
+foreach ($document in @("README.md", "UPDATE.md", "HELP.md", "BETA_TEST.md", "KNOWN_ISSUES.md", "CHANGELOG.md", "PRIVACY.md", "ROADMAP.md", "LICENSE")) {
+    $source = Join-Path $repoRoot $document
+    if (Test-Path -LiteralPath $source) {
+        Copy-Item -LiteralPath $source -Destination (Join-Path $output $document) -Force
+    }
+}
+Copy-Item -LiteralPath (Join-Path $repoRoot "docs") -Destination (Join-Path $output "docs") -Recurse -Force
+Get-ChildItem -LiteralPath $output -Filter "*.pdb" | Remove-Item -Force
+if (Test-Path -LiteralPath (Join-Path $output "gestureclip.db")) {
+    Remove-Item (Join-Path $output "gestureclip.db") -Force
+}
+foreach ($name in @("gestureclip.db-shm", "gestureclip.db-wal")) {
+    $path = Join-Path $output $name
+    if (Test-Path -LiteralPath $path) { Remove-Item -LiteralPath $path -Force }
+}
+if (Test-Path -LiteralPath (Join-Path $output "logs")) {
+    Remove-Item (Join-Path $output "logs") -Recurse -Force
+}
+Get-ChildItem -LiteralPath $releaseRoot -Filter "GestureClip-v*-win-x64.zip" | Remove-Item -Force
 Compress-Archive -Path (Join-Path $output "*") -DestinationPath $fullZipPath -Force
+$hashValue = (Get-FileHash -LiteralPath $fullZipPath -Algorithm SHA256).Hash
+"$hashValue  $([IO.Path]::GetFileName($fullZipPath))" | Set-Content -LiteralPath $hashPath -Encoding UTF8
 
-$publishedExe = Join-Path $output "GestureClip.exe"
-if (Test-Path -LiteralPath $publishedExe) {
-    try {
-        Copy-Item -LiteralPath $publishedExe -Destination $rootExe -Force
-    } catch {
-        Write-Warning "Could not update root GestureClip.exe (file in use): $_"
-    }
-    try {
-        Copy-Item -LiteralPath $publishedExe -Destination $latestExe -Force
-    } catch {
-        Write-Warning "Could not update GestureClip-latest.exe (file in use): $_"
-    }
-}
-
-if (Get-Command Get-FileHash -ErrorAction SilentlyContinue) {
-    $hashValue = (Get-FileHash -LiteralPath $fullZipPath -Algorithm SHA256).Hash
-}
-else {
-    $stream = [System.IO.File]::OpenRead($fullZipPath)
-    try {
-        $sha256 = [System.Security.Cryptography.SHA256]::Create()
-        $hashBytes = $sha256.ComputeHash($stream)
-        $hashValue = -join ($hashBytes | ForEach-Object { $_.ToString("x2") })
-    }
-    finally {
-        $stream.Dispose()
-        if ($sha256) {
-            $sha256.Dispose()
-        }
-    }
-}
-"$hashValue  $([System.IO.Path]::GetFileName($fullZipPath))" | Set-Content -LiteralPath $hashPath -Encoding UTF8
-Copy-Item -LiteralPath $hashPath -Destination (Join-Path $output "SHA256SUMS.txt") -Force
-
-
-# Optional Authenticode signing (no-op without cert env).
-$signScript = Join-Path $repoRoot "scripts\sign-release.ps1"
-if (Test-Path -LiteralPath $signScript) {
-    & powershell -NoProfile -ExecutionPolicy Bypass -File $signScript -Path $output
-}
-
-Write-Host "Release package created:" $output
-Write-Host "Release zip created:" $fullZipPath
-Write-Host "SHA256 file created:" $hashPath
-Write-Host "Root executable updated:" $rootExe
+Write-Host "Release package created: $output"
+Write-Host "Release zip created: $fullZipPath"
+Write-Host "SHA256 file created: $hashPath"
