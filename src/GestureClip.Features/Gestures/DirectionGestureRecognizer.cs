@@ -1,11 +1,14 @@
 using GestureClip.Core.Abstractions;
 using GestureClip.Core.Gestures;
+using System.Runtime.InteropServices;
 
 namespace GestureClip.Features.Gestures;
 
 public sealed class DirectionGestureRecognizer : IMouseGestureRecognizer
 {
     private const int MaxPatternSegments = 8;
+    private const double OrthogonalNoiseFactor = 1.25;
+    private const int DominantAxisFactor = 2;
 
     public GestureResult Recognize(IReadOnlyList<GesturePoint> points, GestureOptions options)
     {
@@ -14,31 +17,44 @@ public sealed class DirectionGestureRecognizer : IMouseGestureRecognizer
             return GestureResult.Invalid();
         }
 
-        var duration = points[^1].Time - points[0].Time;
+        var first = points[0];
+        var last = points[^1];
+        var duration = last.Time - first.Time;
         if (duration.TotalMilliseconds > options.MaxDurationMs)
         {
             return GestureResult.Invalid();
         }
 
-        if (MaxDistanceSquaredFromStart(points) < Square(options.TriggerThreshold))
+        var geometry = AnalyzeStroke(points, first, last);
+        if (geometry.MaxDistanceSquared < Square(options.TriggerThreshold))
         {
             return GestureResult.Invalid();
         }
 
-        if (TryRecognizeStableStraightStroke(points, options, out var straightDirection))
+        if (TryRecognizeStableStraightStroke(geometry, options, out var straightDirection))
         {
-            return new GestureResult(straightDirection.ToString(), true);
+            return new GestureResult(straightDirection, true);
         }
 
+        return RecognizeDirections(points, options, first);
+    }
+
+    private static GestureResult RecognizeDirections(
+        IReadOnlyList<GesturePoint> points,
+        GestureOptions options,
+        GesturePoint first)
+    {
         var directions = new List<char>();
-        for (var i = 1; i < points.Count; i++)
+        var previous = first;
+        var segmentThresholdSquared = Square(options.SegmentThreshold);
+        for (var index = 1; index < points.Count; index++)
         {
-            var previous = points[i - 1];
-            var current = points[i];
+            var current = points[index];
             var dx = current.X - previous.X;
             var dy = current.Y - previous.Y;
+            previous = current;
 
-            if (((double)dx * dx) + ((double)dy * dy) < Square(options.SegmentThreshold))
+            if (((double)dx * dx) + ((double)dy * dy) < segmentThresholdSquared)
             {
                 continue;
             }
@@ -58,70 +74,81 @@ public sealed class DirectionGestureRecognizer : IMouseGestureRecognizer
             return GestureResult.Invalid();
         }
 
-        var pattern = new string(directions.ToArray());
+        var pattern = new string(CollectionsMarshal.AsSpan(directions));
         return new GestureResult(pattern, pattern.Length <= MaxPatternSegments);
     }
 
     private static bool TryRecognizeStableStraightStroke(
-        IReadOnlyList<GesturePoint> points,
+        StrokeGeometry geometry,
         GestureOptions options,
-        out char direction)
+        out string? direction)
     {
-        var first = points[0];
-        var last = points[^1];
-        var dx = last.X - first.X;
-        var dy = last.Y - first.Y;
+        var dx = geometry.End.X - geometry.Start.X;
+        var dy = geometry.End.Y - geometry.Start.Y;
+        var allowedOrthogonalNoise = options.SegmentThreshold * OrthogonalNoiseFactor;
+
+        if (Math.Abs(dx) >= options.TriggerThreshold &&
+            geometry.VerticalSpan <= allowedOrthogonalNoise &&
+            geometry.HorizontalSpan >= geometry.VerticalSpan * DominantAxisFactor)
+        {
+            direction = dx < 0 ? "L" : "R";
+            return true;
+        }
+
+        if (Math.Abs(dy) >= options.TriggerThreshold &&
+            geometry.HorizontalSpan <= allowedOrthogonalNoise &&
+            geometry.VerticalSpan >= geometry.HorizontalSpan * DominantAxisFactor)
+        {
+            direction = dy < 0 ? "U" : "D";
+            return true;
+        }
+
+        direction = null;
+        return false;
+    }
+
+    private static StrokeGeometry AnalyzeStroke(
+        IReadOnlyList<GesturePoint> points,
+        GesturePoint first,
+        GesturePoint last)
+    {
         var minX = first.X;
         var maxX = first.X;
         var minY = first.Y;
         var maxY = first.Y;
 
-        for (var i = 1; i < points.Count; i++)
+        var maxDistanceSquared = 0d;
+        var lastIndex = points.Count - 1;
+        for (var index = 1; index <= lastIndex; index++)
         {
-            var point = points[i];
+            var point = index == lastIndex ? last : points[index];
             minX = Math.Min(minX, point.X);
             maxX = Math.Max(maxX, point.X);
             minY = Math.Min(minY, point.Y);
             maxY = Math.Max(maxY, point.Y);
-        }
-
-        var horizontalSpan = maxX - minX;
-        var verticalSpan = maxY - minY;
-        var allowedOrthogonalNoise = options.SegmentThreshold * 1.25;
-
-        if (Math.Abs(dx) >= options.TriggerThreshold &&
-            verticalSpan <= allowedOrthogonalNoise &&
-            horizontalSpan >= verticalSpan * 2)
-        {
-            direction = dx < 0 ? 'L' : 'R';
-            return true;
-        }
-
-        if (Math.Abs(dy) >= options.TriggerThreshold &&
-            horizontalSpan <= allowedOrthogonalNoise &&
-            verticalSpan >= horizontalSpan * 2)
-        {
-            direction = dy < 0 ? 'U' : 'D';
-            return true;
-        }
-
-        direction = default;
-        return false;
-    }
-
-    private static double MaxDistanceSquaredFromStart(IReadOnlyList<GesturePoint> points)
-    {
-        var maxDistanceSquared = 0d;
-        var start = points[0];
-        for (var i = 1; i < points.Count; i++)
-        {
-            var dx = (double)points[i].X - start.X;
-            var dy = (double)points[i].Y - start.Y;
+            var dx = (double)point.X - first.X;
+            var dy = (double)point.Y - first.Y;
             maxDistanceSquared = Math.Max(maxDistanceSquared, (dx * dx) + (dy * dy));
         }
 
-        return maxDistanceSquared;
+        return new StrokeGeometry
+        {
+            Start = first,
+            End = last,
+            MaxDistanceSquared = maxDistanceSquared,
+            HorizontalSpan = maxX - minX,
+            VerticalSpan = maxY - minY
+        };
     }
 
     private static double Square(int value) => (double)value * value;
+
+    private readonly record struct StrokeGeometry
+    {
+        public required GesturePoint Start { get; init; }
+        public required GesturePoint End { get; init; }
+        public double MaxDistanceSquared { get; init; }
+        public int HorizontalSpan { get; init; }
+        public int VerticalSpan { get; init; }
+    }
 }

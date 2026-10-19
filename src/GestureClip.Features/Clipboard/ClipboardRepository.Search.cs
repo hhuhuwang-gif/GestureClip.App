@@ -29,6 +29,35 @@ public sealed partial class ClipboardRepository
         var safeLimit = Math.Clamp(limit, 1, MaximumSearchResults);
         var safeOffset = Math.Max(0, offset);
         var normalizedKeyword = keyword.Trim();
+        var whereSql = BuildSearchWhereSql(normalizedKeyword, filter);
+
+        var sql = $"""
+SELECT
+    Id, ContentType,
+    CASE WHEN ContentType LIKE 'image/%' THEN NULL ELSE TextContent END AS TextContent,
+    ThumbnailContent,
+    PreviewText, Hash, PlainTextHash, SourceApp, SourceProcess,
+    IsPinned, IsFavorite, IsSensitive, UseCount, CreatedAt, UpdatedAt, LastUsedAt, OcrText
+FROM ClipboardItems
+{whereSql}
+ORDER BY IsPinned DESC, COALESCE(LastUsedAt, CreatedAt) DESC, CreatedAt DESC
+LIMIT @Limit OFFSET @Offset;
+""";
+
+        var results = await connection.QueryAsync<ClipboardItemRow>(new CommandDefinition(
+            sql,
+            new
+            {
+                LikeKeyword = $"%{EscapeLikeValue(normalizedKeyword)}%",
+                Limit = safeLimit,
+                Offset = safeOffset
+            }, cancellationToken: cancellationToken));
+
+        return results.Select(row => row.ToModel()).ToArray();
+    }
+
+    private static string BuildSearchWhereSql(string normalizedKeyword, ClipboardContentFilter filter)
+    {
         var whereParts = new List<string>();
         var filterSql = ToFilterSql(filter);
         if (filterSql.Length > 0)
@@ -44,33 +73,10 @@ public sealed partial class ClipboardRepository
 """);
         }
 
-        var whereSql = whereParts.Count == 0
+        return whereParts.Count == 0
             ? ""
             : $"WHERE {string.Join(" AND ", whereParts)}";
 
-        var sql = $"""
-SELECT
-    Id, ContentType,
-    CASE WHEN ContentType LIKE 'image/%' THEN NULL ELSE TextContent END AS TextContent,
-    ThumbnailContent,
-    PreviewText, Hash, PlainTextHash, SourceApp, SourceProcess,
-    IsPinned, IsFavorite, IsSensitive, UseCount, CreatedAt, UpdatedAt, LastUsedAt, OcrText
-FROM ClipboardItems
-{whereSql}
-ORDER BY IsPinned DESC, COALESCE(LastUsedAt, CreatedAt) DESC, CreatedAt DESC
-LIMIT @Limit OFFSET @Offset;
-""";
-
-        var results = await connection.QueryAsync<ClipboardItemRow>(
-            sql,
-            new
-            {
-                LikeKeyword = $"%{EscapeLikeValue(normalizedKeyword)}%",
-                Limit = safeLimit,
-                Offset = safeOffset
-            });
-
-        return results.Select(row => row.ToModel()).ToArray();
     }
 
     private static string EscapeLikeValue(string value)

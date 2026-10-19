@@ -13,6 +13,9 @@ $scopes = @(
     'FullyQualifiedName~ClipboardServiceTests.CopyItemsAsync',
     'FullyQualifiedName~ClipboardRepositoryTests',
     'FullyQualifiedName~ClipboardRetryPolicyTests',
+    'FullyQualifiedName~DirectionGestureRecognizerPerformanceTests',
+    'FullyQualifiedName~ClipboardInteractionLatencyTests',
+    'FullyQualifiedName~ClipboardOverlayResponsivenessTests',
     'FullyQualifiedName~Stage10UiThreadGuardTests',
     'FullyQualifiedName~GestureOverlayService_throttles_trace_updates'
 )

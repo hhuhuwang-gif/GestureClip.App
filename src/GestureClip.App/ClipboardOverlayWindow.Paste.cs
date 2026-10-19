@@ -1,0 +1,85 @@
+using System.Windows;
+using System.Windows.Controls;
+using System.Windows.Input;
+using System.Windows.Media;
+using GestureClip.App.ViewModels;
+using GestureClip.Core.Abstractions;
+using GestureClip.Core.Clipboard;
+using GestureClip.Core.Settings;
+using GestureClip.App.Services;
+
+namespace GestureClip.App;
+
+public partial class ClipboardOverlayWindow
+{
+    private static readonly TimeSpan FocusRestoreDelay = TimeSpan.FromMilliseconds(90);
+
+    private Task PasteWithFocusRestoreAsync(bool keepOverlayOpen, bool plainText = false) =>
+        _pasteCoordinator.PasteAsync(new ClipboardPasteRequest(keepOverlayOpen, plainText));
+
+    private Task PasteByIndexWithFocusRestoreAsync(int index) =>
+        _pasteCoordinator.PasteAsync(new ClipboardPasteRequest(false, false, index));
+
+    private async Task PasteCoreAsync(ClipboardPasteRequest request)
+    {
+        await _viewModel.FlushPendingSearchAsync();
+        if (_viewModel.HasSearchError || !HasPasteTarget(request.Index))
+        {
+            return;
+        }
+        PrepareForExternalPaste();
+        try
+        {
+            await Task.Delay(FocusRestoreDelay);
+            if (request.Index is { } index)
+            {
+                await _viewModel.PasteByIndexAsync(index);
+            }
+            else
+            {
+                await _viewModel.PasteSelectedAsync(request.KeepOverlayOpen, request.PlainText);
+            }
+        }
+        finally
+        {
+            if (request.KeepOverlayOpen)
+            {
+                RestoreOverlayAfterPaste();
+            }
+        }
+    }
+
+    private bool HasPasteTarget(int? index)
+    {
+        return index is { } position
+            ? position >= 0 && position < _viewModel.Items.Count
+            : _viewModel.SelectedItem is not null;
+    }
+
+    private void HideOverlayAndReleaseFocus()
+    {
+        _viewModel.HideShortcutHelp();
+        MoveFocus(new TraversalRequest(FocusNavigationDirection.Next));
+        Hide();
+    }
+
+    private void PrepareForExternalPaste()
+    {
+        _viewModel.HideShortcutHelp();
+        // Drop topmost/visibility so the previous foreground app becomes active again.
+        Topmost = false;
+        MoveFocus(new TraversalRequest(FocusNavigationDirection.Next));
+        Hide();
+    }
+
+    private void RestoreOverlayAfterPaste()
+    {
+        Show();
+        Activate();
+        Topmost = _alwaysVisible;
+        if (_alwaysVisible)
+        {
+            Topmost = true;
+        }
+    }
+}

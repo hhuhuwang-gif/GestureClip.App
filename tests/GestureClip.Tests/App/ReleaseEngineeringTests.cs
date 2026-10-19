@@ -1,4 +1,5 @@
 using Xunit;
+using GestureClip.Tests.TestDoubles;
 
 namespace GestureClip.Tests.App;
 
@@ -83,7 +84,7 @@ public sealed class ReleaseEngineeringTests
         Assert.Contains("SHA256SUMS.txt", releaseDraft);
         Assert.Contains("已复制", releaseDraft);
         var clipboardOverlayXaml = File.ReadAllText(FindRepositoryFile("src", "GestureClip.App", "ClipboardOverlayWindow.xaml"));
-        var clipboardOverlayCode = File.ReadAllText(FindRepositoryFile("src", "GestureClip.App", "ClipboardOverlayWindow.xaml.cs"));
+        var clipboardOverlayCode = RepositorySource.ReadClassSources(FindRepositoryFile("src", "GestureClip.App", "ClipboardOverlayWindow.xaml.cs"));
         Assert.Contains("双击复制", clipboardOverlayXaml);
         Assert.Contains("SegmentedFilter", clipboardOverlayXaml);
         Assert.Contains("CopyItemAndHideAsync", clipboardOverlayCode);

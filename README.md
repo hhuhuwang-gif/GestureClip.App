@@ -220,6 +220,8 @@ v0.6.37 起历史再复制会统一写成纯文本；也可用「复制为纯文
 
 ## 开发与发布
 
+连续复制、纯文本粘贴、附件导出和键盘分类操作见 [办公快捷操作](docs/OFFICE_WORKFLOW.md)。
+
 安装 .NET 8 SDK，双击 `build-exe.bat` 完成测试和便携版构建，双击 `Start-GestureClip.bat` 启动。
 
 ```powershell
