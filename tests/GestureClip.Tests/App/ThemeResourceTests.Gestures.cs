@@ -178,7 +178,7 @@ public sealed partial class ThemeResourceTests
         var path = FindRepositoryFile("src", "GestureClip.App", "GestureOverlayWindow.xaml");
         var xaml = File.ReadAllText(path);
 
-        Assert.Contains("Background=\"#F0111724\"", xaml);
+        Assert.Contains("Background=\"{StaticResource HudSurfaceGradient}\"", xaml);
         Assert.Contains("手势码", xaml);
         Assert.Contains("Microsoft YaHei UI", xaml);
         Assert.Contains("TextRenderingMode=\"Grayscale\"", xaml);

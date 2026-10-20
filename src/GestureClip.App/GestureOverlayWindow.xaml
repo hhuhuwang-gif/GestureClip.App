@@ -28,14 +28,15 @@
         </Canvas>
         <Border x:Name="CompactGameHud" HorizontalAlignment="Center" VerticalAlignment="Bottom"
                 Margin="24,0,24,70" MinWidth="720" MaxWidth="820" MinHeight="200"
-                CornerRadius="18" Background="#F0111724" BorderBrush="#33475569" BorderThickness="1"
+                CornerRadius="18" Background="{StaticResource HudSurfaceGradient}"
+                BorderBrush="{StaticResource HudSurfaceRim}" BorderThickness="1"
                 SnapsToDevicePixels="True" UseLayoutRounding="True" IsHitTestVisible="True">
             <Grid x:Name="GestureActionStrip">
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="4" /><ColumnDefinition Width="*" />
-                </Grid.ColumnDefinitions>
-                <Border x:Name="HudThemeRail" Background="{Binding HudBackgroundBrush}" CornerRadius="17,0,0,17" />
-                <StackPanel Grid.Column="1" Margin="18,14,20,14">
+                <Border x:Name="HudThemeWash" Background="{Binding HudBackgroundBrush}" Opacity="0.12"
+                        CornerRadius="17" IsHitTestVisible="False" />
+                <Border x:Name="HudAmbientGlow" Background="{StaticResource HudAmbientGradient}"
+                        CornerRadius="17" IsHitTestVisible="False" />
+                <StackPanel Margin="22,14,22,14">
                     <DockPanel Margin="0,0,0,12">
                         <TextBlock DockPanel.Dock="Right" Style="{StaticResource HudReleaseHint}" VerticalAlignment="Center" Margin="12,0,0,0" />
                         <StackPanel Orientation="Horizontal">

@@ -9,16 +9,27 @@ public sealed partial class GestureOverlayWindowTests
     private static readonly XNamespace XamlNamespace = "http://schemas.microsoft.com/winfx/2006/xaml";
 
     [Fact]
-    public void GestureOverlayWindow_uses_dark_surface_with_narrow_time_theme_rail()
+    public void GestureOverlayWindow_uses_layered_gradient_surface_without_side_rail()
     {
         var documents = LoadHudDocuments();
         var panel = FindNamedElement(documents[0], "CompactGameHud");
-        Assert.Equal("#F0111724", (string?)panel.Attribute("Background"));
-        var rail = FindNamedElement(documents[0], "HudThemeRail");
-        Assert.Equal("{Binding HudBackgroundBrush}", (string?)rail.Attribute("Background"));
-        Assert.Contains(panel, rail.Ancestors());
-        var columns = rail.Parent!.Elements().Single(element => element.Name.LocalName == "Grid.ColumnDefinitions");
-        Assert.Equal("4", (string?)columns.Elements().First().Attribute("Width"));
+        Assert.Equal("{StaticResource HudSurfaceGradient}", (string?)panel.Attribute("Background"));
+        var surface = documents.SelectMany(document => document.Descendants()).Single(element =>
+            (string?)element.Attribute(XamlNamespace + "Key") == "HudSurfaceGradient");
+        Assert.Equal("LinearGradientBrush", surface.Name.LocalName);
+        var stops = surface.Elements().Select(element => (string)element.Attribute("Color")!).ToArray();
+        Assert.True(stops.Distinct().Count() >= 3);
+        Assert.All(stops, color => Assert.StartsWith("#FF", color));
+        var wash = FindNamedElement(documents[0], "HudThemeWash");
+        Assert.Equal("{Binding HudBackgroundBrush}", (string?)wash.Attribute("Background"));
+        Assert.Equal("0.12", (string?)wash.Attribute("Opacity"));
+        Assert.Contains(panel, wash.Ancestors());
+        Assert.Null(wash.Attribute("Grid.Column"));
+        Assert.DoesNotContain(documents[0].Descendants(), element =>
+            (string?)element.Attribute(XamlNamespace + "Name") == "HudThemeRail");
+        Assert.Equal("{StaticResource HudAmbientGradient}",
+            (string?)FindNamedElement(documents[0], "HudAmbientGlow").Attribute("Background"));
+        Assert.Equal("{StaticResource HudSurfaceRim}", (string?)panel.Attribute("BorderBrush"));
         Assert.DoesNotContain(documents.SelectMany(document => document.Descendants()),
             element => element.Name.LocalName == "DropShadowEffect");
         Assert.DoesNotContain(documents.SelectMany(document => document.Descendants()).SelectMany(element => element.Attributes()),
