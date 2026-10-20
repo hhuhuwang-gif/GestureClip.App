@@ -18,6 +18,13 @@ public sealed partial class ClipboardServiceTests
         public string? ImagePngBase64 { get; private set; }
         public bool PasteHotkeySent { get; private set; }
         public int SetTextCallCount { get; private set; }
+        public nint PasteTargetWindow { get; private set; }
+
+        public Task SendPasteHotkeyAsync(nint targetWindow, CancellationToken cancellationToken)
+        {
+            PasteTargetWindow = targetWindow;
+            return SendPasteHotkeyAsync(cancellationToken);
+        }
 
         public Task SendPasteHotkeyAsync(CancellationToken cancellationToken)
         {

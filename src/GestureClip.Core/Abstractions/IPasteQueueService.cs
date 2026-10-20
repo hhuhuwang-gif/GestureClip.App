@@ -3,11 +3,12 @@ using GestureClip.Core.Clipboard;
 namespace GestureClip.Core.Abstractions;
 
 /// <summary>
-/// Sequential paste queue: while items are pending, Ctrl+V pops and pastes the next one.
+/// Sequential paste queue: Ctrl+V sends the current item, removing it only on success.
 /// </summary>
 public interface IPasteQueueService
 {
     int PendingCount { get; }
+    PasteQueueSnapshot Snapshot { get; }
 
     event EventHandler? QueueChanged;
 
@@ -15,4 +16,6 @@ public interface IPasteQueueService
     bool Enqueue(IReadOnlyList<ClipboardItem> items);
 
     void Clear();
+    bool Retry();
+    bool Skip();
 }

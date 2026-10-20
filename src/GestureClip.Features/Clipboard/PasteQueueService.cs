@@ -5,77 +5,86 @@ using Microsoft.Extensions.Logging;
 
 namespace GestureClip.Features.Clipboard;
 
-/// <summary>
-/// While the queue holds items, Ctrl+V is claimed via RegisterHotKey. Each press releases the
-/// hotkey, injects a normal paste of the next item, then re-claims it if items remain — so the
-/// synthetic Ctrl+V never re-triggers the queue itself.
-/// </summary>
-public sealed class PasteQueueService : IPasteQueueService, IDisposable
+public sealed partial class PasteQueueService : IPasteQueueService, IDisposable
 {
-    private static readonly HotkeyDefinition PasteHotkey =
-        new(HotkeyModifier.Control, (uint)'V', "Ctrl + V");
-
+    private static readonly HotkeyDefinition PasteHotkey = new(HotkeyModifier.Control, (uint)'V', "Ctrl + V");
     private readonly IHotkeyRegistrar _registrar;
     private readonly IClipboardService _clipboardService;
+    private readonly IPasteTargetService _pasteTargetService;
     private readonly ILogger<PasteQueueService> _logger;
     private readonly object _sync = new();
     private readonly Queue<ClipboardItem> _queue = new();
     private bool _hotkeyClaimed;
     private bool _pasting;
+    private bool _disposed;
+    private long _generation;
+    private string? _error;
+    private CancellationTokenSource? _activePaste;
 
-    public PasteQueueService(
-        IHotkeyRegistrar registrar,
-        IClipboardService clipboardService,
-        ILogger<PasteQueueService> logger)
+    public PasteQueueService(PasteQueueDependencies dependencies, ILogger<PasteQueueService> logger)
     {
-        _registrar = registrar;
-        _clipboardService = clipboardService;
+        _registrar = dependencies.Registrar;
+        _clipboardService = dependencies.ClipboardService;
+        _pasteTargetService = dependencies.TargetService;
         _logger = logger;
         _registrar.PasteQueueHotkeyPressed += OnPasteQueueHotkeyPressed;
     }
 
     public event EventHandler? QueueChanged;
-
-    public int PendingCount
+    public int PendingCount => Snapshot.PendingCount;
+    public PasteQueueSnapshot Snapshot
     {
         get
         {
             lock (_sync)
             {
-                return _queue.Count;
+                var status = _queue.Count == 0 ? PasteQueueStatus.Empty :
+                    _error is not null ? PasteQueueStatus.Failed :
+                    _pasting ? PasteQueueStatus.Pasting : PasteQueueStatus.Ready;
+                return new(_queue.Count, status, _error);
             }
         }
     }
 
     public bool Enqueue(IReadOnlyList<ClipboardItem> items)
     {
-        if (items.Count == 0)
-        {
-            return false;
-        }
-
-        bool claimed;
+        if (items.Count == 0) return false;
         lock (_sync)
         {
-            foreach (var item in items)
+            ObjectDisposedException.ThrowIf(_disposed, this);
+            if (!_pasting && _error is null && !ClaimHotkeyLocked())
             {
-                _queue.Enqueue(item);
+                if (_queue.Count == 0) _error = null;
+                return false;
             }
-
-            claimed = ClaimHotkeyLocked();
-            if (!claimed)
-            {
-                _queue.Clear();
-            }
+            foreach (var item in items) _queue.Enqueue(item);
         }
+        QueueChanged?.Invoke(this, EventArgs.Empty);
+        return true;
+    }
 
-        if (!claimed)
+    public bool Retry()
+    {
+        bool ready;
+        lock (_sync)
         {
-            _logger.LogWarning("Paste queue could not claim Ctrl+V hotkey. Win32Error={Win32Error}", _registrar.GetLastError());
-            return false;
+            if (_disposed || _pasting || _queue.Count == 0 || _error is null) return false;
+            _error = null;
+            ready = ClaimHotkeyLocked();
         }
+        QueueChanged?.Invoke(this, EventArgs.Empty);
+        return ready;
+    }
 
-        _logger.LogInformation("Paste queue enqueued {Count} item(s).", items.Count);
+    public bool Skip()
+    {
+        lock (_sync)
+        {
+            if (_disposed || _pasting || _error is null || _queue.Count == 0) return false;
+            _queue.Dequeue();
+            _error = null;
+            if (_queue.Count > 0) ClaimHotkeyLocked();
+        }
         QueueChanged?.Invoke(this, EventArgs.Empty);
         return true;
     }
@@ -84,90 +93,39 @@ public sealed class PasteQueueService : IPasteQueueService, IDisposable
     {
         lock (_sync)
         {
+            _generation++;
             _queue.Clear();
+            _error = null;
+            _activePaste?.Cancel();
             ReleaseHotkeyLocked();
         }
-
-        _logger.LogInformation("Paste queue cleared.");
         QueueChanged?.Invoke(this, EventArgs.Empty);
     }
 
     public void Dispose()
     {
+        lock (_sync) _disposed = true;
         _registrar.PasteQueueHotkeyPressed -= OnPasteQueueHotkeyPressed;
         Clear();
     }
 
-    private void OnPasteQueueHotkeyPressed(object? sender, EventArgs e)
-    {
-        _ = PasteNextAsync();
-    }
-
-    private async Task PasteNextAsync()
-    {
-        ClipboardItem? item;
-        lock (_sync)
-        {
-            if (_pasting)
-            {
-                return;
-            }
-
-            if (!_queue.TryDequeue(out item))
-            {
-                ReleaseHotkeyLocked();
-                return;
-            }
-
-            _pasting = true;
-            // Release Ctrl+V so the synthetic paste below reaches the target app.
-            ReleaseHotkeyLocked();
-        }
-
-        try
-        {
-            // Let WM_HOTKEY finish and physical keys start to release before we inject input.
-            await Task.Delay(60);
-            await _clipboardService.PasteAsync(item, new PasteOptions(false), CancellationToken.None);
-            _logger.LogInformation("Paste queue delivered one item. Remaining={Remaining}", PendingCount);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Paste queue item failed to paste.");
-        }
-        finally
-        {
-            lock (_sync)
-            {
-                _pasting = false;
-                if (_queue.Count > 0)
-                {
-                    ClaimHotkeyLocked();
-                }
-            }
-
-            QueueChanged?.Invoke(this, EventArgs.Empty);
-        }
-    }
+    private void OnPasteQueueHotkeyPressed(object? sender, EventArgs args) => _ = PasteNextAsync();
 
     private bool ClaimHotkeyLocked()
     {
-        if (_hotkeyClaimed)
-        {
-            return true;
-        }
-
+        if (_hotkeyClaimed) return true;
         _hotkeyClaimed = _registrar.RegisterPasteQueueHotkey(PasteHotkey);
+        if (!_hotkeyClaimed)
+        {
+            _error = $"Ctrl+V 注册失败，错误码 {_registrar.GetLastError()}";
+            _logger.LogWarning("Paste queue hotkey unavailable: {Error}", _error);
+        }
         return _hotkeyClaimed;
     }
 
     private void ReleaseHotkeyLocked()
     {
-        if (!_hotkeyClaimed)
-        {
-            return;
-        }
-
+        if (!_hotkeyClaimed) return;
         _registrar.UnregisterPasteQueueHotkey();
         _hotkeyClaimed = false;
     }

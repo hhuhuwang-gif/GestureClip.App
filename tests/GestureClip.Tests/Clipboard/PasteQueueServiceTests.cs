@@ -1,13 +1,14 @@
 using GestureClip.Core.Abstractions;
 using GestureClip.Core.Clipboard;
 using GestureClip.Core.Hotkeys;
+using GestureClip.Core.SystemInfo;
 using GestureClip.Features.Clipboard;
 using Microsoft.Extensions.Logging.Abstractions;
 using Xunit;
 
 namespace GestureClip.Tests.Clipboard;
 
-public sealed class PasteQueueServiceTests
+public sealed partial class PasteQueueServiceTests
 {
     [Fact]
     public void Enqueue_claims_hotkey_and_tracks_count()
@@ -68,10 +69,12 @@ public sealed class PasteQueueServiceTests
         Assert.Equal(1, registrar.UnregisterCount);
     }
 
-    private static PasteQueueService CreateService(FakeRegistrar registrar, out FakeClipboardService clipboard)
+    private static PasteQueueService CreateService(FakeRegistrar registrar, out FakeClipboardService clipboard,
+        FakeTargetService? targetService = null)
     {
         clipboard = new FakeClipboardService();
-        return new PasteQueueService(registrar, clipboard, NullLogger<PasteQueueService>.Instance);
+        var dependencies = new PasteQueueDependencies(registrar, clipboard, targetService ?? new FakeTargetService());
+        return new PasteQueueService(dependencies, NullLogger<PasteQueueService>.Instance);
     }
 
     private static ClipboardItem Item(string text)
@@ -134,6 +137,8 @@ public sealed class PasteQueueServiceTests
 
     private sealed class FakeClipboardService : IClipboardService
     {
+        public Func<ClipboardItem, CancellationToken, Task>? PasteHandler { get; set; }
+        public PasteOptions? LastPasteOptions { get; private set; }
         public List<string> PastedTexts { get; } = [];
 
         public bool IsCaptureEnabled => true;
@@ -149,6 +154,8 @@ public sealed class PasteQueueServiceTests
 
         public Task PasteAsync(ClipboardItem item, PasteOptions options, CancellationToken cancellationToken)
         {
+            LastPasteOptions = options;
+            if (PasteHandler is not null) return PasteHandler(item, cancellationToken);
             PastedTexts.Add(item.TextContent ?? "");
             return Task.CompletedTask;
         }
@@ -157,5 +164,17 @@ public sealed class PasteQueueServiceTests
         public Task<int> DeleteItemsAsync(IReadOnlyList<Guid> ids, CancellationToken cancellationToken) => Task.FromResult(0);
         public Task SetPinnedAsync(Guid id, bool isPinned, CancellationToken cancellationToken) => Task.CompletedTask;
         public Task SetFavoriteAsync(Guid id, bool isFavorite, CancellationToken cancellationToken) => Task.CompletedTask;
+    }
+
+    private sealed class FakeTargetService : IPasteTargetService
+    {
+        public PasteTarget Target { get; set; } = new(42, "notepad.exe");
+        public int CaptureCount { get; private set; }
+        public PasteTarget CaptureTarget()
+        {
+            CaptureCount++;
+            return Target;
+        }
+        public Task WaitUntilReadyAsync(PasteTarget target, CancellationToken cancellationToken) => Task.CompletedTask;
     }
 }

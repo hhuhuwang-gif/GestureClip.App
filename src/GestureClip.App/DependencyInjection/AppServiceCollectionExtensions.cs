@@ -23,6 +23,9 @@ public static class AppServiceCollectionExtensions
         services.AddSingleton<TrayIconService>();
         services.AddSingleton<WorkBearDailyReportAutoService>();
         services.AddSingleton<IConfirmationService, WpfConfirmationService>();
+        services.AddTransient<ClipboardWindowServices>();
+        services.AddTransient<GestureProfilesViewModel>();
+        services.AddTransient<GestureProfilesWindow>();
         services.AddSingleton<ClipboardOverlayService>();
         services.AddSingleton<IClipboardOverlayService>(provider => provider.GetRequiredService<ClipboardOverlayService>());
         services.AddSingleton<GestureOverlayService>();

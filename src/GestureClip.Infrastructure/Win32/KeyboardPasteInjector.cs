@@ -8,7 +8,7 @@ namespace GestureClip.Infrastructure.Win32;
 /// Keep the happy path simple: release stuck input → one-shot Ctrl+V.
 /// Fallbacks only when SendInput reports incomplete delivery.
 /// </summary>
-public static class KeyboardPasteInjector
+public static partial class KeyboardPasteInjector
 {
     private const ushort VkShift = 0x10;
     private const ushort VkControl = 0x11;
@@ -34,6 +34,8 @@ public static class KeyboardPasteInjector
     private const uint XButton1 = 0x0001;
     private const uint XButton2 = 0x0002;
     private const uint MapVkToVsc = 0;
+    private static readonly TimeSpan ModifierReleaseDelay = TimeSpan.FromMilliseconds(30);
+    private static readonly TimeSpan InjectionCompletionDelay = TimeSpan.FromMilliseconds(15);
 
     public static ushort[] ModifierVirtualKeys { get; } =
     [
@@ -43,58 +45,10 @@ public static class KeyboardPasteInjector
         VkLWin, VkRWin
     ];
 
-    public static KeyboardInputNativeMethods.INPUT[] BuildFullPasteSequence()
-    {
-        // Keyboard only. Do NOT inject synthetic mouse button-ups here:
-        // after a right-button gesture (down/up already eaten by the LL hook), a
-        // synthetic RIGHTUP often reaches the app and opens the context menu.
-        var list = new List<KeyboardInputNativeMethods.INPUT>(16);
-        foreach (var vk in ModifierVirtualKeys)
-        {
-            list.Add(KeyEvent(vk, KeyEventKeyUp));
-        }
-
-        list.Add(KeyEvent(VkControl, 0));
-        list.Add(KeyEvent(VkV, 0));
-        list.Add(KeyEvent(VkV, KeyEventKeyUp));
-        list.Add(KeyEvent(VkControl, KeyEventKeyUp));
-        return list.ToArray();
-    }
-
-    public static KeyboardInputNativeMethods.INPUT[] BuildModifierReleaseOnly()
-    {
-        return ModifierVirtualKeys.Select(vk => KeyEvent(vk, KeyEventKeyUp)).ToArray();
-    }
-
-    public static KeyboardInputNativeMethods.INPUT[] BuildMouseButtonUps()
-    {
-        return
-        [
-            MouseUp(MouseEventLeftUp, 0),
-            MouseUp(MouseEventRightUp, 0),
-            MouseUp(MouseEventMiddleUp, 0),
-            MouseUp(MouseEventXUp, XButton1),
-            MouseUp(MouseEventXUp, XButton2)
-        ];
-    }
-
-    public static int Send(KeyboardInputNativeMethods.INPUT[] inputs)
-    {
-        if (inputs.Length == 0)
-        {
-            return 0;
-        }
-
-        return (int)KeyboardInputNativeMethods.SendInput(
-            (uint)inputs.Length,
-            inputs,
-            Marshal.SizeOf<KeyboardInputNativeMethods.INPUT>());
-    }
-
     /// <summary>
     /// Preferred entry for paste injection.
     /// Does not re-activate the current foreground window (that can steal caret focus).
-    /// Only activates when an explicit preferred target is provided and it is not already FG.
+    /// An explicit target must still exist and own foreground focus immediately before injection.
     /// </summary>
     public static async Task<bool> SendCtrlVAsync(
         ILogger? logger = null,
@@ -105,50 +59,37 @@ public static class KeyboardPasteInjector
         cancellationToken.ThrowIfCancellationRequested();
         _ = preferClipboardMessage; // reserved: all paths may end with WM_PASTE
 
-        if (preferredTargetWindow != IntPtr.Zero &&
-            WindowNativeMethods.IsWindow(preferredTargetWindow) &&
-            WindowNativeMethods.GetForegroundWindow() != preferredTargetWindow)
-        {
-            var activated = WindowNativeMethods.TryActivateWindow(preferredTargetWindow);
-            logger?.LogDebug("Paste activate preferredHwnd={Hwnd} ok={Ok}", preferredTargetWindow, activated);
-            await Task.Delay(20, cancellationToken);
-        }
+        EnsurePreferredTarget(preferredTargetWindow);
 
         // Phase 1: release keyboard modifiers only (Shift stuck after Ctrl+Shift+V, etc.).
         // Never inject mouse button-ups: after right-gesture the LL hook already ate
         // physical down/up; synthetic RIGHTUP commonly pops the context menu.
-        var release = BuildModifierReleaseOnly();
-        var released = Send(release);
-        if (released != release.Length)
-        {
-            logger?.LogWarning(
-                "Modifier release SendInput {Sent}/{Expected}, Win32={Win32}",
-                released,
-                release.Length,
-                Marshal.GetLastWin32Error());
-        }
+        ReleaseKeyboardModifiers(logger);
 
-        await Task.Delay(30, cancellationToken);
+        await Task.Delay(ModifierReleaseDelay, cancellationToken);
 
         // Phase 2: one-shot Ctrl+V (VK + scan). This is the path that works when smart paste is off.
-        if (TrySendCtrlVViaSendInput(logger))
+        EnsurePreferredTarget(preferredTargetWindow);
+        if (TrySendCtrlVViaSendInput(logger, preferredTargetWindow))
         {
-            await Task.Delay(15, cancellationToken);
+            await Task.Delay(InjectionCompletionDelay, cancellationToken);
             return true;
         }
 
         // Phase 3: keybd_event fallback
+        EnsurePreferredTarget(preferredTargetWindow);
         if (TrySendCtrlVViaKeybdEvent(logger))
         {
-            await Task.Delay(15, cancellationToken);
+            await Task.Delay(InjectionCompletionDelay, cancellationToken);
             return true;
         }
 
         // Phase 4: WM_PASTE (classic edit controls)
+        EnsurePreferredTarget(preferredTargetWindow);
         if (WindowNativeMethods.TryPostPasteMessage(preferredTargetWindow))
         {
             logger?.LogInformation("Paste recovered via WM_PASTE fallback.");
-            await Task.Delay(15, cancellationToken);
+            await Task.Delay(InjectionCompletionDelay, cancellationToken);
             return true;
         }
 
@@ -185,165 +126,27 @@ public static class KeyboardPasteInjector
             Marshal.SizeOf<ClipboardNativeMethods.INPUT>());
     }
 
-    private static bool TrySendCtrlVViaSendInput(ILogger? logger)
+    private static void ReleaseKeyboardModifiers(ILogger? logger)
     {
-        var paste =
-            new[]
-            {
-                KeyEvent(VkControl, 0),
-                KeyEvent(VkV, 0),
-                KeyEvent(VkV, KeyEventKeyUp),
-                KeyEvent(VkControl, KeyEventKeyUp)
-            };
-        var sent = Send(paste);
-        if (sent == paste.Length)
+        var release = BuildModifierReleaseOnly();
+        var released = Send(release);
+        if (released != release.Length)
         {
-            return true;
+            logger?.LogWarning(
+                "Modifier release SendInput {Sent}/{Expected}, Win32={Win32}",
+                released,
+                release.Length,
+                Marshal.GetLastWin32Error());
         }
 
-        logger?.LogWarning(
-            "Ctrl+V SendInput {Sent}/{Expected}, Win32={Win32}",
-            sent,
-            paste.Length,
-            Marshal.GetLastWin32Error());
-
-        // Ensure Ctrl is not left down if partial delivery happened.
-        _ = Send(
-        [
-            KeyEvent(VkControl, KeyEventKeyUp),
-            KeyEvent(VkLControl, KeyEventKeyUp),
-            KeyEvent(VkRControl, KeyEventKeyUp)
-        ]);
-
-        // Scan-code-only retry.
-        var scanPaste =
-            new[]
-            {
-                ScanKeyEvent(VkControl, 0),
-                ScanKeyEvent(VkV, 0),
-                ScanKeyEvent(VkV, KeyEventKeyUp),
-                ScanKeyEvent(VkControl, KeyEventKeyUp)
-            };
-        sent = Send(scanPaste);
-        if (sent == scanPaste.Length)
-        {
-            logger?.LogDebug("Ctrl+V via KEYEVENTF_SCANCODE succeeded.");
-            return true;
-        }
-
-        logger?.LogWarning(
-            "Ctrl+V scan-code SendInput {Sent}/{Expected}, Win32={Win32}",
-            sent,
-            scanPaste.Length,
-            Marshal.GetLastWin32Error());
-        return false;
     }
 
-    private static bool TrySendCtrlVViaKeybdEvent(ILogger? logger)
+    private static void EnsurePreferredTarget(IntPtr preferredTargetWindow)
     {
-        try
-        {
-            foreach (var vk in ModifierVirtualKeys)
-            {
-                keybd_event((byte)vk, 0, KeyEventKeyUp, UIntPtr.Zero);
-            }
-
-            keybd_event((byte)VkControl, 0, 0, UIntPtr.Zero);
-            keybd_event((byte)VkV, 0, 0, UIntPtr.Zero);
-            keybd_event((byte)VkV, 0, KeyEventKeyUp, UIntPtr.Zero);
-            keybd_event((byte)VkControl, 0, KeyEventKeyUp, UIntPtr.Zero);
-            logger?.LogDebug("Ctrl+V via keybd_event completed.");
-            return true;
-        }
-        catch (Exception ex)
-        {
-            logger?.LogWarning(ex, "keybd_event Ctrl+V failed.");
-            return false;
-        }
+        if (preferredTargetWindow == IntPtr.Zero) return;
+        if (!WindowNativeMethods.IsWindow(preferredTargetWindow))
+            throw new InvalidOperationException("粘贴目标窗口已关闭，已停止输入。");
+        if (WindowNativeMethods.GetForegroundWindow() != preferredTargetWindow)
+            throw new InvalidOperationException("粘贴目标已失去焦点，已停止输入；请返回目标应用后重试。");
     }
-
-    private static ClipboardNativeMethods.INPUT ToClipboardInput(KeyboardInputNativeMethods.INPUT src)
-    {
-        return new ClipboardNativeMethods.INPUT
-        {
-            type = src.type,
-            u = new ClipboardNativeMethods.InputUnion
-            {
-                ki = new ClipboardNativeMethods.KEYBDINPUT
-                {
-                    wVk = src.u.ki.wVk,
-                    wScan = src.u.ki.wScan,
-                    dwFlags = src.u.ki.dwFlags,
-                    time = src.u.ki.time,
-                    dwExtraInfo = src.u.ki.dwExtraInfo
-                }
-            }
-        };
-    }
-
-    private static KeyboardInputNativeMethods.INPUT KeyEvent(ushort virtualKey, uint flags)
-    {
-        var scan = (ushort)MapVirtualKey(virtualKey, MapVkToVsc);
-        return new KeyboardInputNativeMethods.INPUT
-        {
-            type = InputKeyboard,
-            u = new KeyboardInputNativeMethods.InputUnion
-            {
-                ki = new KeyboardInputNativeMethods.KEYBDINPUT
-                {
-                    wVk = virtualKey,
-                    wScan = scan,
-                    dwFlags = flags,
-                    time = 0,
-                    dwExtraInfo = 0
-                }
-            }
-        };
-    }
-
-    private static KeyboardInputNativeMethods.INPUT ScanKeyEvent(ushort virtualKey, uint flags)
-    {
-        var scan = (ushort)MapVirtualKey(virtualKey, MapVkToVsc);
-        return new KeyboardInputNativeMethods.INPUT
-        {
-            type = InputKeyboard,
-            u = new KeyboardInputNativeMethods.InputUnion
-            {
-                ki = new KeyboardInputNativeMethods.KEYBDINPUT
-                {
-                    wVk = 0,
-                    wScan = scan,
-                    dwFlags = flags | KeyEventScancode,
-                    time = 0,
-                    dwExtraInfo = 0
-                }
-            }
-        };
-    }
-
-    private static KeyboardInputNativeMethods.INPUT MouseUp(uint flags, uint mouseData)
-    {
-        return new KeyboardInputNativeMethods.INPUT
-        {
-            type = InputMouse,
-            u = new KeyboardInputNativeMethods.InputUnion
-            {
-                mi = new KeyboardInputNativeMethods.MOUSEINPUT
-                {
-                    dx = 0,
-                    dy = 0,
-                    mouseData = mouseData,
-                    dwFlags = flags,
-                    time = 0,
-                    dwExtraInfo = 0
-                }
-            }
-        };
-    }
-
-    [DllImport("user32.dll")]
-    private static extern uint MapVirtualKey(uint uCode, uint uMapType);
-
-    [DllImport("user32.dll")]
-    private static extern void keybd_event(byte bVk, byte bScan, uint dwFlags, UIntPtr dwExtraInfo);
 }

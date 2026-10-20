@@ -95,11 +95,6 @@ public partial class ClipboardOverlayWindow
         _viewModel.EnqueueToPasteQueue(GetSelectedItems());
     }
 
-    private void ClearPasteQueueButton_Click(object sender, RoutedEventArgs e)
-    {
-        _viewModel.ClearPasteQueue();
-    }
-
     private void AddSnippetButton_Click(object sender, RoutedEventArgs e)
     {
         _viewModel.OpenSnippetEditor();

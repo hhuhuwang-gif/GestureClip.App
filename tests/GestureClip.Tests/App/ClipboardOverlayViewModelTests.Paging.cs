@@ -70,8 +70,8 @@ public sealed partial class ClipboardOverlayViewModelTests
         await WaitForAsync(() => viewModel.Items.Count == 50);
         await viewModel.LoadMoreAsync();
 
-        Assert.Equal(["alpha", "alpha"], service.SearchKeywords);
-        Assert.Equal([0, 50], service.SearchOffsets);
+        Assert.Equal(["alpha", "", "alpha"], service.SearchKeywords);
+        Assert.Equal([0, 0, 50], service.SearchOffsets);
         Assert.Equal(75, viewModel.Items.Count);
         Assert.False(viewModel.HasMoreItems);
     }

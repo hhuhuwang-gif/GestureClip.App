@@ -120,7 +120,8 @@ public sealed partial class MouseGestureServiceTests
         FakeWorkstationDashboardService? dashboard = null,
         FakeWorkerLevelService? workerLevel = null,
         FakeWorkerLevelUpService? levelUp = null,
-        IGesturePresetProvider? presetProvider = null)
+        IGesturePresetProvider? presetProvider = null,
+        FakeForegroundAppService? foregroundApp = null)
     {
         return new MouseGestureService(
             hook,
@@ -131,7 +132,7 @@ public sealed partial class MouseGestureServiceTests
             presetProvider ?? new GesturePresetProvider(),
             new GestureHudInfoProvider(presetProvider ?? new GesturePresetProvider()),
             overlay ?? new FakeGestureOverlayService(),
-            new FakeForegroundAppService(),
+            foregroundApp ?? new FakeForegroundAppService(),
             new FakeAppBlacklistService { GestureBlocked = gestureBlacklisted },
             dashboard ?? new FakeWorkstationDashboardService(),
             workerLevel ?? new FakeWorkerLevelService(),

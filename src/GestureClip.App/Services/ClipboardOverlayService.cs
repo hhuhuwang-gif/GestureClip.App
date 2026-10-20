@@ -37,6 +37,7 @@ public sealed class ClipboardOverlayService : IClipboardOverlayService
         await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
         {
             var window = EnsureWindow();
+            if (!window.IsVisible) window.CapturePasteTarget();
             window.Show();
             window.Activate();
             window.FocusSearchBox();
@@ -57,6 +58,7 @@ public sealed class ClipboardOverlayService : IClipboardOverlayService
                 return;
             }
 
+            window.CapturePasteTarget();
             window.Show();
             window.Activate();
             window.FocusSearchBox();

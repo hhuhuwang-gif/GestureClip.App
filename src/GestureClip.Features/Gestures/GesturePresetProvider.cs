@@ -51,6 +51,7 @@ public sealed class GesturePresetProvider : IGesturePresetProvider
         };
 
     private readonly object _syncRoot = new();
+    private readonly IGestureAppProfileService? _appProfiles;
     private IReadOnlyDictionary<string, BuiltInGestureAction> _customBindings = EditEnhanced;
     private IReadOnlyDictionary<string, BuiltInGestureAction> _leftButtonEnhanced = DefaultLeftButtonEnhanced;
 
@@ -58,11 +59,15 @@ public sealed class GesturePresetProvider : IGesturePresetProvider
     {
     }
 
-    public GesturePresetProvider(ISettingsService settingsService)
+    public GesturePresetProvider(ISettingsService settingsService, IGestureAppProfileService? appProfiles = null)
     {
+        _appProfiles = appProfiles;
         _customBindings = ParseCustomBindings(settingsService.Get(SettingKeys.GestureCustomBindingsJson, ""));
         _leftButtonEnhanced = ParseLeftButtonEnhanced(settingsService.Get(SettingKeys.GestureLeftButtonEnhancedJson, ""));
     }
+
+    public BuiltInGestureAction GetWheelAction(GestureExecutionContext context, BuiltInGestureAction globalAction) =>
+        _appProfiles is not null && _appProfiles.TryGetAction(context, out var action) ? action : globalAction;
 
     public BuiltInGestureAction GetAction(GesturePreset preset, string pattern)
     {
@@ -72,6 +77,11 @@ public sealed class GesturePresetProvider : IGesturePresetProvider
 
     public BuiltInGestureAction GetAction(GesturePreset preset, GestureExecutionContext context)
     {
+        if (_appProfiles is not null && _appProfiles.TryGetAction(context, out var applicationAction))
+        {
+            return applicationAction;
+        }
+
         if (context.IsLeftButtonModified)
         {
             var leftMap = GetLeftButtonEnhancedBindings();

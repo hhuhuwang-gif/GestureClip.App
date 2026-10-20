@@ -74,6 +74,10 @@ public sealed class GestureHudInfoProvider : IGestureHudInfoProvider
         {
             BuiltInGestureAction.Copy => "复制",
             BuiltInGestureAction.Paste => "粘贴",
+            BuiltInGestureAction.PastePlainText => "纯文本粘贴",
+            BuiltInGestureAction.PreviousTab => "上一个标签",
+            BuiltInGestureAction.NextTab => "下一个标签",
+            BuiltInGestureAction.ReopenClosedTab => "恢复关闭的标签",
             BuiltInGestureAction.SmartPaste => "智能粘贴",
             BuiltInGestureAction.Cut => "剪切",
             BuiltInGestureAction.SelectAll => "全选",
@@ -121,6 +125,10 @@ public sealed class GestureHudInfoProvider : IGestureHudInfoProvider
         {
             BuiltInGestureAction.Copy => "Ctrl + C",
             BuiltInGestureAction.Paste => "Ctrl + V",
+            BuiltInGestureAction.PastePlainText => "Ctrl + Shift + V",
+            BuiltInGestureAction.PreviousTab => "Ctrl + Shift + Tab",
+            BuiltInGestureAction.NextTab => "Ctrl + Tab",
+            BuiltInGestureAction.ReopenClosedTab => "Ctrl + Shift + T",
             BuiltInGestureAction.SmartPaste => "根据当前软件自动选择",
             BuiltInGestureAction.Cut => "Ctrl + X",
             BuiltInGestureAction.SelectAll => "Ctrl + A",

@@ -10,7 +10,7 @@ public sealed partial class ThemeResourceTests
     public void MouseGestureService_does_not_reinsert_start_point_when_trimming_overlay_points()
     {
         var path = FindRepositoryFile("src", "GestureClip.Features", "Gestures", "MouseGestureService.cs");
-        var source = File.ReadAllText(path);
+        var source = RepositorySource.ReadClassSources(path);
 
         Assert.Contains("RemoveRange(0, overflow)", source);
         Assert.DoesNotContain(".Insert(0", source);

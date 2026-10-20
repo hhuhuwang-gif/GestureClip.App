@@ -7,7 +7,7 @@ using Microsoft.Extensions.Logging;
 
 namespace GestureClip.App.Services;
 
-public sealed class AppLifecycleService : IAppLifecycleService
+public sealed partial class AppLifecycleService : IAppLifecycleService
 {
     private const string LatestReleaseUrl = "https://github.com/hhuhuwang-gif/GestureClip.App/releases/latest";
 
@@ -27,42 +27,6 @@ public sealed class AppLifecycleService : IAppLifecycleService
     public bool IsExplicitExit { get; private set; }
 
     public bool RuntimeStopped { get; private set; }
-
-    public void ShowSettingsWindow(string? page = null)
-    {
-        if (_settingsWindow is null)
-        {
-            _settingsWindow = _serviceProvider.GetRequiredService<SettingsWindow>();
-            _settingsWindow.Closed += (_, _) => _settingsWindow = null;
-        }
-
-        _settingsWindow.Show();
-        if (_settingsWindow.WindowState == WindowState.Minimized)
-        {
-            _settingsWindow.WindowState = WindowState.Normal;
-        }
-
-        _settingsWindow.Activate();
-        if (!string.IsNullOrWhiteSpace(page))
-        {
-            _settingsWindow.NavigateToPage(page);
-        }
-
-        _logger.LogInformation("Settings window shown. Page={Page}", page ?? "default");
-    }
-
-
-    public void ShowGestureBindingEditor(string? pattern = null)
-    {
-        ShowSettingsWindow("bindings");
-        if (_settingsWindow is null)
-        {
-            return;
-        }
-
-        _settingsWindow.FocusGestureBinding(pattern);
-        _logger.LogInformation("Gesture binding editor shown. Pattern={Pattern}", pattern ?? "(none)");
-    }
 
     public void ToggleSettingsWindow()
     {
@@ -191,17 +155,17 @@ public sealed class AppLifecycleService : IAppLifecycleService
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to check for updates.");
-            var openRelease = System.Windows.MessageBox.Show(
-                UpdateErrorMessageFormatter.ToUserMessage(ex) + "\n\n是否打开 GitHub Release 页面手动查看？",
-                "检查更新失败",
-                MessageBoxButton.YesNo,
-                MessageBoxImage.Warning);
-            if (openRelease == MessageBoxResult.Yes)
-            {
-                OpenLatestReleasePage();
-            }
+            ReportUpdateCheckFailure(ex);
         }
+    }
+
+    private void ReportUpdateCheckFailure(Exception exception)
+    {
+        _logger.LogError(exception, "Failed to check for updates.");
+        var openRelease = System.Windows.MessageBox.Show(
+            UpdateErrorMessageFormatter.ToUserMessage(exception) + "\n\n是否打开 GitHub Release 页面手动查看？",
+            "检查更新失败", MessageBoxButton.YesNo, MessageBoxImage.Warning);
+        if (openRelease == MessageBoxResult.Yes) OpenLatestReleasePage();
     }
 
     private static string TruncateReleaseNotes(string? notes)

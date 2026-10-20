@@ -6,25 +6,47 @@ namespace GestureClip.App.ViewModels;
 
 public sealed partial class ClipboardOverlayViewModel
 {
+    private const int RegexSearchTimeoutMilliseconds = 250;
     private sealed record SmartSearchPool(
         long Revision, ClipboardContentFilter Filter, IReadOnlyList<ClipboardItem> Items);
 
     private SmartSearchPool? _smartSearchPool;
     private sealed record PinyinSearchRequest(
         IReadOnlyList<ClipboardItem> Primary, IReadOnlyList<ClipboardItem> Pool, string Keyword);
+    private sealed record SmartSearchPoolRequest(long Revision, ClipboardContentFilter Filter, IProgress<int>? Progress);
 
     private async Task<IReadOnlyList<ClipboardItem>> GetSmartSearchPoolAsync(
-        long revision, ClipboardContentFilter filter, CancellationToken cancellationToken)
+        SmartSearchPoolRequest request, CancellationToken cancellationToken)
     {
-        if (_smartSearchPool is { } cached && cached.Revision == revision && cached.Filter == filter)
+        if (_smartSearchPool is { } cached && cached.Revision == request.Revision && cached.Filter == request.Filter)
         {
             return cached.Items;
         }
 
-        var pool = await _clipboardService.SearchAsync("", SmartSearchScanLimit, 0, filter, cancellationToken);
-        cancellationToken.ThrowIfCancellationRequested();
-        _smartSearchPool = new SmartSearchPool(revision, filter, pool);
-        return pool;
+        var pool = new List<ClipboardItem>();
+        while (true)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            EnsureSearchRevision(request.Revision);
+            var batch = await _clipboardService.SearchAsync(
+                "", SmartSearchBatchSize, pool.Count, request.Filter, cancellationToken);
+            cancellationToken.ThrowIfCancellationRequested();
+            pool.AddRange(batch);
+            request.Progress?.Report(pool.Count);
+            if (batch.Count < SmartSearchBatchSize) break;
+        }
+
+        EnsureSearchRevision(request.Revision);
+        _smartSearchPool = new SmartSearchPool(request.Revision, request.Filter, pool.ToArray());
+        return _smartSearchPool.Items;
+    }
+
+    private void EnsureSearchRevision(long revision)
+    {
+        if (_clipboardService.HistoryRevision != revision)
+        {
+            throw new InvalidOperationException("搜索期间剪贴板历史已变更，请重新搜索");
+        }
     }
 
     private static (IReadOnlyList<ClipboardItem> Items, string Status) AppendPinyinMatches(
@@ -35,7 +57,8 @@ public sealed partial class ClipboardOverlayViewModel
         foreach (var item in request.Pool)
         {
             cancellationToken.ThrowIfCancellationRequested();
-            if (!knownIds.Contains(item.Id) && MatchesPinyinInitials(item, request.Keyword))
+            if (!knownIds.Contains(item.Id) && !MatchesLiteralKeyword(item, request.Keyword) &&
+                MatchesPinyinInitials(item, request.Keyword))
             {
                 knownIds.Add(item.Id);
                 matches.Add(item);
@@ -43,7 +66,7 @@ public sealed partial class ClipboardOverlayViewModel
         }
 
         return (request.Primary.Concat(matches).ToArray(),
-            matches.Count > 0 ? $"含 {matches.Count} 条拼音首字母匹配" : "");
+            $"已搜索全部 {request.Pool.Count} 条历史 · 含 {matches.Count} 条拼音首字母匹配");
     }
 
     private static bool TryGetRegexPattern(string keyword, out string pattern)
@@ -59,47 +82,54 @@ public sealed partial class ClipboardOverlayViewModel
         return pattern.Length > 0;
     }
 
-    private static (IReadOnlyList<ClipboardItem> Results, string Status) FilterByRegex(
-        IReadOnlyList<ClipboardItem> pool, string pattern, CancellationToken cancellationToken)
+    private async Task<SearchPage> QueryRegexSearchAsync(
+        SearchRequest request, string pattern, CancellationToken cancellationToken)
     {
-        const int regexTimeoutMilliseconds = 250;
         Regex regex;
         try
         {
             regex = new Regex(pattern, RegexOptions.IgnoreCase | RegexOptions.CultureInvariant,
-                TimeSpan.FromMilliseconds(regexTimeoutMilliseconds));
+                TimeSpan.FromMilliseconds(RegexSearchTimeoutMilliseconds));
         }
         catch (ArgumentException)
         {
-            return ([], "正则表达式无效，请检查 re: 后面的内容");
+            return new SearchPage([], 0, false, "正则表达式无效，请检查 re: 后面的内容") { HasError = true };
         }
 
+        var pool = await GetSmartSearchPoolAsync(
+            new SmartSearchPoolRequest(request.Revision, request.Filter, request.Progress), cancellationToken);
+        var (matches, status, hasError) = FilterByRegex(pool, regex, cancellationToken);
+        return new SearchPage(matches, matches.Count, false, status) { HasError = hasError };
+    }
+
+    private static (IReadOnlyList<ClipboardItem> Results, string Status, bool HasError) FilterByRegex(
+        IReadOnlyList<ClipboardItem> pool, Regex regex, CancellationToken cancellationToken)
+    {
         var matches = new List<ClipboardItem>();
         foreach (var item in pool)
         {
             cancellationToken.ThrowIfCancellationRequested();
-            var text = item.TextContent ?? item.PreviewText ?? item.OcrText;
-            if (string.IsNullOrEmpty(text)) continue;
             try
             {
-                if (regex.IsMatch(text)) matches.Add(item);
+                var texts = new[] { item.TextContent, item.PreviewText, item.OcrText };
+                if (texts.Any(text => !string.IsNullOrEmpty(text) && regex.IsMatch(text))) matches.Add(item);
             }
             catch (RegexMatchTimeoutException)
             {
-                return ([], "正则匹配超时，请简化表达式后重试");
+                return ([], "正则匹配超时，请简化表达式后重试", true);
             }
         }
 
-        return (matches, $"正则匹配 {matches.Count} 条");
+        return (matches, $"已搜索全部 {pool.Count} 条历史 · 正则匹配 {matches.Count} 条", false);
     }
 
-    private static bool ShouldAugmentWithPinyin(string keyword, int primaryCount)
+    private static bool ShouldAugmentWithPinyin(string keyword)
     {
         const int minimumInitialsLength = 2;
         const int maximumInitialsLength = 12;
         var trimmed = keyword.Trim();
         return trimmed.Length >= minimumInitialsLength && trimmed.Length <= maximumInitialsLength &&
-            primaryCount < PageSize && trimmed.All(char.IsAsciiLetter);
+            trimmed.All(char.IsAsciiLetter);
     }
 
     private static bool MatchesPinyinInitials(ClipboardItem item, string keyword)
@@ -107,5 +137,12 @@ public sealed partial class ClipboardOverlayViewModel
         return PinyinInitialMatcher.Matches(item.PreviewText, keyword) ||
             PinyinInitialMatcher.Matches(item.TextContent, keyword) ||
             PinyinInitialMatcher.Matches(item.OcrText, keyword);
+    }
+
+    private static bool MatchesLiteralKeyword(ClipboardItem item, string keyword)
+    {
+        return (item.IsText && item.TextContent?.Contains(keyword, StringComparison.OrdinalIgnoreCase) == true) ||
+            item.PreviewText?.Contains(keyword, StringComparison.OrdinalIgnoreCase) == true ||
+            item.OcrText?.Contains(keyword, StringComparison.OrdinalIgnoreCase) == true;
     }
 }

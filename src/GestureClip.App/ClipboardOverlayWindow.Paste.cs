@@ -7,12 +7,21 @@ using GestureClip.Core.Abstractions;
 using GestureClip.Core.Clipboard;
 using GestureClip.Core.Settings;
 using GestureClip.App.Services;
+using GestureClip.Core.SystemInfo;
 
 namespace GestureClip.App;
 
 public partial class ClipboardOverlayWindow
 {
-    private static readonly TimeSpan FocusRestoreDelay = TimeSpan.FromMilliseconds(90);
+    private readonly IPasteTargetService _pasteTargetService;
+    private PasteTarget? _pasteTarget;
+    private CancellationTokenSource? _pastePreparation;
+
+    public void CapturePasteTarget()
+    {
+        _pastePreparation?.Cancel();
+        _pasteTarget = _pasteTargetService.CaptureTarget();
+    }
 
     private Task PasteWithFocusRestoreAsync(bool keepOverlayOpen, bool plainText = false) =>
         _pasteCoordinator.PasteAsync(new ClipboardPasteRequest(keepOverlayOpen, plainText));
@@ -27,22 +36,36 @@ public partial class ClipboardOverlayWindow
         {
             return;
         }
-        PrepareForExternalPaste();
+        using var preparation = new CancellationTokenSource();
+        _pastePreparation = preparation;
+        var restore = request.KeepOverlayOpen;
         try
         {
-            await Task.Delay(FocusRestoreDelay);
+            var target = _pasteTarget ?? throw new InvalidOperationException("尚未选择粘贴目标。");
+            PrepareForExternalPaste();
+            await _pasteTargetService.WaitUntilReadyAsync(target, preparation.Token);
             if (request.Index is { } index)
             {
-                await _viewModel.PasteByIndexAsync(index);
+                restore |= !await _viewModel.PasteByIndexAsync(index, target.WindowHandle);
             }
             else
             {
-                await _viewModel.PasteSelectedAsync(request.KeepOverlayOpen, request.PlainText);
+                restore |= !await _viewModel.PasteSelectedAsync(request.KeepOverlayOpen, request.PlainText, target.WindowHandle);
             }
+        }
+        catch (OperationCanceledException) when (preparation.IsCancellationRequested)
+        {
+            restore = false;
+        }
+        catch (Exception exception)
+        {
+            _viewModel.ReportPastePreparationError(exception.Message);
+            restore = true;
         }
         finally
         {
-            if (request.KeepOverlayOpen)
+            if (ReferenceEquals(_pastePreparation, preparation)) _pastePreparation = null;
+            if (restore)
             {
                 RestoreOverlayAfterPaste();
             }
@@ -66,7 +89,6 @@ public partial class ClipboardOverlayWindow
     private void PrepareForExternalPaste()
     {
         _viewModel.HideShortcutHelp();
-        // Drop topmost/visibility so the previous foreground app becomes active again.
         Topmost = false;
         MoveFocus(new TraversalRequest(FocusNavigationDirection.Next));
         Hide();

@@ -23,11 +23,12 @@ public partial class ClipboardOverlayWindow : Window
     public ClipboardOverlayWindow(
         ClipboardOverlayViewModel viewModel,
         ISettingsService settingsService,
-        IConfirmationService confirmationService)
+        ClipboardWindowServices services)
     {
         _viewModel = viewModel;
         _settingsService = settingsService;
-        _confirmationService = confirmationService;
+        _confirmationService = services.Confirmation;
+        _pasteTargetService = services.PasteTarget;
         _pasteCoordinator = new ClipboardPasteCoordinator(PasteCoreAsync);
         InitializeComponent();
         DataContext = _viewModel;

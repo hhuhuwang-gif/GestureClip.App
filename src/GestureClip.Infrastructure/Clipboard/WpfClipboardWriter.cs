@@ -1,6 +1,7 @@
 using System.IO;
 using System.Runtime.InteropServices;
 using GestureClip.Core.Abstractions;
+using GestureClip.Core.SystemInfo;
 using GestureClip.Infrastructure.Win32;
 using Microsoft.Extensions.Logging;
 
@@ -10,11 +11,13 @@ public sealed class WpfClipboardWriter : IClipboardWriter, IDisposable
 {
     private readonly ClipboardStaDispatcher _clipboardStaThread;
     private readonly ILogger<WpfClipboardWriter> _logger;
+    private readonly IPasteTargetService _pasteTargetService;
 
-    public WpfClipboardWriter(ILogger<WpfClipboardWriter> logger)
+    public WpfClipboardWriter(ILogger<WpfClipboardWriter> logger, IPasteTargetService pasteTargetService)
     {
         _clipboardStaThread = new ClipboardStaDispatcher("GestureClip Clipboard Writer");
         _logger = logger;
+        _pasteTargetService = pasteTargetService;
     }
 
     public void Dispose()
@@ -76,21 +79,7 @@ public sealed class WpfClipboardWriter : IClipboardWriter, IDisposable
         var ownershipTransferred = false;
         try
         {
-            var target = ClipboardNativeMethods.GlobalLock(handle);
-            if (target == IntPtr.Zero)
-            {
-                throw new InvalidOperationException($"锁定剪贴板内存失败。Win32={Marshal.GetLastWin32Error()}");
-            }
-
-            try
-            {
-                var bytes = System.Text.Encoding.Unicode.GetBytes(text + "\0");
-                Marshal.Copy(bytes, 0, target, bytes.Length);
-            }
-            finally
-            {
-                ClipboardNativeMethods.GlobalUnlock(handle);
-            }
+            CopyTextToMemory(handle, text);
 
             if (!ClipboardNativeMethods.OpenClipboard(IntPtr.Zero))
             {
@@ -125,19 +114,37 @@ public sealed class WpfClipboardWriter : IClipboardWriter, IDisposable
         }
     }
 
-    public async Task SendPasteHotkeyAsync(CancellationToken cancellationToken)
+    public Task SendPasteHotkeyAsync(CancellationToken cancellationToken) => SendPasteHotkeyAsync(0, cancellationToken);
+
+    private static void CopyTextToMemory(IntPtr handle, string text)
+    {
+        var target = ClipboardNativeMethods.GlobalLock(handle);
+        if (target == IntPtr.Zero)
+            throw new InvalidOperationException($"锁定剪贴板内存失败。Win32={Marshal.GetLastWin32Error()}");
+        try
+        {
+            var bytes = System.Text.Encoding.Unicode.GetBytes(text + "\0");
+            Marshal.Copy(bytes, 0, target, bytes.Length);
+        }
+        finally
+        {
+            ClipboardNativeMethods.GlobalUnlock(handle);
+        }
+    }
+
+    public async Task SendPasteHotkeyAsync(nint targetWindow, CancellationToken cancellationToken)
     {
         cancellationToken.ThrowIfCancellationRequested();
+        var target = targetWindow == 0 ? _pasteTargetService.CaptureTarget() : new PasteTarget(targetWindow, null);
+        await _pasteTargetService.WaitUntilReadyAsync(target, cancellationToken);
         var ok = await KeyboardPasteInjector.SendCtrlVAsync(
             _logger,
             cancellationToken,
-            preferredTargetWindow: default,
+            preferredTargetWindow: target.WindowHandle,
             preferClipboardMessage: true);
         if (!ok)
         {
-            // Do not throw: callers (history paste / assistant) already wrote clipboard;
-            // throwing aborts UI flows without improving paste success rate.
-            _logger.LogWarning("SendPasteHotkeyAsync: all paste injection paths failed.");
+            throw new InvalidOperationException("粘贴输入发送失败，历史记录未标记为已使用。");
         }
     }
 

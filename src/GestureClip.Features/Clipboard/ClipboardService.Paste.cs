@@ -17,13 +17,13 @@ public sealed partial class ClipboardService
             var image = await EnsureFullContentAsync(item, cancellationToken);
             if (string.IsNullOrWhiteSpace(image.TextContent))
             {
-                return;
+                throw new InvalidOperationException("图片内容不存在，未执行粘贴。");
             }
 
             SuppressCaptureFor(TimeSpan.FromMilliseconds(1500));
             RecordInternalWrite(imageHash: _clipboardHashService.ComputeHash(image.TextContent));
             await _clipboardWriter.SetImagePngBase64Async(image.TextContent, cancellationToken);
-            await _clipboardWriter.SendPasteHotkeyAsync(cancellationToken);
+            await _clipboardWriter.SendPasteHotkeyAsync(options.TargetWindowHandle, cancellationToken);
             await RecordPasteUsageAsync(image.Id, DateTimeOffset.UtcNow, cancellationToken);
             pasteWatch.Stop();
             LogPerf("PasteMs", pasteWatch.ElapsedMilliseconds, ("ContentType", "image/png"));
@@ -33,7 +33,7 @@ public sealed partial class ClipboardService
         var textItem = await EnsureFullContentAsync(item, cancellationToken);
         if (string.IsNullOrEmpty(textItem.TextContent))
         {
-            return;
+            throw new InvalidOperationException("文字内容不存在，未执行粘贴。");
         }
 
         var pasteText = textItem.TextContent;
@@ -55,7 +55,7 @@ public sealed partial class ClipboardService
         SuppressCaptureFor(TimeSpan.FromMilliseconds(1500));
         RecordInternalWrite(textHash: _clipboardHashService.ComputeHash(pasteText));
         await _clipboardWriter.SetTextAsync(pasteText, cancellationToken);
-        await _clipboardWriter.SendPasteHotkeyAsync(cancellationToken);
+        await _clipboardWriter.SendPasteHotkeyAsync(options.TargetWindowHandle, cancellationToken);
         await RecordPasteUsageAsync(textItem.Id, DateTimeOffset.UtcNow, cancellationToken);
         pasteWatch.Stop();
         LogPerf("PasteMs", pasteWatch.ElapsedMilliseconds, ("ContentType", "text"));

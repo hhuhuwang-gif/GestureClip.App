@@ -974,6 +974,14 @@
                                                 Height="34"
                                                 Margin="0,0,8,8"
                                                 Click="NavigateToBindings_Click" />
+                                        <Button Content="按应用配置手势"
+                                                Style="{StaticResource SecondaryButtonStyle}"
+                                                MinWidth="0"
+                                                Width="150"
+                                                Height="34"
+                                                Margin="0,0,8,8"
+                                                ToolTip="为 Excel、浏览器或编辑器单独覆盖手势，默认不启用"
+                                                Click="OpenGestureProfiles_Click" />
                                         <Button Content="查看边缘增强"
                                                 Style="{StaticResource SecondaryButtonStyle}"
                                                 MinWidth="0"

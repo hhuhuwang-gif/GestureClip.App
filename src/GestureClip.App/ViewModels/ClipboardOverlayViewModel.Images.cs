@@ -13,33 +13,75 @@ namespace GestureClip.App.ViewModels;
 
 public sealed partial class ClipboardOverlayViewModel
 {
+    private readonly Dictionary<Guid, string?> _imagePreviewCache = [];
+    private long _imagePreviewCacheRevision = -1;
+    private CancellationTokenSource? _imagePreviewCancellation;
+
+    private void RefreshSelectedImagePreview(ClipboardItem? item)
+    {
+        Interlocked.Increment(ref _selectedImagePreviewVersion);
+        var previous = Interlocked.Exchange(ref _imagePreviewCancellation, null);
+        previous?.Cancel();
+        previous?.Dispose();
+        if (NeedsImagePreview(item)) _ = LoadSelectedImagePreviewAsync(item!);
+    }
+
     private async Task LoadSelectedImagePreviewAsync(ClipboardItem item)
     {
         var version = Interlocked.Increment(ref _selectedImagePreviewVersion);
+        var revision = _clipboardService.HistoryRevision;
+        EnsureImagePreviewCacheRevision(revision);
+
+        var cancellation = new CancellationTokenSource();
+        _imagePreviewCancellation = cancellation;
+        var token = cancellation.Token;
         try
         {
-            var fullItem = await _clipboardService.GetByIdAsync(item.Id, CancellationToken.None);
-            if (fullItem is null || version != Volatile.Read(ref _selectedImagePreviewVersion))
+            if (!_imagePreviewCache.TryGetValue(item.Id, out var previewContent))
+            {
+                previewContent = await Task.Run(() => ReadImagePreviewAsync(item.Id, token), token);
+            }
+
+            if (token.IsCancellationRequested || version != Volatile.Read(ref _selectedImagePreviewVersion) ||
+                _clipboardService.HistoryRevision != revision || SelectedItem?.Id != item.Id)
             {
                 return;
             }
 
-            var previewContent = await GetImagePreviewContentAsync(fullItem, cancellationToken: CancellationToken.None);
-            if (string.IsNullOrWhiteSpace(previewContent) || SelectedItem?.Id != item.Id)
-            {
-                return;
-            }
-
+            _imagePreviewCache[item.Id] = previewContent;
+            if (string.IsNullOrWhiteSpace(previewContent)) return;
             UpdateItem(item.Id, current => current with
             {
                 TextContent = current.IsImage ? null : current.TextContent,
                 ThumbnailContent = previewContent
             });
         }
+        catch (OperationCanceledException) when (token.IsCancellationRequested)
+        {
+        }
         catch (Exception ex)
         {
-            ErrorMessage = $"加载图片预览失败：{ex.Message}";
+            if (!token.IsCancellationRequested && version == Volatile.Read(ref _selectedImagePreviewVersion))
+            {
+                ErrorMessage = $"加载图片预览失败：{ex.Message}";
+            }
         }
+    }
+
+    private void EnsureImagePreviewCacheRevision(long revision)
+    {
+        if (_imagePreviewCacheRevision == revision) return;
+        _imagePreviewCache.Clear();
+        _imagePreviewCacheRevision = revision;
+    }
+
+    private async Task<string?> ReadImagePreviewAsync(Guid id, CancellationToken cancellationToken)
+    {
+        var fullItem = await _clipboardService.GetByIdAsync(id, cancellationToken);
+        cancellationToken.ThrowIfCancellationRequested();
+        return fullItem is null
+            ? null
+            : await GetImagePreviewContentAsync(fullItem, cancellationToken);
     }
 
     private static bool NeedsImagePreview(ClipboardItem? item)

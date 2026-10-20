@@ -109,6 +109,8 @@ public sealed partial class ClipboardOverlayViewModelTests
 
         public Func<ClipboardItem, PasteOptions, CancellationToken, Task>? PasteHandler { get; set; }
 
+        public Func<Guid, CancellationToken, Task<ClipboardItem?>>? GetByIdHandler { get; set; }
+
         public Func<IReadOnlyList<ClipboardItem>, CancellationToken, Task>? CopyHandler { get; set; }
 
         public DateTimeOffset? SuppressCaptureUntil => null;
@@ -182,6 +184,7 @@ public sealed partial class ClipboardOverlayViewModelTests
         public Task<ClipboardItem?> GetByIdAsync(Guid id, CancellationToken cancellationToken)
         {
             GetByIdRequests.Add(id);
+            if (GetByIdHandler is not null) return GetByIdHandler(id, cancellationToken);
             return Task.FromResult(FullItems.TryGetValue(id, out var item) ? item : null);
         }
 

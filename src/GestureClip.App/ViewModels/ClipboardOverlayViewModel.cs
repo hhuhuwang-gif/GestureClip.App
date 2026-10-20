@@ -23,8 +23,7 @@ public sealed partial class ClipboardOverlayViewModel : INotifyPropertyChanged
     private const int TextPreviewLength = 120;
     private const int SelectedImagePreviewPixelWidth = 320;
     private const int MaxInlineImagePreviewBytes = 512 * 1024;
-    /// <summary>Pool size fetched for client-side pinyin-initial / regex matching.</summary>
-    private const int SmartSearchScanLimit = 200;
+    private const int SmartSearchBatchSize = 200;
     private const string RegexSearchPrefix = "re:";
     private const string DefaultShortcutHint =
         "拼音/re:正则 · Alt+数字粘贴 · Shift+Enter纯文本 · Ctrl+Enter粘贴不关 · Ctrl+Tab切分类";
@@ -80,12 +79,7 @@ public sealed partial class ClipboardOverlayViewModel : INotifyPropertyChanged
         RefreshShortcutHint();
         if (_pasteQueueService is not null)
         {
-            _pasteQueueService.QueueChanged += (_, _) =>
-            {
-                OnPropertyChanged(nameof(PasteQueueCount));
-                OnPropertyChanged(nameof(HasPasteQueue));
-                OnPropertyChanged(nameof(PasteQueueText));
-            };
+            _pasteQueueService.QueueChanged += OnPasteQueueChanged;
         }
     }
 
@@ -156,10 +150,7 @@ public sealed partial class ClipboardOverlayViewModel : INotifyPropertyChanged
             OnPropertyChanged(nameof(SelectedUseCountText));
             OnPropertyChanged(nameof(SelectedPinActionText));
             OnPropertyChanged(nameof(SelectedFavoriteActionText));
-            if (value is { } selected && NeedsImagePreview(selected))
-            {
-                _ = LoadSelectedImagePreviewAsync(selected);
-            }
+            RefreshSelectedImagePreview(value);
         }
     }
 

@@ -6,7 +6,8 @@ namespace GestureClip.Core.Gestures;
 public sealed record GestureExecutionContext(
     string Pattern,
     bool IsLeftButtonModified,
-    nint TargetWindowHandle = 0)
+    nint TargetWindowHandle = 0,
+    string? TargetProcessName = null)
 {
     public bool HasLeftButtonModifier => IsLeftButtonModified;
 }

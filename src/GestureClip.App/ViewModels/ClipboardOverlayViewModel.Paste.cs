@@ -13,7 +13,7 @@ namespace GestureClip.App.ViewModels;
 
 public sealed partial class ClipboardOverlayViewModel
 {
-    public async Task<bool> PasteSelectedAsync(bool keepOverlayOpen = false, bool plainText = false)
+    public async Task<bool> PasteSelectedAsync(bool keepOverlayOpen = false, bool plainText = false, nint targetWindow = 0)
     {
         await FlushPendingSearchAsync();
         if (SelectedItem is null || HasSearchError)
@@ -21,7 +21,7 @@ public sealed partial class ClipboardOverlayViewModel
             return false;
         }
 
-        var ok = await TryPasteAsync(SelectedItem, plainText);
+        var ok = await TryPasteAsync(SelectedItem, plainText, targetWindow);
         if (ok)
         {
             StatusText = keepOverlayOpen ? "已粘贴（面板保持打开）" : "已粘贴";
@@ -30,7 +30,7 @@ public sealed partial class ClipboardOverlayViewModel
         return ok;
     }
 
-    public async Task<bool> PasteByIndexAsync(int index)
+    public async Task<bool> PasteByIndexAsync(int index, nint targetWindow = 0)
     {
         await FlushPendingSearchAsync();
         if (HasSearchError || index < 0 || index >= Items.Count)
@@ -38,7 +38,7 @@ public sealed partial class ClipboardOverlayViewModel
             return false;
         }
 
-        var ok = await TryPasteAsync(Items[index]);
+        var ok = await TryPasteAsync(Items[index], targetWindow: targetWindow);
         if (ok)
         {
             StatusText = "已粘贴";
@@ -47,12 +47,12 @@ public sealed partial class ClipboardOverlayViewModel
         return ok;
     }
 
-    private async Task<bool> TryPasteAsync(ClipboardItem item, bool plainText = false)
+    private async Task<bool> TryPasteAsync(ClipboardItem item, bool plainText = false, nint targetWindow = 0)
     {
         try
         {
             ErrorMessage = null;
-            await _clipboardService.PasteAsync(item, new PasteOptions(plainText), CancellationToken.None);
+            await _clipboardService.PasteAsync(item, new PasteOptions(plainText) { TargetWindowHandle = targetWindow }, CancellationToken.None);
             MarkItemsUsed([item.Id]);
             return true;
         }

@@ -4,6 +4,8 @@ namespace GestureClip.Core.Abstractions;
 
 public interface IGesturePresetProvider
 {
+    BuiltInGestureAction GetWheelAction(GestureExecutionContext context, BuiltInGestureAction globalAction) => globalAction;
+
     BuiltInGestureAction GetAction(GesturePreset preset, string pattern);
 
     BuiltInGestureAction GetAction(GesturePreset preset, GestureExecutionContext context)

@@ -22,12 +22,15 @@ public static class FeaturesServiceCollectionExtensions
         services.AddSingleton<ISensitiveContentDetector, SensitiveContentDetector>();
         services.AddSingleton<IClipboardRepository, ClipboardRepository>();
         services.AddSingleton<IPlainTextPasteService, PlainTextPasteService>();
+        services.AddSingleton<PasteQueueDependencies>();
         services.AddSingleton<IPasteQueueService, PasteQueueService>();
+        services.AddSingleton<IPasteTargetService, PasteTargetService>();
         services.AddSingleton<IClipboardService, ClipboardService>();
         services.AddSingleton<IAppBlacklistService, AppBlacklistService>();
         services.AddSingleton<IAppSmartPasteRuleService, AppSmartPasteRuleService>();
         services.AddSingleton<IMouseGestureRecognizer, DirectionGestureRecognizer>();
         services.AddSingleton<IGestureSettingsProvider, GestureSettingsProvider>();
+        services.AddSingleton<IGestureAppProfileService, GestureAppProfileService>();
         services.AddSingleton<IGesturePresetProvider, GesturePresetProvider>();
         services.AddSingleton<IGestureConfigTransferService, GestureConfigTransferService>();
         services.AddSingleton<IGestureHudInfoProvider, GestureHudInfoProvider>();

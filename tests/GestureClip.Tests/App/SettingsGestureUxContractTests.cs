@@ -1,4 +1,5 @@
 using Xunit;
+using GestureClip.Tests.TestDoubles;
 
 namespace GestureClip.Tests.App;
 
@@ -45,7 +46,7 @@ public sealed class SettingsGestureUxContractTests
     [Fact]
     public void AppLifecycle_accepts_settings_page_argument()
     {
-        var life = File.ReadAllText(Find("src", "GestureClip.App", "Services", "AppLifecycleService.cs"));
+        var life = RepositorySource.ReadClassSources(Find("src", "GestureClip.App", "Services", "AppLifecycleService.cs"));
         var iface = File.ReadAllText(Find("src", "GestureClip.Core", "Abstractions", "IAppLifecycleService.cs"));
 
         Assert.Contains("ShowSettingsWindow(string? page = null)", life);

@@ -1,5 +1,6 @@
 using System.Runtime.InteropServices;
 using GestureClip.Core.Abstractions;
+using GestureClip.Core.SystemInfo;
 using GestureClip.Infrastructure.Win32;
 using Microsoft.Extensions.Logging;
 
@@ -8,12 +9,14 @@ namespace GestureClip.Infrastructure.Gestures;
 public sealed class KeyboardInputSender : IKeyboardInputSender
 {
     private readonly ILogger<KeyboardInputSender> _logger;
+    private readonly IPasteTargetService _pasteTargetService;
     private string? _lastStatus;
     private string? _lastPasteFailureHint;
 
-    public KeyboardInputSender(ILogger<KeyboardInputSender> logger)
+    public KeyboardInputSender(ILogger<KeyboardInputSender> logger, IPasteTargetService pasteTargetService)
     {
         _logger = logger;
+        _pasteTargetService = pasteTargetService;
     }
 
     public string? LastStatus => _lastStatus;
@@ -25,10 +28,13 @@ public sealed class KeyboardInputSender : IKeyboardInputSender
         _lastPasteFailureHint = null;
         try
         {
+            var target = preferredTargetWindow == 0
+                ? _pasteTargetService.CaptureTarget() : new PasteTarget(preferredTargetWindow, null);
+            await _pasteTargetService.WaitUntilReadyAsync(target, cancellationToken);
             var ok = await KeyboardPasteInjector.SendCtrlVAsync(
                 _logger,
                 cancellationToken,
-                preferredTargetWindow: preferredTargetWindow,
+                preferredTargetWindow: target.WindowHandle,
                 preferClipboardMessage: true);
             _lastStatus = ok
                 ? preferredTargetWindow == 0
@@ -68,30 +74,7 @@ public sealed class KeyboardInputSender : IKeyboardInputSender
             keys[0] == KeyboardInputNativeMethods.VkControl &&
             keys[1] == KeyboardInputNativeMethods.VkV)
         {
-            // Prefer SendPasteAsync so callers can await and pass a target window.
-            // Keep sync path for non-paste shortcuts that accidentally use this overload.
-            try
-            {
-                var ok = KeyboardPasteInjector.SendCtrlV(
-                    _logger,
-                    preferredTargetWindow: default,
-                    preferClipboardMessage: true);
-                _lastStatus = ok
-                    ? "Sent Ctrl+V via KeyboardPasteInjector"
-                    : "Ctrl+V multi-path injection reported failure";
-                if (!ok)
-                {
-                    _lastPasteFailureHint = BuildPasteFailureHint(0);
-                    _logger.LogWarning("Ctrl+V multi-path injection reported failure.");
-                }
-            }
-            catch (Exception ex)
-            {
-                _lastStatus = $"Ctrl+V failed: {ex.Message}";
-                _lastPasteFailureHint = BuildPasteFailureHint(0);
-                _logger.LogWarning(ex, "Ctrl+V via KeyboardPasteInjector failed.");
-            }
-
+            SendSynchronousPasteShortcut();
             return;
         }
 
@@ -123,6 +106,26 @@ public sealed class KeyboardInputSender : IKeyboardInputSender
     public void SendKey(ushort key)
     {
         SendShortcut(key);
+    }
+
+    private void SendSynchronousPasteShortcut()
+    {
+        try
+        {
+            var ok = KeyboardPasteInjector.SendCtrlV(_logger, preferClipboardMessage: true);
+            _lastStatus = ok ? "Sent Ctrl+V via KeyboardPasteInjector" : "Ctrl+V multi-path injection reported failure";
+            if (!ok)
+            {
+                _lastPasteFailureHint = BuildPasteFailureHint(0);
+                _logger.LogWarning("Ctrl+V multi-path injection reported failure.");
+            }
+        }
+        catch (Exception ex)
+        {
+            _lastStatus = $"Ctrl+V failed: {ex.Message}";
+            _lastPasteFailureHint = BuildPasteFailureHint(0);
+            _logger.LogWarning(ex, "Ctrl+V via KeyboardPasteInjector failed.");
+        }
     }
 
     private static string BuildPasteFailureHint(nint preferredTargetWindow)
