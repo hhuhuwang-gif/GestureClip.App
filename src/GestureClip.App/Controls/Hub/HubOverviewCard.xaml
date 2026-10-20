@@ -1,0 +1,50 @@
+<UserControl x:Class="GestureClip.App.Controls.Hub.HubOverviewCard"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <Border x:Name="HeroCard" Style="{DynamicResource HubSurfaceStyle}" Margin="0,0,0,16"
+            BorderBrush="{Binding FishingBorderBrush}" BorderThickness="{Binding FishingBorderThickness}">
+        <StackPanel>
+            <DockPanel Margin="0,0,0,20">
+                <Border DockPanel.Dock="Right" Style="{DynamicResource HubChipStyle}" VerticalAlignment="Top">
+                    <TextBlock Text="{Binding BearStatusText}" Style="{DynamicResource HubMetricLabelStyle}" />
+                </Border>
+                <StackPanel>
+                    <TextBlock Text="TODAY / 今日状态" Style="{DynamicResource HubEyebrowStyle}" />
+                    <TextBlock Text="{Binding CurrentStateText}" Style="{DynamicResource HubRootTextStyle}"
+                               FontSize="23" FontWeight="SemiBold" Margin="0,6,12,0" TextWrapping="Wrap" />
+                </StackPanel>
+            </DockPanel>
+            <Grid Margin="0,0,0,22">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" /><ColumnDefinition Width="24" /><ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+                <StackPanel>
+                    <TextBlock Text="今日已赚 · 本地估算" Style="{DynamicResource HubMetricLabelStyle}" />
+                    <TextBlock Text="{Binding TodayEarnedText}" Style="{DynamicResource HubDisplayValueStyle}" ToolTip="{Binding TodayEarnedText}" />
+                </StackPanel>
+                <Border Grid.Column="1" Width="1" Background="{DynamicResource BrushSeparator}" Margin="0,4" />
+                <StackPanel Grid.Column="2">
+                    <TextBlock Text="距离下班" Style="{DynamicResource HubMetricLabelStyle}" />
+                    <TextBlock Text="{Binding OffWorkCountdownText}" Style="{DynamicResource HubDisplayValueStyle}"
+                               ToolTip="{Binding OffWorkCountdownText}" />
+                </StackPanel>
+            </Grid>
+            <DockPanel Margin="0,0,0,8">
+                <TextBlock DockPanel.Dock="Right" Text="{Binding WorkdayProgressText}" Style="{DynamicResource HubMetricLabelStyle}" />
+                <TextBlock Text="{Binding OffWorkProgressText}" Style="{DynamicResource HubMetricLabelStyle}" Margin="0,0,16,0" />
+            </DockPanel>
+            <ProgressBar Style="{DynamicResource HubThinProgressBarStyle}" Height="5"
+                         Value="{Binding OffWorkProgress, Mode=OneWay}" Foreground="{Binding StageAccentBrush}"
+                         ToolTip="{Binding OffWorkProgressText}" />
+            <TextBlock Text="{Binding BearLineText}" Style="{DynamicResource HubBodyStyle}" Margin="0,14,0,0" />
+            <TextBlock Text="{Binding OvertimeText}" Style="{DynamicResource HubBodyStyle}"
+                       Foreground="{DynamicResource BrushDanger}" Margin="0,10,0,0"
+                       Visibility="{Binding HasOvertime, Converter={StaticResource BooleanToVisibilityConverter}}" />
+            <Border Style="{DynamicResource HubFishingBannerStyle}"
+                    Visibility="{Binding IsFishing, Converter={StaticResource BooleanToVisibilityConverter}}">
+                <TextBlock Text="{Binding FishingStatusBanner}" Style="{DynamicResource HubBodyStyle}"
+                           Foreground="{DynamicResource BrushPrimaryBright}" FontWeight="SemiBold" />
+            </Border>
+        </StackPanel>
+    </Border>
+</UserControl>

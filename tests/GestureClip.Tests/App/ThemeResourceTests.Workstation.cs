@@ -7,14 +7,13 @@ public sealed partial class ThemeResourceTests
 {
 
     [Fact]
-    public void WorkstationDashboardWindow_uses_glass_cards_and_plain_language_metrics()
+    public void WorkstationDashboardWindow_keeps_readable_metrics_in_referenced_sections()
     {
         var path = FindRepositoryFile("src", "GestureClip.App", "WorkstationDashboardWindow.xaml");
-        var xaml = File.ReadAllText(path);
+        var xaml = RepositoryXaml.Read(path);
 
         Assert.Contains("工位小熊", xaml);
         Assert.Contains("v0.6.41 · 本地", xaml);
-        Assert.Contains("UniformGrid", xaml);
         Assert.Contains("OffWorkCountdownText", xaml);
         Assert.Contains("TodayEarnedText", xaml);
         Assert.Contains("TodayFishingValueText", xaml);
@@ -23,9 +22,6 @@ public sealed partial class ThemeResourceTests
         Assert.Contains("GreetingText", xaml);
         Assert.Contains("StageAccentBrush", xaml);
         Assert.Contains("WorkdayProgress", xaml);
-        Assert.Contains("HubThinProgressBarStyle", xaml);
-        Assert.Contains("HubFishingBannerStyle", xaml);
-        Assert.Contains("HubReportTextStyle", xaml);
         Assert.Contains("ShowEmptySalaryGuide", xaml);
         Assert.Contains("OpenWorkRulesCommand", xaml);
         Assert.Contains("FishingStatusBanner", xaml);

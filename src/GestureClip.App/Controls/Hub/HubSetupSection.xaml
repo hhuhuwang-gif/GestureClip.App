@@ -1,0 +1,93 @@
+<UserControl x:Class="GestureClip.App.Controls.Hub.HubSetupSection"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <StackPanel>
+        <Border Style="{DynamicResource HubSetupCardStyle}"
+                Margin="0,0,0,12"
+                Visibility="{Binding NeedsSetup, Converter={StaticResource BooleanToVisibilityConverter}}">
+            <StackPanel>
+                <TextBlock Text="30 秒开工配置"
+                           Style="{DynamicResource HubRootTextStyle}"
+                           FontSize="17"
+                           FontWeight="SemiBold" />
+                <TextBlock Text="填月薪和上下班时间，小熊才能估算「今日已赚」和下班倒计时。可随时改，也可先跳过。"
+                           Style="{DynamicResource HubBodyStyle}"
+                           Margin="0,6,0,12" />
+                <UniformGrid Columns="3">
+                    <StackPanel Margin="0,0,10,0">
+                        <TextBlock Text="月薪（元）" Style="{DynamicResource HubMetricLabelStyle}" />
+                        <TextBox Text="{Binding SetupSalaryText, UpdateSourceTrigger=PropertyChanged}"
+                                 Margin="0,4,0,0"
+                                 ToolTip="例如 10000，仅本地估算" />
+                    </StackPanel>
+                    <StackPanel Margin="0,0,10,0">
+                        <TextBlock Text="上班时间" Style="{DynamicResource HubMetricLabelStyle}" />
+                        <TextBox Text="{Binding SetupStartTime, UpdateSourceTrigger=PropertyChanged}"
+                                 Margin="0,4,0,0"
+                                 ToolTip="格式 HH:mm，例如 09:00" />
+                    </StackPanel>
+                    <StackPanel>
+                        <TextBlock Text="下班时间" Style="{DynamicResource HubMetricLabelStyle}" />
+                        <TextBox Text="{Binding SetupEndTime, UpdateSourceTrigger=PropertyChanged}"
+                                 Margin="0,4,0,0"
+                                 ToolTip="格式 HH:mm，例如 18:00" />
+                    </StackPanel>
+                </UniformGrid>
+                <TextBlock Text="快捷模板" Style="{DynamicResource HubMetricLabelStyle}" Margin="0,12,0,6" />
+                <ItemsControl ItemsSource="{Binding WorkTemplateOptions}">
+                    <ItemsControl.ItemsPanel>
+                        <ItemsPanelTemplate>
+                            <WrapPanel />
+                        </ItemsPanelTemplate>
+                    </ItemsControl.ItemsPanel>
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <Button Content="{Binding Name}"
+                                    Style="{DynamicResource HubSecondaryButtonStyle}"
+                                    Command="{Binding DataContext.ApplyWorkTemplateCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                    CommandParameter="{Binding}"
+                                    Margin="0,0,8,8"
+                                    ToolTip="一键套用该工作制" />
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+                <WrapPanel Margin="0,4,0,0">
+                    <Button Content="保存并开始"
+                            Style="{DynamicResource HubPrimaryButtonStyle}"
+                            Command="{Binding CompleteSetupCommand}"
+                            Margin="0,0,10,0" />
+                    <Button Content="先跳过"
+                            Style="{DynamicResource HubSecondaryButtonStyle}"
+                            Command="{Binding DismissSetupCommand}"
+                            ToolTip="稍后可在「工作规则设置」补全" />
+                </WrapPanel>
+            </StackPanel>
+        </Border>
+        
+        
+        <Border Style="{DynamicResource HubSetupCardStyle}"
+                Margin="0,0,0,12"
+                Visibility="{Binding ShowEmptySalaryGuide, Converter={StaticResource BooleanToVisibilityConverter}}">
+            <DockPanel>
+                <Button DockPanel.Dock="Right"
+                        Content="{Binding EmptySalaryGuideActionText}"
+                        Style="{DynamicResource HubPrimaryButtonStyle}"
+                        Command="{Binding OpenWorkRulesCommand}"
+                        Margin="12,0,0,0"
+                        VerticalAlignment="Center"
+                        MinWidth="140"
+                        ToolTip="展开工作规则设置" />
+                <StackPanel>
+                    <TextBlock Text="{Binding EmptySalaryGuideTitle}"
+                               Style="{DynamicResource HubRootTextStyle}"
+                               FontSize="16"
+                               FontWeight="SemiBold" />
+                    <TextBlock Text="{Binding EmptySalaryGuideText}"
+                               Style="{DynamicResource HubBodyStyle}"
+                               Margin="0,6,0,0" />
+                </StackPanel>
+            </DockPanel>
+        </Border>
+    </StackPanel>
+</UserControl>
+
