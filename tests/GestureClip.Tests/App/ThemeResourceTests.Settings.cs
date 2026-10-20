@@ -54,7 +54,7 @@ public sealed partial class ThemeResourceTests
         var workstationPath = FindRepositoryFile("src", "GestureClip.App", "WorkstationDashboardWindow.xaml");
         var controlsPath = FindRepositoryFile("src", "GestureClip.App", "Themes", "Controls.xaml");
         var settings = File.ReadAllText(settingsPath);
-        var workstation = RepositoryXaml.Read(workstationPath);
+        var workstation = File.ReadAllText(workstationPath);
         var controls = File.ReadAllText(controlsPath);
 
         Assert.Contains("TrafficLightButtonStyle", settings);
@@ -63,8 +63,9 @@ public sealed partial class ThemeResourceTests
         Assert.Contains("BrushTrafficGreen", settings);
         Assert.Contains("MaximizeButton_Click", settings);
         Assert.Contains("MinimizeButton_Click", settings);
-        Assert.Contains("CloseButton_Click", workstation);
-        Assert.Contains("MinimizeButton_Click", workstation);
+        Assert.Contains("TrafficLightButtonStyle", workstation);
+        Assert.Contains("BrushTrafficYellow", workstation);
+        Assert.Contains("BrushTrafficGreen", workstation);
         Assert.Contains("MaximizeButton_Click", workstation);
         Assert.Contains("GlassScrollBarStyle", controls);
         Assert.Contains("GlassScrollViewerStyle", controls);

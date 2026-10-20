@@ -28,7 +28,6 @@ public partial class WorkstationDashboardWindow : Window
         _themeService = themeService;
         InitializeComponent();
         DataContext = viewModel;
-        AddHandler(System.Windows.Controls.Primitives.ButtonBase.ClickEvent, new RoutedEventHandler(HubAction_Click));
         _themeService.Changed += ThemeService_Changed;
         _refreshTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(5) };
         _refreshTimer.Tick += async (_, _) => await _viewModel.RefreshAsync();
@@ -125,35 +124,5 @@ public partial class WorkstationDashboardWindow : Window
     private void ToggleWidgetButton_Click(object sender, RoutedEventArgs e)
     {
         _appLifecycleService.ToggleWorkBearWidget();
-    }
-
-    private void NavigateSection_Click(object sender, RoutedEventArgs e)
-    {
-        if (sender is System.Windows.Controls.Button { Tag: string section }) NavigateToSection(section);
-    }
-
-    private void HubAction_Click(object sender, RoutedEventArgs e)
-    {
-        if (e.OriginalSource is not System.Windows.Controls.Button button) return;
-        if (ReferenceEquals(button.Command, _viewModel.OpenWorkRulesCommand)) NavigateToSection("Rules");
-        else if (button.Tag is "Report") NavigateToSection("Report");
-    }
-
-    private void NavigateToSection(string section)
-    {
-        FrameworkElement target = section switch
-        {
-            "Earnings" => EarningsSection,
-            "Rest" => RestSection,
-            "Report" => ReportSection,
-            "Rules" => RulesSection,
-            _ => OverviewSection
-        };
-        if (section == "Earnings") _viewModel.EarningsExpanded = true;
-        if (section == "Rest") _viewModel.RestExpanded = true;
-        if (section == "Report") _viewModel.ReportExpanded = true;
-        if (section == "Rules") _viewModel.SettingsExpanded = true;
-        target.BringIntoView();
-        target.MoveFocus(new TraversalRequest(FocusNavigationDirection.First));
     }
 }
