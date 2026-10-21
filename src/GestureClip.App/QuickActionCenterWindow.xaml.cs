@@ -36,14 +36,31 @@ public partial class QuickActionCenterWindow : Window
 
         if (e.Key == Key.Down)
         {
-            _viewModel.MoveSelection(1);
+            MoveSelectionAndReveal(1);
             e.Handled = true;
             return;
         }
 
         if (e.Key == Key.Up)
         {
-            _viewModel.MoveSelection(-1);
+            MoveSelectionAndReveal(-1);
+            e.Handled = true;
+            return;
+        }
+
+        if (e.Key == Key.F5)
+        {
+            _viewModel.RefreshInputCommand.Execute(null);
+            e.Handled = true;
+            return;
+        }
+
+        if (e.Key == Key.Enter && (Keyboard.Modifiers & ModifierKeys.Shift) == ModifierKeys.Shift)
+        {
+            if (_viewModel.PreviewSelectedCommand.CanExecute(null))
+            {
+                _viewModel.PreviewSelectedCommand.Execute(null);
+            }
             e.Handled = true;
             return;
         }
@@ -78,5 +95,14 @@ public partial class QuickActionCenterWindow : Window
     private async void ActionList_MouseDoubleClick(object sender, System.Windows.Input.MouseButtonEventArgs e)
     {
         await _viewModel.RunDefaultAsync();
+    }
+
+    private void MoveSelectionAndReveal(int delta)
+    {
+        _viewModel.MoveSelection(delta);
+        if (_viewModel.SelectedAction is not null)
+        {
+            ActionList.ScrollIntoView(_viewModel.SelectedAction);
+        }
     }
 }

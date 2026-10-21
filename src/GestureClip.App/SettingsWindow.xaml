@@ -500,7 +500,7 @@
                                     SnapsToDevicePixels="True">
                                 <StackPanel>
                                     <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
-                                        <TextBlock Text="v0.6.42 新功能"
+                                        <TextBlock Text="v0.6.43 新功能"
                                                    FontSize="16"
                                                    FontWeight="SemiBold"
                                                    Foreground="{DynamicResource BrushTextPrimary}"

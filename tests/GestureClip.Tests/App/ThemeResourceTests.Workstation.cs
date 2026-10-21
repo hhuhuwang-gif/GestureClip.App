@@ -13,7 +13,7 @@ public sealed partial class ThemeResourceTests
         var xaml = File.ReadAllText(path);
 
         Assert.Contains("工位小熊", xaml);
-        Assert.Contains("v0.6.42 · 本地", xaml);
+        Assert.Contains("v0.6.43 · 本地", xaml);
         Assert.Contains("UniformGrid", xaml);
         Assert.Contains("OffWorkCountdownText", xaml);
         Assert.Contains("TodayEarnedText", xaml);

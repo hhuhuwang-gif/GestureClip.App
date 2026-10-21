@@ -7,33 +7,36 @@ namespace GestureClip.Features.Clipboard;
 
 public sealed class PlainTextPasteService : IPlainTextPasteService
 {
-    private static readonly TimeSpan ClipboardSettleDelay = TimeSpan.FromMilliseconds(70);
+    private static readonly TimeSpan CaptureSuppressionDuration = TimeSpan.FromMilliseconds(1500);
 
     private readonly IClipboardService _clipboardService;
     private readonly IClipboardTextReader _clipboardTextReader;
     private readonly IClipboardWriter _clipboardWriter;
+    private readonly IPasteTargetService _pasteTargetService;
     private readonly ILogger<PlainTextPasteService> _logger;
 
     public PlainTextPasteService(
-        IClipboardService clipboardService,
-        IClipboardTextReader clipboardTextReader,
-        IClipboardWriter clipboardWriter,
+        PlainTextPasteDependencies dependencies,
+        IPasteTargetService pasteTargetService,
         ILogger<PlainTextPasteService> logger)
     {
-        _clipboardService = clipboardService;
-        _clipboardTextReader = clipboardTextReader;
-        _clipboardWriter = clipboardWriter;
+        _clipboardService = dependencies.ClipboardService;
+        _clipboardTextReader = dependencies.TextReader;
+        _clipboardWriter = dependencies.Writer;
+        _pasteTargetService = pasteTargetService;
         _logger = logger;
     }
 
     public async Task PastePlainTextAsync(CancellationToken cancellationToken = default)
     {
+        cancellationToken.ThrowIfCancellationRequested();
+        var target = _pasteTargetService.CaptureTarget();
+        await _pasteTargetService.WaitUntilReadyAsync(target, cancellationToken);
         var text = _clipboardTextReader.TryReadText();
         if (string.IsNullOrEmpty(text))
         {
-            // No text (maybe image-only clipboard): still try a normal paste hotkey.
             _logger.LogInformation("Plain text rewrite skipped (empty text); sending normal paste hotkey.");
-            await _clipboardWriter.SendPasteHotkeyAsync(cancellationToken);
+            await _clipboardWriter.SendPasteHotkeyAsync(target.WindowHandle, cancellationToken);
             return;
         }
 
@@ -42,22 +45,13 @@ public sealed class PlainTextPasteService : IPlainTextPasteService
         if (string.IsNullOrEmpty(plain))
         {
             _logger.LogInformation("Plain text cleaned to empty; sending normal paste hotkey.");
-            await _clipboardWriter.SendPasteHotkeyAsync(cancellationToken);
+            await _clipboardWriter.SendPasteHotkeyAsync(target.WindowHandle, cancellationToken);
             return;
         }
 
-        try
-        {
-            _clipboardService.SuppressCaptureFor(TimeSpan.FromMilliseconds(1500));
-            await _clipboardWriter.SetTextAsync(plain, cancellationToken);
-            await Task.Delay(ClipboardSettleDelay, cancellationToken);
-            await _clipboardWriter.SendPasteHotkeyAsync(cancellationToken);
-            _logger.LogInformation("Plain text paste completed. Length={Length}", plain.Length);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogWarning(ex, "Plain text rewrite paste failed; retrying normal paste hotkey.");
-            await _clipboardWriter.SendPasteHotkeyAsync(cancellationToken);
-        }
+        _clipboardService.SuppressCaptureFor(CaptureSuppressionDuration);
+        await _clipboardWriter.SetTextAsync(plain, cancellationToken);
+        await _clipboardWriter.SendPasteHotkeyAsync(target.WindowHandle, cancellationToken);
+        _logger.LogInformation("Plain text paste completed. Length={Length}", plain.Length);
     }
 }

@@ -8,6 +8,49 @@ namespace GestureClip.Tests.App;
 
 public sealed class GestureProfilesViewModelTests
 {
+    [Fact]
+    public async Task Existing_profile_is_selected_when_editor_opens()
+    {
+        var profiles = new GestureAppProfileService(new FakeSettingsService());
+        await profiles.SaveAsync([new("excel", true, [new("U", false, BuiltInGestureAction.Copy)])], default);
+
+        var viewModel = new GestureProfilesViewModel(profiles);
+
+        Assert.Equal("excel", viewModel.SelectedProfile?.ProcessName);
+        Assert.True(viewModel.HasProfiles);
+        Assert.True(viewModel.HasSelectedProfile);
+        Assert.True(viewModel.HasBindings);
+    }
+
+    [Fact]
+    public async Task Duplicate_creates_disabled_unsaved_draft_with_copied_bindings()
+    {
+        var profiles = new GestureAppProfileService(new FakeSettingsService());
+        await profiles.SaveAsync([new("excel", true, [new("UD", false, BuiltInGestureAction.Copy)])], default);
+        var viewModel = new GestureProfilesViewModel(profiles);
+
+        viewModel.DuplicateSelectedProfile();
+
+        Assert.Null(viewModel.SelectedProfile);
+        Assert.Empty(viewModel.ProcessName);
+        Assert.False(viewModel.IsEnabled);
+        Assert.Equal("UD", Assert.Single(viewModel.Bindings).Pattern);
+        Assert.Single(profiles.GetCurrent());
+    }
+
+    [Fact]
+    public void Add_and_remove_binding_updates_empty_state()
+    {
+        var viewModel = new GestureProfilesViewModel(
+            new GestureAppProfileService(new FakeSettingsService()));
+
+        var row = viewModel.AddBinding();
+
+        Assert.True(viewModel.HasBindings);
+        viewModel.RemoveBinding(row);
+        Assert.False(viewModel.HasBindings);
+    }
+
     [Theory]
     [InlineData("Excel", "excel")]
     [InlineData("浏览器", "msedge")]

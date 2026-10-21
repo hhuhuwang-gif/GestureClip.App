@@ -7,7 +7,7 @@ using GestureClip.Core.Assistant;
 
 namespace GestureClip.App.ViewModels;
 
-public sealed class QuickActionCenterViewModel : INotifyPropertyChanged
+public sealed partial class QuickActionCenterViewModel : INotifyPropertyChanged
 {
     private readonly IAssistantActionCatalog _catalog;
     private readonly IAssistantActionExecutor _executor;
@@ -18,6 +18,9 @@ public sealed class QuickActionCenterViewModel : INotifyPropertyChanged
     private string _inputHint = "";
     private AssistantActionDefinition? _selectedAction;
     private bool _isBusy;
+    private readonly AsyncRelayCommand _runSelectedCommand;
+    private readonly AsyncRelayCommand _runAndPasteCommand;
+    private readonly AsyncRelayCommand _previewSelectedCommand;
 
     public QuickActionCenterViewModel(
         IAssistantActionCatalog catalog,
@@ -33,12 +36,14 @@ public sealed class QuickActionCenterViewModel : INotifyPropertyChanged
             .ToList();
 
         FilteredActions = new ObservableCollection<AssistantActionDefinition>(AllActions);
-        SelectedAction = FilteredActions.FirstOrDefault();
-
-        RunSelectedCommand = new AsyncRelayCommand(_ => RunSelectedAsync(AssistantOutputKind.Clipboard), _ => CanRun());
-        RunAndPasteCommand = new AsyncRelayCommand(_ => RunSelectedAsync(AssistantOutputKind.Paste), _ => CanRunSelectedTextAction());
-        PreviewSelectedCommand = new AsyncRelayCommand(_ => RunSelectedAsync(AssistantOutputKind.Preview), _ => CanRunSelectedTextAction());
+        _runSelectedCommand = new AsyncRelayCommand(
+            _ => RunSelectedAsync(AssistantOutputKind.Clipboard), _ => CanRun());
+        _runAndPasteCommand = new AsyncRelayCommand(
+            _ => RunSelectedAsync(AssistantOutputKind.Paste), _ => CanRunSelectedTextAction());
+        _previewSelectedCommand = new AsyncRelayCommand(
+            _ => RunSelectedAsync(AssistantOutputKind.Preview), _ => CanRunSelectedTextAction());
         RefreshInputCommand = new RelayCommand(_ => RefreshInputHint());
+        SelectedAction = FilteredActions.FirstOrDefault();
     }
 
     public event PropertyChangedEventHandler? PropertyChanged;
@@ -47,11 +52,11 @@ public sealed class QuickActionCenterViewModel : INotifyPropertyChanged
 
     public ObservableCollection<AssistantActionDefinition> FilteredActions { get; }
 
-    public ICommand RunSelectedCommand { get; }
+    public ICommand RunSelectedCommand => _runSelectedCommand;
 
-    public ICommand RunAndPasteCommand { get; }
+    public ICommand RunAndPasteCommand => _runAndPasteCommand;
 
-    public ICommand PreviewSelectedCommand { get; }
+    public ICommand PreviewSelectedCommand => _previewSelectedCommand;
 
     public ICommand RefreshInputCommand { get; }
 
@@ -85,6 +90,7 @@ public sealed class QuickActionCenterViewModel : INotifyPropertyChanged
             OnPropertyChanged();
             OnPropertyChanged(nameof(SelectedDescription));
             OnPropertyChanged(nameof(CanPasteSelected));
+            NotifyCommandAvailability();
         }
     }
 
@@ -148,11 +154,14 @@ public sealed class QuickActionCenterViewModel : INotifyPropertyChanged
 
             _isBusy = value;
             OnPropertyChanged();
+            NotifyCommandAvailability();
         }
     }
 
     public bool CanPasteSelected =>
         SelectedAction is { RequiredInput: AssistantInputKind.ClipboardText or AssistantInputKind.SelectedText };
+
+    public bool HasFilteredActions => FilteredActions.Count > 0;
 
     public string OpenQuickActionHotkeyHint { get; private set; } = "Ctrl + Shift + Q";
 
@@ -206,82 +215,11 @@ public sealed class QuickActionCenterViewModel : INotifyPropertyChanged
     private bool CanRunSelectedTextAction() =>
         CanRun() && SelectedAction is { RequiredInput: AssistantInputKind.ClipboardText or AssistantInputKind.SelectedText };
 
-    private void ApplyFilter()
+    private void NotifyCommandAvailability()
     {
-        var keyword = SearchText.Trim();
-        IEnumerable<AssistantActionDefinition> query = AllActions;
-        if (!string.IsNullOrEmpty(keyword))
-        {
-            query = AllActions.Where(action =>
-                action.DisplayName.Contains(keyword, StringComparison.OrdinalIgnoreCase) ||
-                action.Category.Contains(keyword, StringComparison.OrdinalIgnoreCase) ||
-                action.Description.Contains(keyword, StringComparison.OrdinalIgnoreCase) ||
-                action.Id.Contains(keyword, StringComparison.OrdinalIgnoreCase));
-        }
-
-        var list = query.ToList();
-        FilteredActions.Clear();
-        foreach (var action in list)
-        {
-            FilteredActions.Add(action);
-        }
-
-        if (SelectedAction is null || !FilteredActions.Contains(SelectedAction))
-        {
-            SelectedAction = FilteredActions.FirstOrDefault();
-        }
-    }
-
-    private void RefreshInputHint()
-    {
-        var text = _clipboardTextReader.TryReadText();
-        if (string.IsNullOrEmpty(text))
-        {
-            InputHint = "当前剪贴板：无文本";
-            return;
-        }
-
-        var oneLine = text.Replace("\r\n", " ").Replace('\n', ' ').Replace('\r', ' ').Trim();
-        if (oneLine.Length > 80)
-        {
-            oneLine = oneLine[..80] + "…";
-        }
-
-        InputHint = $"当前剪贴板：{text.Length} 字 · {oneLine}";
-    }
-
-    private async Task RunSelectedAsync(AssistantOutputKind outputKind)
-    {
-        if (SelectedAction is null || IsBusy)
-        {
-            return;
-        }
-
-        try
-        {
-            IsBusy = true;
-            StatusText = "执行中…";
-            RefreshInputHint();
-
-            var request = new AssistantActionRequest(SelectedAction.Id, OutputOverride: outputKind);
-            var result = await _executor.ExecuteAsync(request, CancellationToken.None);
-            StatusText = result.Message ?? (result.Success ? "完成" : "失败");
-            PreviewText = result.PreviewText ?? "";
-            if (result.Success && SelectedAction.RequiredInput == AssistantInputKind.None)
-            {
-                PreviewText = "";
-            }
-
-            RefreshInputHint();
-        }
-        catch (Exception)
-        {
-            StatusText = "执行失败，请重试。";
-        }
-        finally
-        {
-            IsBusy = false;
-        }
+        _runSelectedCommand.RaiseCanExecuteChanged();
+        _runAndPasteCommand.RaiseCanExecuteChanged();
+        _previewSelectedCommand.RaiseCanExecuteChanged();
     }
 
     private void OnPropertyChanged([CallerMemberName] string? propertyName = null)

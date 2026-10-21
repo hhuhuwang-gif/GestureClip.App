@@ -12,12 +12,14 @@ public sealed class GestureProfilesViewModel : INotifyPropertyChanged
     private readonly IGestureAppProfileService _service;
     private GestureAppProfile? _selectedProfile;
     private string _processName = "";
+    private bool _isEnabled;
     private string _status = "新配置默认关闭，保存后生效。";
 
     public GestureProfilesViewModel(IGestureAppProfileService service)
     {
         _service = service;
         Profiles = new(service.GetCurrent());
+        SelectedProfile = Profiles.FirstOrDefault();
     }
 
     public event PropertyChangedEventHandler? PropertyChanged;
@@ -25,8 +27,12 @@ public sealed class GestureProfilesViewModel : INotifyPropertyChanged
     public ObservableCollection<GestureProfileBindingRow> Bindings { get; } = [];
     public IReadOnlyList<GestureActionOptionViewModel> Actions => GestureActionCatalog.DefaultOptions;
     public string ProcessName { get => _processName; set { _processName = value; Notify(); } }
-    public bool IsEnabled { get; set; }
+    public bool IsEnabled { get => _isEnabled; set { _isEnabled = value; Notify(); } }
     public string Status { get => _status; private set { _status = value; Notify(); } }
+    public bool HasProfiles => Profiles.Count > 0;
+    public bool HasBindings => Bindings.Count > 0;
+    public bool HasSelectedProfile => SelectedProfile is not null;
+    public string EditorTitle => SelectedProfile is null ? "新建应用配置" : $"编辑 {SelectedProfile.ProcessName}";
 
     public GestureAppProfile? SelectedProfile
     {
@@ -39,12 +45,45 @@ public sealed class GestureProfilesViewModel : INotifyPropertyChanged
             Bindings.Clear();
             foreach (var binding in value?.Bindings ?? []) Bindings.Add(new(binding));
             Notify();
-            Notify(nameof(ProcessName));
-            Notify(nameof(IsEnabled));
+            Notify(nameof(HasSelectedProfile));
+            Notify(nameof(EditorTitle));
+            NotifyBindingsState();
         }
     }
 
-    public void NewProfile() => SelectedProfile = null;
+    public void NewProfile()
+    {
+        SelectedProfile = null;
+        Status = "已建立空白草稿；选择模板或手动添加绑定。";
+    }
+
+    public void DuplicateSelectedProfile()
+    {
+        var source = SelectedProfile;
+        if (source is null) return;
+        var rows = source.Bindings.Select(binding => new GestureProfileBindingRow(binding)).ToArray();
+        SelectedProfile = null;
+        foreach (var row in rows) Bindings.Add(row);
+        IsEnabled = false;
+        NotifyBindingsState();
+        Status = $"已复制 {source.ProcessName} 的绑定；请填写新进程名后保存。";
+    }
+
+    public GestureProfileBindingRow AddBinding()
+    {
+        var row = new GestureProfileBindingRow();
+        Bindings.Add(row);
+        NotifyBindingsState();
+        Status = "已添加一条覆盖，可直接编辑手势码与动作。";
+        return row;
+    }
+
+    public void RemoveBinding(GestureProfileBindingRow? row)
+    {
+        if (row is null || !Bindings.Remove(row)) return;
+        NotifyBindingsState();
+        Status = "已移除选中覆盖，保存后生效。";
+    }
 
     public void ApplyTemplate(string template)
     {
@@ -58,7 +97,7 @@ public sealed class GestureProfilesViewModel : INotifyPropertyChanged
         var patterns = new[] { "U", "D", "RL" };
         for (var index = 0; index < patterns.Length; index++)
             Bindings.Add(new(new(patterns[index], false, actions[index])));
-        Notify(nameof(ProcessName));
+        NotifyBindingsState();
         Status = "模板已填入草稿，未启用；请确认进程和动作后保存。";
     }
 
@@ -87,7 +126,10 @@ public sealed class GestureProfilesViewModel : INotifyPropertyChanged
     {
         Profiles.Clear();
         foreach (var profile in profiles) Profiles.Add(profile);
+        Notify(nameof(HasProfiles));
     }
+
+    private void NotifyBindingsState() => Notify(nameof(HasBindings));
 
     private void Notify([CallerMemberName] string? property = null) =>
         PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(property));

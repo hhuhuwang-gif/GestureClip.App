@@ -23,9 +23,9 @@
 <p align="center">
   <a href="https://github.com/hhuhuwang-gif/GestureClip.App/releases/latest"><strong>⬇ 下载最新版（Latest）</strong></a>
   ·
-  <a href="https://github.com/hhuhuwang-gif/GestureClip.App/releases/download/v0.6.42-beta/GestureClip-v0.6.42-beta-win-x64.zip"><strong>v0.6.42 Beta zip</strong></a>
+  <a href="https://github.com/hhuhuwang-gif/GestureClip.App/releases/download/v0.6.43-beta/GestureClip-v0.6.43-beta-win-x64.zip"><strong>v0.6.43 Beta zip</strong></a>
   ·
-  <a href="https://github.com/hhuhuwang-gif/GestureClip.App/releases/tag/v0.6.42-beta">Release 说明</a>
+  <a href="https://github.com/hhuhuwang-gif/GestureClip.App/releases/tag/v0.6.43-beta">Release 说明</a>
   ·
   <a href="CHANGELOG.md">更新日志</a>
 </p>
@@ -37,7 +37,7 @@
 ## 目录
 
 - [30 秒上手](#30-秒上手)
-- [当前版本](#当前版本v0642-beta)
+- [当前版本](#当前版本v0643-beta)
 - [核心功能](#核心功能)
 - [数据与隐私](#数据与隐私)
 - [安装与更新](#安装与更新)
@@ -63,19 +63,21 @@
 
 ---
 
-## 当前版本：v0.6.42 Beta
+## 当前版本：v0.6.43 Beta
 
 | 资源 | 链接 |
 | --- | --- |
 | **推荐下载（Latest）** | [Releases / latest](https://github.com/hhuhuwang-gif/GestureClip.App/releases/latest) |
-| 安装包 | [GestureClip-v0.6.42-beta-win-x64.zip](https://github.com/hhuhuwang-gif/GestureClip.App/releases/download/v0.6.42-beta/GestureClip-v0.6.42-beta-win-x64.zip) |
-| 校验文件 | [SHA256SUMS.txt](https://github.com/hhuhuwang-gif/GestureClip.App/releases/download/v0.6.42-beta/SHA256SUMS.txt) |
+| 安装包 | [GestureClip-Setup-v0.6.43-beta-win-x64.zip](https://github.com/hhuhuwang-gif/GestureClip.App/releases/download/v0.6.43-beta/GestureClip-Setup-v0.6.43-beta-win-x64.zip) |
+| 便携包 | [GestureClip-v0.6.43-beta-win-x64.zip](https://github.com/hhuhuwang-gif/GestureClip.App/releases/download/v0.6.43-beta/GestureClip-v0.6.43-beta-win-x64.zip) |
+| 校验文件 | [SHA256SUMS.txt](https://github.com/hhuhuwang-gif/GestureClip.App/releases/download/v0.6.43-beta/SHA256SUMS.txt) |
 | 历史版本 | 旧版在 Releases 里标记为 **Pre-release**，默认请用 Latest |
 
-### 本版亮点（v0.6.42）
+### 本版亮点（v0.6.43）
 
-- **手势 HUD 渐变设计**：整面蓝绿渐变、柔光与细边，删除左侧装饰条，避免背景文档透字。
-- **办公便捷性**：队列失败可恢复、图片预览复用、完整历史智能搜索、目标焦点就绪后粘贴、按应用配置手势。详见 [v0.6.42 Release 说明](docs/github-release-v0.6.42-beta.md)。
+- **粘贴更快更稳**：纯文本粘贴改为等待真实目标焦点和按键释放，移除固定延迟，失败直接报错，避免重复粘贴。
+- **快捷动作中心**：新的双栏预览界面，支持 Shift+Enter 预览、Ctrl+Enter 处理并粘贴、F5 刷新。
+- **应用手势与深色主题**：可复制应用配置、快速录入方向，并完成应用配置、粘贴队列、休息提醒的浅深主题统一。详见 [v0.6.43 Release 说明](docs/github-release-v0.6.43-beta.md)。
 
 ### 延续功能（v0.6.41）
 
@@ -219,7 +221,7 @@ v0.6.37 起历史再复制会统一写成纯文本；也可用「复制为纯文
 可手动到 [Latest](https://github.com/hhuhuwang-gif/GestureClip.App/releases/latest) 下载。
 
 **为什么 GitHub 上还有很多旧版本？**  
-历史包仍保留下载；已标为 Pre-release。日常请只用 **Latest = v0.6.42 Beta**。
+历史包仍保留下载；已标为 Pre-release。日常请只用 **Latest = v0.6.43 Beta**。
 
 ---
 

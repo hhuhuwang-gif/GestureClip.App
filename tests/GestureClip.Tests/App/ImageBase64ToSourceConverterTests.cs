@@ -1,4 +1,6 @@
 using System.Globalization;
+using System.Windows;
+using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using GestureClip.App.Converters;
 using Xunit;
@@ -78,5 +80,57 @@ public sealed class ImageBase64ToSourceConverterTests
         var result = converter.Convert("not-png", typeof(BitmapImage), new object(), CultureInfo.InvariantCulture);
 
         Assert.Null(result);
+    }
+
+    [Fact]
+    public void Convert_distinguishes_images_with_equal_length_and_head_tail_samples()
+    {
+        const int sampleLength = 64;
+        const int decodeWidth = 32;
+        var firstBase64 = CreateBitmapWithCenterBlue(0);
+        var secondBase64 = CreateBitmapWithCenterBlue(byte.MaxValue);
+        Assert.Equal(firstBase64.Length, secondBase64.Length);
+        Assert.Equal(firstBase64[..sampleLength], secondBase64[..sampleLength]);
+        Assert.Equal(firstBase64[^sampleLength..], secondBase64[^sampleLength..]);
+        Assert.NotEqual(firstBase64, secondBase64);
+        var converter = new ImageBase64ToSourceConverter();
+
+        var first = Assert.IsType<BitmapImage>(converter.Convert(
+            firstBase64, typeof(BitmapImage), decodeWidth, CultureInfo.InvariantCulture));
+        var second = Assert.IsType<BitmapImage>(converter.Convert(
+            secondBase64, typeof(BitmapImage), decodeWidth, CultureInfo.InvariantCulture));
+
+        Assert.NotSame(first, second);
+        Assert.Equal(new byte[] { 0, 0, 0 }, ReadCenterPixel(first));
+        Assert.Equal(new byte[] { byte.MaxValue, 0, 0 }, ReadCenterPixel(second));
+        Assert.Same(second, converter.Convert(new string(secondBase64.ToCharArray()),
+            typeof(BitmapImage), decodeWidth, CultureInfo.InvariantCulture));
+    }
+
+    private static string CreateBitmapWithCenterBlue(byte blue)
+    {
+        const int size = 32;
+        const int channels = 3;
+        const int dpi = 96;
+        var stride = size * channels;
+        var pixels = new byte[size * stride];
+        pixels[(size / 2 * stride) + (size / 2 * channels)] = blue;
+        var bitmap = BitmapSource.Create(size, size, dpi, dpi,
+            PixelFormats.Bgr24, null, pixels, stride);
+        var encoder = new BmpBitmapEncoder();
+        encoder.Frames.Add(BitmapFrame.Create(bitmap));
+        using var stream = new MemoryStream();
+        encoder.Save(stream);
+        return System.Convert.ToBase64String(stream.ToArray());
+    }
+
+    private static byte[] ReadCenterPixel(BitmapSource bitmap)
+    {
+        const int channels = 3;
+        var converted = new FormatConvertedBitmap(bitmap, PixelFormats.Bgr24, null, 0);
+        var pixel = new byte[channels];
+        converted.CopyPixels(new Int32Rect(bitmap.PixelWidth / 2, bitmap.PixelHeight / 2, 1, 1),
+            pixel, channels, 0);
+        return pixel;
     }
 }

@@ -1,65 +1,299 @@
 <Window x:Class="GestureClip.App.GestureProfilesWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="按应用配置手势" Width="960" Height="680" MinWidth="800" MinHeight="560"
-        WindowStartupLocation="CenterOwner" Background="#F5F7FA">
-    <Grid Margin="24">
-        <Grid.RowDefinitions>
-            <RowDefinition Height="Auto"/><RowDefinition Height="Auto"/>
-            <RowDefinition Height="*"/><RowDefinition Height="Auto"/>
-        </Grid.RowDefinitions>
-        <TextBlock Text="按应用配置手势" FontSize="24" FontWeight="SemiBold"/>
-        <TextBlock Grid.Row="1" Margin="0,12,0,20" TextWrapping="Wrap"
-                   Text="默认关闭。按手势开始时捕获的目标进程精确匹配；只覆盖所列手势及绑定模式，其他手势继承现有全局绑定。动作选择“未绑定”表示在该应用明确禁用该手势。模板只填入草稿，需自行启用并保存。"/>
-        <Grid Grid.Row="2">
-            <Grid.ColumnDefinitions><ColumnDefinition Width="200"/><ColumnDefinition Width="20"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
-            <DockPanel>
-                <Button DockPanel.Dock="Top" Content="新增配置" Click="NewProfile_Click" Margin="0,0,0,10" Padding="10"/>
-                <ListBox ItemsSource="{Binding Profiles}" SelectedItem="{Binding SelectedProfile}" DisplayMemberPath="ProcessName"/>
-            </DockPanel>
-            <DockPanel Grid.Column="2">
-                <StackPanel DockPanel.Dock="Top">
-                    <TextBlock Text="进程名（例如 EXCEL.exe、chrome.exe、Code.exe）" Margin="0,0,0,6"/>
-                    <DockPanel>
-                        <Button DockPanel.Dock="Right" Content="选择程序…" Click="ChooseProgram_Click" Margin="8,0,0,0" Padding="10,5"/>
-                        <TextBox x:Name="ProcessNameInput" Text="{Binding ProcessName, UpdateSourceTrigger=PropertyChanged}" Padding="8"/>
-                    </DockPanel>
-                    <CheckBox Content="启用此应用配置" IsChecked="{Binding IsEnabled}" Margin="0,12"/>
-                    <WrapPanel Margin="0,0,0,12">
-                        <TextBlock Text="可选模板：" VerticalAlignment="Center"/>
-                        <Button Content="Excel" Click="Template_Click" Padding="10,5"/>
-                        <Button Content="浏览器" Click="Template_Click" Padding="10,5" Margin="6,0"/>
-                        <Button Content="编辑器" Click="Template_Click" Padding="10,5"/>
-                    </WrapPanel>
-                    <TextBlock Text="手势码：U ↑ / D ↓ / L ← / R →，可组合；R+L、WHEEL_UP、WHEEL_DOWN。" TextWrapping="Wrap" Margin="0,0,0,8"/>
-                    <WrapPanel Margin="0,0,0,10">
-                        <Button Content="添加覆盖" Click="AddBinding_Click" Padding="10,5"/>
-                        <Button Content="移除选中覆盖" Click="RemoveBinding_Click" Margin="8,0,0,0" Padding="10,5"/>
-                    </WrapPanel>
-                </StackPanel>
-                <DataGrid x:Name="BindingsGrid" ItemsSource="{Binding Bindings}" AutoGenerateColumns="False" CanUserAddRows="False" CanUserDeleteRows="False">
-                    <DataGrid.Columns>
-                        <DataGridTextColumn Header="手势码" Binding="{Binding Pattern, UpdateSourceTrigger=PropertyChanged}" Width="110"/>
-                        <DataGridCheckBoxColumn Header="左键增强模式" Binding="{Binding IsLeftButtonModified, UpdateSourceTrigger=PropertyChanged}" Width="115"/>
-                        <DataGridTemplateColumn Header="动作" Width="*">
-                            <DataGridTemplateColumn.CellTemplate>
-                                <DataTemplate>
-                                    <ComboBox ItemsSource="{Binding DataContext.Actions, RelativeSource={RelativeSource AncestorType=Window}}"
-                                              DisplayMemberPath="DisplayName" SelectedValuePath="Action"
-                                              SelectedValue="{Binding Action, UpdateSourceTrigger=PropertyChanged}"/>
-                                </DataTemplate>
-                            </DataGridTemplateColumn.CellTemplate>
-                        </DataGridTemplateColumn>
-                    </DataGrid.Columns>
-                </DataGrid>
-            </DockPanel>
+        Title="按应用配置手势" Icon="Assets/GestureClip.ico"
+        Width="1020" Height="720" MinWidth="880" MinHeight="620"
+        WindowStartupLocation="CenterOwner"
+        Background="{DynamicResource BrushAppBackground}"
+        Foreground="{DynamicResource BrushTextPrimary}"
+        Loaded="Window_Loaded" PreviewKeyDown="Window_PreviewKeyDown">
+    <Window.Resources>
+        <RadialGradientBrush x:Key="ProfileAmbient" Center="0.92,0.02" GradientOrigin="0.92,0.02"
+                             RadiusX="0.72" RadiusY="1.1">
+            <GradientStop Color="#243B82F6" Offset="0" />
+            <GradientStop Color="#102DD4BF" Offset="0.5" />
+            <GradientStop Color="#00FFFFFF" Offset="1" />
+        </RadialGradientBrush>
+        <Style x:Key="ProfilePanelStyle" TargetType="Border">
+            <Setter Property="CornerRadius" Value="18" />
+            <Setter Property="Background" Value="{DynamicResource BrushGlassStrong}" />
+            <Setter Property="BorderBrush" Value="{DynamicResource BrushGlassRim}" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="Padding" Value="16" />
+        </Style>
+        <Style x:Key="ProfileFocusVisual" TargetType="Control">
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate>
+                        <Border BorderBrush="{DynamicResource BrushPrimaryBright}"
+                                BorderThickness="2" CornerRadius="10" Margin="-2">
+                            <AdornedElementPlaceholder />
+                        </Border>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+        <Style x:Key="ProfileButtonStyle" TargetType="Button" BasedOn="{StaticResource SecondaryButtonStyle}">
+            <Setter Property="FocusVisualStyle" Value="{StaticResource ProfileFocusVisual}" />
+        </Style>
+        <Style x:Key="ProfilePrimaryButtonStyle" TargetType="Button" BasedOn="{StaticResource PrimaryButtonStyle}">
+            <Setter Property="FocusVisualStyle" Value="{StaticResource ProfileFocusVisual}" />
+        </Style>
+        <Style x:Key="ProfileDangerButtonStyle" TargetType="Button" BasedOn="{StaticResource DangerButtonStyle}">
+            <Setter Property="FocusVisualStyle" Value="{StaticResource ProfileFocusVisual}" />
+        </Style>
+        <Style x:Key="PatternButtonStyle" TargetType="Button" BasedOn="{StaticResource ProfileButtonStyle}">
+            <Setter Property="Height" Value="34" />
+            <Setter Property="MinWidth" Value="42" />
+            <Setter Property="Padding" Value="10,4" />
+            <Setter Property="Margin" Value="0,0,6,0" />
+        </Style>
+    </Window.Resources>
+
+    <Border Margin="18" Padding="24,22,24,20" CornerRadius="24"
+            Background="{DynamicResource BrushOverlayPanel}"
+            BorderBrush="{DynamicResource BrushGlassRim}" BorderThickness="1">
+        <Grid>
+            <Border Background="{StaticResource ProfileAmbient}" IsHitTestVisible="False" />
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="*" />
+                    <RowDefinition Height="Auto" />
+                </Grid.RowDefinitions>
+
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+                    <StackPanel>
+                        <TextBlock Text="GESTURECLIP / 应用级手势" FontSize="10" FontWeight="SemiBold"
+                                   Foreground="{DynamicResource BrushPrimaryBright}" />
+                        <TextBlock Text="按应用配置手势" Margin="0,4,0,0"
+                                   FontFamily="Segoe UI Variable Display, Microsoft YaHei UI"
+                                   FontSize="28" FontWeight="SemiBold" />
+                        <TextBlock Text="仅覆盖列出的手势，其他操作继续使用全局绑定。"
+                                   Margin="0,5,0,0" FontSize="12"
+                                   Foreground="{DynamicResource BrushTextSecondary}" />
+                    </StackPanel>
+                    <Border Grid.Column="1" Style="{StaticResource AccentChipStyle}"
+                            VerticalAlignment="Top" Margin="16,2,0,0">
+                        <TextBlock Text="Ctrl+N 新建  ·  Ctrl+S 保存  ·  Insert"
+                                   FontFamily="Cascadia Mono, Consolas" FontSize="11"
+                                   Foreground="{DynamicResource BrushPrimaryBright}" />
+                    </Border>
+                </Grid>
+
+                <Grid Grid.Row="1" Margin="0,20,0,16">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="250" />
+                        <ColumnDefinition Width="16" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+
+                    <Border Style="{StaticResource ProfilePanelStyle}">
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="*" />
+                                <RowDefinition Height="Auto" />
+                            </Grid.RowDefinitions>
+                            <DockPanel Margin="0,0,0,12">
+                                <TextBlock DockPanel.Dock="Right" Text="{Binding Profiles.Count, StringFormat={}{0} 个}"
+                                           FontSize="11" Foreground="{DynamicResource BrushTextMuted}" />
+                                <TextBlock Text="应用配置" FontSize="15" FontWeight="SemiBold" />
+                            </DockPanel>
+                            <Grid Grid.Row="1">
+                                <ListBox x:Name="ProfilesList" ItemsSource="{Binding Profiles}"
+                                         SelectedItem="{Binding SelectedProfile}" ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                                         AutomationProperties.Name="应用手势配置列表">
+                                    <ListBox.ItemTemplate>
+                                        <DataTemplate>
+                                            <Grid Margin="2,6">
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="*" />
+                                                    <ColumnDefinition Width="Auto" />
+                                                </Grid.ColumnDefinitions>
+                                                <StackPanel>
+                                                    <TextBlock Text="{Binding ProcessName}" FontWeight="SemiBold" />
+                                                    <TextBlock Text="{Binding Bindings.Count, StringFormat={}{0} 条覆盖}"
+                                                               Margin="0,3,0,0" FontSize="11"
+                                                               Foreground="{DynamicResource BrushTextMuted}" />
+                                                </StackPanel>
+                                                <TextBlock Grid.Column="1" Margin="10,0,0,0"
+                                                           FontSize="11" Foreground="{DynamicResource BrushTextMuted}">
+                                                    <TextBlock.Style>
+                                                        <Style TargetType="TextBlock">
+                                                            <Setter Property="Text" Value="已关闭" />
+                                                            <Style.Triggers>
+                                                                <DataTrigger Binding="{Binding IsEnabled}" Value="True">
+                                                                    <Setter Property="Text" Value="启用" />
+                                                                    <Setter Property="Foreground" Value="{DynamicResource BrushSuccess}" />
+                                                                </DataTrigger>
+                                                            </Style.Triggers>
+                                                        </Style>
+                                                    </TextBlock.Style>
+                                                </TextBlock>
+                                            </Grid>
+                                        </DataTemplate>
+                                    </ListBox.ItemTemplate>
+                                </ListBox>
+                                <TextBlock Text="还没有应用配置&#x0a;点击新建或使用右侧模板"
+                                           TextAlignment="Center" TextWrapping="Wrap" FontSize="12"
+                                           Foreground="{DynamicResource BrushTextMuted}"
+                                           HorizontalAlignment="Center" VerticalAlignment="Center">
+                                    <TextBlock.Style>
+                                        <Style TargetType="TextBlock">
+                                            <Setter Property="Visibility" Value="Collapsed" />
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding HasProfiles}" Value="False">
+                                                    <Setter Property="Visibility" Value="Visible" />
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </TextBlock.Style>
+                                </TextBlock>
+                            </Grid>
+                            <Grid Grid.Row="2" Margin="0,12,0,0">
+                                <Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="*" /></Grid.ColumnDefinitions>
+                                <Button Content="＋ 新建" Style="{StaticResource ProfileButtonStyle}"
+                                        Margin="0,0,5,0" Click="NewProfile_Click" AutomationProperties.Name="新建应用配置" />
+                                <Button Grid.Column="1" Content="复制配置" Style="{StaticResource ProfileButtonStyle}"
+                                        Margin="5,0,0,0" IsEnabled="{Binding HasSelectedProfile}"
+                                        Click="DuplicateProfile_Click" AutomationProperties.Name="复制选中应用配置" />
+                            </Grid>
+                        </Grid>
+                    </Border>
+
+                    <Border Grid.Column="2" Style="{StaticResource ProfilePanelStyle}">
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="*" />
+                            </Grid.RowDefinitions>
+                            <DockPanel Margin="0,0,0,14">
+                                <CheckBox DockPanel.Dock="Right" Content="启用此配置" IsChecked="{Binding IsEnabled}"
+                                          VerticalAlignment="Center" AutomationProperties.Name="启用此应用手势配置" />
+                                <TextBlock Text="{Binding EditorTitle}" FontSize="17" FontWeight="SemiBold" />
+                            </DockPanel>
+
+                            <Grid Grid.Row="1">
+                                <Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="Auto" /></Grid.ColumnDefinitions>
+                                <StackPanel>
+                                    <TextBlock Text="进程名" Margin="2,0,0,6" FontSize="11"
+                                               Foreground="{DynamicResource BrushTextMuted}" />
+                                    <TextBox x:Name="ProcessNameInput" Text="{Binding ProcessName, UpdateSourceTrigger=PropertyChanged}"
+                                             Height="42" Padding="12,0" VerticalContentAlignment="Center"
+                                             Background="{DynamicResource BrushGlassStrong}"
+                                             AutomationProperties.Name="应用进程名" />
+                                </StackPanel>
+                                <Button Grid.Column="1" Content="选择程序…" Margin="10,20,0,0"
+                                        Style="{StaticResource ProfileButtonStyle}" Click="ChooseProgram_Click"
+                                        ToolTip="Ctrl + O" AutomationProperties.Name="选择应用程序" />
+                            </Grid>
+
+                            <Grid Grid.Row="2" Margin="0,14,0,12">
+                                <Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="Auto" /></Grid.ColumnDefinitions>
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock Text="快速模板" VerticalAlignment="Center" Margin="2,0,10,0"
+                                               FontSize="11" Foreground="{DynamicResource BrushTextMuted}" />
+                                    <Button Content="Excel" Style="{StaticResource PatternButtonStyle}" Click="Template_Click" />
+                                    <Button Content="浏览器" Style="{StaticResource PatternButtonStyle}" Click="Template_Click" />
+                                    <Button Content="编辑器" Style="{StaticResource PatternButtonStyle}" Click="Template_Click" />
+                                </StackPanel>
+                                <StackPanel Grid.Column="1" Orientation="Horizontal">
+                                    <Button Content="↑" Tag="U" Style="{StaticResource PatternButtonStyle}" Click="AppendDirection_Click" />
+                                    <Button Content="↓" Tag="D" Style="{StaticResource PatternButtonStyle}" Click="AppendDirection_Click" />
+                                    <Button Content="←" Tag="L" Style="{StaticResource PatternButtonStyle}" Click="AppendDirection_Click" />
+                                    <Button Content="→" Tag="R" Style="{StaticResource PatternButtonStyle}" Click="AppendDirection_Click" />
+                                    <Button Content="退一格" Style="{StaticResource PatternButtonStyle}" Margin="0" Click="RemoveLastDirection_Click" />
+                                </StackPanel>
+                            </Grid>
+
+                            <Grid Grid.Row="3">
+                                <Grid.RowDefinitions><RowDefinition Height="Auto" /><RowDefinition Height="*" /></Grid.RowDefinitions>
+                                <DockPanel Margin="2,0,2,8">
+                                    <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
+                                        <Button Content="＋ 添加覆盖" Style="{StaticResource ProfileButtonStyle}"
+                                                Margin="0,0,8,0" Click="AddBinding_Click" ToolTip="Insert" />
+                                        <Button Content="移除选中" Style="{StaticResource ProfileButtonStyle}"
+                                                Click="RemoveBinding_Click" ToolTip="Delete" />
+                                    </StackPanel>
+                                    <StackPanel>
+                                        <TextBlock Text="手势覆盖" FontSize="14" FontWeight="SemiBold" />
+                                        <TextBlock Text="手势码 U/D/L/R 可组合；也支持 R+L、WHEEL_UP、WHEEL_DOWN。"
+                                                   Margin="0,3,0,0" FontSize="10.5" Foreground="{DynamicResource BrushTextMuted}" />
+                                    </StackPanel>
+                                </DockPanel>
+                                <Grid Grid.Row="1">
+                                    <DataGrid x:Name="BindingsGrid" ItemsSource="{Binding Bindings}"
+                                              Style="{StaticResource ProfileDataGridStyle}"
+                                              ColumnHeaderStyle="{StaticResource ProfileDataGridHeaderStyle}"
+                                              RowStyle="{StaticResource ProfileDataGridRowStyle}"
+                                              CellStyle="{StaticResource ProfileDataGridCellStyle}"
+                                              AutoGenerateColumns="False" CanUserAddRows="False" CanUserDeleteRows="False"
+                                              HeadersVisibility="Column" RowHeaderWidth="0" GridLinesVisibility="Horizontal"
+                                              HorizontalGridLinesBrush="{DynamicResource BrushBorder}"
+                                              Background="Transparent" Foreground="{DynamicResource BrushTextPrimary}"
+                                              BorderBrush="{DynamicResource BrushBorder}" BorderThickness="1"
+                                              AutomationProperties.Name="应用手势覆盖列表">
+                                        <DataGrid.Columns>
+                                            <DataGridTextColumn Header="手势码" Binding="{Binding Pattern, UpdateSourceTrigger=PropertyChanged}" Width="120" />
+                                            <DataGridCheckBoxColumn Header="左键增强" Binding="{Binding IsLeftButtonModified, UpdateSourceTrigger=PropertyChanged}" Width="105" />
+                                            <DataGridTemplateColumn Header="执行动作" Width="330">
+                                                <DataGridTemplateColumn.CellTemplate>
+                                                    <DataTemplate>
+                                                        <ComboBox ItemsSource="{Binding DataContext.Actions, RelativeSource={RelativeSource AncestorType=Window}}"
+                                                                  HorizontalAlignment="Stretch" MinWidth="240" Margin="3"
+                                                                  Background="{DynamicResource BrushGlassStrong}"
+                                                                  Foreground="{DynamicResource BrushTextPrimary}"
+                                                                  DisplayMemberPath="DisplayName" SelectedValuePath="Action"
+                                                                  SelectedValue="{Binding Action, UpdateSourceTrigger=PropertyChanged}" />
+                                                    </DataTemplate>
+                                                </DataGridTemplateColumn.CellTemplate>
+                                            </DataGridTemplateColumn>
+                                        </DataGrid.Columns>
+                                    </DataGrid>
+                                    <TextBlock Text="没有局部覆盖，该应用将完全沿用全局手势。"
+                                               HorizontalAlignment="Center" VerticalAlignment="Center"
+                                               Foreground="{DynamicResource BrushTextMuted}" FontSize="12" IsHitTestVisible="False">
+                                        <TextBlock.Style>
+                                            <Style TargetType="TextBlock">
+                                                <Setter Property="Visibility" Value="Collapsed" />
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding HasBindings}" Value="False">
+                                                        <Setter Property="Visibility" Value="Visible" />
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </TextBlock.Style>
+                                    </TextBlock>
+                                </Grid>
+                            </Grid>
+                        </Grid>
+                    </Border>
+                </Grid>
+
+                <Grid Grid.Row="2">
+                    <Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="Auto" /></Grid.ColumnDefinitions>
+                    <StackPanel VerticalAlignment="Center">
+                        <TextBlock Text="{Binding Status}" TextWrapping="Wrap" FontSize="12"
+                                   Foreground="{DynamicResource BrushTextSecondary}" />
+                        <TextBlock Text="Esc 关闭  ·  Ctrl+D 复制  ·  Ctrl+O 选程序  ·  Ctrl+Delete 删除配置"
+                                   Margin="0,4,0,0" FontFamily="Cascadia Mono, Consolas" FontSize="10"
+                                   Foreground="{DynamicResource BrushTextMuted}" />
+                    </StackPanel>
+                    <StackPanel Grid.Column="1" Orientation="Horizontal" Margin="18,0,0,0">
+                        <Button Content="删除配置" Style="{StaticResource ProfileDangerButtonStyle}"
+                                IsEnabled="{Binding HasSelectedProfile}" Click="DeleteProfile_Click" />
+                        <Button Content="保存配置" Style="{StaticResource ProfilePrimaryButtonStyle}"
+                                Margin="10,0,0,0" MinWidth="112" Click="SaveProfile_Click" />
+                    </StackPanel>
+                </Grid>
+            </Grid>
         </Grid>
-        <DockPanel Grid.Row="3" Margin="0,18,0,0">
-            <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
-                <Button Content="删除配置" Click="DeleteProfile_Click" Padding="14,8" Margin="8,0"/>
-                <Button Content="保存配置" Click="SaveProfile_Click" Padding="20,8"/>
-            </StackPanel>
-            <TextBlock Text="{Binding Status}" TextWrapping="Wrap" VerticalAlignment="Center"/>
-        </DockPanel>
-    </Grid>
+    </Border>
 </Window>

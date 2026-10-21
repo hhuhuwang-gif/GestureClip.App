@@ -21,6 +21,7 @@ public static class FeaturesServiceCollectionExtensions
         services.AddSingleton<IClipboardHashService, ClipboardHashService>();
         services.AddSingleton<ISensitiveContentDetector, SensitiveContentDetector>();
         services.AddSingleton<IClipboardRepository, ClipboardRepository>();
+        services.AddSingleton<PlainTextPasteDependencies>();
         services.AddSingleton<IPlainTextPasteService, PlainTextPasteService>();
         services.AddSingleton<PasteQueueDependencies>();
         services.AddSingleton<IPasteQueueService, PasteQueueService>();

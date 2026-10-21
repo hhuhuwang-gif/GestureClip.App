@@ -2,16 +2,101 @@
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
     <UserControl.Resources>
-        <BooleanToVisibilityConverter x:Key="QueueVisibility"/>
+        <BooleanToVisibilityConverter x:Key="QueueVisibility" />
+        <Style x:Key="QueueFocusVisual" TargetType="Control">
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate>
+                        <Border BorderBrush="{DynamicResource BrushPrimaryBright}"
+                                BorderThickness="2" CornerRadius="8" Margin="-2">
+                            <AdornedElementPlaceholder />
+                        </Border>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
     </UserControl.Resources>
-    <Border Padding="10" Visibility="{Binding HasPasteQueue, Converter={StaticResource QueueVisibility}}">
-        <StackPanel>
-            <TextBlock Text="{Binding PasteQueueText}" TextWrapping="Wrap"/>
-            <StackPanel Orientation="Horizontal" Margin="0,6,0,0">
-                <Button Content="重试" IsEnabled="{Binding CanRecoverPasteQueue}" Click="OnRetry" Padding="10,3"/>
-                <Button Content="跳过" IsEnabled="{Binding CanRecoverPasteQueue}" Click="OnSkip" Padding="10,3" Margin="6,0,0,0"/>
-                <Button Content="取消队列" Click="OnCancel" Padding="10,3" Margin="6,0,0,0"/>
+    <Border x:Name="QueueCard"
+            MinWidth="460"
+            MaxWidth="760"
+            Padding="14,11"
+            CornerRadius="14"
+            BorderThickness="1"
+            Visibility="{Binding HasPasteQueue, Converter={StaticResource QueueVisibility}}">
+        <Border.Style>
+            <Style TargetType="Border">
+                <Setter Property="Background" Value="{DynamicResource BrushPrimarySoft}" />
+                <Setter Property="BorderBrush" Value="#4D3B82F6" />
+                <Style.Triggers>
+                    <DataTrigger Binding="{Binding CanRecoverPasteQueue}" Value="True">
+                        <Setter Property="Background" Value="{DynamicResource BrushDangerSoft}" />
+                        <Setter Property="BorderBrush" Value="{DynamicResource BrushDanger}" />
+                    </DataTrigger>
+                </Style.Triggers>
+            </Style>
+        </Border.Style>
+        <Grid>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+            <Border x:Name="StatusDot"
+                    Width="8" Height="8" CornerRadius="4"
+                    Margin="0,4,10,0"
+                    VerticalAlignment="Top"
+                    >
+                <Border.Style>
+                    <Style TargetType="Border">
+                        <Setter Property="Background" Value="{DynamicResource BrushPrimaryBright}" />
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding CanRecoverPasteQueue}" Value="True">
+                                <Setter Property="Background" Value="{DynamicResource BrushDanger}" />
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </Border.Style>
+            </Border>
+            <StackPanel Grid.Column="1" Margin="0,0,14,0">
+                <DockPanel LastChildFill="True">
+                    <Border DockPanel.Dock="Right"
+                            CornerRadius="6"
+                            Padding="7,2"
+                            Background="#80FFFFFF">
+                        <TextBlock Text="{Binding PasteQueueCount, StringFormat=剩 {0} 条}"
+                                   FontFamily="Cascadia Mono, Consolas"
+                                   FontSize="10"
+                                   FontWeight="SemiBold"
+                                   Foreground="{DynamicResource BrushTextSecondary}" />
+                    </Border>
+                    <TextBlock Text="顺序粘贴"
+                               FontSize="12"
+                               FontWeight="SemiBold"
+                               Foreground="{DynamicResource BrushTextPrimary}" />
+                </DockPanel>
+                <TextBlock Text="{Binding PasteQueueText}"
+                           Margin="0,4,0,0"
+                           FontSize="11"
+                           Foreground="{DynamicResource BrushTextSecondary}"
+                           TextWrapping="Wrap" />
             </StackPanel>
-        </StackPanel>
+            <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
+                <StackPanel Orientation="Horizontal"
+                            Visibility="{Binding CanRecoverPasteQueue, Converter={StaticResource QueueVisibility}}">
+                    <Button Content="重试" Style="{StaticResource PrimaryButtonStyle}"
+                            FocusVisualStyle="{StaticResource QueueFocusVisual}"
+                            Height="28" MinWidth="54" Padding="10,0" Margin="0,0,6,0"
+                            AutomationProperties.Name="重试当前粘贴队列项" Click="OnRetry" />
+                    <Button Content="跳过" Style="{StaticResource SecondaryButtonStyle}"
+                            FocusVisualStyle="{StaticResource QueueFocusVisual}"
+                            Height="28" MinWidth="54" Padding="10,0" Margin="0,0,6,0"
+                            AutomationProperties.Name="跳过当前粘贴队列项" Click="OnSkip" />
+                </StackPanel>
+                <Button Content="取消队列" Style="{StaticResource SecondaryButtonStyle}"
+                        FocusVisualStyle="{StaticResource QueueFocusVisual}"
+                        Height="28" MinWidth="72" Padding="10,0"
+                        AutomationProperties.Name="取消整个粘贴队列" Click="OnCancel" />
+            </StackPanel>
+        </Grid>
     </Border>
 </UserControl>

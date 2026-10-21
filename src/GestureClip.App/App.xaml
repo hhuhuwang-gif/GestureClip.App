@@ -9,6 +9,7 @@
                 <ResourceDictionary Source="Themes/Brushes.xaml" />
                 <ResourceDictionary Source="Themes/GlassStyles.xaml" />
                 <ResourceDictionary Source="Themes/Controls.xaml" />
+                <ResourceDictionary Source="Themes/GestureProfilesStyles.xaml" />
             </ResourceDictionary.MergedDictionaries>
             <converters:ShortcutNumberConverter x:Key="ShortcutNumberConverter" />
             <converters:ImageBase64ToSourceConverter x:Key="ImageBase64ToSourceConverter" />

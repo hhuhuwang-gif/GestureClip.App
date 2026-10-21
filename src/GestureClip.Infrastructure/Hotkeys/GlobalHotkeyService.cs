@@ -223,8 +223,6 @@ public sealed class GlobalHotkeyService : IGlobalHotkeyService
     {
         try
         {
-            // Let WM_HOTKEY finish and physical keys start to release before we inject input.
-            await Task.Delay(60);
             await _plainTextPasteService.PastePlainTextAsync();
         }
         catch (Exception ex)

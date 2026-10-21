@@ -8,15 +8,26 @@ namespace GestureClip.App.Converters;
 public sealed class ImageBase64ToSourceConverter : IValueConverter
 {
     private const int MaxCachedImages = 128;
-    /// <summary>Chars sampled from each end of the raw base64 for the cache key, so a
-    /// cache hit never scans the full (possibly multi-MB) string.</summary>
     private const int CacheKeySampleLength = 64;
     private const int DefaultDecodePixelWidth = 320;
     private const int MinDecodePixelWidth = 32;
     private const int MaxDecodePixelWidth = 720;
     private static readonly object CacheLock = new();
-    private static readonly Dictionary<string, BitmapImage> Cache = [];
-    private static readonly Queue<string> CacheOrder = [];
+    private static readonly Dictionary<ImageCacheKey, BitmapImage> Cache = [];
+    private static readonly Queue<ImageCacheKey> CacheOrder = [];
+
+    private sealed record ImageCacheKey(string Base64, int DecodePixelWidth)
+    {
+        public override int GetHashCode()
+        {
+            var sampleLength = Math.Min(CacheKeySampleLength, Base64.Length);
+            var head = Base64.AsSpan(0, sampleLength);
+            var tail = Base64.AsSpan(Base64.Length - sampleLength);
+            return HashCode.Combine(DecodePixelWidth, Base64.Length,
+                string.GetHashCode(head, StringComparison.Ordinal),
+                string.GetHashCode(tail, StringComparison.Ordinal));
+        }
+    }
 
     public object? Convert(object value, Type targetType, object parameter, CultureInfo culture)
     {
@@ -28,7 +39,7 @@ public sealed class ImageBase64ToSourceConverter : IValueConverter
         try
         {
             var decodePixelWidth = GetDecodePixelWidth(parameter);
-            var cacheKey = CreateCacheKey(rawBase64, decodePixelWidth);
+            var cacheKey = new ImageCacheKey(rawBase64, decodePixelWidth);
             if (TryGetCached(cacheKey, out var cached))
             {
                 return cached;
@@ -86,7 +97,7 @@ public sealed class ImageBase64ToSourceConverter : IValueConverter
         return Math.Clamp(configured, MinDecodePixelWidth, MaxDecodePixelWidth);
     }
 
-    private static bool TryGetCached(string key, out BitmapImage image)
+    private static bool TryGetCached(ImageCacheKey key, out BitmapImage image)
     {
         lock (CacheLock)
         {
@@ -94,7 +105,7 @@ public sealed class ImageBase64ToSourceConverter : IValueConverter
         }
     }
 
-    private static void AddToCache(string key, BitmapImage image)
+    private static void AddToCache(ImageCacheKey key, BitmapImage image)
     {
         lock (CacheLock)
         {
@@ -112,14 +123,4 @@ public sealed class ImageBase64ToSourceConverter : IValueConverter
         }
     }
 
-    private static string CreateCacheKey(string rawBase64, int decodePixelWidth)
-    {
-        // Length + head/tail samples identify an image without touching the middle of the
-        // payload; hashing the full string used to cost O(n) on every cache hit.
-        var head = rawBase64[..Math.Min(CacheKeySampleLength, rawBase64.Length)];
-        var tail = rawBase64[Math.Max(0, rawBase64.Length - CacheKeySampleLength)..];
-        return string.Create(
-            CultureInfo.InvariantCulture,
-            $"{decodePixelWidth}:{rawBase64.Length}:{head.GetHashCode(StringComparison.Ordinal):X8}:{tail.GetHashCode(StringComparison.Ordinal):X8}");
-    }
 }
