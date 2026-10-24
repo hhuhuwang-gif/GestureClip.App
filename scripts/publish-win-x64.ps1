@@ -20,7 +20,7 @@ Write-Host "Using .NET SDK host: $dotnet"
 Assert-PublishOutputAvailable $output
 
 Invoke-Checked $dotnet @("restore", $solution) "dotnet restore"
-Invoke-DotNetTests $dotnet @("test", $solution, "--no-restore")
+Invoke-DotNetTests $dotnet @("test", $solution, "--no-restore", "-c", "Release")
 
 Remove-BuildOutput $staging
 New-Item -ItemType Directory -Force -Path $staging | Out-Null
