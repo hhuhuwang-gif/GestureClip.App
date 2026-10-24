@@ -12,7 +12,7 @@ public sealed class SettingsGestureUxContractTests
         var code = ReadAllMatching("src", "GestureClip.App", "SettingsWindow*.cs");
 
         Assert.Contains("MainSettingsTabControl", xaml);
-        Assert.Contains("Click=\"ChangeGestureAction_Click\"", xaml);
+        Assert.Contains("ChangeActionRequested=\"ChangeGestureAction_Click\"", xaml);
         Assert.Contains("Tag=\"{Binding Pattern}\"", xaml);
         Assert.Contains("NavigateToBindings_Click", xaml);
         Assert.Contains("NavigateToEdgeEnhancement_Click", xaml);
@@ -21,12 +21,45 @@ public sealed class SettingsGestureUxContractTests
         Assert.Contains("GestureAdvancedSettingsExpander", xaml);
         Assert.Contains("EdgeTriggerSettingsGroup", xaml);
         Assert.Contains("FeatureMapCard_MouseLeftButtonUp", xaml);
-        Assert.Contains("在此选择新动作", xaml);
+        Assert.Contains("BindingActionPopup", xaml);
+        Assert.Contains("GestureActionPicker", xaml);
 
         Assert.Contains("void ChangeGestureAction_Click", code);
         Assert.Contains("void NavigateToPage(string page", code);
         Assert.Contains("ScrollToNamedElement", code);
         Assert.Contains("SectionGestureEditor", code);
+    }
+
+    [Fact]
+    public void Changing_action_does_not_queue_competing_scroll_requests()
+    {
+        var code = File.ReadAllText(Find("src", "GestureClip.App", "SettingsWindow.Navigation.cs"));
+        var start = code.IndexOf("private void ChangeGestureAction_Click", StringComparison.Ordinal);
+        var end = code.IndexOf("private void ScrollToCustomGestureDesigner_Click", start, StringComparison.Ordinal);
+        var handler = code[start..end];
+
+        Assert.DoesNotContain("BringIntoView", handler);
+        Assert.DoesNotContain("ScrollToNamedElement", handler);
+        Assert.DoesNotContain("NavigateToPage(\"bindings\",", handler);
+        Assert.DoesNotContain("ScrollToVerticalOffset", handler);
+        Assert.Contains("BindingActionPopup.IsOpen = true", handler);
+    }
+
+    [Fact]
+    public void Moving_or_resizing_settings_never_restores_whole_window_shadow()
+    {
+        var code = File.ReadAllText(Find("src", "GestureClip.App", "SettingsWindow.Resize.cs"));
+        Assert.DoesNotContain("new DropShadowEffect", code);
+        Assert.DoesNotContain("SetWindowShadowEnabled", code);
+        Assert.Contains("WmNcHitTest", code);
+    }
+
+    [Fact]
+    public void Selecting_gesture_cards_does_not_change_their_border_geometry()
+    {
+        var xaml = File.ReadAllText(Find("src", "GestureClip.App", "SettingsWindow.xaml"));
+
+        Assert.DoesNotContain("TargetName=\"GestureCard\" Property=\"BorderThickness\" Value=\"2\"", xaml);
     }
 
     [Fact]

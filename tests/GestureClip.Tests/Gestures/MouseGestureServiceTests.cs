@@ -105,7 +105,7 @@ public sealed partial class MouseGestureServiceTests
     private static MouseGestureService CreateService(
         FakeLowLevelMouseHook hook,
         IMouseGestureActionExecutor? executor = null,
-        FakeRightClickSynthesizer? synthesizer = null,
+        IRightClickSynthesizer? synthesizer = null,
         FakeGestureOverlayService? overlay = null,
         bool enabled = true,
         int maxDurationMs = 2000,
@@ -121,22 +121,28 @@ public sealed partial class MouseGestureServiceTests
         FakeWorkerLevelService? workerLevel = null,
         FakeWorkerLevelUpService? levelUp = null,
         IGesturePresetProvider? presetProvider = null,
-        FakeForegroundAppService? foregroundApp = null)
+        FakeForegroundAppService? foregroundApp = null,
+        FakeMouseButtonStateProvider? buttonState = null)
     {
+        var resolvedPresetProvider = presetProvider ?? new GesturePresetProvider();
         return new MouseGestureService(
-            hook,
-            new DirectionGestureRecognizer(),
-            executor ?? new FakeMouseGestureActionExecutor(),
-            synthesizer ?? new FakeRightClickSynthesizer(),
-            new FakeGestureSettingsProvider(enabled, maxDurationMs, showOverlay, debugEnabled, leftButtonEnabled, rightButtonEnabled, middleButtonEnabled, xButton1Enabled, xButton2Enabled),
-            presetProvider ?? new GesturePresetProvider(),
-            new GestureHudInfoProvider(presetProvider ?? new GesturePresetProvider()),
-            overlay ?? new FakeGestureOverlayService(),
-            foregroundApp ?? new FakeForegroundAppService(),
-            new FakeAppBlacklistService { GestureBlocked = gestureBlacklisted },
-            dashboard ?? new FakeWorkstationDashboardService(),
-            workerLevel ?? new FakeWorkerLevelService(),
-            levelUp ?? new FakeWorkerLevelUpService(),
+            new MouseGestureDependencies
+            {
+                MouseHook = hook,
+                Recognizer = new DirectionGestureRecognizer(),
+                ActionExecutor = executor ?? new FakeMouseGestureActionExecutor(),
+                RightClickSynthesizer = synthesizer ?? new FakeRightClickSynthesizer(),
+                MouseButtonStateProvider = buttonState ?? new FakeMouseButtonStateProvider(),
+                SettingsProvider = new FakeGestureSettingsProvider(enabled, maxDurationMs, showOverlay, debugEnabled, leftButtonEnabled, rightButtonEnabled, middleButtonEnabled, xButton1Enabled, xButton2Enabled),
+                PresetProvider = resolvedPresetProvider,
+                HudInfoProvider = new GestureHudInfoProvider(resolvedPresetProvider),
+                GestureOverlayService = overlay ?? new FakeGestureOverlayService(),
+                ForegroundAppService = foregroundApp ?? new FakeForegroundAppService(),
+                AppBlacklistService = new FakeAppBlacklistService { GestureBlocked = gestureBlacklisted },
+                WorkstationDashboardService = dashboard ?? new FakeWorkstationDashboardService(),
+                WorkerLevelService = workerLevel ?? new FakeWorkerLevelService(),
+                WorkerLevelUpService = levelUp ?? new FakeWorkerLevelUpService()
+            },
             NullLogger<MouseGestureService>.Instance);
     }
 

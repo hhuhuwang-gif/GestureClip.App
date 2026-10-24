@@ -98,7 +98,7 @@ public static class GestureActionText
     {
         BuiltInGestureAction.Copy => "Ctrl + C",
         BuiltInGestureAction.Paste => "Ctrl + V（开启智能时按应用策略）",
-        BuiltInGestureAction.SmartPaste => "根据当前软件自动选择",
+        BuiltInGestureAction.SmartPaste => "保留原格式 / 应用规则",
         BuiltInGestureAction.PastePlainText => "Ctrl + Shift + V",
         BuiltInGestureAction.Cut => "Ctrl + X",
         BuiltInGestureAction.SelectAll => "Ctrl + A",

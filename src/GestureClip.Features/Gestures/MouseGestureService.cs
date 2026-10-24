@@ -15,6 +15,7 @@ public sealed partial class MouseGestureService : IMouseGestureService
     private readonly IMouseGestureRecognizer _recognizer;
     private readonly IMouseGestureActionExecutor _actionExecutor;
     private readonly IRightClickSynthesizer _rightClickSynthesizer;
+    private readonly IMouseButtonStateProvider _mouseButtonStateProvider;
     private readonly IGestureSettingsProvider _settingsProvider;
     private readonly IGesturePresetProvider _presetProvider;
     private readonly IGestureHudInfoProvider _hudInfoProvider;
@@ -61,34 +62,23 @@ public sealed partial class MouseGestureService : IMouseGestureService
     private string? _gestureTargetProcessName;
 
     public MouseGestureService(
-        ILowLevelMouseHook mouseHook,
-        IMouseGestureRecognizer recognizer,
-        IMouseGestureActionExecutor actionExecutor,
-        IRightClickSynthesizer rightClickSynthesizer,
-        IGestureSettingsProvider settingsProvider,
-        IGesturePresetProvider presetProvider,
-        IGestureHudInfoProvider hudInfoProvider,
-        IGestureOverlayService gestureOverlayService,
-        IForegroundAppService foregroundAppService,
-        IAppBlacklistService appBlacklistService,
-        IWorkstationDashboardService workstationDashboardService,
-        IWorkerLevelService workerLevelService,
-        IWorkerLevelUpService workerLevelUpService,
+        MouseGestureDependencies dependencies,
         ILogger<MouseGestureService> logger)
     {
-        _mouseHook = mouseHook;
-        _recognizer = recognizer;
-        _actionExecutor = actionExecutor;
-        _rightClickSynthesizer = rightClickSynthesizer;
-        _settingsProvider = settingsProvider;
-        _presetProvider = presetProvider;
-        _hudInfoProvider = hudInfoProvider;
-        _gestureOverlayService = gestureOverlayService;
-        _foregroundAppService = foregroundAppService;
-        _appBlacklistService = appBlacklistService;
-        _workstationDashboardService = workstationDashboardService;
-        _workerLevelService = workerLevelService;
-        _workerLevelUpService = workerLevelUpService;
+        _mouseHook = dependencies.MouseHook;
+        _recognizer = dependencies.Recognizer;
+        _actionExecutor = dependencies.ActionExecutor;
+        _rightClickSynthesizer = dependencies.RightClickSynthesizer;
+        _mouseButtonStateProvider = dependencies.MouseButtonStateProvider;
+        _settingsProvider = dependencies.SettingsProvider;
+        _presetProvider = dependencies.PresetProvider;
+        _hudInfoProvider = dependencies.HudInfoProvider;
+        _gestureOverlayService = dependencies.GestureOverlayService;
+        _foregroundAppService = dependencies.ForegroundAppService;
+        _appBlacklistService = dependencies.AppBlacklistService;
+        _workstationDashboardService = dependencies.WorkstationDashboardService;
+        _workerLevelService = dependencies.WorkerLevelService;
+        _workerLevelUpService = dependencies.WorkerLevelUpService;
         _logger = logger;
         IsEnabled = !IsDisabledByEnvironment() && _settingsProvider.GetCurrent().Enabled;
     }
@@ -113,14 +103,14 @@ public sealed partial class MouseGestureService : IMouseGestureService
         }
     }
 
-    public Task StartAsync(CancellationToken cancellationToken)
+    public async Task StartAsync(CancellationToken cancellationToken)
     {
         if (IsDisabledByEnvironment())
         {
             IsEnabled = false;
             SetHookStatus("被环境变量禁用");
             _logger.LogInformation("Mouse gesture disabled by environment variable");
-            return Task.CompletedTask;
+            return;
         }
 
         var settings = _settingsProvider.GetCurrent();
@@ -129,19 +119,19 @@ public sealed partial class MouseGestureService : IMouseGestureService
         {
             SetHookStatus("未安装");
             LogDebug(settings, "Gesture disabled by setting");
-            return Task.CompletedTask;
+            return;
         }
 
         if (Interlocked.Exchange(ref _started, 1) == 1)
         {
-            return Task.CompletedTask;
+            return;
         }
 
         _mouseHook.MouseEventReceived += OnMouseEventReceived;
 
         try
         {
-            _mouseHook.Start();
+            await _mouseHook.StartAsync(cancellationToken);
             SetHookStatus("已安装");
             LogDebug(settings, "Hook installed");
         }
@@ -155,26 +145,23 @@ public sealed partial class MouseGestureService : IMouseGestureService
             throw;
         }
 
-        return Task.CompletedTask;
     }
 
-    public Task StopAsync(CancellationToken cancellationToken)
+    public async Task StopAsync(CancellationToken cancellationToken)
     {
         IsEnabled = false;
         if (Interlocked.Exchange(ref _started, 0) == 0)
         {
-            return Task.CompletedTask;
+            return;
         }
 
         _mouseHook.MouseEventReceived -= OnMouseEventReceived;
-        _mouseHook.Stop();
+        await _mouseHook.StopAsync(cancellationToken);
 
         lock (_syncRoot)
         {
             ResetState("StateReset");
             _hookStatus = "未安装";
         }
-
-        return Task.CompletedTask;
     }
 }

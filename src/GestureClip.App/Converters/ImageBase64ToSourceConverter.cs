@@ -7,9 +7,12 @@ namespace GestureClip.App.Converters;
 
 public sealed class ImageBase64ToSourceConverter : IValueConverter
 {
-    private const int MaxCachedImages = 128;
+    // Thumbnails only ever render at ~120-160 px in the history list, so a wider decode buys
+    // nothing and costs ~4 bytes per pixel of retained bitmap. 64 entries keeps the hot set
+    // (one screen plus a little scrollback) cached while roughly halving resident memory.
+    private const int MaxCachedImages = 64;
     private const int CacheKeySampleLength = 64;
-    private const int DefaultDecodePixelWidth = 320;
+    private const int DefaultDecodePixelWidth = 256;
     private const int MinDecodePixelWidth = 32;
     private const int MaxDecodePixelWidth = 720;
     private static readonly object CacheLock = new();

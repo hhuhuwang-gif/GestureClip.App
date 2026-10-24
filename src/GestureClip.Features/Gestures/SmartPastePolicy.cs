@@ -12,63 +12,6 @@ public enum SmartPasteStrategy
 
 public static class SmartPastePolicy
 {
-    private static readonly HashSet<string> ChatProcesses = new(StringComparer.OrdinalIgnoreCase)
-    {
-        "WeChat.exe",
-        "Weixin.exe",
-        "WXWork.exe",
-        "WeComApp.exe",
-        "Feishu.exe",
-        "Lark.exe",
-        "Teams.exe",
-        "ms-teams.exe",
-        "Slack.exe",
-        "QQ.exe",
-        "TIM.exe",
-        "DingTalk.exe",
-        "Discord.exe",
-        "Telegram.exe",
-        "WhatsApp.exe",
-        "Line.exe"
-    };
-
-    private static readonly HashSet<string> BrowserProcesses = new(StringComparer.OrdinalIgnoreCase)
-    {
-        "chrome.exe",
-        "msedge.exe",
-        "firefox.exe",
-        "brave.exe",
-        "opera.exe",
-        "arc.exe"
-    };
-
-    private static readonly HashSet<string> OfficeProcesses = new(StringComparer.OrdinalIgnoreCase)
-    {
-        "WINWORD.EXE",
-        "EXCEL.EXE",
-        "POWERPNT.EXE"
-    };
-
-    private static readonly HashSet<string> CodeProcesses = new(StringComparer.OrdinalIgnoreCase)
-    {
-        "Code.exe",
-        "devenv.exe",
-        "Cursor.exe",
-        "rider64.exe",
-        "idea64.exe",
-        "pycharm64.exe",
-        "webstorm64.exe",
-        "clion64.exe",
-        "datagrip64.exe",
-        "phpstorm64.exe",
-        "goland64.exe",
-        "WindowsTerminal.exe",
-        "wt.exe",
-        "powershell.exe",
-        "pwsh.exe",
-        "cmd.exe"
-    };
-
     /// <summary>Prepare clipboard text for the current foreground app strategy.</summary>
     public static string TransformForStrategy(string text, SmartPasteStrategy strategy)
     {
@@ -91,30 +34,6 @@ public static class SmartPastePolicy
         if (TryParseStrategy(strategyOverride, out var overrideStrategy))
         {
             return overrideStrategy;
-        }
-
-        var processName = NormalizeProcessName(app.ProcessName);
-        var windowTitle = app.WindowTitle ?? "";
-
-        if (ChatProcesses.Contains(processName))
-        {
-            return SmartPasteStrategy.PlainTextPaste;
-        }
-
-        if (OfficeProcesses.Contains(processName))
-        {
-            return SmartPasteStrategy.NormalPaste;
-        }
-
-        if (CodeProcesses.Contains(processName))
-        {
-            return SmartPasteStrategy.PlainTextPaste;
-        }
-
-        if (BrowserProcesses.Contains(processName) ||
-            windowTitle.Contains("ChatGPT", StringComparison.OrdinalIgnoreCase))
-        {
-            return SmartPasteStrategy.CleanTextPaste;
         }
 
         return SmartPasteStrategy.NormalPaste;
@@ -189,16 +108,4 @@ public static class SmartPastePolicy
         }
     }
 
-    private static string NormalizeProcessName(string? processName)
-    {
-        if (string.IsNullOrWhiteSpace(processName))
-        {
-            return "";
-        }
-
-        var normalized = processName.Trim();
-        return normalized.EndsWith(".exe", StringComparison.OrdinalIgnoreCase)
-            ? normalized
-            : $"{normalized}.exe";
-    }
 }

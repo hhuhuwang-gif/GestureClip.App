@@ -7,7 +7,7 @@ using Xunit;
 
 namespace GestureClip.Tests.Gestures;
 
-public sealed class EdgeTriggerServiceTests
+public sealed partial class EdgeTriggerServiceTests
 {
     [Fact]
     public async Task PollOnceAsync_does_not_execute_when_disabled()
@@ -282,60 +282,4 @@ public sealed class EdgeTriggerServiceTests
         Assert.True(condition());
     }
 
-    private sealed class FakeCursorPositionProvider : ICursorPositionProvider
-    {
-        public CursorPosition Position { get; set; } = new(100, 100, DateTimeOffset.UtcNow);
-        public ScreenBounds Bounds { get; set; } = new(0, 0, 1920, 1080);
-
-        public CursorPosition GetCurrentPosition() => Position;
-
-        public ScreenBounds GetVirtualScreenBounds() => Bounds;
-    }
-
-    private sealed class FakeGestureActionExecutor : IMouseGestureActionExecutor
-    {
-        public List<BuiltInGestureAction> Actions { get; } = [];
-
-        public Task ExecuteAsync(BuiltInGestureAction action, CancellationToken cancellationToken)
-        {
-            Actions.Add(action);
-            return Task.CompletedTask;
-        }
-    }
-
-    private sealed class FakeLowLevelMouseHook : ILowLevelMouseHook
-    {
-        public event EventHandler<MouseHookEventArgs>? MouseEventReceived;
-        public int StartCount { get; private set; }
-        public int StopCount { get; private set; }
-
-        public void Start() => StartCount++;
-
-        public void Stop() => StopCount++;
-
-        public MouseHookEventArgs Emit(MouseHookEvent mouseEvent)
-        {
-            var args = new MouseHookEventArgs { Event = mouseEvent };
-            MouseEventReceived?.Invoke(this, args);
-            return args;
-        }
-    }
-
-    private sealed class FakeSettingsService : ISettingsService
-    {
-        public Dictionary<string, object?> Values { get; } = [];
-        public int GetCount { get; set; }
-
-        public T Get<T>(string key, T defaultValue)
-        {
-            GetCount++;
-            return Values.TryGetValue(key, out var value) ? (T)value! : defaultValue;
-        }
-
-        public Task SetAsync<T>(string key, T value, CancellationToken cancellationToken)
-        {
-            Values[key] = value;
-            return Task.CompletedTask;
-        }
-    }
 }

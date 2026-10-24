@@ -10,6 +10,7 @@ public sealed class SqliteSettingsService : ISettingsService
     private readonly ISqliteConnectionFactory _connectionFactory;
     private readonly object _cacheLock = new();
     private readonly Dictionary<string, string?> _cache = [];
+    private readonly SemaphoreSlim _writeLock = new(1, 1);
 
     public SqliteSettingsService(ISqliteConnectionFactory connectionFactory)
     {
@@ -41,9 +42,23 @@ public sealed class SqliteSettingsService : ISettingsService
 
     public async Task SetAsync<T>(string key, T value, CancellationToken cancellationToken)
     {
-        await using var connection = await _connectionFactory.OpenConnectionAsync(cancellationToken);
-
         var serialized = JsonSerializer.Serialize(value);
+        await _writeLock.WaitAsync(cancellationToken).ConfigureAwait(false);
+        try
+        {
+            var write = new SettingWrite(key, serialized, typeof(T).Name);
+            await Task.Run(() => PersistAsync(write, cancellationToken), cancellationToken)
+                .ConfigureAwait(false);
+        }
+        finally
+        {
+            _writeLock.Release();
+        }
+    }
+
+    private async Task PersistAsync(SettingWrite write, CancellationToken cancellationToken)
+    {
+        await using var connection = await _connectionFactory.OpenConnectionAsync(cancellationToken);
         await connection.ExecuteAsync(
             """
 INSERT INTO Settings (Key, Value, ValueType, UpdatedAt)
@@ -55,17 +70,19 @@ ON CONFLICT(Key) DO UPDATE SET
 """,
             new
             {
-                Key = key,
-                Value = serialized,
-                ValueType = typeof(T).Name,
+                Key = write.Key,
+                Value = write.Serialized,
+                ValueType = write.ValueType,
                 UpdatedAt = DateTimeOffset.UtcNow.ToString("O")
             });
 
         lock (_cacheLock)
         {
-            _cache[key] = serialized;
+            _cache[write.Key] = write.Serialized;
         }
     }
+
+    private sealed record SettingWrite(string Key, string Serialized, string ValueType);
 
     private bool TryGetCached(string key, out string? value)
     {

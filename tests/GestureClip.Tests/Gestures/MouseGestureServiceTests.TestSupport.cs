@@ -16,9 +16,17 @@ public sealed partial class MouseGestureServiceTests
         public int StartCount { get; private set; }
         public int StopCount { get; private set; }
 
-        public void Start() => StartCount++;
+        public Task StartAsync(CancellationToken cancellationToken)
+        {
+            StartCount++;
+            return Task.CompletedTask;
+        }
 
-        public void Stop() => StopCount++;
+        public Task StopAsync(CancellationToken cancellationToken)
+        {
+            StopCount++;
+            return Task.CompletedTask;
+        }
 
         public MouseHookEventArgs Raise(
             MouseHookEventType type,
@@ -39,8 +47,8 @@ public sealed partial class MouseGestureServiceTests
 
     private sealed class FakeRightClickSynthesizer : IRightClickSynthesizer
     {
-        public List<(int X, int Y)> Clicks { get; } = [];
-        public List<(GestureTriggerButton Button, int X, int Y)> MouseClicks { get; } = [];
+        public ConcurrentQueue<(int X, int Y)> Clicks { get; } = [];
+        public ConcurrentQueue<(GestureTriggerButton Button, int X, int Y)> MouseClicks { get; } = [];
 
         public void SynthesizeRightClick(int x, int y)
         {
@@ -49,16 +57,23 @@ public sealed partial class MouseGestureServiceTests
 
         public void SynthesizeClick(GestureTriggerButton button, int x, int y)
         {
-            MouseClicks.Add((button, x, y));
+            MouseClicks.Enqueue((button, x, y));
             if (button == GestureTriggerButton.Right)
             {
-                Clicks.Add((x, y));
+                Clicks.Enqueue((x, y));
             }
         }
 
         public void SynthesizeWheel(int delta, int x, int y)
         {
         }
+    }
+
+    private sealed class FakeMouseButtonStateProvider : IMouseButtonStateProvider
+    {
+        public bool IsPressedValue { get; set; } = true;
+
+        public bool IsPressed(GestureTriggerButton button) => IsPressedValue;
     }
 
     private sealed class FakeMouseGestureActionExecutor : IMouseGestureActionExecutor

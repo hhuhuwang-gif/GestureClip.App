@@ -10,7 +10,8 @@ public sealed class SmartPasteSourceContractTests
         var xamlPath = FindRepositoryFile("src", "GestureClip.App", "SettingsWindow.xaml");
         var actionTextPath = FindRepositoryFile("src", "GestureClip.App", "ViewModels", "GestureActionText.cs");
         var catalogPath = FindRepositoryFile("src", "GestureClip.App", "ViewModels", "GestureActionCatalog.cs");
-        var xaml = File.ReadAllText(xamlPath);
+        var xaml = File.ReadAllText(xamlPath) + File.ReadAllText(
+            FindRepositoryFile("src", "GestureClip.App", "Controls", "GestureBindingCard.xaml"));
         var viewModel = ReadAllViewModelPartials();
         var actionText = File.ReadAllText(actionTextPath);
         var catalog = File.ReadAllText(catalogPath);
@@ -19,16 +20,16 @@ public sealed class SmartPasteSourceContractTests
         Assert.Contains("ActionName", xaml);
         Assert.Contains("InstructionText", xaml);
         Assert.Contains("BuiltInGestureAction.SmartPaste", viewModel);
-        Assert.Contains("根据当前软件自动选择", viewModel);
+        Assert.Contains("默认保留原格式", viewModel);
         Assert.Contains("IsSmartPasteEnabled", viewModel);
         Assert.Contains("SmartPasteEnabled", viewModel);
         Assert.Contains("智能粘贴", actionText);
-        Assert.Contains("根据当前软件", catalog);
+        Assert.Contains("保留原格式", catalog);
         Assert.Contains("智能粘贴", xaml);
         Assert.Contains("推荐", xaml);
-        Assert.Contains("只净化剪贴板内容，粘贴方式与关闭时相同", xaml);
+        Assert.Contains("默认保留 HTML、表格和原格式", xaml);
         Assert.Contains("开启智能粘贴（推荐）", xaml);  // tooltip
-        Assert.Contains("统一发送 Ctrl+V", xaml);
+        Assert.Contains("默认使用 Ctrl+V 保留原格式", xaml);
         Assert.Contains("IsSmartPasteEnabled", xaml);
         Assert.Contains("SelectedBadgeText", xaml);
         Assert.Contains("DeleteCommand", xaml);
@@ -38,18 +39,13 @@ public sealed class SmartPasteSourceContractTests
     [Fact]
     public void Settings_gesture_card_source_contract_exposes_left_button_modifier_rows()
     {
-        var xamlPath = FindRepositoryFile("src", "GestureClip.App", "SettingsWindow.xaml");
+        var xamlPath = FindRepositoryFile("src", "GestureClip.App", "Controls", "GestureBindingCard.xaml");
         var viewModelPath = FindRepositoryFile("src", "GestureClip.App", "ViewModels", "GestureBindingCardViewModel.cs");
         var xaml = File.ReadAllText(xamlPath);
         var viewModel = File.ReadAllText(viewModelPath);
 
-        Assert.Contains("普通动作", xaml);
-        Assert.Contains("点左键增强", xaml);
-        Assert.Contains("暂无增强动作", xaml);
-        Assert.Contains("PrimaryActionLabel", xaml);
-        Assert.Contains("PrimaryActionValueText", xaml);
-        Assert.Contains("LeftButtonModifierLabel", xaml);
-        Assert.Contains("LeftButtonModifierValueText", xaml);
+        Assert.Contains("ActionName", xaml);
+        Assert.Contains("LeftButtonModifierHintText", xaml);
         Assert.Contains("LeftButtonModifierBadgeText", xaml);
         Assert.Contains("普通动作", viewModel);
         Assert.Contains("点左键增强", viewModel);

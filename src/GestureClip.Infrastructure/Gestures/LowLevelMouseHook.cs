@@ -1,6 +1,6 @@
+using System.ComponentModel;
 using System.Diagnostics;
 using System.Runtime.InteropServices;
-using System.Windows.Threading;
 using GestureClip.Core.Abstractions;
 using GestureClip.Core.Gestures;
 using GestureClip.Infrastructure.Win32;
@@ -8,8 +8,9 @@ using Microsoft.Extensions.Logging;
 
 namespace GestureClip.Infrastructure.Gestures;
 
-public sealed class LowLevelMouseHook : ILowLevelMouseHook, IDisposable
+public sealed partial class LowLevelMouseHook : ILowLevelMouseHook, IDisposable
 {
+    private static readonly TimeSpan HookThreadStartupTimeout = TimeSpan.FromSeconds(2);
     private static readonly TimeSpan HookThreadShutdownTimeout = TimeSpan.FromSeconds(2);
 
     private readonly ILogger<LowLevelMouseHook> _logger;
@@ -27,14 +28,44 @@ public sealed class LowLevelMouseHook : ILowLevelMouseHook, IDisposable
 
     public event EventHandler<MouseHookEventArgs>? MouseEventReceived;
 
-    public void Start()
+    public bool IsRunning
+    {
+        get
+        {
+            lock (_startLock)
+            {
+                return _hookState is { IsInstalled: true, Thread.IsAlive: true };
+            }
+        }
+    }
+
+    public async Task StartAsync(CancellationToken cancellationToken)
+    {
+        var state = StartHookThread();
+        if (state is null)
+        {
+            return;
+        }
+
+        try
+        {
+            await WaitForHookStartupAsync(state, cancellationToken);
+        }
+        catch
+        {
+            await StopAsync(CancellationToken.None);
+            throw;
+        }
+    }
+
+    private HookThreadState? StartHookThread()
     {
         lock (_startLock)
         {
             _startReferenceCount++;
             if (_startReferenceCount > 1)
             {
-                return;
+                return null;
             }
 
             var state = new HookThreadState();
@@ -46,47 +77,75 @@ public sealed class LowLevelMouseHook : ILowLevelMouseHook, IDisposable
             state.Thread.SetApartmentState(ApartmentState.STA);
             _hookState = state;
             state.Thread.Start();
+            return state;
         }
     }
 
-    public void Stop()
+    private static async Task WaitForHookStartupAsync(
+        HookThreadState state,
+        CancellationToken cancellationToken)
     {
-        HookThreadState? state;
-        lock (_startLock)
+        var startupError = await state.Startup.Task.WaitAsync(HookThreadStartupTimeout, cancellationToken);
+        if (startupError is not null)
         {
-            if (_startReferenceCount <= 0)
-            {
-                return;
-            }
-
-            _startReferenceCount--;
-            if (_startReferenceCount > 0)
-            {
-                return;
-            }
-
-            state = _hookState;
-            _hookState = null;
+            throw new InvalidOperationException("Low-level mouse hook failed to start.", startupError);
         }
+    }
 
+    public async Task StopAsync(CancellationToken cancellationToken)
+    {
+        var state = DetachHookState();
         if (state is null)
         {
             return;
         }
 
         state.RequestCancellation();
-        state.Dispatcher?.BeginInvokeShutdown(DispatcherPriority.Send);
-        QueueShutdownObservation(state);
+        if (!state.RequestShutdown() && state.Thread?.IsAlive == true)
+        {
+            _logger.LogWarning("Failed to post shutdown message to low-level mouse hook thread. Win32Error={Win32Error}", Marshal.GetLastWin32Error());
+        }
+
+        await state.Stopped.Task.WaitAsync(HookThreadShutdownTimeout, cancellationToken);
     }
 
     public void Dispose()
     {
-        Stop();
+        var state = DetachHookState();
+        if (state is null)
+        {
+            return;
+        }
+
+        state.RequestCancellation();
+        state.RequestShutdown();
+    }
+
+    private HookThreadState? DetachHookState()
+    {
+        lock (_startLock)
+        {
+            if (_startReferenceCount <= 0)
+            {
+                return null;
+            }
+
+            _startReferenceCount--;
+            if (_startReferenceCount > 0)
+            {
+                return null;
+            }
+
+            var state = _hookState;
+            _hookState = null;
+            return state;
+        }
     }
 
     private void RunHookThread(HookThreadState state)
     {
-        state.Dispatcher = Dispatcher.CurrentDispatcher;
+        state.NativeThreadId = MouseHookNativeMethods.GetCurrentThreadId();
+        MouseHookNativeMethods.PeekMessage(out _, IntPtr.Zero, 0, 0, MouseHookNativeMethods.PmNoRemove);
         try
         {
             if (state.Cancellation.IsCancellationRequested)
@@ -94,43 +153,23 @@ public sealed class LowLevelMouseHook : ILowLevelMouseHook, IDisposable
                 return;
             }
 
-            var moduleName = Process.GetCurrentProcess().MainModule?.ModuleName;
-            var moduleHandle = MouseHookNativeMethods.GetModuleHandle(moduleName);
-            state.HookHandle = MouseHookNativeMethods.SetWindowsHookEx(
-                MouseHookNativeMethods.WhMouseLl,
-                _hookProc,
-                moduleHandle,
-                0);
-
-            if (state.HookHandle == IntPtr.Zero)
-            {
-                var error = Marshal.GetLastWin32Error();
-                _logger.LogError(
-                    "Failed to install low-level mouse hook. ModuleName={ModuleName}, ModuleHandle={ModuleHandle}, Win32Error={Win32Error}",
-                    moduleName,
-                    moduleHandle,
-                    error);
-                return;
-            }
-
+            var moduleName = InstallHook(state);
+            state.MarkInstalled();
             _logger.LogInformation(
-                "Low-level mouse hook started on dedicated thread. ModuleName={ModuleName}, ModuleHandle={ModuleHandle}, ThreadId={ThreadId}",
+                "Low-level mouse hook started on dedicated thread. ModuleName={ModuleName}, ThreadId={ThreadId}",
                 moduleName,
-                moduleHandle,
-                Environment.CurrentManagedThreadId);
-
-            if (!state.Cancellation.IsCancellationRequested)
-            {
-                Dispatcher.Run();
-            }
+                state.NativeThreadId);
+            RunMessageLoop(state);
         }
         catch (Exception ex)
         {
+            state.ReportStartupFailure(ex);
             _logger.LogError(ex, "Low-level mouse hook thread failed.");
         }
         finally
         {
             UninstallHookOnHookThread(state);
+            state.MarkStopped();
             lock (_startLock)
             {
                 if (ReferenceEquals(_hookState, state))
@@ -144,25 +183,41 @@ public sealed class LowLevelMouseHook : ILowLevelMouseHook, IDisposable
         }
     }
 
-    private void QueueShutdownObservation(HookThreadState state)
+    private string? InstallHook(HookThreadState state)
     {
-        var thread = state.Thread;
-        if (thread is null)
+        var moduleName = Process.GetCurrentProcess().MainModule?.ModuleName;
+        var moduleHandle = MouseHookNativeMethods.GetModuleHandle(moduleName);
+        state.HookHandle = MouseHookNativeMethods.SetWindowsHookEx(
+            MouseHookNativeMethods.WhMouseLl,
+            _hookProc,
+            moduleHandle,
+            0);
+        if (state.HookHandle == IntPtr.Zero)
         {
-            state.DisposeCancellation();
-            return;
+            throw new Win32Exception(Marshal.GetLastWin32Error(), "Failed to install low-level mouse hook.");
         }
 
-        _ = Task.Run(() =>
+        return moduleName;
+    }
+
+    private static void RunMessageLoop(HookThreadState state)
+    {
+        while (!state.Cancellation.IsCancellationRequested)
         {
-            if (!thread.Join(HookThreadShutdownTimeout))
+            var result = MouseHookNativeMethods.GetMessage(out var message, IntPtr.Zero, 0, 0);
+            if (result == 0)
             {
-                _logger.LogWarning("Low-level mouse hook thread did not stop within timeout.");
                 return;
             }
 
-            state.DisposeCancellation();
-        });
+            if (result < 0)
+            {
+                throw new Win32Exception(Marshal.GetLastWin32Error(), "Low-level mouse hook message loop failed.");
+            }
+
+            MouseHookNativeMethods.TranslateMessage(ref message);
+            MouseHookNativeMethods.DispatchMessage(ref message);
+        }
     }
 
     private void UninstallHookOnHookThread(HookThreadState state)
@@ -186,115 +241,4 @@ public sealed class LowLevelMouseHook : ILowLevelMouseHook, IDisposable
         }
     }
 
-    private IntPtr HookCallback(int nCode, IntPtr wParam, IntPtr lParam)
-    {
-        try
-        {
-            if (nCode >= 0 && TryCreateEvent(wParam, lParam, out var hookEvent))
-            {
-                LogHookEvent(hookEvent);
-                var args = new MouseHookEventArgs { Event = hookEvent };
-                MouseEventReceived?.Invoke(this, args);
-                if (args.Suppress)
-                {
-                    return 1;
-                }
-            }
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Low-level mouse hook callback failed.");
-        }
-
-        return MouseHookNativeMethods.CallNextHookEx(IntPtr.Zero, nCode, wParam, lParam);
-    }
-
-    private void LogHookEvent(MouseHookEvent hookEvent)
-    {
-        if (hookEvent.Type == MouseHookEventType.Move)
-        {
-            return;
-        }
-
-        if (!_logger.IsEnabled(LogLevel.Debug))
-        {
-            return;
-        }
-
-        var count = Interlocked.Increment(ref _receivedEventCount);
-        _logger.LogDebug(
-            "Low-level mouse hook event received: {Type}, x={X}, y={Y}, injected={Injected}, count={Count}",
-            hookEvent.Type,
-            hookEvent.X,
-            hookEvent.Y,
-            hookEvent.IsInjected,
-            count);
-    }
-
-    private static bool TryCreateEvent(IntPtr wParam, IntPtr lParam, out MouseHookEvent hookEvent)
-    {
-        var message = wParam.ToInt32();
-        var data = Marshal.PtrToStructure<MouseHookNativeMethods.MSLLHOOKSTRUCT>(lParam);
-        var xButton = data.mouseData >> 16;
-        var type = message switch
-        {
-            MouseHookNativeMethods.WmLButtonDown => MouseHookEventType.LeftButtonDown,
-            MouseHookNativeMethods.WmLButtonUp => MouseHookEventType.LeftButtonUp,
-            MouseHookNativeMethods.WmRButtonDown => MouseHookEventType.RightButtonDown,
-            MouseHookNativeMethods.WmMouseMove => MouseHookEventType.Move,
-            MouseHookNativeMethods.WmRButtonUp => MouseHookEventType.RightButtonUp,
-            MouseHookNativeMethods.WmMButtonDown => MouseHookEventType.MiddleButtonDown,
-            MouseHookNativeMethods.WmMButtonUp => MouseHookEventType.MiddleButtonUp,
-            MouseHookNativeMethods.WmMouseWheel => MouseHookEventType.Wheel,
-            MouseHookNativeMethods.WmXButtonDown when xButton == MouseHookNativeMethods.XButton1 => MouseHookEventType.XButton1Down,
-            MouseHookNativeMethods.WmXButtonUp when xButton == MouseHookNativeMethods.XButton1 => MouseHookEventType.XButton1Up,
-            MouseHookNativeMethods.WmXButtonDown when xButton == MouseHookNativeMethods.XButton2 => MouseHookEventType.XButton2Down,
-            MouseHookNativeMethods.WmXButtonUp when xButton == MouseHookNativeMethods.XButton2 => MouseHookEventType.XButton2Up,
-            _ => (MouseHookEventType?)null
-        };
-
-        if (type is null)
-        {
-            hookEvent = default!;
-            return false;
-        }
-
-        var isInjected = (data.flags & MouseHookNativeMethods.LlmhfInjected) != 0;
-        var wheelDelta = type == MouseHookEventType.Wheel ? (short)xButton : 0;
-        hookEvent = new MouseHookEvent(type.Value, data.pt.x, data.pt.y, DateTimeOffset.UtcNow, isInjected, wheelDelta);
-        return true;
-    }
-
-    private sealed class HookThreadState
-    {
-        private int _cancellationDisposed;
-
-        public CancellationTokenSource Cancellation { get; } = new();
-
-        public Dispatcher? Dispatcher { get; set; }
-
-        public Thread? Thread { get; set; }
-
-        public IntPtr HookHandle { get; set; }
-
-        public void RequestCancellation()
-        {
-            try
-            {
-                Cancellation.Cancel();
-            }
-            catch (ObjectDisposedException)
-            {
-                // The hook thread may have failed and completed concurrently.
-            }
-        }
-
-        public void DisposeCancellation()
-        {
-            if (Interlocked.Exchange(ref _cancellationDisposed, 1) == 0)
-            {
-                Cancellation.Dispose();
-            }
-        }
-    }
 }

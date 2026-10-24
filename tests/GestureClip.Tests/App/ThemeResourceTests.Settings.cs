@@ -7,6 +7,37 @@ public sealed partial class ThemeResourceTests
 {
 
     [Fact]
+    public void Settings_surfaces_share_the_lit_card_rim_and_nav_pill()
+    {
+        var brushes = File.ReadAllText(FindRepositoryFile("src", "GestureClip.App", "Themes", "Brushes.xaml"));
+        var glass = File.ReadAllText(FindRepositoryFile("src", "GestureClip.App", "Themes", "GlassStyles.xaml"));
+        var settings = File.ReadAllText(FindRepositoryFile("src", "GestureClip.App", "SettingsWindow.xaml"));
+
+        // 卡片和分组列表共用同一个“顶部受光”的细边，避免一页里出现两种描边质感
+        Assert.Contains("x:Key=\"BrushCardRim\"", brushes);
+        Assert.Contains("BrushCardRim", glass);
+        Assert.Contains("CornerRadius=\"14\"", glass);
+
+        // 左侧导航选中态是渐变胶囊 + 同款细边，而不是纯色块
+        Assert.Contains("BrushTabSelectedGradient", settings);
+        Assert.Contains("x:Name=\"NavIndicator\"", settings);
+        Assert.DoesNotContain("TargetName=\"Root\" Property=\"Background\" Value=\"{DynamicResource BrushTabSelected}\"", settings);
+    }
+
+    [Fact]
+    public void Settings_window_construction_and_page_switch_are_instrumented()
+    {
+        var lifecycle = File.ReadAllText(FindRepositoryFile("src", "GestureClip.App", "Services", "AppLifecycleService.Settings.cs"));
+        var navigation = File.ReadAllText(FindRepositoryFile("src", "GestureClip.App", "SettingsWindow.Navigation.cs"));
+
+        // --trace-ui 是排查“打开慢/切页卡”的唯一数据来源，不能被顺手删掉
+        Assert.Contains("SettingsWindow constructed in", lifecycle);
+        Assert.Contains("Settings window ready in", lifecycle);
+        Assert.Contains("UiTrace.Report", navigation);
+        Assert.Contains("DispatcherPriority.Background", navigation);
+    }
+
+    [Fact]
     public void SettingsWindow_keeps_readonly_textbox_bindings_one_way()
     {
         var path = FindRepositoryFile("src", "GestureClip.App", "SettingsWindow.xaml");
@@ -29,7 +60,11 @@ public sealed partial class ThemeResourceTests
         var xaml = File.ReadAllText(path);
 
         Assert.Contains("WindowStyle=\"None\"", xaml);
-        Assert.Contains("AllowsTransparency=\"True\"", xaml);
+        // The shell must stay a normal DWM-composited window: a layered
+        // (AllowsTransparency=True) window falls back to WPF software rendering and
+        // turns scrolling into a ~50 fps stutter. Rounded corners come from DWM.
+        Assert.Contains("AllowsTransparency=\"False\"", xaml);
+        Assert.Contains("WindowChrome", xaml);
         Assert.Contains("CornerRadius=\"14\"", xaml);
         Assert.Contains("BrushAppBackground", xaml);
         Assert.Contains("TrafficLightButtonStyle", xaml);
@@ -121,7 +156,7 @@ public sealed partial class ThemeResourceTests
         Assert.Contains("Command=\"{Binding ClearAllClipboardItemsCommand}\"", xaml);
         Assert.Contains("Style=\"{StaticResource SettingsDangerTextButtonStyle}\"", xaml);
         Assert.Contains("Style=\"{StaticResource SettingsSecondaryActionButtonStyle}\"", xaml);
-        Assert.Contains("Style=\"{StaticResource SettingsCompactActionButtonStyle}\"", xaml);
+        Assert.Contains("Style=\"{StaticResource SettingsSurfaceCardStyle}\"", xaml);
         Assert.Contains("Style=\"{StaticResource SettingsGestureTemplateButtonStyle}\"", xaml);
         Assert.Contains("Width=\"200\"", xaml);
         Assert.Contains("Width=\"240\"", xaml);

@@ -27,7 +27,8 @@ public sealed class AppSmartPasteRuleServiceTests
     public void SmartPastePolicy_respects_override()
     {
         var app = new ForegroundAppInfo("chrome.exe", "Google");
-        Assert.Equal(SmartPasteStrategy.CleanTextPaste, SmartPastePolicy.Select(app));
+        Assert.Equal(SmartPasteStrategy.NormalPaste, SmartPastePolicy.Select(app));
+        Assert.Equal(SmartPasteStrategy.CleanTextPaste, SmartPastePolicy.Select(app, "CleanTextPaste"));
         Assert.Equal(
             SmartPasteStrategy.PlainTextPaste,
             SmartPastePolicy.Select(app, "PlainTextPaste"));

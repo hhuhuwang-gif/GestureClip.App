@@ -39,6 +39,7 @@ public static class InfrastructureServiceCollectionExtensions
         services.AddSingleton(TimeProvider.System);
         services.AddSingleton<IUserIdleProvider, WindowsUserIdleProvider>();
         services.AddSingleton<ICursorPositionProvider, WindowsCursorPositionProvider>();
+        services.AddSingleton<IMouseButtonStateProvider, WindowsMouseButtonStateProvider>();
         services.AddSingleton<ILowLevelMouseHook, LowLevelMouseHook>();
         services.AddSingleton<IRightClickSynthesizer, RightClickSynthesizer>();
         services.AddSingleton<IKeyboardInputSender, KeyboardInputSender>();

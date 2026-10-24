@@ -18,57 +18,49 @@ public sealed partial class ThemeResourceTests
     }
 
     [Fact]
-    public void GestureBindingEditor_uses_single_scroll_flow_and_large_pattern_preview()
+    public void GestureBindingEditor_uses_compact_cards_and_local_action_picker()
     {
         var path = FindRepositoryFile("src", "GestureClip.App", "SettingsWindow.xaml");
         var xaml = File.ReadAllText(path);
 
         Assert.Contains("GestureDesignerPanel", xaml);
         Assert.Contains("GestureBindingListPanel", xaml);
-        Assert.Contains("GestureBindingDetailPanel", xaml);
+        Assert.Contains("BindingActionPopup", xaml);
+        Assert.Contains("GestureActionPicker", xaml);
         Assert.Contains("GestureBindingPageScrollViewer", xaml);
         Assert.Contains("WindowBackground_MouseLeftButtonDown", xaml);
         Assert.Contains("Click=\"ScrollToCustomGestureDesigner_Click\"", xaml);
-        Assert.Contains("MinHeight=\"210\"", xaml);
-        Assert.Contains("删除这个手势绑定", xaml);
-        Assert.Contains("点「更换动作」会选中该手势", xaml);
+        Assert.Contains("就近更换动作", xaml);
         Assert.Contains("常用手势一览", xaml);
         Assert.Contains("ChangeGestureAction_Click", xaml);
         Assert.Contains("Tag=\"{Binding Pattern}\"", xaml);
-        Assert.Contains("<UniformGrid Columns=\"2\" />", xaml);
-        Assert.Contains("MinHeight=\"180\"", xaml);
         Assert.Contains("Focusable=\"False\"", xaml);
-        Assert.Contains("TrajectoryGlyphs", xaml);
-        Assert.Contains("InstructionText", xaml);
+        var card = File.ReadAllText(FindRepositoryFile("src", "GestureClip.App", "Controls", "GestureBindingCard.xaml"));
+        Assert.Contains("TrajectoryGlyphs", card);
+        Assert.Contains("InstructionText", card);
+        Assert.Contains("DeleteCommand", card);
         Assert.DoesNotContain("<ListBox ItemsSource=\"{Binding PrimaryGestureBindingCards}\"", xaml);
         Assert.DoesNotContain("<ListBox ItemsSource=\"{Binding AdvancedGestureBindingCards}\"", xaml);
         Assert.DoesNotContain("SelectedItem=\"{Binding SelectedGestureBindingCard, Mode=TwoWay}\"", xaml);
 
 
-        var detailStart = xaml.IndexOf("x:Name=\"GestureBindingDetailPanel\"", StringComparison.Ordinal);
-        Assert.True(detailStart >= 0);
-        var detailEnd = xaml.IndexOf("</Border>", detailStart, StringComparison.Ordinal);
-        var detailHeader = xaml[detailStart..detailEnd];
-        Assert.DoesNotContain("Grid.Column=\"1\"", detailHeader);
-        Assert.DoesNotContain("Margin=\"14,0,0,0\"", detailHeader);
-        Assert.Contains("Margin=\"0,16,0,0\"", detailHeader);
+        Assert.DoesNotContain("GestureBindingDetailPanel", xaml);
     }
 
     [Fact]
     public void Gesture_binding_cards_have_clear_selection_delete_and_empty_state_contract()
     {
         var path = FindRepositoryFile("src", "GestureClip.App", "SettingsWindow.xaml");
-        var xaml = File.ReadAllText(path);
+        var xaml = File.ReadAllText(path) + File.ReadAllText(
+            FindRepositoryFile("src", "GestureClip.App", "Controls", "GestureBindingCard.xaml"));
 
         Assert.Contains("SelectedBadgeText", xaml);
         Assert.Contains("当前选中", File.ReadAllText(FindRepositoryFile("src", "GestureClip.App", "ViewModels", "GestureBindingCardViewModel.cs")));
-        Assert.Contains("SelectedAccent", xaml);
         Assert.Contains("Binding=\"{Binding IsSelected}\"", xaml);
         Assert.Contains("Content=\"更换动作\"", xaml);
-        Assert.Contains("Content=\"删除\"", xaml);
-        Assert.Contains("ToolTip=\"删除这个手势绑定\"", xaml);
+        Assert.Contains("Content=\"删除绑定\"", xaml);
         Assert.Contains("Command=\"{Binding DeleteCommand}\"", xaml);
-        Assert.Contains("当前绑定动作", xaml);
+        Assert.Contains("ActionName", xaml);
         Assert.Contains("按住右键画这个手势后", File.ReadAllText(FindRepositoryFile("src", "GestureClip.App", "ViewModels", "GestureBindingCardViewModel.cs")));
         Assert.Contains("CustomGestureEmptyStateText", xaml);
         Assert.Contains("GestureBindingEmptyStateText", xaml);

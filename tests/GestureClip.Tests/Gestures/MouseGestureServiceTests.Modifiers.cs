@@ -51,6 +51,29 @@ public sealed partial class MouseGestureServiceTests
     }
 
     [Fact]
+    public async Task Wheel_recovers_stale_tracking_when_physical_trigger_is_released()
+    {
+        var hook = new FakeLowLevelMouseHook();
+        var executor = new FakeMouseGestureActionExecutor();
+        var buttonState = new FakeMouseButtonStateProvider();
+        var service = CreateService(
+            hook,
+            executor,
+            showOverlay: false,
+            buttonState: buttonState);
+        await service.StartAsync(CancellationToken.None);
+
+        hook.Raise(MouseHookEventType.RightButtonDown, 0, 0);
+        buttonState.IsPressedValue = false;
+        var wheel = hook.Raise(MouseHookEventType.Wheel, 0, 0, wheelDelta: -120);
+        await Task.Delay(50);
+
+        Assert.False(wheel.Suppress);
+        Assert.Empty(executor.Actions);
+        Assert.Equal(GestureRuntimeState.Idle, service.Diagnostics.State);
+    }
+
+    [Fact]
     public async Task Right_button_drag_then_left_click_marks_left_modifier_and_executes_enhanced_action()
     {
         var hook = new FakeLowLevelMouseHook();

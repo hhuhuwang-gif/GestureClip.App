@@ -116,6 +116,14 @@
         <GradientStop Color="{StaticResource ColorControlHover}" Offset="1" />
     </LinearGradientBrush>
 
+    <!-- Card rim: hairline that is brighter along the top edge, so white cards read as
+         lit from above instead of sitting perfectly flat on the page tint. -->
+    <LinearGradientBrush x:Key="BrushCardRim" StartPoint="0,0" EndPoint="0,1">
+        <GradientStop Color="#B8FFFFFF" Offset="0" />
+        <GradientStop Color="#3C94A3B8" Offset="0.42" />
+        <GradientStop Color="#2A94A3B8" Offset="1" />
+    </LinearGradientBrush>
+
     <LinearGradientBrush x:Key="BrushPrimaryGradient" StartPoint="0,0" EndPoint="0,1">
         <GradientStop Color="#60A5FA" Offset="0" />
         <GradientStop Color="#3B82F6" Offset="0.55" />
@@ -145,6 +153,15 @@
         <GradientStop Color="#D9FFFFFF" Offset="0.5" />
         <GradientStop Color="#C8F8FAFC" Offset="1" />
     </LinearGradientBrush>
+
+    <!-- Settings content surface: a hair cooler than the cards it hosts so the
+         white cards read as layered instead of dissolving into the page. -->
+    <LinearGradientBrush x:Key="BrushSettingsContentPanel" StartPoint="0,0" EndPoint="0,1">
+        <GradientStop Color="#F4F7FBFE" Offset="0" />
+        <GradientStop Color="#EFEFF4FA" Offset="0.55" />
+        <GradientStop Color="#E9EDF4FA" Offset="1" />
+    </LinearGradientBrush>
+
     <LinearGradientBrush x:Key="BrushGlassCard" StartPoint="0,0" EndPoint="0,1">
         <GradientStop Color="#F5FFFFFF" Offset="0" />
         <GradientStop Color="#E0FFFFFF" Offset="1" />

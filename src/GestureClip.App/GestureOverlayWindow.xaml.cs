@@ -15,6 +15,12 @@ public partial class GestureOverlayWindow : Window
     {
         InitializeComponent();
         DataContext = viewModel;
+        HudLiquidTeal.Background = HudLiquidTeal.Background.Clone();
+        HudLiquidViolet.Background = HudLiquidViolet.Background.Clone();
+        HudPixelFlow.Background = HudPixelFlow.Background.Clone();
+        HudPixelFlowAlt.Background = HudPixelFlowAlt.Background.Clone();
+        HudScanBeam.Background = HudScanBeam.Background.Clone();
+        IsVisibleChanged += (_, _) => UpdateLiquidMotion();
     }
 
     /// <summary>Green pulse when the gesture triggered an action, red fade when it was unbound.</summary>

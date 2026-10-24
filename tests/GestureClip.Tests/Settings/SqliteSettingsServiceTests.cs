@@ -48,6 +48,53 @@ VALUES ('Probe.Cached', '1', 'int', @UpdatedAt);
         Assert.Equal(3, value);
     }
 
+    [Fact]
+    public async Task SetAsync_opens_database_off_the_calling_thread()
+    {
+        using var database = await TestDatabase.CreateAsync();
+        var factory = new RecordingConnectionFactory(database.ConnectionFactory);
+        var service = new SqliteSettingsService(factory);
+        var invoked = new TaskCompletionSource<Task>(TaskCreationOptions.RunContinuationsAsynchronously);
+        var callerThreadId = 0;
+        var caller = new Thread(() =>
+        {
+            callerThreadId = Environment.CurrentManagedThreadId;
+            invoked.SetResult(service.SetAsync("Probe.Worker", 7, CancellationToken.None));
+        });
+        caller.Start();
+        await await invoked.Task;
+
+        Assert.NotEqual(callerThreadId, factory.OpenThreadId);
+        Assert.Equal(7, service.Get("Probe.Worker", 0));
+    }
+
+    [Fact]
+    public async Task Concurrent_saves_keep_latest_requested_value_in_database_and_cache()
+    {
+        using var database = await TestDatabase.CreateAsync();
+        var service = new SqliteSettingsService(database.ConnectionFactory);
+        const int saveCount = 30;
+        var saves = Enumerable.Range(1, saveCount)
+            .Select(value => service.SetAsync("Probe.Ordered", value, CancellationToken.None))
+            .ToArray();
+        await Task.WhenAll(saves);
+
+        Assert.Equal(saveCount, service.Get("Probe.Ordered", 0));
+        var reloaded = new SqliteSettingsService(database.ConnectionFactory);
+        Assert.Equal(saveCount, reloaded.Get("Probe.Ordered", 0));
+    }
+
+    private sealed class RecordingConnectionFactory(ISqliteConnectionFactory inner) : ISqliteConnectionFactory
+    {
+        public int OpenThreadId { get; private set; }
+
+        public Task<Microsoft.Data.Sqlite.SqliteConnection> OpenConnectionAsync(CancellationToken cancellationToken)
+        {
+            OpenThreadId = Environment.CurrentManagedThreadId;
+            return inner.OpenConnectionAsync(cancellationToken);
+        }
+    }
+
     private sealed class TestDatabase : IDisposable
     {
         private readonly string _path;

@@ -29,15 +29,7 @@ public static class FeaturesServiceCollectionExtensions
         services.AddSingleton<IClipboardService, ClipboardService>();
         services.AddSingleton<IAppBlacklistService, AppBlacklistService>();
         services.AddSingleton<IAppSmartPasteRuleService, AppSmartPasteRuleService>();
-        services.AddSingleton<IMouseGestureRecognizer, DirectionGestureRecognizer>();
-        services.AddSingleton<IGestureSettingsProvider, GestureSettingsProvider>();
-        services.AddSingleton<IGestureAppProfileService, GestureAppProfileService>();
-        services.AddSingleton<IGesturePresetProvider, GesturePresetProvider>();
-        services.AddSingleton<IGestureConfigTransferService, GestureConfigTransferService>();
-        services.AddSingleton<IGestureHudInfoProvider, GestureHudInfoProvider>();
-        services.AddSingleton<IMouseGestureActionExecutor, GestureBuiltInActionExecutor>();
-        services.AddSingleton<IMouseGestureService, MouseGestureService>();
-        services.AddSingleton<IEdgeTriggerService, EdgeTriggerService>();
+        AddGestureServices(services);
         services.AddSingleton<IFeatureToggleService, FeatureToggleService>();
         services.AddSingleton<IFirstRunOnboardingService, FirstRunOnboardingService>();
         services.AddSingleton<IDiagnosticsService, DiagnosticsService>();
@@ -53,4 +45,36 @@ public static class FeaturesServiceCollectionExtensions
         services.AddSingleton<IWellnessReminderService, WellnessReminderService>();
         return services;
     }
+
+    private static void AddGestureServices(IServiceCollection services)
+    {
+        services.AddSingleton<IMouseGestureRecognizer, DirectionGestureRecognizer>();
+        services.AddSingleton<IGestureSettingsProvider, GestureSettingsProvider>();
+        services.AddSingleton<IGestureAppProfileService, GestureAppProfileService>();
+        services.AddSingleton<IGesturePresetProvider, GesturePresetProvider>();
+        services.AddSingleton<IGestureConfigTransferService, GestureConfigTransferService>();
+        services.AddSingleton<IGestureHudInfoProvider, GestureHudInfoProvider>();
+        services.AddSingleton<IMouseGestureActionExecutor, GestureBuiltInActionExecutor>();
+        services.AddSingleton(CreateMouseGestureDependencies);
+        services.AddSingleton<IMouseGestureService, MouseGestureService>();
+        services.AddSingleton<IEdgeTriggerService, EdgeTriggerService>();
+    }
+
+    private static MouseGestureDependencies CreateMouseGestureDependencies(IServiceProvider provider) => new()
+    {
+        MouseHook = provider.GetRequiredService<ILowLevelMouseHook>(),
+        Recognizer = provider.GetRequiredService<IMouseGestureRecognizer>(),
+        ActionExecutor = provider.GetRequiredService<IMouseGestureActionExecutor>(),
+        RightClickSynthesizer = provider.GetRequiredService<IRightClickSynthesizer>(),
+        MouseButtonStateProvider = provider.GetRequiredService<IMouseButtonStateProvider>(),
+        SettingsProvider = provider.GetRequiredService<IGestureSettingsProvider>(),
+        PresetProvider = provider.GetRequiredService<IGesturePresetProvider>(),
+        HudInfoProvider = provider.GetRequiredService<IGestureHudInfoProvider>(),
+        GestureOverlayService = provider.GetRequiredService<IGestureOverlayService>(),
+        ForegroundAppService = provider.GetRequiredService<IForegroundAppService>(),
+        AppBlacklistService = provider.GetRequiredService<IAppBlacklistService>(),
+        WorkstationDashboardService = provider.GetRequiredService<IWorkstationDashboardService>(),
+        WorkerLevelService = provider.GetRequiredService<IWorkerLevelService>(),
+        WorkerLevelUpService = provider.GetRequiredService<IWorkerLevelUpService>()
+    };
 }

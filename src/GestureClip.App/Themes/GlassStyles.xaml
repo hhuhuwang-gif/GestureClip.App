@@ -5,12 +5,15 @@
         <Setter Property="CornerRadius" Value="14" />
         <Setter Property="Padding" Value="20" />
         <Setter Property="Background" Value="{DynamicResource BrushGlassCard}" />
-        <Setter Property="BorderBrush" Value="{DynamicResource BrushBorder}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource BrushCardRim}" />
         <Setter Property="BorderThickness" Value="1" />
         <Setter Property="SnapsToDevicePixels" Value="True" />
         <Setter Property="Effect">
             <Setter.Value>
-                <DropShadowEffect Color="#000000" BlurRadius="18" ShadowDepth="1" Opacity="0.06" Direction="270" RenderingBias="Performance" />
+                <!-- A wider, lower-opacity shadow separates the card from the page tint
+                     without the hard edge that a small blur produces. Performance bias keeps
+                     the extra render pass cheap; these cards are all over the settings pages. -->
+                <DropShadowEffect Color="#0B1B34" BlurRadius="26" ShadowDepth="3" Opacity="0.07" Direction="270" RenderingBias="Performance" />
             </Setter.Value>
         </Setter>
     </Style>
@@ -265,11 +268,15 @@
     <Style x:Key="SettingsListContainerStyle" TargetType="Border">
         <Setter Property="CornerRadius" Value="14" />
         <Setter Property="Background" Value="{DynamicResource BrushGlassCard}" />
-        <Setter Property="BorderBrush" Value="{DynamicResource BrushBorder}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource BrushCardRim}" />
         <Setter Property="BorderThickness" Value="1" />
         <Setter Property="Padding" Value="4,6" />
         <Setter Property="ClipToBounds" Value="True" />
-        
+        <Setter Property="Effect">
+            <Setter.Value>
+                <DropShadowEffect Color="#0B1B34" BlurRadius="22" ShadowDepth="3" Opacity="0.06" Direction="270" RenderingBias="Performance" />
+            </Setter.Value>
+        </Setter>
         <Setter Property="HorizontalAlignment" Value="Stretch" />
         <Setter Property="SnapsToDevicePixels" Value="True" />
     </Style>

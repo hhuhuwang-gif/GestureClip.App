@@ -171,4 +171,39 @@ public sealed partial class MouseGestureServiceTests
         Assert.True(up.Suppress);
         Assert.Equal(BuiltInGestureAction.Copy, executor.Actions.Single());
     }
+
+    [Fact]
+    public async Task Replayed_click_runs_outside_low_level_hook_callback_thread()
+    {
+        var hook = new FakeLowLevelMouseHook();
+        var synthesizer = new ThreadCapturingClickSynthesizer();
+        var service = CreateService(hook, synthesizer: synthesizer);
+        await service.StartAsync(CancellationToken.None);
+        var callbackThreadId = Environment.CurrentManagedThreadId;
+
+        hook.Raise(MouseHookEventType.RightButtonDown, 20, 30);
+        hook.Raise(MouseHookEventType.RightButtonUp, 20, 30);
+        await synthesizer.Clicked.Task.WaitAsync(TimeSpan.FromSeconds(2));
+
+        Assert.NotEqual(callbackThreadId, synthesizer.ThreadId);
+    }
+
+    private sealed class ThreadCapturingClickSynthesizer : IRightClickSynthesizer
+    {
+        public TaskCompletionSource Clicked { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
+
+        public int ThreadId { get; private set; }
+
+        public void SynthesizeRightClick(int x, int y) => SynthesizeClick(GestureTriggerButton.Right, x, y);
+
+        public void SynthesizeClick(GestureTriggerButton button, int x, int y)
+        {
+            ThreadId = Environment.CurrentManagedThreadId;
+            Clicked.TrySetResult();
+        }
+
+        public void SynthesizeWheel(int delta, int x, int y)
+        {
+        }
+    }
 }

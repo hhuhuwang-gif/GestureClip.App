@@ -1,0 +1,56 @@
+<UserControl x:Class="GestureClip.App.Controls.GestureBindingCard"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <Border x:Name="Card" CornerRadius="14" Padding="16" Margin="0,0,0,10"
+            BorderThickness="1"
+            Background="{DynamicResource BrushCardElevated}">
+        <Border.Style>
+            <Style TargetType="Border">
+                <Setter Property="BorderBrush" Value="{DynamicResource BrushBorder}" />
+                <Style.Triggers>
+                    <DataTrigger Binding="{Binding IsSelected}" Value="True">
+                        <Setter Property="BorderBrush" Value="{DynamicResource BrushPrimaryBright}" />
+                    </DataTrigger>
+                    <Trigger Property="IsMouseOver" Value="True">
+                        <Setter Property="BorderBrush" Value="{DynamicResource BrushPrimaryBright}" />
+                    </Trigger>
+                </Style.Triggers>
+            </Style>
+        </Border.Style>
+        <Grid>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="64" />
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+            <Border Width="50" Height="50" CornerRadius="12" VerticalAlignment="Top"
+                    Background="{DynamicResource BrushFillTertiary}">
+                <TextBlock Text="{Binding TrajectoryGlyphs}" FontSize="22" FontWeight="SemiBold"
+                           HorizontalAlignment="Center" VerticalAlignment="Center"
+                           Foreground="{DynamicResource BrushPrimaryBright}" />
+            </Border>
+            <StackPanel Grid.Column="1" Margin="0,0,12,0">
+                <DockPanel>
+                    <TextBlock DockPanel.Dock="Right" Text="{Binding SelectedBadgeText}" FontSize="11"
+                               VerticalAlignment="Center" Margin="10,0,0,0"
+                               Foreground="{DynamicResource BrushPrimaryBright}" />
+                    <TextBlock Text="{Binding ActionName}" FontSize="16" FontWeight="SemiBold"
+                               TextTrimming="CharacterEllipsis" ToolTip="{Binding ActionName}" />
+                </DockPanel>
+                <TextBlock Text="{Binding DirectionText}" ToolTip="{Binding InstructionText}" Style="{StaticResource MutedTextStyle}"
+                           FontSize="12" Margin="0,4,0,0" />
+                <TextBlock Text="{Binding ShortcutText}" FontFamily="Consolas" FontSize="12"
+                           Foreground="{DynamicResource BrushTextSecondary}" Margin="0,3,0,0" />
+                <TextBlock Text="{Binding LeftButtonModifierBadgeText}" FontSize="12" Margin="0,6,0,0"
+                           Foreground="{DynamicResource BrushTextSecondary}" TextTrimming="CharacterEllipsis"
+                           ToolTip="{Binding LeftButtonModifierHintText}" />
+            </StackPanel>
+            <StackPanel Grid.Column="2" VerticalAlignment="Center">
+                <Button Content="更换动作" MinWidth="0" Width="88" Height="32" Focusable="True"
+                        ToolTip="就近选择动作，支持名称、分类和快捷键搜索" Click="ChangeAction_Click" />
+                <Button Content="删除绑定" MinWidth="0" Width="88" Height="28" Margin="0,6,0,0"
+                        Style="{StaticResource SecondaryButtonStyle}" Command="{Binding DeleteCommand}" />
+            </StackPanel>
+        </Grid>
+    </Border>
+</UserControl>

@@ -31,6 +31,9 @@ namespace GestureClip.App;
 
 public partial class SettingsWindow
 {
+    private const int WmGetMinMaxInfo = 0x0024;
+    private const int MonitorDefaultToNearest = 0x00000002;
+
     private void EnableTaskbarMinimizeBehavior()
     {
         var handle = new WindowInteropHelper(this).Handle;
@@ -51,18 +54,11 @@ public partial class SettingsWindow
 
     private IntPtr WndProc(IntPtr hwnd, int msg, IntPtr wParam, IntPtr lParam, ref bool handled)
     {
-        const int wmEnterSizeMove = 0x0231;
-        const int wmExitSizeMove = 0x0232;
-
-        if (msg == wmEnterSizeMove)
+        if (msg == WmGetMinMaxInfo)
         {
-            SetWindowShadowEnabled(false);
-            return IntPtr.Zero;
-        }
-
-        if (msg == wmExitSizeMove)
-        {
-            SetWindowShadowEnabled(true);
+            // A WindowStyle=None window maximises to the full monitor and covers the
+            // taskbar. Constrain it to the monitor work area instead.
+            ApplyWorkAreaAsMaximizedBounds(hwnd, lParam);
             return IntPtr.Zero;
         }
 
@@ -112,35 +108,67 @@ public partial class SettingsWindow
         return new IntPtr(hit);
     }
 
-    private void SetWindowShadowEnabled(bool enabled)
+    private static void ApplyWorkAreaAsMaximizedBounds(IntPtr hwnd, IntPtr lParam)
     {
-        Border? chrome = Content as Border;
-        if (chrome is null && VisualTreeHelper.GetChildrenCount(this) > 0)
-        {
-            chrome = VisualTreeHelper.GetChild(this, 0) as Border;
-        }
-
-        if (chrome is null)
+        var monitor = MonitorFromWindow(hwnd, MonitorDefaultToNearest);
+        if (monitor == IntPtr.Zero)
         {
             return;
         }
 
-        if (enabled)
+        var monitorInfo = new MonitorInfo { Size = Marshal.SizeOf<MonitorInfo>() };
+        if (!GetMonitorInfo(monitor, ref monitorInfo))
         {
-            chrome.Effect ??= new DropShadowEffect
-            {
-                Color = Colors.Black,
-                BlurRadius = 16,
-                ShadowDepth = 2,
-                Opacity = 0.08,
-                Direction = 270,
-                RenderingBias = RenderingBias.Performance
-            };
+            return;
         }
-        else
-        {
-            chrome.Effect = null;
-        }
+
+        var info = Marshal.PtrToStructure<MinMaxInfo>(lParam);
+        info.MaxPosition.X = monitorInfo.Work.Left - monitorInfo.Monitor.Left;
+        info.MaxPosition.Y = monitorInfo.Work.Top - monitorInfo.Monitor.Top;
+        info.MaxSize.X = monitorInfo.Work.Right - monitorInfo.Work.Left;
+        info.MaxSize.Y = monitorInfo.Work.Bottom - monitorInfo.Work.Top;
+        Marshal.StructureToPtr(info, lParam, false);
     }
+
+    [StructLayout(LayoutKind.Sequential)]
+    private struct NativePoint
+    {
+        public int X;
+        public int Y;
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
+    private struct NativeRect
+    {
+        public int Left;
+        public int Top;
+        public int Right;
+        public int Bottom;
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
+    private struct MinMaxInfo
+    {
+        public NativePoint Reserved;
+        public NativePoint MaxSize;
+        public NativePoint MaxPosition;
+        public NativePoint MinTrackSize;
+        public NativePoint MaxTrackSize;
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
+    private struct MonitorInfo
+    {
+        public int Size;
+        public NativeRect Monitor;
+        public NativeRect Work;
+        public int Flags;
+    }
+
+    [DllImport("user32.dll")]
+    private static extern IntPtr MonitorFromWindow(IntPtr hwnd, int flags);
+
+    [DllImport("user32.dll", CharSet = CharSet.Unicode)]
+    private static extern bool GetMonitorInfo(IntPtr hMonitor, ref MonitorInfo info);
 
 }

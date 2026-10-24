@@ -1,6 +1,7 @@
 using System.Windows;
 using System.Reflection;
 using GestureClip.App.DependencyInjection;
+using GestureClip.App.Diagnostics;
 using GestureClip.App.Services;
 using GestureClip.Core.Abstractions;
 using GestureClip.Features.Startup;
@@ -47,6 +48,11 @@ public partial class App : System.Windows.Application
 
         _serviceProvider = services.BuildServiceProvider();
         var logger = _serviceProvider.GetRequiredService<ILogger<App>>();
+
+        // Must run before the settings window is created so cold-start timings are captured.
+        UiTrace.Configure(
+            e.Args.Contains("--trace-ui", StringComparer.OrdinalIgnoreCase),
+            message => logger.LogInformation("UiTiming {Message}", message));
 
         try
         {
@@ -100,6 +106,14 @@ public partial class App : System.Windows.Application
             else
             {
                 _serviceProvider.GetRequiredService<AppLifecycleService>().ShowSettingsWindow();
+            }
+
+            if (e.Args.Contains("--trace-scroll", StringComparer.OrdinalIgnoreCase))
+            {
+                foreach (var settingsWindow in Windows.OfType<SettingsWindow>().Where(window => window.IsVisible))
+                    settingsWindow.EnableScrollDiagnostics(
+                        message => logger.LogInformation("ScrollTrace {Message}", message));
+                logger.LogInformation("Scroll tracing enabled explicitly by --trace-scroll.");
             }
 
             _serviceProvider.GetRequiredService<AppLifecycleService>().ShowWorkBearWidgetIfEnabled();

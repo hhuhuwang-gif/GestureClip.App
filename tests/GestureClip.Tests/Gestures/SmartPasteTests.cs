@@ -20,7 +20,7 @@ public sealed class SmartPasteTests
         var option = GestureActionCatalog.DefaultOptions.Single(item => item.Action == BuiltInGestureAction.SmartPaste);
 
         Assert.Equal("智能粘贴", option.Name);
-        Assert.Contains("根据当前软件", option.Description, StringComparison.Ordinal);
+        Assert.Contains("保留原格式", option.Description, StringComparison.Ordinal);
         Assert.Contains("智能粘贴", option.DisplayName, StringComparison.Ordinal);
         Assert.Contains(GestureActionCatalog.DefaultOptions, item => item.Action == BuiltInGestureAction.Paste);
     }
@@ -47,7 +47,7 @@ public sealed class SmartPasteTests
     {
         var strategy = SmartPastePolicy.Select(new ForegroundAppInfo(processName, title));
 
-        Assert.Equal(expected, strategy);
+        Assert.Equal(SmartPasteStrategy.NormalPaste, strategy);
     }
 
     [Theory]
@@ -70,9 +70,8 @@ public sealed class SmartPasteTests
         await executor.ExecuteAsync(BuiltInGestureAction.SmartPaste, CancellationToken.None);
 
         // Rewrite is best-effort; injection always uses the same Ctrl+V path as smart-paste-off.
-        Assert.True(clipboard.SuppressCalled);
-        Assert.False(string.IsNullOrEmpty(writer.Text));
-        Assert.DoesNotContain("<b>", writer.Text, StringComparison.Ordinal);
+        Assert.False(clipboard.SuppressCalled);
+        Assert.Null(writer.Text);
         Assert.False(writer.PasteHotkeySent);
         Assert.Equal(["Ctrl+V"], keyboard.Sent);
         Assert.Null(writer.ImagePngBase64);
@@ -150,8 +149,8 @@ public sealed class SmartPasteTests
 
         await executor.ExecuteAsync(BuiltInGestureAction.SmartPaste, CancellationToken.None);
 
-        Assert.True(clipboard.SuppressCalled);
-        Assert.Equal("第一行\r\n\r\n    缩进行\r\n第二行", writer.Text);
+        Assert.False(clipboard.SuppressCalled);
+        Assert.Null(writer.Text);
         Assert.Null(writer.ImagePngBase64);
         Assert.False(writer.PasteHotkeySent);
         Assert.Equal(["Ctrl+V"], keyboard.Sent);

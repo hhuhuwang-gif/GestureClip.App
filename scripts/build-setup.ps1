@@ -52,7 +52,7 @@ if (-not (Test-Path (Join-Path $PublishDir "GestureClip.exe"))) {
 $setupRoot = Join-Path $releaseRoot "setup-staging"
 Assert-BuildPath $setupRoot $repoRoot
 $payload = Join-Path $setupRoot "payload"
-if (Test-Path -LiteralPath $setupRoot) { Remove-Item -LiteralPath $setupRoot -Recurse -Force }
+Remove-BuildOutput $setupRoot
 New-Item -ItemType Directory -Force -Path $payload | Out-Null
 
 Copy-Item (Join-Path $PublishDir "*") $payload -Recurse -Force
@@ -64,7 +64,7 @@ Copy-Item (Join-Path $repoRoot "scripts\install\Setup.cmd") (Join-Path $setupRoo
 foreach ($pattern in @("GestureClip-Setup-v*-win-x64.zip", "GestureClip-Setup-v*-win-x64.exe")) {
     foreach ($artifact in (Get-ChildItem -LiteralPath $releaseRoot -Filter $pattern -File)) {
         Assert-BuildPath $artifact.FullName $repoRoot
-        Remove-Item -LiteralPath $artifact.FullName -Force
+        Remove-BuildOutput $artifact.FullName
     }
 }
 $setupZip = Join-Path $releaseRoot "GestureClip-Setup-v$packageVersion-win-x64.zip"

@@ -27,7 +27,7 @@ public sealed class ForegroundAppService : IForegroundAppService
             }
 
             ForegroundWindowNativeMethods.GetWindowThreadProcessId(hwnd, out var processId);
-            var process = Process.GetProcessById((int)processId);
+            using var process = Process.GetProcessById((int)processId);
             var titleBuffer = new StringBuilder(256);
             ForegroundWindowNativeMethods.GetWindowText(hwnd, titleBuffer, titleBuffer.Capacity);
 

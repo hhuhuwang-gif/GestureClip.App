@@ -19,6 +19,13 @@ public sealed partial class MouseGestureService : IMouseGestureService
             return null;
         }
 
+        if (!_mouseButtonStateProvider.IsPressed(_activeTriggerButton))
+        {
+            ResetState("ReleasedTriggerWheelRecovery");
+            _ = _gestureOverlayService.HideAsync(CancellationToken.None);
+            return null;
+        }
+
         args.Suppress = true;
         _wheelGestureFired = true;
         var wheelAction = mouseEvent.WheelDelta > 0

@@ -2,6 +2,7 @@
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:controls="clr-namespace:GestureClip.App.Controls"
+        xmlns:shell="clr-namespace:System.Windows.Shell;assembly=PresentationFramework"
         Title="GestureClip 设置"
         Icon="Assets/GestureClip.ico"
         Width="1440"
@@ -9,12 +10,30 @@
         MinWidth="1180"
         MinHeight="700"
         WindowStyle="None"
-        AllowsTransparency="True"
+        AllowsTransparency="False"
         ResizeMode="CanResize"
-        Background="Transparent"
+        Background="{DynamicResource BrushAppBackground}"
         Foreground="{DynamicResource BrushTextPrimary}"
-        FocusVisualStyle="{x:Null}">
+        FocusVisualStyle="{x:Null}"
+        UseLayoutRounding="True"
+        TextOptions.TextFormattingMode="Display"
+        TextOptions.TextRenderingMode="Grayscale"
+        TextOptions.TextHintingMode="Fixed"
+        PreviewMouseWheel="SettingsWindow_PreviewMouseWheel">
+    <shell:WindowChrome.WindowChrome>
+        <!-- Keeps the window a normal DWM-composited surface (no layered fallback)
+             while leaving the resize grip to SettingsWindow.Resize.cs. -->
+        <shell:WindowChrome CaptionHeight="0"
+                            ResizeBorderThickness="0"
+                            GlassFrameThickness="0"
+                            CornerRadius="14"
+                            UseAeroCaptionButtons="False" />
+    </shell:WindowChrome.WindowChrome>
     <Window.Resources>
+        <Style TargetType="{x:Type controls:SmoothScrollViewer}" BasedOn="{StaticResource GlassScrollViewerStyle}" />
+        <Style x:Key="SettingsSurfaceCardStyle" TargetType="Border" BasedOn="{StaticResource GlassCardStyle}">
+            <Setter Property="Effect" Value="{x:Null}" />
+        </Style>
         <Style x:Key="SettingsIntroCardStyle" TargetType="Border">
             <Setter Property="Padding" Value="0" />
             <Setter Property="Margin" Value="0,0,0,8" />
@@ -173,18 +192,44 @@
                         <Border x:Name="Root"
                                 CornerRadius="8"
                                 Background="{TemplateBinding Background}"
+                                BorderBrush="Transparent"
+                                BorderThickness="1"
                                 Padding="{TemplateBinding Padding}"
                                 SnapsToDevicePixels="True">
-                            <ContentPresenter VerticalAlignment="Center" HorizontalAlignment="Left" />
+                            <Grid>
+                                <Border x:Name="NavIndicator"
+                                        Width="3"
+                                        Height="18"
+                                        CornerRadius="2"
+                                        Margin="-9,0,0,0"
+                                        HorizontalAlignment="Left"
+                                        VerticalAlignment="Center"
+                                        Background="Transparent" />
+                                <ContentPresenter VerticalAlignment="Center" HorizontalAlignment="Left" />
+                            </Grid>
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
                                 <Setter TargetName="Root" Property="Background" Value="{DynamicResource BrushControlHover}" />
                             </Trigger>
                             <Trigger Property="IsChecked" Value="True">
-                                <Setter TargetName="Root" Property="Background" Value="{DynamicResource BrushTabSelected}" />
+                                <!-- Lit pill: gradient fill plus a hairline rim reads as a raised
+                                     chip instead of a flat tint, which is what made the sidebar
+                                     look cheap next to the cards. -->
+                                <Setter TargetName="Root" Property="Background" Value="{DynamicResource BrushTabSelectedGradient}" />
+                                <Setter TargetName="Root" Property="BorderBrush" Value="{DynamicResource BrushCardRim}" />
+                                <Setter TargetName="NavIndicator" Property="Background" Value="{DynamicResource BrushPrimaryBright}" />
                                 <Setter Property="FontWeight" Value="SemiBold" />
+                                <Setter Property="Foreground" Value="{DynamicResource BrushPrimary}" />
                             </Trigger>
+                            <MultiTrigger>
+                                <MultiTrigger.Conditions>
+                                    <Condition Property="IsChecked" Value="True" />
+                                    <Condition Property="IsMouseOver" Value="True" />
+                                </MultiTrigger.Conditions>
+                                <Setter TargetName="Root" Property="Background" Value="{DynamicResource BrushTabSelectedGradient}" />
+                                <Setter TargetName="Root" Property="BorderBrush" Value="{DynamicResource BrushPrimarySoft}" />
+                            </MultiTrigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
                 </Setter.Value>
@@ -217,11 +262,8 @@
             Background="{DynamicResource BrushAppBackground}"
             BorderBrush="{DynamicResource BrushBorder}"
             BorderThickness="1"
-            ClipToBounds="True"
+            ClipToBounds="False"
             MouseLeftButtonDown="WindowBackground_MouseLeftButtonDown">
-        <Border.Effect>
-            <DropShadowEffect Color="#000000" BlurRadius="24" ShadowDepth="2" Opacity="0.10" Direction="270" RenderingBias="Performance" />
-        </Border.Effect>
     <Grid Margin="16">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
@@ -406,7 +448,7 @@
 
             <!-- Center content -->
             <Border Grid.Column="1"
-                    Background="{DynamicResource BrushGlassPanel}"
+                    Background="{DynamicResource BrushSettingsContentPanel}"
                     ClipToBounds="True">
                 <TabControl x:Name="MainSettingsTabControl"
                             Style="{StaticResource GlassTabControlStyle}"
@@ -428,7 +470,7 @@
                     </TabControl.Resources>
 
                 <TabItem Header="首页">
-                    <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" ClipToBounds="True">
+                    <controls:SmoothScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" ClipToBounds="True">
                         <StackPanel Margin="28,24,36,36" HorizontalAlignment="Stretch">
                             <Border x:Name="HomePageIntro" Style="{StaticResource SettingsIntroCardStyle}">
                                 <StackPanel>
@@ -475,7 +517,7 @@
                                                            FontWeight="SemiBold" />
                                             </Border>
                                         </StackPanel>
-                                        <TextBlock Text="只净化剪贴板内容，粘贴方式与关闭时相同。开启后按当前应用尽力改写为纯文本/干净文本，再统一发送 Ctrl+V。"
+                                        <TextBlock Text="默认保留 HTML、表格和原格式，不按软件名称自动清理。仅在明确设置应用规则时转换。"
                                                    Style="{StaticResource MutedTextStyle}"
                                                    FontSize="13"
                                                    LineHeight="20"
@@ -500,7 +542,7 @@
                                     SnapsToDevicePixels="True">
                                 <StackPanel>
                                     <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
-                                        <TextBlock Text="v0.6.43 新功能"
+                                        <TextBlock Text="v0.6.45 新功能"
                                                    FontSize="16"
                                                    FontWeight="SemiBold"
                                                    Foreground="{DynamicResource BrushTextPrimary}"
@@ -735,11 +777,11 @@
                                 </StackPanel>
                             </Border>
                         </StackPanel>
-                    </ScrollViewer>
+                    </controls:SmoothScrollViewer>
                 </TabItem>
 
                 <TabItem Header="剪贴板">
-                    <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" ClipToBounds="True">
+                    <controls:SmoothScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" ClipToBounds="True">
                         <StackPanel Margin="28,24,36,36" HorizontalAlignment="Stretch">
                             <Border x:Name="ClipboardPageIntro" Style="{StaticResource SettingsCompactIntroCardStyle}">
                                 <StackPanel>
@@ -955,11 +997,11 @@
                                 </StackPanel>
                             </Border>
                         </StackPanel>
-                    </ScrollViewer>
+                    </controls:SmoothScrollViewer>
                 </TabItem>
 
                 <TabItem Header="手势">
-                    <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" ClipToBounds="True">
+                    <controls:SmoothScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" ClipToBounds="True">
                         <StackPanel Margin="28,24,36,36" HorizontalAlignment="Stretch">
                             <Border x:Name="GesturePageIntro" Style="{StaticResource SettingsCompactIntroCardStyle}">
                                 <StackPanel>
@@ -1032,7 +1074,7 @@
                                                            TextWrapping="Wrap" />
                                             </StackPanel>
                                             <StackPanel Grid.Column="1">
-                                                <TextBlock Text="智能粘贴只做剪贴板改写（内容不变则跳过），注入始终走可靠 Ctrl+V。与首页推荐卡是同一开关。"
+                                                <TextBlock Text="默认使用 Ctrl+V 保留原格式。应用规则或左键增强可清理文本；纯文本粘贴请使用对应快捷键。"
                                                             TextWrapping="Wrap" />
                                             </StackPanel>
                                         </Grid>
@@ -1117,7 +1159,7 @@
                                        Style="{StaticResource SettingsGroupTitleStyle}"
                                        Margin="2,28,0,12" />
                             <Border x:Name="EdgeEnhancementPromoCard"
-                                    Style="{StaticResource GlassCardStyle}"
+                                    Style="{StaticResource SettingsSurfaceCardStyle}"
                                     Padding="16"
                                     Margin="0,10,0,0"
                                     Background="{DynamicResource BrushFillTertiary}">
@@ -1435,11 +1477,11 @@
                                 </Border>
                             </Expander>
                         </StackPanel>
-                    </ScrollViewer>
+                    </controls:SmoothScrollViewer>
                 </TabItem>
 
                 <TabItem Header="动作绑定">
-                    <ScrollViewer x:Name="GestureBindingPageScrollViewer"
+                    <controls:SmoothScrollViewer x:Name="GestureBindingPageScrollViewer"
                                   VerticalScrollBarVisibility="Auto"
                                   CanContentScroll="False" HorizontalScrollBarVisibility="Disabled">
                         <StackPanel Margin="28,24,36,36" HorizontalAlignment="Stretch">
@@ -1461,16 +1503,55 @@
                                                     Height="34"
                                                     Focusable="False"
                                                     Click="ScrollToCustomGestureDesigner_Click" />
-                                            <TextBlock Text="动作绑定"
+                                            <TextBlock Text="让每个手势顺手好用"
                                                        FontSize="18"
                                                        FontWeight="SemiBold"
                                                        VerticalAlignment="Center" />
                                         </DockPanel>
-                                        <TextBlock Text="点「更换动作」会选中该手势并滚到下方修改区。删除只影响绑定。R+L = 按住右键再点左键（左键增强）。"
+                                        <TextBlock Text="选择手势，就近更换动作。支持搜索动作名称、分类和快捷键；选好即生效。"
                                                    Style="{StaticResource MutedTextStyle}"
                                                    TextWrapping="Wrap"
                                                    Margin="0,0,0,14" />
 
+                                        <Border Background="{DynamicResource BrushCardElevated}"
+                                                BorderBrush="{DynamicResource BrushBorder}"
+                                                BorderThickness="1"
+                                                CornerRadius="14"
+                                                Padding="12"
+                                                Margin="0,0,0,14">
+                                            <TextBlock Text="{Binding CustomGestureEmptyStateText}"
+                                                       Style="{StaticResource MutedTextStyle}"
+                                                       TextWrapping="Wrap" />
+                                        </Border>
+                                        <TextBlock Text="{Binding GestureBindingEmptyStateText}"
+                                                   Style="{StaticResource MutedTextStyle}"
+                                                   TextWrapping="Wrap"
+                                                   Margin="0,0,0,10" />
+
+                                        <TextBlock x:Name="SectionGestureEditor" Text="常用手势一览"
+                                                   FontWeight="SemiBold"
+                                                   Margin="0,0,0,8" />
+                                        <ItemsControl ItemsSource="{Binding PrimaryGestureBindingCards}">
+                                            <ItemsControl.ItemTemplate>
+                                                <DataTemplate>
+                                                    <controls:GestureBindingCard Tag="{Binding Pattern}"
+                                                        ChangeActionRequested="ChangeGestureAction_Click" />
+                                                </DataTemplate>
+                                            </ItemsControl.ItemTemplate>
+                                        </ItemsControl>
+
+                                        <Expander Header="更多手势（点击展开）" IsExpanded="False" Margin="0,2,0,0">
+                                            <ItemsControl ItemsSource="{Binding AdvancedGestureBindingCards}">
+                                                <ItemsControl.ItemTemplate>
+                                                    <DataTemplate>
+                                                        <controls:GestureBindingCard Tag="{Binding Pattern}"
+                                                            ChangeActionRequested="ChangeGestureAction_Click" />
+                                                    </DataTemplate>
+                                                </ItemsControl.ItemTemplate>
+                                            </ItemsControl>
+                                        </Expander>
+                                        <Expander Header="左键增强 · 模板 · 常用话术" IsExpanded="False" Margin="0,18,0,14">
+                                            <StackPanel Margin="0,12,0,0">
                                         <Border Background="{DynamicResource BrushFillTertiary}"
                                                 BorderBrush="{DynamicResource BrushBorder}"
                                                 BorderThickness="1"
@@ -1482,7 +1563,7 @@
                                                            Text="左键增强"
                                                            Style="{StaticResource SettingsGroupTitleStyle}"
                                                            Margin="0,0,0,6" />
-                                                <TextBlock Text="用法：按住右键开始画手势时，再点一下左键，会执行这里配置的增强动作，而不是普通动作。例如默认：下划+左键=智能干净粘贴，上划+左键=全选。"
+                                                <TextBlock Text="R+L = 按住右键再点左键。画方向手势时再点左键，可执行这里的增强动作。例如：下划+左键=干净粘贴，上划+左键=全选。"
                                                            Style="{StaticResource MutedTextStyle}"
                                                            TextWrapping="Wrap"
                                                            Margin="0,6,0,10" />
@@ -1748,409 +1829,17 @@
                                                            Margin="4,8,0,0" />
                                             </StackPanel>
                                         </Border>
-                                        <Border Background="{DynamicResource BrushCardElevated}"
-                                                BorderBrush="{DynamicResource BrushBorder}"
-                                                BorderThickness="1"
-                                                CornerRadius="14"
-                                                Padding="12"
-                                                Margin="0,0,0,14">
-                                            <TextBlock Text="{Binding CustomGestureEmptyStateText}"
-                                                       Style="{StaticResource MutedTextStyle}"
-                                                       TextWrapping="Wrap" />
-                                        </Border>
-                                        <TextBlock Text="{Binding GestureBindingEmptyStateText}"
-                                                   Style="{StaticResource MutedTextStyle}"
-                                                   TextWrapping="Wrap"
-                                                   Margin="0,0,0,10" />
-
-                                        <TextBlock Text="常用手势一览"
-                                                   FontWeight="SemiBold"
-                                                   Margin="0,0,0,8" />
-                                        <ItemsControl ItemsSource="{Binding PrimaryGestureBindingCards}">
-                                            <ItemsControl.ItemsPanel>
-                                                <ItemsPanelTemplate>
-                                                    <UniformGrid Columns="2" />
-                                                </ItemsPanelTemplate>
-                                            </ItemsControl.ItemsPanel>
-                                            <ItemsControl.ItemTemplate>
-                                                <DataTemplate>
-                                                    <Border x:Name="GestureCard"
-                                                            MinHeight="210"
-                                                            Margin="8"
-                                                            Padding="18"
-                                                            Background="{DynamicResource BrushGlassCard}"
-                                                            BorderBrush="{DynamicResource BrushBorder}"
-                                                            BorderThickness="1"
-                                                            CornerRadius="16"
-                                                            SnapsToDevicePixels="True">
-                                                        <StackPanel>
-                                                            <Grid>
-                                                                <Grid.ColumnDefinitions>
-                                                                    <ColumnDefinition Width="6" />
-                                                                    <ColumnDefinition Width="54" />
-                                                                    <ColumnDefinition Width="*" />
-                                                                    <ColumnDefinition Width="Auto" />
-                                                                </Grid.ColumnDefinitions>
-                                                                <Border x:Name="SelectedAccent"
-                                                                        Width="4"
-                                                                        CornerRadius="4"
-                                                                        Background="#00000000" />
-                                                                <Border Grid.Column="1"
-                                                                        Width="52"
-                                                                        Height="52"
-                                                                        CornerRadius="16"
-                                                                        Background="{DynamicResource BrushPrimarySoft}"
-                                                                        VerticalAlignment="Center"
-                                                                        HorizontalAlignment="Left">
-                                                                    <TextBlock Text="{Binding TrajectoryGlyphs}"
-                                                                               FontSize="18"
-                                                                               FontWeight="SemiBold"
-                                                                               Foreground="{DynamicResource BrushPrimaryBright}"
-                                                                               TextAlignment="Center"
-                                                                               HorizontalAlignment="Center"
-                                                                               VerticalAlignment="Center" />
-                                                                </Border>
-                                                                <StackPanel Grid.Column="2" VerticalAlignment="Center">
-                                                                    <TextBlock Text="{Binding GestureName}"
-                                                                               FontSize="16"
-                                                                               FontWeight="SemiBold"
-                                                                               Foreground="{DynamicResource BrushTextPrimary}"
-                                                                               TextTrimming="CharacterEllipsis" />
-                                                                    <TextBlock Text="{Binding PatternText}"
-                                                                               Style="{StaticResource MutedTextStyle}"
-                                                                               FontSize="12"
-                                                                               Margin="0,3,0,0" />
-                                                                </StackPanel>
-                                                                <Border Grid.Column="3"
-                                                                        Padding="8,3"
-                                                                        CornerRadius="12"
-                                                                        Background="{DynamicResource BrushPrimarySoft}"
-                                                                        VerticalAlignment="Top">
-                                                                    <TextBlock Text="{Binding SelectedBadgeText}"
-                                                                               FontSize="11"
-                                                                               FontWeight="SemiBold"
-                                                                               Foreground="{DynamicResource BrushPrimaryBright}" />
-                                                                </Border>
-                                                            </Grid>
-                                                            <TextBlock Text="当前绑定动作"
-                                                                       Style="{StaticResource MutedTextStyle}"
-                                                                       FontSize="12"
-                                                                       Margin="0,12,0,2" />
-                                                            <TextBlock Text="{Binding ActionName}"
-                                                                       FontSize="17"
-                                                                       FontWeight="SemiBold"
-                                                                       Foreground="{DynamicResource BrushTextPrimary}"
-                                                                       TextTrimming="CharacterEllipsis" />
-                                                            <StackPanel Margin="0,10,0,0">
-                                                                <Border Background="{DynamicResource BrushFillTertiary}"
-                                                                        BorderBrush="{DynamicResource BrushBorder}"
-                                                                        BorderThickness="1"
-                                                                        CornerRadius="12"
-                                                                        Padding="10,7"
-                                                                        Margin="0,0,0,6">
-                                                                    <Grid>
-                                                                        <Grid.ColumnDefinitions>
-                                                                            <ColumnDefinition Width="Auto" />
-                                                                            <ColumnDefinition Width="*" />
-                                                                        </Grid.ColumnDefinitions>
-                                                                        <TextBlock Text="{Binding PrimaryActionLabel, FallbackValue=普通动作}"
-                                                                                   FontSize="12"
-                                                                                   FontWeight="SemiBold"
-                                                                                   Foreground="{DynamicResource BrushTextSecondary}" />
-                                                                        <TextBlock Grid.Column="1"
-                                                                                   Text="{Binding PrimaryActionValueText}"
-                                                                                   FontSize="13"
-                                                                                   FontWeight="SemiBold"
-                                                                                   Foreground="{DynamicResource BrushTextPrimary}"
-                                                                                   TextTrimming="CharacterEllipsis"
-                                                                                   Margin="10,0,0,0" />
-                                                                    </Grid>
-                                                                </Border>
-                                                                <Border Background="{DynamicResource BrushFillTertiary}"
-                                                                        BorderBrush="{DynamicResource BrushBorder}"
-                                                                        BorderThickness="1"
-                                                                        CornerRadius="12"
-                                                                        Padding="10,7"
-                                                                        ToolTip="{Binding LeftButtonModifierBadgeText}">
-                                                                    <Grid>
-                                                                        <Grid.ColumnDefinitions>
-                                                                            <ColumnDefinition Width="Auto" />
-                                                                            <ColumnDefinition Width="*" />
-                                                                        </Grid.ColumnDefinitions>
-                                                                        <TextBlock Text="{Binding LeftButtonModifierLabel, FallbackValue=点左键增强}"
-                                                                                   FontSize="12"
-                                                                                   FontWeight="SemiBold"
-                                                                                   Foreground="#C2410C" />
-                                                                        <TextBlock Grid.Column="1"
-                                                                                   Text="{Binding LeftButtonModifierValueText, FallbackValue=暂无增强动作}"
-                                                                                   FontSize="13"
-                                                                                   FontWeight="SemiBold"
-                                                                                   Foreground="#9A3412"
-                                                                                   TextTrimming="CharacterEllipsis"
-                                                                                   Margin="10,0,0,0" />
-                                                                    </Grid>
-                                                                </Border>
-                                                            </StackPanel>
-                                                            <TextBlock Text="{Binding InstructionText}"
-                                                                       Style="{StaticResource MutedTextStyle}"
-                                                                       TextWrapping="Wrap"
-                                                                       FontSize="12"
-                                                                       Margin="0,6,0,0" />
-                                                            <WrapPanel Margin="0,12,0,0">
-                                                                <Button Content="更换动作"
-                                                                        MinWidth="0"
-                                                                        Width="88"
-                                                                        Height="30"
-                                                                        Margin="0,0,8,0"
-                                                                        Focusable="False"
-                                                                        ToolTip="选中此手势并跳到下方修改动作"
-                                                                        Tag="{Binding Pattern}"
-                                                                        Click="ChangeGestureAction_Click" />
-                                                                <Button Content="删除"
-                                                                        MinWidth="0"
-                                                                        Width="68"
-                                                                        Height="30"
-                                                                        Focusable="False"
-                                                                        ToolTip="删除这个手势绑定"
-                                                                        Background="{DynamicResource BrushDangerSoft}"
-                                                                        Foreground="#B42318"
-                                                                        BorderBrush="#FECACA"
-                                                                        Command="{Binding DeleteCommand}" />
-                                                            </WrapPanel>
-                                                        </StackPanel>
-                                                    </Border>
-                                                    <DataTemplate.Triggers>
-                                                        <DataTrigger Binding="{Binding IsSelected}" Value="True">
-                                                            <Setter TargetName="GestureCard" Property="Background" Value="#EEF6FF" />
-                                                            <Setter TargetName="GestureCard" Property="BorderBrush" Value="{DynamicResource BrushPrimaryBright}" />
-                                                            <Setter TargetName="GestureCard" Property="BorderThickness" Value="2" />
-                                                            <Setter TargetName="SelectedAccent" Property="Background" Value="{DynamicResource BrushPrimaryBright}" />
-                                                        </DataTrigger>
-                                                    </DataTemplate.Triggers>
-                                                </DataTemplate>
-                                            </ItemsControl.ItemTemplate>
-                                        </ItemsControl>
-
-                                        <Expander Header="更多手势（点击展开）" IsExpanded="False" Margin="0,2,0,0">
-                                            <ItemsControl ItemsSource="{Binding AdvancedGestureBindingCards}" Margin="0,10,0,0">
-                                                <ItemsControl.ItemsPanel>
-                                                    <ItemsPanelTemplate>
-                                                        <UniformGrid Columns="2" />
-                                                    </ItemsPanelTemplate>
-                                                </ItemsControl.ItemsPanel>
-                                                <ItemsControl.ItemTemplate>
-                                                    <DataTemplate>
-                                                        <Border x:Name="GestureCard"
-                                                                MinHeight="180"
-                                                                Margin="6"
-                                                                Padding="12"
-                                                                Background="{DynamicResource BrushGlassCard}"
-                                                                BorderBrush="{DynamicResource BrushBorder}"
-                                                                BorderThickness="1"
-                                                                CornerRadius="16">
-                                                            <StackPanel>
-                                                                <Grid>
-                                                                    <Grid.ColumnDefinitions>
-                                                                        <ColumnDefinition Width="42" />
-                                                                        <ColumnDefinition Width="*" />
-                                                                        <ColumnDefinition Width="Auto" />
-                                                                    </Grid.ColumnDefinitions>
-                                                                    <Border Width="34"
-                                                                            Height="34"
-                                                                            CornerRadius="11"
-                                                                            Background="{DynamicResource BrushPrimarySoft}"
-                                                                            HorizontalAlignment="Left"
-                                                                            VerticalAlignment="Center">
-                                                                        <TextBlock Text="{Binding TrajectoryGlyphs}"
-                                                                                   FontSize="14"
-                                                                                   FontWeight="SemiBold"
-                                                                                   Foreground="{DynamicResource BrushPrimaryBright}"
-                                                                                   HorizontalAlignment="Center"
-                                                                                   VerticalAlignment="Center" />
-                                                                    </Border>
-                                                                    <StackPanel Grid.Column="1">
-                                                                        <TextBlock Text="{Binding GestureName}"
-                                                                                   FontWeight="SemiBold"
-                                                                                   TextTrimming="CharacterEllipsis" />
-                                                                        <TextBlock Text="{Binding ActionName}"
-                                                                                   Style="{StaticResource MutedTextStyle}"
-                                                                                   FontSize="12"
-                                                                                   Margin="0,3,0,0"
-                                                                                   TextTrimming="CharacterEllipsis" />
-                                                                    </StackPanel>
-                                                                    <TextBlock Grid.Column="2"
-                                                                               Text="{Binding SelectedBadgeText}"
-                                                                               FontSize="11"
-                                                                               FontWeight="SemiBold"
-                                                                               Foreground="{DynamicResource BrushPrimaryBright}" />
-                                                                </Grid>
-                                                                <TextBlock Text="{Binding InstructionText}"
-                                                                           Style="{StaticResource MutedTextStyle}"
-                                                                           TextWrapping="Wrap"
-                                                                           FontSize="12"
-                                                                           Margin="0,8,0,0" />
-                                                                <StackPanel Margin="0,10,0,0">
-                                                                    <Border Background="{DynamicResource BrushFillTertiary}"
-                                                                            BorderBrush="{DynamicResource BrushBorder}"
-                                                                            BorderThickness="1"
-                                                                            CornerRadius="12"
-                                                                            Padding="9,6"
-                                                                            Margin="0,0,0,6">
-                                                                        <Grid>
-                                                                            <Grid.ColumnDefinitions>
-                                                                                <ColumnDefinition Width="Auto" />
-                                                                                <ColumnDefinition Width="*" />
-                                                                            </Grid.ColumnDefinitions>
-                                                                            <TextBlock Text="{Binding PrimaryActionLabel, FallbackValue=普通动作}"
-                                                                                       FontSize="12"
-                                                                                       FontWeight="SemiBold"
-                                                                                       Foreground="{DynamicResource BrushTextSecondary}" />
-                                                                            <TextBlock Grid.Column="1"
-                                                                                       Text="{Binding PrimaryActionValueText}"
-                                                                                       FontSize="12"
-                                                                                       FontWeight="SemiBold"
-                                                                                       Foreground="{DynamicResource BrushTextPrimary}"
-                                                                                       TextTrimming="CharacterEllipsis"
-                                                                                       Margin="8,0,0,0" />
-                                                                        </Grid>
-                                                                    </Border>
-                                                                    <Border Background="{DynamicResource BrushFillTertiary}"
-                                                                            BorderBrush="{DynamicResource BrushBorder}"
-                                                                            BorderThickness="1"
-                                                                            CornerRadius="12"
-                                                                            Padding="9,6"
-                                                                            ToolTip="{Binding LeftButtonModifierBadgeText}">
-                                                                        <Grid>
-                                                                            <Grid.ColumnDefinitions>
-                                                                                <ColumnDefinition Width="Auto" />
-                                                                                <ColumnDefinition Width="*" />
-                                                                            </Grid.ColumnDefinitions>
-                                                                            <TextBlock Text="{Binding LeftButtonModifierLabel, FallbackValue=点左键增强}"
-                                                                                       FontSize="12"
-                                                                                       FontWeight="SemiBold"
-                                                                                       Foreground="#C2410C" />
-                                                                            <TextBlock Grid.Column="1"
-                                                                                       Text="{Binding LeftButtonModifierValueText, FallbackValue=暂无增强动作}"
-                                                                                       FontSize="12"
-                                                                                       FontWeight="SemiBold"
-                                                                                       Foreground="#9A3412"
-                                                                                       TextTrimming="CharacterEllipsis"
-                                                                                       Margin="8,0,0,0" />
-                                                                        </Grid>
-                                                                    </Border>
-                                                                </StackPanel>
-                                                                <WrapPanel Margin="0,10,0,0">
-                                                                    <Button Content="更换动作"
-                                                                        MinWidth="0"
-                                                                        Width="88"
-                                                                        Height="30"
-                                                                        Margin="0,0,8,0"
-                                                                        Focusable="False"
-                                                                        ToolTip="选中此手势并跳到下方修改动作"
-                                                                        Tag="{Binding Pattern}"
-                                                                        Click="ChangeGestureAction_Click" />
-                                                                    <Button Content="删除"
-                                                                            MinWidth="0"
-                                                                            Width="68"
-                                                                            Height="30"
-                                                                            Focusable="False"
-                                                                            ToolTip="删除这个手势绑定"
-                                                                            Background="{DynamicResource BrushDangerSoft}"
-                                                                            Foreground="#B42318"
-                                                                            BorderBrush="#FECACA"
-                                                                            Command="{Binding DeleteCommand}" />
-                                                                </WrapPanel>
-                                                            </StackPanel>
-                                                        </Border>
-                                                        <DataTemplate.Triggers>
-                                                            <DataTrigger Binding="{Binding IsSelected}" Value="True">
-                                                                <Setter TargetName="GestureCard" Property="Background" Value="#EEF6FF" />
-                                                                <Setter TargetName="GestureCard" Property="BorderBrush" Value="{DynamicResource BrushPrimaryBright}" />
-                                                                <Setter TargetName="GestureCard" Property="BorderThickness" Value="2" />
-                                                            </DataTrigger>
-                                                        </DataTemplate.Triggers>
-                                                    </DataTemplate>
-                                                </ItemsControl.ItemTemplate>
-                                            </ItemsControl>
+                                            </StackPanel>
                                         </Expander>
-                                        <TextBlock x:Name="SectionGestureEditor"
-                                                   Text="修改选中手势"
-                                                   Style="{StaticResource SettingsGroupTitleStyle}"
-                                                   Margin="2,24,0,10" />
-                                        <Border x:Name="GestureBindingDetailPanel"
-                                                Background="{DynamicResource BrushCardElevated}"
-                                                BorderBrush="{DynamicResource BrushBorder}"
-                                                BorderThickness="1"
-                                                CornerRadius="18"
-                                                Padding="18"
-                                                Margin="0,16,0,0">
-                                            <Grid>
-                                                <Grid.ColumnDefinitions>
-                                                    <ColumnDefinition Width="220" />
-                                                    <ColumnDefinition Width="*" />
-                                                </Grid.ColumnDefinitions>
-
-                                                <StackPanel>
-                                                    <Border Background="{DynamicResource BrushGlassCard}"
-                                                            BorderBrush="{DynamicResource BrushBorder}"
-                                                            BorderThickness="1"
-                                                            CornerRadius="16"
-                                                            Padding="10">
-                                                        <controls:GesturePatternView Pattern="{Binding SelectedGestureBindingPattern}"
-                                                                                     Width="180"
-                                                                                     Height="110"
-                                                                                     HorizontalAlignment="Center" />
-                                                    </Border>
-                                                    <TextBlock Text="{Binding SelectedGestureBindingDirectionText}"
-                                                               FontSize="16"
-                                                               FontWeight="SemiBold"
-                                                               Foreground="{DynamicResource BrushPrimaryBright}"
-                                                               HorizontalAlignment="Center"
-                                                               Margin="0,10,0,0" />
-                                                    <TextBlock Text="{Binding SelectedGestureBindingPattern, StringFormat=手势码：{0}}"
-                                                               Style="{StaticResource MutedTextStyle}"
-                                                               HorizontalAlignment="Center"
-                                                               Margin="0,4,0,0" />
-                                                </StackPanel>
-
-                                                <StackPanel Grid.Column="1" Margin="20,0,0,0">
-                                                    <TextBlock Text="当前动作" FontWeight="SemiBold" />
-                                                    <TextBlock Text="{Binding SelectedGestureBindingActionName}"
-                                                               FontSize="17"
-                                                               FontWeight="SemiBold"
-                                                               Margin="0,6,0,0" />
-                                                    <TextBlock Text="{Binding SelectedGestureBindingShortcutText}"
-                                                               Style="{StaticResource MutedTextStyle}"
-                                                               Margin="0,4,0,10" />
-                                                    <TextBlock Text="{Binding SelectedGestureBindingEmptyText}"
-                                                               Style="{StaticResource MutedTextStyle}"
-                                                               TextWrapping="Wrap"
-                                                               Margin="0,0,0,14" />
-
-                                                    <TextBlock x:Name="GestureActionEditorTitle"
-                                                               Text="在此选择新动作（点「更换动作」会滚到这里）"
-                                                               FontWeight="SemiBold"
-                                                               Margin="0,0,0,8" />
-                                                    <ComboBox Height="40"
-                                                              ItemsSource="{Binding GestureActionOptions}"
-                                                              DisplayMemberPath="DisplayName"
-                                                              SelectedItem="{Binding SelectedGestureBindingCard.SelectedActionOption, Mode=TwoWay}"
-                                                              IsEnabled="{Binding HasSelectedGestureBinding}" />
-
-                                                    <WrapPanel Margin="0,14,0,0">
-                                                        <Button Content="复制" Style="{StaticResource SettingsCompactActionButtonStyle}" Command="{Binding SetSelectedGestureActionCommand}" CommandParameter="Copy" />
-                                                        <Button Content="粘贴" Style="{StaticResource SettingsCompactActionButtonStyle}" Command="{Binding SetSelectedGestureActionCommand}" CommandParameter="Paste" />
-                                                        <Button Content="粘贴并回车" Style="{StaticResource SettingsCompactActionButtonStyle}" Command="{Binding SetSelectedGestureActionCommand}" CommandParameter="PasteAndEnter" />
-                                                        <Button Content="Google 搜索" Style="{StaticResource SettingsCompactActionButtonStyle}" Command="{Binding SetSelectedGestureActionCommand}" CommandParameter="SearchSelectedTextWithGoogle" />
-                                                        <Button Content="百度搜索" Style="{StaticResource SettingsCompactActionButtonStyle}" Command="{Binding SetSelectedGestureActionCommand}" CommandParameter="SearchSelectedTextWithBaidu" />
-                                                    </WrapPanel>
-
-                                                </StackPanel>
-                                            </Grid>
-                                        </Border>
+                                        <Popup x:Name="BindingActionPopup" Placement="Bottom" StaysOpen="False"
+                                               AllowsTransparency="True" PopupAnimation="None"
+                                               Opened="BindingActionPopup_Opened">
+                                            <controls:GestureActionPicker x:Name="BindingActionPicker"
+                                                CloseRequested="BindingActionPicker_CloseRequested" />
+                                        </Popup>
                                     </StackPanel>
                                 </Border>
-                                <Border Style="{StaticResource GlassCardStyle}" Padding="18" Margin="0,14,0,0">
+                                <Border Style="{StaticResource SettingsSurfaceCardStyle}" Padding="18" Margin="0,14,0,0">
                                     <Grid>
                                         <Grid.ColumnDefinitions>
                                             <ColumnDefinition Width="*" />
@@ -2174,8 +1863,8 @@
                                     </Grid>
                                 </Border>
 
-                                <Expander Header="添加自己的手势" IsExpanded="True" Margin="0,14,0,0">
-                                    <Border Style="{StaticResource GlassCardStyle}" Padding="18">
+                                <Expander x:Name="GestureDesignerExpander" Header="添加自己的手势" IsExpanded="False" Margin="0,14,0,0">
+                                    <Border Style="{StaticResource SettingsSurfaceCardStyle}" Padding="18">
                                         <StackPanel>
                                             <TextBlock Text="添加自己的手势：先选择要执行的动作，再画一个简单方向，最后点“确认添加到手势列表”。"
                                                        Style="{StaticResource MutedTextStyle}"
@@ -2328,11 +2017,11 @@
                             </StackPanel>
 
 
-                    </ScrollViewer>
+                    </controls:SmoothScrollViewer>
                 </TabItem>
 
                 <TabItem Header="隐私">
-                    <ScrollViewer VerticalScrollBarVisibility="Auto"
+                    <controls:SmoothScrollViewer VerticalScrollBarVisibility="Auto"
                                   HorizontalScrollBarVisibility="Disabled"
                                   ClipToBounds="True">
                         <StackPanel Margin="28,24,36,40" HorizontalAlignment="Stretch">
@@ -2386,7 +2075,7 @@
                                 <StackPanel>
                                     <Border Style="{StaticResource SettingsFormRowStyle}">
                                         <StackPanel>
-                                            <TextBlock Text="为指定进程覆盖智能粘贴策略（优先于内置聊天/浏览器/Office/代码规则）。"
+                                            <TextBlock Text="默认保留原格式。仅为指定进程明确选择纯文本或清理策略时转换内容。"
                                                        TextWrapping="Wrap"
                                                        Style="{StaticResource MutedTextStyle}" />
                                             <Grid Margin="0,12,0,0">
@@ -2516,11 +2205,11 @@
                                 </ItemsControl>
                             </Border>
                         </StackPanel>
-                    </ScrollViewer>
+                    </controls:SmoothScrollViewer>
                 </TabItem>
 
                 <TabItem Header="自启">
-                    <ScrollViewer VerticalScrollBarVisibility="Auto"
+                    <controls:SmoothScrollViewer VerticalScrollBarVisibility="Auto"
                                   HorizontalScrollBarVisibility="Disabled"
                                   ClipToBounds="True">
                         <Grid Margin="28,24,36,40" HorizontalAlignment="Stretch">
@@ -2578,11 +2267,11 @@
                                 </Border>
                             </StackPanel>
                         </Grid>
-                    </ScrollViewer>
+                    </controls:SmoothScrollViewer>
                 </TabItem>
 
                 <TabItem Header="小熊">
-                    <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" ClipToBounds="True">
+                    <controls:SmoothScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" ClipToBounds="True">
                         <StackPanel Margin="28,24,36,36" HorizontalAlignment="Stretch">
                             <Border x:Name="WorkstationPageIntro" Style="{StaticResource SettingsIntroCardStyle}">
                                 <StackPanel>
@@ -2872,11 +2561,11 @@
                                 </StackPanel>
                             </Border>
                         </StackPanel>
-                    </ScrollViewer>
+                    </controls:SmoothScrollViewer>
                 </TabItem>
 
                 <TabItem Header="诊断">
-                    <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" ClipToBounds="True">
+                    <controls:SmoothScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" ClipToBounds="True">
                         <StackPanel Margin="28,24,36,36" HorizontalAlignment="Stretch">
                             <Border x:Name="DiagnosticsPageIntro" Style="{StaticResource SettingsIntroCardStyle}">
                                 <StackPanel>
@@ -2903,11 +2592,11 @@
                                 </StackPanel>
                             </Border>
                         </StackPanel>
-                    </ScrollViewer>
+                    </controls:SmoothScrollViewer>
                 </TabItem>
 
                 <TabItem Header="关于">
-                    <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" ClipToBounds="True">
+                    <controls:SmoothScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" ClipToBounds="True">
                         <StackPanel Margin="28,24,36,36" HorizontalAlignment="Stretch">
                             <Border x:Name="AboutPageIntro" Style="{StaticResource SettingsIntroCardStyle}">
                                 <StackPanel>
@@ -2968,7 +2657,7 @@
                                 </StackPanel>
                             </Border>
                         </StackPanel>
-                    </ScrollViewer>
+                    </controls:SmoothScrollViewer>
                 </TabItem>
                 </TabControl>
             </Border>

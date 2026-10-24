@@ -53,6 +53,24 @@ public static class WindowBackdrop
         }
     }
 
+    /// <summary>
+    /// Asks DWM for rounded window corners without enabling a system backdrop.
+    /// Only meaningful for non-layered windows: a transparent (layered) window
+    /// is composited by WPF and never reaches DWM's corner treatment.
+    /// Returns false on systems that ignore the corner preference (pre-Win11).
+    /// </summary>
+    public static bool TryApplyRoundedCorners(Window window, bool isDark)
+    {
+        var handle = new WindowInteropHelper(window).Handle;
+        if (handle == IntPtr.Zero)
+        {
+            return false;
+        }
+
+        SetIntAttribute(handle, DwmwaUseImmersiveDarkMode, isDark ? 1 : 0);
+        return SetIntAttribute(handle, DwmwaWindowCornerPreference, CornerPreferenceRound);
+    }
+
     private static bool SetIntAttribute(IntPtr handle, int attribute, int value)
     {
         return DwmSetWindowAttribute(handle, attribute, ref value, sizeof(int)) == 0;

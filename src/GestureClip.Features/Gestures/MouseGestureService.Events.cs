@@ -21,7 +21,7 @@ public sealed partial class MouseGestureService : IMouseGestureService
 
             if (pendingClick is not null)
             {
-                SynthesizeClick(pendingClick.Button, pendingClick.X, pendingClick.Y);
+                _ = Task.Run(() => SynthesizeClick(pendingClick.Button, pendingClick.X, pendingClick.Y));
             }
 
             if (pendingGesture is not null)

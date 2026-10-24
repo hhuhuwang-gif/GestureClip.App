@@ -79,7 +79,7 @@ public sealed partial class SettingsViewModel
         return
         [
             new("U", DirectionText("U"), GestureName("U"), BuiltInGestureAction.OpenClipboardOverlay, "向上划，快速打开剪贴板历史。"),
-            new("D", DirectionText("D"), GestureName("D"), BuiltInGestureAction.SmartPaste, "向下划，根据当前软件自动选择普通粘贴、纯文本粘贴或干净粘贴。"),
+            new("D", DirectionText("D"), GestureName("D"), BuiltInGestureAction.SmartPaste, "向下划，默认保留原格式；仅按明确设置的应用规则转换。"),
             new("LR", DirectionText("LR"), GestureName("LR"), BuiltInGestureAction.Copy, "先左后右，复制当前选中的文字。")
         ];
     }

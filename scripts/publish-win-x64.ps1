@@ -22,7 +22,7 @@ Assert-PublishOutputAvailable $output
 Invoke-Checked $dotnet @("restore", $solution) "dotnet restore"
 Invoke-DotNetTests $dotnet @("test", $solution, "--no-restore")
 
-if (Test-Path -LiteralPath $staging) { Remove-Item -LiteralPath $staging -Recurse -Force }
+Remove-BuildOutput $staging
 New-Item -ItemType Directory -Force -Path $staging | Out-Null
 Invoke-Checked $dotnet @(
     "publish", $project, "-c", "Release", "-r", "win-x64",
@@ -35,7 +35,7 @@ Invoke-Checked "powershell.exe" @(
     "-NoProfile", "-ExecutionPolicy", "Bypass", "-File", $signScript, "-Path", $staging
 ) "sign-release.ps1"
 
-if (Test-Path -LiteralPath $output) { Remove-Item -LiteralPath $output -Recurse -Force }
+Remove-BuildOutput $output
 Move-Item -LiteralPath $staging -Destination $output
 foreach ($document in @("README.md", "UPDATE.md", "HELP.md", "BETA_TEST.md", "KNOWN_ISSUES.md", "CHANGELOG.md", "PRIVACY.md", "ROADMAP.md", "LICENSE")) {
     $source = Join-Path $repoRoot $document
@@ -44,18 +44,17 @@ foreach ($document in @("README.md", "UPDATE.md", "HELP.md", "BETA_TEST.md", "KN
     }
 }
 Copy-Item -LiteralPath (Join-Path $repoRoot "docs") -Destination (Join-Path $output "docs") -Recurse -Force
-Get-ChildItem -LiteralPath $output -Filter "*.pdb" | Remove-Item -Force
-if (Test-Path -LiteralPath (Join-Path $output "gestureclip.db")) {
-    Remove-Item (Join-Path $output "gestureclip.db") -Force
+
+# Piped and wildcard removals bind poorly with deletion guards; loop over explicit paths.
+foreach ($pdb in (Get-ChildItem -LiteralPath $output -Filter "*.pdb" -File)) {
+    Remove-BuildOutput $pdb.FullName
 }
-foreach ($name in @("gestureclip.db-shm", "gestureclip.db-wal")) {
-    $path = Join-Path $output $name
-    if (Test-Path -LiteralPath $path) { Remove-Item -LiteralPath $path -Force }
+foreach ($name in @("gestureclip.db", "gestureclip.db-shm", "gestureclip.db-wal", "logs")) {
+    Remove-BuildOutput (Join-Path $output $name)
 }
-if (Test-Path -LiteralPath (Join-Path $output "logs")) {
-    Remove-Item (Join-Path $output "logs") -Recurse -Force
+foreach ($zip in (Get-ChildItem -LiteralPath $releaseRoot -Filter "GestureClip-v*-win-x64.zip" -File)) {
+    Remove-BuildOutput $zip.FullName
 }
-Get-ChildItem -LiteralPath $releaseRoot -Filter "GestureClip-v*-win-x64.zip" | Remove-Item -Force
 Compress-Archive -Path (Join-Path $output "*") -DestinationPath $fullZipPath -Force
 $hashValue = (Get-FileHash -LiteralPath $fullZipPath -Algorithm SHA256).Hash
 "$hashValue  $([IO.Path]::GetFileName($fullZipPath))" | Set-Content -LiteralPath $hashPath -Encoding UTF8

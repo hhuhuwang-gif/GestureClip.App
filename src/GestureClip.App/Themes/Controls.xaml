@@ -267,7 +267,14 @@
         <Setter Property="FontSize" Value="13" />
         <Setter Property="VerticalContentAlignment" Value="Center" />
         <Setter Property="HorizontalContentAlignment" Value="Left" />
-        <Setter Property="ScrollViewer.CanContentScroll" Value="False" />
+        <Setter Property="ScrollViewer.CanContentScroll" Value="True" />
+        <Setter Property="VirtualizingPanel.IsVirtualizing" Value="True" />
+        <Setter Property="VirtualizingPanel.VirtualizationMode" Value="Recycling" />
+        <Setter Property="ItemsPanel">
+            <Setter.Value>
+                <ItemsPanelTemplate><VirtualizingStackPanel /></ItemsPanelTemplate>
+            </Setter.Value>
+        </Setter>
         <Setter Property="MaxDropDownHeight" Value="280" />
         <Setter Property="Foreground" Value="{DynamicResource BrushTextPrimary}" />
         <Setter Property="Background" Value="{DynamicResource BrushGlassCard}" />
@@ -343,7 +350,7 @@
                                     CornerRadius="0"
                                     Padding="4,4"
                                     SnapsToDevicePixels="True">
-                                <ScrollViewer CanContentScroll="False"
+                                <ScrollViewer CanContentScroll="True"
                                               VerticalScrollBarVisibility="Auto"
                                               HorizontalScrollBarVisibility="Disabled"
                                               MaxHeight="280">
@@ -587,7 +594,7 @@
         <Setter Property="Width" Value="6" />
         <Setter Property="MinWidth" Value="6" />
         <Setter Property="Background" Value="Transparent" />
-        <Setter Property="Opacity" Value="0.45" />
+        <Setter Property="Opacity" Value="0.55" />
         <Setter Property="Margin" Value="0" />
         <Setter Property="Padding" Value="0" />
         <Setter Property="SnapsToDevicePixels" Value="True" />
@@ -611,16 +618,24 @@
                             </Track.DecreaseRepeatButton>
                             <Track.Thumb>
                                 <Thumb x:Name="ScrollBarThumb"
-                                       Background="#668F949E"
-                                       MinHeight="36"
-                                       Margin="0,1,0,1">
+                                       Background="#5C8E8E93"
+                                       MinHeight="40"
+                                       Margin="0,2,0,2">
                                     <Thumb.Template>
                                         <ControlTemplate TargetType="Thumb">
                                             <Border x:Name="ThumbBorder"
                                                     CornerRadius="4"
                                                     Background="{TemplateBinding Background}"
-                                                    Margin="0"
+                                                    Margin="1,0,1,0"
                                                     SnapsToDevicePixels="True" />
+                                            <ControlTemplate.Triggers>
+                                                <Trigger Property="IsMouseOver" Value="True">
+                                                    <Setter TargetName="ThumbBorder" Property="Background" Value="#A68E8E93" />
+                                                </Trigger>
+                                                <Trigger Property="IsDragging" Value="True">
+                                                    <Setter TargetName="ThumbBorder" Property="Background" Value="#CC6E6E73" />
+                                                </Trigger>
+                                            </ControlTemplate.Triggers>
                                         </ControlTemplate>
                                     </Thumb.Template>
                                 </Thumb>
@@ -635,8 +650,8 @@
                     </Grid>
                     <ControlTemplate.Triggers>
                         <Trigger Property="IsMouseOver" Value="True">
-                            <Setter TargetName="Root" Property="Background" Value="#10000000" />
-                            <Setter TargetName="ScrollBarThumb" Property="Background" Value="#A05E6675" />
+                            <Setter Property="Opacity" Value="1" />
+                            <Setter TargetName="Root" Property="Background" Value="#0C000000" />
                         </Trigger>
                         <Trigger Property="Orientation" Value="Horizontal">
                             <Setter Property="Height" Value="8" />
@@ -680,7 +695,7 @@
                     </Border>
                     <ControlTemplate.Triggers>
                         <Trigger Property="IsMouseOver" Value="True">
-                            <Setter TargetName="Root" Property="Background" Value="#F2F2F7" />
+                            <Setter TargetName="Root" Property="Background" Value="{DynamicResource BrushListHover}" />
                         </Trigger>
                         <Trigger Property="IsSelected" Value="True">
                             <Setter TargetName="Root" Property="Background" Value="{DynamicResource BrushControlSelected}" />

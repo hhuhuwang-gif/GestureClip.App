@@ -45,7 +45,7 @@ powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\check-performance.
 
 `build-exe.bat` 是便携版构建入口。构建不强制结束正在运行的应用；若输出目录被使用，先从托盘正常退出对应实例。
 
-程序统一从 `artifacts/release/GestureClip/GestureClip.exe` 启动，不再在根目录复制两份 EXE。未配置证书时明确跳过签名；签名配置与故障处理见 [代码签名](CODE_SIGNING.md)。没有 Inno Setup 时生成 Setup ZIP；安装了 Inno Setup 时还会构建 Setup EXE，编译失败会报错。
+程序统一从 `artifacts/release/GestureClip/GestureClip.exe` 启动，不再在根目录复制两份 EXE。根目录的 `Start-GestureClip.bat` 会先用 `scripts/check-build-freshness.ps1` 比对源码与可执行文件时间戳：结果为 `STALE` 时给出倒计时选项，可选择增量 Debug 编译（`--quick`）、完整重建发布包（`--rebuild`）或忽略提示启动旧产物（`--no-check`）；其余参数原样转发给应用。未配置证书时明确跳过签名；签名配置与故障处理见 [代码签名](CODE_SIGNING.md)。没有 Inno Setup 时生成 Setup ZIP；安装了 Inno Setup 时还会构建 Setup EXE，编译失败会报错。
 
 自动化测试不代替真实桌面交互，发布前按 [回归清单](regression-checklist.md) 验证快捷键、鼠标手势与剪贴板操作。
 

@@ -140,7 +140,7 @@ public sealed class SettingsViewModelTests
         Assert.Contains(downCard.ActionOptions, option =>
             option.Action == BuiltInGestureAction.SmartPaste &&
             option.DisplayName.Contains("智能粘贴", StringComparison.Ordinal) &&
-            option.DisplayName.Contains("根据当前软件自动选择", StringComparison.Ordinal));
+            option.DisplayName.Contains("保留原格式", StringComparison.Ordinal));
         Assert.Contains(viewModel.GestureBindingCards, card => card.Pattern == "DL" && card.SelectedAction == BuiltInGestureAction.PasteAndEnter);
         Assert.Contains(viewModel.GestureBindingCards, card => card.Pattern == "R+L" && card.SelectedAction == BuiltInGestureAction.PasteAndEnter);
         Assert.Contains(viewModel.PrimaryGestureBindingCards, card => card.Pattern == "DL");
@@ -581,7 +581,7 @@ public sealed class SettingsViewModelTests
             item.Pattern == "D" &&
             item.Action == BuiltInGestureAction.SmartPaste &&
             item.ActionName == "智能粘贴" &&
-            item.InstructionText.Contains("根据当前软件自动选择", StringComparison.Ordinal));
+            item.InstructionText.Contains("默认保留原格式", StringComparison.Ordinal));
         Assert.Contains(viewModel.GestureActionOptions, item => item.Action == BuiltInGestureAction.Paste);
     }
 

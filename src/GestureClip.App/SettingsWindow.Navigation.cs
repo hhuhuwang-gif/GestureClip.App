@@ -9,6 +9,8 @@ using System.Windows.Input;
 using System.Windows.Interop;
 using System.Windows.Media;
 using System.Windows.Media.Effects;
+using System.Windows.Threading;
+using GestureClip.App.Diagnostics;
 using GestureClip.App.Controls;
 using GestureClip.App.Services;
 using GestureClip.App.ViewModels;
@@ -165,7 +167,7 @@ public partial class SettingsWindow
 
     private void MainSettingsTabControl_SelectionChanged(object sender, SelectionChangedEventArgs e)
     {
-        if (_suppressNavSync)
+        if (_suppressNavSync || !ReferenceEquals(e.OriginalSource, MainSettingsTabControl))
         {
             return;
         }
@@ -177,7 +179,14 @@ public partial class SettingsWindow
 
         var header = tab.Header?.ToString() ?? "首页";
         var key = NormalizePageKey(header);
+        var startedAt = UiTrace.Restart();
         SyncNavSelection(key);
+
+        // Report after the dispatcher has drained layout, so the number covers how long the
+        // newly realized page actually blocked the UI before the first frame appeared.
+        Dispatcher.BeginInvoke(
+            DispatcherPriority.Background,
+            new Action(() => UiTrace.Report($"Page '{key}' ready in {UiTrace.ElapsedMillisecondsSince(startedAt)} ms")));
     }
 
     private void NavItem_Checked(object sender, RoutedEventArgs e)
@@ -284,40 +293,24 @@ public partial class SettingsWindow
         }
 
         viewModel.SelectedGestureBindingSelectionKey = pattern;
-        NavigateToPage("bindings", "SectionGestureEditor");
-        Dispatcher.BeginInvoke(new Action(() =>
-        {
-            try
-            {
-                ScrollToNamedElement("SectionGestureEditor");
-                GestureActionEditorTitle.BringIntoView();
-            }
-            catch (InvalidOperationException)
-            {
-                GestureBindingPageScrollViewer.ScrollToVerticalOffset(
-                    Math.Max(0, GestureBindingPageScrollViewer.ScrollableHeight * 0.45));
-            }
-        }), System.Windows.Threading.DispatcherPriority.Loaded);
+        if (viewModel.SelectedGestureBindingCard is not { } card) return;
+        BindingActionPicker.Show(card);
+        BindingActionPopup.PlacementTarget = sender as UIElement;
+        BindingActionPopup.IsOpen = true;
         e.Handled = true;
     }
 
+    private void BindingActionPopup_Opened(object? sender, EventArgs e) => BindingActionPicker.FocusSearch();
+
+    private void BindingActionPicker_CloseRequested(object? sender, EventArgs e)
+        => BindingActionPopup.IsOpen = false;
+
     private void ScrollToCustomGestureDesigner_Click(object sender, RoutedEventArgs e)
     {
-        NavigateToPage("bindings", "SectionGestureDesigner");
-        Dispatcher.BeginInvoke(new Action(() =>
-        {
-            try
-            {
-                var target = GestureDesignerPanel.TransformToAncestor(GestureBindingPageScrollViewer)
-                    .Transform(new System.Windows.Point(0, 0));
-                GestureBindingPageScrollViewer.ScrollToVerticalOffset(
-                    Math.Max(0, GestureBindingPageScrollViewer.VerticalOffset + target.Y - 24));
-            }
-            catch (InvalidOperationException)
-            {
-                GestureBindingPageScrollViewer.ScrollToEnd();
-            }
-        }), System.Windows.Threading.DispatcherPriority.Loaded);
+        NavigateToPage("bindings");
+        GestureDesignerExpander.IsExpanded = true;
+        Dispatcher.BeginInvoke(new Action(() => GestureDesignerPanel.BringIntoView()),
+            System.Windows.Threading.DispatcherPriority.Loaded);
     }
 
 }

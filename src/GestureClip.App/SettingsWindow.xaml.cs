@@ -78,11 +78,26 @@ public partial class SettingsWindow : Window
         base.OnSourceInitialized(e);
         EnableTaskbarMinimizeBehavior();
         EnableBorderlessResize();
+        // The window is a normal (non-layered) HWND now, so DWM can round the
+        // corners and provide a real drop shadow while WPF keeps hardware
+        // acceleration. A layered window would silently fall back to software
+        // rendering, which is what made scrolling feel choppy.
+        WindowBackdrop.TryApplyRoundedCorners(this, IsDarkSurface());
         SyncNavSelection("home");
         UpdateSearchPlaceholder();
         // Ensure template names are available for rail chevron
         ToggleRailButton?.ApplyTemplate();
         UpdateRailToggleGlyph(collapsed: false);
+    }
+
+    private bool IsDarkSurface()
+    {
+        if (TryFindResource("ColorAppBg0") is System.Windows.Media.Color color)
+        {
+            return 0.299 * color.R + 0.587 * color.G + 0.114 * color.B < 128;
+        }
+
+        return false;
     }
 
     protected override void OnClosing(CancelEventArgs e)
@@ -208,18 +223,6 @@ public partial class SettingsWindow : Window
             Dispatcher.BeginInvoke(new Action(() => ScrollToNamedElement(targetElementName!)),
                 System.Windows.Threading.DispatcherPriority.Loaded);
         }
-    }
-
-    private void PassMouseWheelToParent(object sender, MouseWheelEventArgs e)
-    {
-        if (e.Handled)
-        {
-            return;
-        }
-
-        e.Handled = true;
-        GestureBindingPageScrollViewer.ScrollToVerticalOffset(
-            GestureBindingPageScrollViewer.VerticalOffset - e.Delta);
     }
 
     private static bool CanDragFrom(DependencyObject? source)

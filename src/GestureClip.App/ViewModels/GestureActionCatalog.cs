@@ -102,7 +102,7 @@ public static class GestureActionCatalog
 
     public static string Description(BuiltInGestureAction action) => action switch
     {
-        BuiltInGestureAction.SmartPaste => "根据当前软件自动选择普通粘贴、纯文本粘贴或干净粘贴。",
+        BuiltInGestureAction.SmartPaste => "默认保留原格式，仅按明确设置的应用规则转换；左键增强可清理文本。",
         BuiltInGestureAction.PastePlainText => "强制纯文本粘贴（等同全局 Ctrl+Shift+V）。",
         BuiltInGestureAction.InsertDate => "在当前光标处插入今天日期（yyyy-MM-dd）。",
         BuiltInGestureAction.InsertTime => "在当前光标处插入当前时间（HH:mm）。",

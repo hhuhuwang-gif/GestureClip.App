@@ -6,7 +6,7 @@ public interface ILowLevelMouseHook
 {
     event EventHandler<MouseHookEventArgs>? MouseEventReceived;
 
-    void Start();
+    Task StartAsync(CancellationToken cancellationToken);
 
-    void Stop();
+    Task StopAsync(CancellationToken cancellationToken);
 }
