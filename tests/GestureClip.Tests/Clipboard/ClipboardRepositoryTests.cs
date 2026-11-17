@@ -8,7 +8,7 @@ using Xunit;
 
 namespace GestureClip.Tests.Clipboard;
 
-public sealed class ClipboardRepositoryTests
+public sealed partial class ClipboardRepositoryTests
 {
     [Fact]
     public async Task ConnectionFactory_sets_busy_timeout_for_clipboard_contention()

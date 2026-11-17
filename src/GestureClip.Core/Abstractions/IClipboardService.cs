@@ -2,7 +2,7 @@ using GestureClip.Core.Clipboard;
 
 namespace GestureClip.Core.Abstractions;
 
-public interface IClipboardService
+public interface IClipboardService : IClipboardSearchIndex
 {
     bool IsCaptureEnabled { get; }
 

@@ -76,8 +76,9 @@
     <SolidColorBrush x:Key="BrushAppBackgroundSolid" Color="{StaticResource ColorAppBg1}" />
     <LinearGradientBrush x:Key="BrushAppBackground" StartPoint="0,0" EndPoint="1,1">
         <GradientStop Color="{StaticResource ColorAppBg0}" Offset="0" />
-        <GradientStop Color="{StaticResource ColorAppBg1}" Offset="0.45" />
-        <GradientStop Color="{StaticResource ColorAppBg2}" Offset="1" />
+        <GradientStop Color="{StaticResource ColorAppBg1}" Offset="0.40" />
+        <GradientStop Color="{StaticResource ColorAppBg2}" Offset="0.85" />
+        <GradientStop Color="{StaticResource ColorAppBg3}" Offset="1" />
     </LinearGradientBrush>
 
     <!-- Liquid glass: specular rim border (bright top edge fading down) -->
@@ -86,10 +87,11 @@
         <GradientStop Color="{StaticResource ColorGlassRimBottom}" Offset="0.6" />
         <GradientStop Color="{StaticResource ColorGlassRimBottom}" Offset="1" />
     </LinearGradientBrush>
-    <!-- Inner top sheen laid over glass surfaces (non-hit-test overlay) -->
+    <!-- Inner top sheen laid over glass surfaces (non-hit-test overlay) — crisper fade -->
     <LinearGradientBrush x:Key="BrushGlassSheen" StartPoint="0,0" EndPoint="0,1">
         <GradientStop Color="{StaticResource ColorGlassSheen}" Offset="0" />
-        <GradientStop Color="#00FFFFFF" Offset="0.38" />
+        <GradientStop Color="#40FFFFFF" Offset="0.15" />
+        <GradientStop Color="#00FFFFFF" Offset="0.32" />
     </LinearGradientBrush>
     <!-- Ambient washes behind glass surfaces -->
     <RadialGradientBrush x:Key="BrushAmbientBlue" GradientOrigin="0.5,0.5" Center="0.5,0.5" RadiusX="0.5" RadiusY="0.5">
@@ -105,9 +107,11 @@
         <GradientStop Color="#002DD4BF" Offset="1" />
     </RadialGradientBrush>
 
+    <!-- Apple-style frosted glass highlight — refined multi-stop with warm tint -->
     <LinearGradientBrush x:Key="BrushGlassHighlight" StartPoint="0,0" EndPoint="0,1">
         <GradientStop Color="{StaticResource ColorGlassTop}" Offset="0" />
-        <GradientStop Color="{StaticResource ColorGlassMid}" Offset="0.55" />
+        <GradientStop Color="{StaticResource ColorGlassMid}" Offset="0.45" />
+        <GradientStop Color="{StaticResource ColorGlassMid}" Offset="0.65" />
         <GradientStop Color="{StaticResource ColorGlassBottom}" Offset="1" />
     </LinearGradientBrush>
 
@@ -116,22 +120,29 @@
         <GradientStop Color="{StaticResource ColorControlHover}" Offset="1" />
     </LinearGradientBrush>
 
-    <!-- Card rim: hairline that is brighter along the top edge, so white cards read as
-         lit from above instead of sitting perfectly flat on the page tint. -->
+    <!-- Card rim: refined multi-stop — brighter top edge for "lit from above" depth -->
     <LinearGradientBrush x:Key="BrushCardRim" StartPoint="0,0" EndPoint="0,1">
-        <GradientStop Color="#B8FFFFFF" Offset="0" />
-        <GradientStop Color="#3C94A3B8" Offset="0.42" />
-        <GradientStop Color="#2A94A3B8" Offset="1" />
+        <GradientStop Color="{StaticResource ColorGlassRimTop}" Offset="0" />
+        <GradientStop Color="{StaticResource ColorBorderDark}" Offset="1" />
     </LinearGradientBrush>
 
-    <LinearGradientBrush x:Key="BrushPrimaryGradient" StartPoint="0,0" EndPoint="0,1">
-        <GradientStop Color="#60A5FA" Offset="0" />
-        <GradientStop Color="#3B82F6" Offset="0.55" />
-        <GradientStop Color="#2563EB" Offset="1" />
+    <!-- 深色浮层专用受光边：顶部亮、中部偏冷、底部几乎隐没，比均匀描边更有层次 -->
+    <LinearGradientBrush x:Key="BrushCardRimDark" StartPoint="0,0" EndPoint="0,1">
+        <GradientStop Color="#70FFFFFF" Offset="0" />
+        <GradientStop Color="#28A8C4E0" Offset="0.45" />
+        <GradientStop Color="#0DFFFFFF" Offset="1" />
     </LinearGradientBrush>
-    <SolidColorBrush x:Key="BrushPrimarySolid" Color="{StaticResource ColorPrimaryBright}" />
-    <SolidColorBrush x:Key="BrushPrimarySolidHover" Color="#2563EB" />
-    <SolidColorBrush x:Key="BrushPrimarySolidPressed" Color="#1D4ED8" />
+
+    <!-- Primary CTA gradient — richer, deeper stops -->
+    <LinearGradientBrush x:Key="BrushPrimaryGradient" StartPoint="0,0" EndPoint="0,1">
+        <GradientStop Color="#6DB3FF" Offset="0" />
+        <GradientStop Color="#3B82F6" Offset="0.45" />
+        <GradientStop Color="#2563EB" Offset="0.78" />
+        <GradientStop Color="#1D4ED8" Offset="1" />
+    </LinearGradientBrush>
+    <SolidColorBrush x:Key="BrushPrimarySolid" Color="{StaticResource ColorPrimaryFill}" />
+    <SolidColorBrush x:Key="BrushPrimarySolidHover" Color="{StaticResource ColorPrimaryFillHover}" />
+    <SolidColorBrush x:Key="BrushPrimarySolidPressed" Color="{StaticResource ColorPrimaryFillPressed}" />
 
     <LinearGradientBrush x:Key="BrushCoralGradient" StartPoint="0,0" EndPoint="1,1">
         <GradientStop Color="#FF8A7A" Offset="0" />
@@ -143,31 +154,38 @@
         <GradientStop Color="{StaticResource ColorOverlayBottom}" Offset="1" />
     </LinearGradientBrush>
 
-    <LinearGradientBrush x:Key="BrushSidebarBackground" StartPoint="0,0" EndPoint="1,1">
-        <GradientStop Color="#D0E8ECF1" Offset="0" />
-        <GradientStop Color="#B8E2E8F0" Offset="0.55" />
-        <GradientStop Color="#A8DCE3EB" Offset="1" />
+    <!-- Sidebar: warmer, less cold gray -->
+    <LinearGradientBrush x:Key="BrushSidebarBackground" StartPoint="0,0" EndPoint="0,1">
+        <GradientStop Color="{StaticResource ColorSidebarTop}" Offset="0" />
+        <GradientStop Color="{StaticResource ColorSidebarBottom}" Offset="1" />
     </LinearGradientBrush>
     <LinearGradientBrush x:Key="BrushGlassPanel" StartPoint="0,0" EndPoint="0,1">
-        <GradientStop Color="#F2FFFFFF" Offset="0" />
-        <GradientStop Color="#D9FFFFFF" Offset="0.5" />
-        <GradientStop Color="#C8F8FAFC" Offset="1" />
+        <GradientStop Color="{StaticResource ColorGlassTop}" Offset="0" />
+        <GradientStop Color="{StaticResource ColorGlassMid}" Offset="0.5" />
+        <GradientStop Color="{StaticResource ColorGlassBottom}" Offset="1" />
     </LinearGradientBrush>
 
-    <!-- Settings content surface: a hair cooler than the cards it hosts so the
-         white cards read as layered instead of dissolving into the page. -->
+    <!-- Settings content surface: subtle warm tint distinction from cards -->
     <LinearGradientBrush x:Key="BrushSettingsContentPanel" StartPoint="0,0" EndPoint="0,1">
-        <GradientStop Color="#F4F7FBFE" Offset="0" />
-        <GradientStop Color="#EFEFF4FA" Offset="0.55" />
-        <GradientStop Color="#E9EDF4FA" Offset="1" />
+        <GradientStop Color="{StaticResource ColorContentTop}" Offset="0" />
+        <GradientStop Color="{StaticResource ColorContentBottom}" Offset="1" />
     </LinearGradientBrush>
 
     <LinearGradientBrush x:Key="BrushGlassCard" StartPoint="0,0" EndPoint="0,1">
-        <GradientStop Color="#F5FFFFFF" Offset="0" />
-        <GradientStop Color="#E0FFFFFF" Offset="1" />
+        <GradientStop Color="{StaticResource ColorCardElevated}" Offset="0" />
+        <GradientStop Color="{StaticResource ColorCardBottom}" Offset="1" />
     </LinearGradientBrush>
-    <LinearGradientBrush x:Key="BrushGlassAccent" StartPoint="0,0" EndPoint="1,1">
-        <GradientStop Color="#CCDBEAFE" Offset="0" />
-        <GradientStop Color="#B8EFF6FF" Offset="1" />
+    <LinearGradientBrush x:Key="BrushGlassAccent" StartPoint="0,0" EndPoint="0,1">
+        <GradientStop Color="{StaticResource ColorAccentSoft}" Offset="0" />
+        <GradientStop Color="{StaticResource ColorPrimarySoft}" Offset="1" />
     </LinearGradientBrush>
+
+    <!-- Premium deep card shadow — large blur, very low opacity for Apple-quality depth -->
+    <DropShadowEffect x:Key="BrushCardShadowDeep"
+                      Color="{StaticResource ColorShadow}"
+                      BlurRadius="40"
+                      ShadowDepth="8"
+                      Direction="270"
+                      Opacity="0.04" />
+    <SolidColorBrush x:Key="BrushDangerHover" Color="{StaticResource ColorDangerHover}" />
 </ResourceDictionary>

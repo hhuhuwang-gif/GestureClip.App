@@ -7,9 +7,12 @@
             <ResourceDictionary.MergedDictionaries>
                 <ResourceDictionary Source="Themes/Colors.xaml" />
                 <ResourceDictionary Source="Themes/Brushes.xaml" />
+                <ResourceDictionary Source="Themes/Interaction.xaml" />
                 <ResourceDictionary Source="Themes/GlassStyles.xaml" />
                 <ResourceDictionary Source="Themes/Controls.xaml" />
+                <ResourceDictionary Source="Themes/ToggleSwitch.xaml" />
                 <ResourceDictionary Source="Themes/GestureProfilesStyles.xaml" />
+                <ResourceDictionary Source="Themes/BoardPanels.xaml" />
             </ResourceDictionary.MergedDictionaries>
             <converters:ShortcutNumberConverter x:Key="ShortcutNumberConverter" />
             <converters:ImageBase64ToSourceConverter x:Key="ImageBase64ToSourceConverter" />

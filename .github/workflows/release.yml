@@ -42,7 +42,9 @@ jobs:
         shell: pwsh
         env:
           GESTURECLIP_SIGN_PASSWORD: ${{ secrets.GESTURECLIP_SIGN_PASSWORD }}
-        run: .\scripts\build-setup.ps1
+        run: |
+          # windows-latest 自带 Inno Setup；缺失时直接失败，不再静默产出没有 Setup.exe 的 release。
+          .\scripts\build-setup.ps1 -RequireSetup
 
       - name: Verify release artifacts
         shell: pwsh

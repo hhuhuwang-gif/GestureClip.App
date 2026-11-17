@@ -198,6 +198,19 @@ public sealed class ClipboardOverlaySmartSearchTests
             return Task.FromResult(results);
         }
 
+        public Task<IReadOnlyList<ClipboardSearchEntry>> ReadSearchIndexAsync(
+            ClipboardSearchIndexPage page, CancellationToken cancellationToken) =>
+            Task.FromResult<IReadOnlyList<ClipboardSearchEntry>>(_items.Skip(page.Offset).Take(page.Limit)
+                .Select(ClipboardSearchEntry.FromItem).ToArray());
+
+        public Task<IReadOnlyList<ClipboardItem>> GetDisplayItemsAsync(
+            IReadOnlyList<Guid> ids, CancellationToken cancellationToken)
+        {
+            var byId = _items.ToDictionary(item => item.Id);
+            return Task.FromResult<IReadOnlyList<ClipboardItem>>(ids.Where(byId.ContainsKey)
+                .Select(id => byId[id]).Select(item => item.IsImage ? item with { TextContent = null } : item).ToArray());
+        }
+
         public Task<ClipboardItem?> GetLatestAsync(CancellationToken cancellationToken) =>
             Task.FromResult<ClipboardItem?>(null);
 

@@ -14,8 +14,6 @@ public partial class WorkstationDashboardWindow : Window
     private readonly WorkstationDashboardViewModel _viewModel;
     private readonly IAppLifecycleService _appLifecycleService;
     private readonly AppThemeService _themeService;
-    private readonly DispatcherTimer _refreshTimer;
-    private readonly DispatcherTimer _tickTimer;
     private bool _micaApplied;
 
     public WorkstationDashboardWindow(
@@ -29,11 +27,7 @@ public partial class WorkstationDashboardWindow : Window
         InitializeComponent();
         DataContext = viewModel;
         _themeService.Changed += ThemeService_Changed;
-        _refreshTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(5) };
-        _refreshTimer.Tick += async (_, _) => await _viewModel.RefreshAsync();
-        // Per-second live tick: extrapolates earnings/countdown locally, no DB access.
-        _tickTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(1) };
-        _tickTimer.Tick += (_, _) => _viewModel.TickRealtime();
+        InitializeRefreshTimers();
     }
 
     protected override void OnSourceInitialized(EventArgs e)
@@ -50,16 +44,17 @@ public partial class WorkstationDashboardWindow : Window
     private async void Window_Loaded(object sender, RoutedEventArgs e)
     {
         PlayOpenAnimation();
-        await _viewModel.RefreshAsync();
-        _refreshTimer.Start();
-        _tickTimer.Start();
+        _hasLoaded = true;
+        await RefreshAndResumeAsync();
     }
 
     private void Window_Closing(object sender, CancelEventArgs e)
     {
-        _refreshTimer.Stop();
-        _tickTimer.Stop();
+        _isClosing = true;
+        StopRefreshTimers();
         _themeService.Changed -= ThemeService_Changed;
+        IsVisibleChanged -= WindowPresentationChanged;
+        StateChanged -= WindowStateChanged;
     }
 
     private void ThemeService_Changed(object? sender, EventArgs e)
@@ -72,6 +67,7 @@ public partial class WorkstationDashboardWindow : Window
 
     private void PlayOpenAnimation()
     {
+        if (!SystemParameters.ClientAreaAnimation) return;
         var fade = new DoubleAnimation
         {
             From = 0,

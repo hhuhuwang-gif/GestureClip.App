@@ -20,7 +20,7 @@ public sealed class SettingsGestureUxContractTests
         Assert.Contains("EdgeEnhancementPromoCard", xaml);
         Assert.Contains("GestureAdvancedSettingsExpander", xaml);
         Assert.Contains("EdgeTriggerSettingsGroup", xaml);
-        Assert.Contains("FeatureMapCard_MouseLeftButtonUp", xaml);
+        Assert.Contains("FeatureMapCard_Click", xaml);
         Assert.Contains("BindingActionPopup", xaml);
         Assert.Contains("GestureActionPicker", xaml);
 

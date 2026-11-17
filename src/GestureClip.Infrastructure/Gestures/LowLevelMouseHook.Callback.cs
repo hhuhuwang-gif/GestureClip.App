@@ -51,6 +51,13 @@ public sealed partial class LowLevelMouseHook
     {
         var message = wParam.ToInt32();
         var data = Marshal.PtrToStructure<MouseHookNativeMethods.MSLLHOOKSTRUCT>(lParam);
+        // Let replay reach the target app without interpreting it as a new control gesture.
+        if ((data.flags & MouseHookNativeMethods.LlmhfInjected) != 0
+            && data.dwExtraInfo == Macros.MacroNative.ReplayInputTag)
+        {
+            hookEvent = default!;
+            return false;
+        }
         var xButton = data.mouseData >> 16;
         var type = ToEventType(message, xButton);
         if (type is null)

@@ -63,7 +63,10 @@ public partial class SettingsWindow : Window
     {
         _appLifecycleService = appLifecycleService;
         _settingsService = settingsService;
+        // 建窗耗时里 XAML 内联页面和 ViewModel 各占多少，直接决定下一步该拆页面还是拆 VM。
+        var xamlWatch = System.Diagnostics.Stopwatch.StartNew();
         InitializeComponent();
+        Diagnostics.UiTrace.Report($"SettingsWindow XAML load {xamlWatch.ElapsedMilliseconds} ms");
         DataContext = viewModel;
         RestoreWindowPlacement();
         Loaded += (_, _) => _windowPlacementReady = true;

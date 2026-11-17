@@ -131,7 +131,7 @@ public sealed class AssistantActionExecutorTests
             NullLogger<AssistantActionExecutor>.Instance);
     }
 
-    private sealed class FakeClipboardService : IClipboardService
+    private sealed class FakeClipboardService : Support.UnsupportedClipboardSearchIndex, IClipboardService
     {
         public bool SuppressCalled { get; private set; }
         public bool IsCaptureEnabled => true;

@@ -217,6 +217,21 @@ public sealed class ClipboardOverlayResponsivenessTests
         public Task<IReadOnlyList<ClipboardItem>> SearchAsync(string keyword, int limit, CancellationToken token) =>
             SearchAsync(keyword, limit, 0, ClipboardContentFilter.All, token);
 
+        public async Task<IReadOnlyList<ClipboardSearchEntry>> ReadSearchIndexAsync(
+            ClipboardSearchIndexPage page, CancellationToken token)
+        {
+            var results = await SearchAsync("", page.Limit, page.Offset, page.Filter, token);
+            return results.Select(ClipboardSearchEntry.FromItem).ToArray();
+        }
+
+        public Task<IReadOnlyList<ClipboardItem>> GetDisplayItemsAsync(
+            IReadOnlyList<Guid> ids, CancellationToken token)
+        {
+            var byId = items.ToDictionary(item => item.Id);
+            return Task.FromResult<IReadOnlyList<ClipboardItem>>(ids.Where(byId.ContainsKey)
+                .Select(id => byId[id]).Select(item => item.IsImage ? item with { TextContent = null } : item).ToArray());
+        }
+
         public async Task<IReadOnlyList<ClipboardItem>> SearchAsync(string keyword, int limit, int offset,
             ClipboardContentFilter filter, CancellationToken token)
         {

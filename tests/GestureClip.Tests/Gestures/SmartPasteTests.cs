@@ -353,7 +353,7 @@ public sealed class SmartPasteTests
         public Task RefreshAsync() => Task.CompletedTask;
     }
 
-    private sealed class FakeClipboardService : IClipboardService
+    private sealed class FakeClipboardService : Support.UnsupportedClipboardSearchIndex, IClipboardService
     {
         public bool IsCaptureEnabled => true;
         public DateTimeOffset? SuppressCaptureUntil => null;

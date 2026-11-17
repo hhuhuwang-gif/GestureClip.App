@@ -10,7 +10,9 @@ public sealed partial class ThemeResourceTests
     public void WorkstationDashboardWindow_uses_glass_cards_and_plain_language_metrics()
     {
         var path = FindRepositoryFile("src", "GestureClip.App", "WorkstationDashboardWindow.xaml");
-        var xaml = File.ReadAllText(path);
+        var themes = Path.Combine(Path.GetDirectoryName(path)!, "Themes");
+        var xaml = string.Join(Environment.NewLine, new[] { path }
+            .Concat(Directory.GetFiles(themes, "Hub*.xaml")).Select(File.ReadAllText));
 
         Assert.Contains("工位小熊", xaml);
         Assert.Contains("v0.6.45 · 本地", xaml);
@@ -21,10 +23,10 @@ public sealed partial class ThemeResourceTests
         Assert.Contains("ActionStatsText", xaml);
         Assert.Contains("Microsoft YaHei UI", xaml);
         Assert.Contains("GreetingText", xaml);
-        Assert.Contains("StageAccentBrush", xaml);
+        Assert.Contains("StageSoftBrush", xaml);
         Assert.Contains("WorkdayProgress", xaml);
         Assert.Contains("HubThinProgressBarStyle", xaml);
-        Assert.Contains("HubFishingBannerStyle", xaml);
+        Assert.Contains("BoardHubDetailStyle", xaml);
         Assert.Contains("HubReportTextStyle", xaml);
         Assert.Contains("ShowEmptySalaryGuide", xaml);
         Assert.Contains("OpenWorkRulesCommand", xaml);

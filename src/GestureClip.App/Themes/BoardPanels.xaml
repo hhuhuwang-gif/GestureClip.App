@@ -1,0 +1,91 @@
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <!-- BoardUI's semantic surfaces, 4px spacing, and quiet borders, adapted to WPF. -->
+    <Style x:Key="BoardCardStyle" TargetType="Border">
+        <Setter Property="Background" Value="{DynamicResource BrushGlassCard}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource BrushBorder}" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="CornerRadius" Value="24" />
+        <Setter Property="Padding" Value="24" />
+        <Setter Property="SnapsToDevicePixels" Value="True" />
+    </Style>
+    <Style x:Key="BoardBodyStyle" TargetType="TextBlock">
+        <Setter Property="FontSize" Value="14" />
+        <Setter Property="LineHeight" Value="24" />
+        <Setter Property="TextWrapping" Value="Wrap" />
+        <Setter Property="Foreground" Value="{DynamicResource BrushTextSecondary}" />
+    </Style>
+    <Style x:Key="BoardHubBodyStyle" TargetType="Border">
+        <Setter Property="Padding" Value="20,8,20,16" />
+        <Setter Property="Background" Value="Transparent" />
+        <Setter Property="TextElement.Foreground" Value="{DynamicResource BrushTextPrimary}" />
+    </Style>
+    <Style x:Key="BoardHeadingStyle" TargetType="TextBlock">
+        <Setter Property="FontSize" Value="18" />
+        <Setter Property="LineHeight" Value="28" />
+        <Setter Property="FontWeight" Value="SemiBold" />
+        <Setter Property="Foreground" Value="{DynamicResource BrushTextPrimary}" />
+        <Setter Property="TextWrapping" Value="Wrap" />
+    </Style>
+    <Style x:Key="BoardActionStyle" TargetType="Button" BasedOn="{StaticResource SecondaryButtonStyle}">
+        <Setter Property="Height" Value="40" />
+        <Setter Property="MinWidth" Value="120" />
+        <Setter Property="Padding" Value="20,0" />
+        <Setter Property="Margin" Value="0,0,12,12" />
+    </Style>
+    <Style x:Key="BoardPrimaryActionStyle" TargetType="Button" BasedOn="{StaticResource PrimaryButtonStyle}">
+        <Setter Property="Height" Value="40" />
+        <Setter Property="MinWidth" Value="128" />
+        <Setter Property="Padding" Value="20,0" />
+        <Setter Property="Margin" Value="0,0,12,12" />
+    </Style>
+    <Style x:Key="BoardHubDetailStyle" TargetType="Expander">
+        <Setter Property="Foreground" Value="{DynamicResource BrushTextPrimary}" />
+        <Setter Property="FontSize" Value="14" />
+        <Setter Property="Margin" Value="0,0,0,16" />
+        <Setter Property="VerticalAlignment" Value="Top" />
+        <Setter Property="Focusable" Value="False" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="Expander">
+                    <Border Style="{StaticResource BoardCardStyle}" Padding="0">
+                        <StackPanel>
+                            <ToggleButton IsChecked="{Binding IsExpanded, RelativeSource={RelativeSource TemplatedParent}, Mode=TwoWay}"
+                                          Content="{TemplateBinding Header}" Padding="20,18" Cursor="Hand"
+                                          Foreground="{TemplateBinding Foreground}"
+                                          FocusVisualStyle="{StaticResource KeyboardFocusStyle}">
+                                <ToggleButton.Template>
+                                    <ControlTemplate TargetType="ToggleButton">
+                                        <Border x:Name="Header" Padding="{TemplateBinding Padding}" Background="Transparent" CornerRadius="24">
+                                            <DockPanel>
+                                                <TextBlock x:Name="Arrow" DockPanel.Dock="Right" Text="&#xE70D;"
+                                                           FontFamily="Segoe MDL2 Assets" VerticalAlignment="Center" Margin="16,0,0,0" />
+                                                <ContentPresenter TextElement.Foreground="{TemplateBinding Foreground}"
+                                                                  TextElement.FontWeight="SemiBold" />
+                                            </DockPanel>
+                                        </Border>
+                                        <ControlTemplate.Triggers>
+                                            <Trigger Property="IsMouseOver" Value="True"><Setter TargetName="Header" Property="Background" Value="{DynamicResource BrushControlHover}" /></Trigger>
+                                            <Trigger Property="IsPressed" Value="True"><Setter TargetName="Header" Property="Background" Value="{DynamicResource BrushControlSelected}" /></Trigger>
+                                            <Trigger Property="IsChecked" Value="True"><Setter TargetName="Arrow" Property="Text" Value="&#xE70E;" /></Trigger>
+                                        </ControlTemplate.Triggers>
+                                    </ControlTemplate>
+                                </ToggleButton.Template>
+                            </ToggleButton>
+                            <!-- Both content and template are released on collapse, so closed panels retain no visual tree. -->
+                            <ContentPresenter x:Name="Details" Content="{x:Null}" ContentTemplate="{x:Null}"
+                                              Visibility="Collapsed" Margin="0,0,0,8" />
+                        </StackPanel>
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsExpanded" Value="True">
+                            <Setter TargetName="Details" Property="Content" Value="{Binding Content, RelativeSource={RelativeSource TemplatedParent}}" />
+                            <Setter TargetName="Details" Property="ContentTemplate" Value="{Binding ContentTemplate, RelativeSource={RelativeSource TemplatedParent}}" />
+                            <Setter TargetName="Details" Property="Visibility" Value="Visible" />
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+</ResourceDictionary>

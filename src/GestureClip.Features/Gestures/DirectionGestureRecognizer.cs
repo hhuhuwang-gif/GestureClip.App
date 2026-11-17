@@ -36,6 +36,9 @@ public sealed class DirectionGestureRecognizer : IMouseGestureRecognizer
             return new GestureResult(straightDirection, true);
         }
 
+        var chevron = ChevronGestureRecognizer.Recognize(points, options, geometry.Chevron);
+        if (chevron is not null) return new GestureResult(chevron, true);
+
         return RecognizeDirections(points, options, first);
     }
 
@@ -116,12 +119,18 @@ public sealed class DirectionGestureRecognizer : IMouseGestureRecognizer
         var maxX = first.X;
         var minY = first.Y;
         var maxY = first.Y;
+        var leftTip = first;
+        var rightTip = first;
+        var leftTipIndex = 0;
+        var rightTipIndex = 0;
 
         var maxDistanceSquared = 0d;
         var lastIndex = points.Count - 1;
         for (var index = 1; index <= lastIndex; index++)
         {
             var point = index == lastIndex ? last : points[index];
+            if (point.X < minX) { leftTip = point; leftTipIndex = index; }
+            if (point.X > maxX) { rightTip = point; rightTipIndex = index; }
             minX = Math.Min(minX, point.X);
             maxX = Math.Max(maxX, point.X);
             minY = Math.Min(minY, point.Y);
@@ -137,7 +146,12 @@ public sealed class DirectionGestureRecognizer : IMouseGestureRecognizer
             End = last,
             MaxDistanceSquared = maxDistanceSquared,
             HorizontalSpan = maxX - minX,
-            VerticalSpan = maxY - minY
+            VerticalSpan = maxY - minY,
+            Chevron = new ChevronStrokeGeometry
+            {
+                Start = first, End = last, LeftTip = leftTip, RightTip = rightTip,
+                LeftTipIndex = leftTipIndex, RightTipIndex = rightTipIndex
+            }
         };
     }
 
@@ -150,5 +164,6 @@ public sealed class DirectionGestureRecognizer : IMouseGestureRecognizer
         public double MaxDistanceSquared { get; init; }
         public int HorizontalSpan { get; init; }
         public int VerticalSpan { get; init; }
+        public required ChevronStrokeGeometry Chevron { get; init; }
     }
 }

@@ -135,7 +135,7 @@ public sealed partial class PasteQueueServiceTests
         }
     }
 
-    private sealed class FakeClipboardService : IClipboardService
+    private sealed class FakeClipboardService : Support.UnsupportedClipboardSearchIndex, IClipboardService
     {
         public Func<ClipboardItem, CancellationToken, Task>? PasteHandler { get; set; }
         public PasteOptions? LastPasteOptions { get; private set; }

@@ -6,10 +6,10 @@
          深色底 + 千秋青环境光 + 青→靛→紫→品红的方块数据流
          =================================================================== -->
     <LinearGradientBrush x:Key="HudSurfaceGradient" StartPoint="0,0" EndPoint="1,1">
-        <GradientStop Color="#FF03070E" Offset="0" />
-        <GradientStop Color="#FF0A2434" Offset="0.36" />
-        <GradientStop Color="#FF1B1A3C" Offset="0.72" />
-        <GradientStop Color="#FF03070E" Offset="1" />
+        <GradientStop Color="#FF101722" Offset="0" />
+        <GradientStop Color="#FF172334" Offset="0.36" />
+        <GradientStop Color="#FF1A2638" Offset="0.72" />
+        <GradientStop Color="#FF101722" Offset="1" />
     </LinearGradientBrush>
 
     <RadialGradientBrush x:Key="HudAmbientGradient" Center="0.78,0.02" GradientOrigin="0.78,0.02"
@@ -117,11 +117,11 @@
     </Style>
 
     <Style x:Key="HudStatChip" TargetType="Border">
-        <Setter Property="Background" Value="{StaticResource HudChipGradient}" />
+        <Setter Property="Background" Value="Transparent" />
         <Setter Property="CornerRadius" Value="7" />
         <Setter Property="Padding" Value="8,4" />
         <Setter Property="Margin" Value="0,0,6,0" />
-        <Setter Property="BorderBrush" Value="#1AFFFFFF" />
+        <Setter Property="BorderBrush" Value="#10FFFFFF" />
         <Setter Property="BorderThickness" Value="1" />
     </Style>
 
@@ -154,7 +154,7 @@
     <Style x:Key="HudXpProgress" TargetType="ProgressBar">
         <Setter Property="Minimum" Value="0" />
         <Setter Property="Maximum" Value="1" />
-        <Setter Property="Height" Value="7" />
+        <Setter Property="Height" Value="3" />
         <Setter Property="Background" Value="#14FFFFFF" />
         <Setter Property="Template">
             <Setter.Value>
@@ -174,5 +174,16 @@
                 </ControlTemplate>
             </Setter.Value>
         </Setter>
+    </Style>
+    <Style x:Key="HudPatternRow" TargetType="StackPanel">
+        <Style.Triggers>
+            <DataTrigger Binding="{Binding Pattern}" Value="-"><Setter Property="Visibility" Value="Collapsed" /></DataTrigger>
+        </Style.Triggers>
+    </Style>
+    <Style x:Key="HudShortcutBadge" TargetType="Border">
+        <Style.Triggers>
+            <DataTrigger Binding="{Binding ShortcutText}" Value="暂无动作"><Setter Property="Visibility" Value="Collapsed" /></DataTrigger>
+            <DataTrigger Binding="{Binding ShortcutText}" Value=""><Setter Property="Visibility" Value="Collapsed" /></DataTrigger>
+        </Style.Triggers>
     </Style>
 </ResourceDictionary>

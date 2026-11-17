@@ -40,7 +40,7 @@ public sealed partial class ClipboardOverlayViewModel
     private async Task<bool> LoadCoreAsync(bool force, long currentRevision)
     {
         DebugPerf("OVERLAY_LOAD_BEGIN", $"Force={force} Revision={currentRevision}");
-        if (force) _smartSearchPool = null;
+        ReleaseSearchCache();
         _isSearchDebouncing = false;
         var cancellation = ReplaceSearchCancellation();
         var search = SearchCoreAsync(cancellation.Token);

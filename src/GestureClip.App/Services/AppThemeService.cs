@@ -1,10 +1,7 @@
 using System.Windows;
-using System.Windows.Media;
 using GestureClip.Core.Abstractions;
 using GestureClip.Core.Settings;
 using Microsoft.Win32;
-using Color = System.Windows.Media.Color;
-using Point = System.Windows.Point;
 
 namespace GestureClip.App.Services;
 
@@ -25,7 +22,7 @@ public enum AppThemePreference
 /// Swaps the Colors resource dictionary so DynamicResource brushes follow light/dark,
 /// resolves the "follow system" preference, and layers an accent-color override dictionary.
 /// </summary>
-public sealed class AppThemeService : IDisposable
+public sealed partial class AppThemeService : IDisposable
 {
     private const string AccentOverlayMarkerKey = "GestureClipAccentOverlay";
 
@@ -240,62 +237,4 @@ public sealed class AppThemeService : IDisposable
         app.Resources.MergedDictionaries.Add(BuildAccentOverlay(accent, mode == AppUiThemeMode.Dark));
     }
 
-    private static ResourceDictionary BuildAccentOverlay(Color accent, bool isDark)
-    {
-        var overlay = new ResourceDictionary { [AccentOverlayMarkerKey] = true };
-
-        foreach (var (key, color) in AccentPalette.BuildColorOverrides(accent, isDark))
-        {
-            overlay[key] = color;
-        }
-
-        var bright = AccentPalette.BrightAccent(accent, isDark);
-        overlay["BrushPrimaryBright"] = CreateBrush(bright);
-        overlay["BrushPrimarySoft"] = CreateBrush((Color)overlay["ColorPrimarySoft"]);
-        overlay["BrushAccentSoft"] = CreateBrush((Color)overlay["ColorAccentSoft"]);
-        overlay["BrushFocusRing"] = CreateBrush((Color)overlay["ColorFocusRing"]);
-        overlay["BrushControlSelected"] = CreateBrush((Color)overlay["ColorControlSelected"]);
-        overlay["BrushListSelectedHover"] = CreateBrush((Color)overlay["ColorListSelectedHover"]);
-        overlay["BrushPrimarySolid"] = CreateBrush(bright);
-        overlay["BrushPrimarySolidHover"] = CreateBrush(AccentPalette.Darken(accent, 0.12));
-        overlay["BrushPrimarySolidPressed"] = CreateBrush(AccentPalette.Darken(accent, 0.24));
-
-        var gradient = new LinearGradientBrush
-        {
-            StartPoint = new Point(0, 0),
-            EndPoint = new Point(0, 1)
-        };
-        gradient.GradientStops.Add(new GradientStop(AccentPalette.Lighten(accent, 0.25), 0));
-        gradient.GradientStops.Add(new GradientStop(accent, 0.55));
-        gradient.GradientStops.Add(new GradientStop(AccentPalette.Darken(accent, 0.15), 1));
-        gradient.Freeze();
-        overlay["BrushPrimaryGradient"] = gradient;
-
-        var glassAccent = new LinearGradientBrush
-        {
-            StartPoint = new Point(0, 0),
-            EndPoint = new Point(1, 1)
-        };
-        if (isDark)
-        {
-            glassAccent.GradientStops.Add(new GradientStop((Color)overlay["ColorAccentSoft"], 0));
-            glassAccent.GradientStops.Add(new GradientStop((Color)overlay["ColorControlSelected"], 1));
-        }
-        else
-        {
-            glassAccent.GradientStops.Add(new GradientStop(AccentPalette.WithAlpha(AccentPalette.Lighten(accent, 0.80), 0xCC), 0));
-            glassAccent.GradientStops.Add(new GradientStop(AccentPalette.WithAlpha(AccentPalette.Lighten(accent, 0.90), 0xB8), 1));
-        }
-        glassAccent.Freeze();
-        overlay["BrushGlassAccent"] = glassAccent;
-
-        return overlay;
-    }
-
-    private static SolidColorBrush CreateBrush(Color color)
-    {
-        var brush = new SolidColorBrush(color);
-        brush.Freeze();
-        return brush;
-    }
 }

@@ -18,6 +18,16 @@ public static class AppServiceCollectionExtensions
         services.AddGestureClipFeatures();
 
         services.AddSingleton<AppThemeService>();
+        services.AddSingleton<GestureClip.Core.Abstractions.IMacroCapture, GestureClip.Infrastructure.Macros.WindowsMacroCapture>();
+        services.AddSingleton<GestureClip.Core.Abstractions.IMacroInputSink, GestureClip.Infrastructure.Macros.WindowsMacroInputSink>();
+        services.AddSingleton<GestureClip.Infrastructure.Macros.MacroFileStore>();
+        services.AddSingleton<GestureClip.Features.Macros.MacroPlayback>();
+        services.AddSingleton<MacroRecorderService>();
+        services.AddSingleton<IMacroGestureController>(provider => provider.GetRequiredService<MacroRecorderService>());
+        services.AddSingleton<GestureClip.Features.Gestures.GestureBuiltInActionExecutor>();
+        services.AddSingleton<IMouseGestureActionExecutor>(provider => new GestureClip.Features.Macros.MacroGestureActionExecutor(
+            provider.GetRequiredService<GestureClip.Features.Gestures.GestureBuiltInActionExecutor>(),
+            provider.GetRequiredService<IMacroGestureController>()));
         services.AddSingleton<AppLifecycleService>();
         services.AddSingleton<IAppLifecycleService>(provider => provider.GetRequiredService<AppLifecycleService>());
         services.AddSingleton<TrayIconService>();

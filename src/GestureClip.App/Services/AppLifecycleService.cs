@@ -24,6 +24,9 @@ public sealed partial class AppLifecycleService : IAppLifecycleService
         _logger = logger;
     }
 
+    public void InitializeMacroRecorder(Controls.MacroRecorderControl control)
+        => control.Initialize(_serviceProvider.GetRequiredService<MacroRecorderService>());
+
     public bool IsExplicitExit { get; private set; }
 
     public bool RuntimeStopped { get; private set; }
@@ -214,6 +217,8 @@ public sealed partial class AppLifecycleService : IAppLifecycleService
         }
     }
 
+    public void ShowMacroRecorderWindow() => _serviceProvider.GetRequiredService<MacroRecorderService>().ShowWindow();
+
     public async void ExitApplication()
     {
         if (Interlocked.Exchange(ref _exitStarted, 1) == 1)
@@ -237,6 +242,7 @@ public sealed partial class AppLifecycleService : IAppLifecycleService
             return;
         }
 
+        await (_serviceProvider.GetService<MacroRecorderService>()?.StopAndSaveAsync() ?? Task.CompletedTask);
         RuntimeStopped = true;
         await StopStepAsync("global hotkey", () =>
         {

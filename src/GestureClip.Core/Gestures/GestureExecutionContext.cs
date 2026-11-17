@@ -10,4 +10,6 @@ public sealed record GestureExecutionContext(
     string? TargetProcessName = null)
 {
     public bool HasLeftButtonModifier => IsLeftButtonModified;
+    public DateTimeOffset GestureStartedAt { get; init; }
+    public DateTimeOffset GestureEndedAt { get; init; }
 }

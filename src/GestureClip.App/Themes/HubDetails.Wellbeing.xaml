@@ -1,0 +1,176 @@
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:controls="clr-namespace:GestureClip.App.Controls">
+    <DataTemplate x:Key="HubRestBody">
+        <Border Style="{StaticResource BoardHubBodyStyle}">
+            <StackPanel>
+                <TextBlock Text="温柔提醒，可稍后、可关闭。离开电脑几分钟会自动算休息（只看键鼠是否空闲，不看你在用什么）。"
+                           Style="{StaticResource HubBodyStyle}"
+                           Margin="0,0,0,12" />
+                <TextBlock Text="{Binding ContinuousWorkText, StringFormat=已连续工作 {0}}"
+                           Style="{StaticResource HubRootTextStyle}"
+                           FontSize="18"
+                           FontWeight="SemiBold" />
+                <TextBlock Text="{Binding NextRestReminderText, StringFormat=下次提醒 {0}}"
+                           Style="{StaticResource HubBodyStyle}"
+                           Margin="0,6,0,0" />
+                <TextBlock Text="{Binding RestReminderLimitText}"
+                           Style="{StaticResource HubBodyStyle}"
+                           Margin="0,4,0,0" />
+                <Border Background="{Binding RestRiskSoftBrush}"
+                        BorderBrush="{Binding RestRiskBrush}"
+                        BorderThickness="1"
+                        CornerRadius="999"
+                        Padding="10,4"
+                        Margin="0,10,0,14"
+                        HorizontalAlignment="Left">
+                    <TextBlock Text="{Binding RestRiskText, StringFormat=当前节奏：{0}}"
+                               Style="{StaticResource HubRootTextStyle}"
+                               FontSize="12"
+                               FontWeight="SemiBold"
+                               Foreground="{Binding RestRiskBrush}" />
+                </Border>
+                <UniformGrid Columns="1" Margin="0,0,0,12">
+                    <StackPanel Margin="0,0,8,0">
+                        <TextBlock Text="每日上限" Style="{StaticResource HubMetricLabelStyle}" />
+                        <ComboBox ItemsSource="{Binding RestReminderMaxOptions}"
+                                  SelectedItem="{Binding RestReminderMaxPerDay, Mode=TwoWay}"
+                                  Margin="0,4,0,0"
+                                  ToolTip="一天最多弹几次" />
+                    </StackPanel>
+                    <StackPanel Margin="0,0,8,0">
+                        <TextBlock Text="每周上限" Style="{StaticResource HubMetricLabelStyle}" />
+                        <ComboBox ItemsSource="{Binding RestReminderWeekMaxOptions}"
+                                  SelectedItem="{Binding RestReminderMaxPerWeek, Mode=TwoWay}"
+                                  Margin="0,4,0,0" />
+                    </StackPanel>
+                    <StackPanel>
+                        <TextBlock Text="最少连续（分钟）" Style="{StaticResource HubMetricLabelStyle}" />
+                        <ComboBox ItemsSource="{Binding RestReminderMinContinuousOptions}"
+                                  SelectedItem="{Binding RestReminderMinContinuousMinutes, Mode=TwoWay}"
+                                  Margin="0,4,0,0"
+                                  ToolTip="连续工作满该分钟才提醒" />
+                    </StackPanel>
+                </UniformGrid>
+                <Border Height="1" Background="{DynamicResource BrushSeparator}" Margin="0,2,0,12" />
+                <TextBlock Text="健康小提醒（工作时段内，温柔不轰炸）"
+                           Style="{StaticResource HubMetricLabelStyle}"
+                           Margin="0,0,0,8" />
+                <UniformGrid Columns="2" Margin="0,0,0,12">
+                    <StackPanel Margin="0,0,8,0">
+                        <CheckBox Content="💧 喝水提醒"
+                                  IsChecked="{Binding WaterReminderEnabled, Mode=TwoWay}" />
+                        <DockPanel Margin="0,6,0,0">
+                            <TextBlock Text="每隔(分)" Style="{StaticResource HubMetricLabelStyle}" VerticalAlignment="Center" Margin="0,0,8,0" />
+                            <ComboBox Width="80"
+                                      HorizontalAlignment="Left"
+                                      ItemsSource="{Binding WaterIntervalOptions}"
+                                      SelectedItem="{Binding WaterReminderIntervalMinutes, Mode=TwoWay}"
+                                      IsEnabled="{Binding WaterReminderEnabled}" />
+                        </DockPanel>
+                    </StackPanel>
+                    <StackPanel Margin="8,0,0,0">
+                        <CheckBox Content="🧘 拉伸提醒"
+                                  IsChecked="{Binding StretchReminderEnabled, Mode=TwoWay}" />
+                        <DockPanel Margin="0,6,0,0">
+                            <TextBlock Text="每隔(分)" Style="{StaticResource HubMetricLabelStyle}" VerticalAlignment="Center" Margin="0,0,8,0" />
+                            <ComboBox Width="80"
+                                      HorizontalAlignment="Left"
+                                      ItemsSource="{Binding StretchIntervalOptions}"
+                                      SelectedItem="{Binding StretchReminderIntervalMinutes, Mode=TwoWay}"
+                                      IsEnabled="{Binding StretchReminderEnabled}" />
+                        </DockPanel>
+                    </StackPanel>
+                </UniformGrid>
+                <WrapPanel>
+                    <Button Content="稍后提醒"
+                            Style="{StaticResource SecondaryButtonStyle}"
+                            Command="{Binding SnoozeRestReminderCommand}"
+                            Margin="0,0,10,8" />
+                    <Button Content="{Binding RestReminderButtonText}"
+                            Style="{StaticResource SecondaryButtonStyle}"
+                            Command="{Binding ToggleRestReminderCommand}"
+                            Margin="0,0,10,8" />
+                    <Button Content="关闭提醒"
+                            Style="{StaticResource SecondaryButtonStyle}"
+                            Command="{Binding DisableRestReminderCommand}"
+                            Margin="0,0,10,8" />
+                </WrapPanel>
+            </StackPanel>
+        </Border>
+    </DataTemplate>
+    <DataTemplate x:Key="HubReportBody">
+        <Border Style="{StaticResource BoardHubBodyStyle}">
+            <StackPanel>
+                <DockPanel>
+                    <TextBlock Text="今日评级" Style="{StaticResource HubMetricLabelStyle}" />
+                    <Border DockPanel.Dock="Right"
+                            Style="{StaticResource HubChipStyle}"
+                            HorizontalAlignment="Right">
+                        <TextBlock Text="{Binding DailyRatingText}"
+                                   Style="{StaticResource HubRootTextStyle}"
+                                   FontSize="12"
+                                   FontWeight="SemiBold"
+                                   Foreground="{DynamicResource BrushPrimaryBright}" />
+                    </Border>
+                </DockPanel>
+                <Border Style="{StaticResource HubReportBlockStyle}">
+                    <TextBlock Text="{Binding DailyReportDisplayText}"
+                               Style="{StaticResource HubReportTextStyle}"
+                               MinHeight="48" />
+                </Border>
+                <DockPanel Margin="0,14,0,10">
+                    <TextBlock Text="分享卡片样式"
+                               VerticalAlignment="Center"
+                               Style="{StaticResource HubMetricLabelStyle}" />
+                    <ComboBox Width="148"
+                              HorizontalAlignment="Right"
+                              ItemsSource="{Binding ShareCardStyleOptions}"
+                              SelectedItem="{Binding ShareCardStyle, Mode=TwoWay}"
+                              ToolTip="仅本地 PNG，不含剪贴板正文" />
+                </DockPanel>
+                <WrapPanel>
+                    <Button Content="生成今日报告"
+                            Style="{StaticResource PrimaryButtonStyle}"
+                            Command="{Binding GenerateReportCommand}"
+                            Margin="0,0,10,8" />
+                    <Button Content="生成 PNG 卡片"
+                            Style="{StaticResource SecondaryButtonStyle}"
+                            Command="{Binding GenerateShareCardCommand}"
+                            Margin="0,0,10,8" />
+                    <Button Content="打开卡片文件夹"
+                            Style="{StaticResource SecondaryButtonStyle}"
+                            Command="{Binding OpenLastShareCardFolderCommand}"
+                            Margin="0,0,10,8" />
+                    <Button Content="{Binding AutoDailyReportButtonText}"
+                            Style="{StaticResource SecondaryButtonStyle}"
+                            Command="{Binding ToggleAutoDailyReportCommand}"
+                            Margin="0,0,10,8" />
+                    <Button Content="今天不再显示"
+                            Style="{StaticResource SecondaryButtonStyle}"
+                            Command="{Binding MuteDailyReportTodayCommand}"
+                            Margin="0,0,10,8" />
+                </WrapPanel>
+            </StackPanel>
+        </Border>
+    </DataTemplate>
+    <DataTemplate x:Key="HubPeriodBody">
+        <Border Style="{StaticResource BoardHubBodyStyle}">
+            <StackPanel>
+                <TextBlock Text="只汇总本机统计，不上传。适合周五回顾，或月底看看自己有多拼。"
+                           Style="{StaticResource HubBodyStyle}"
+                           Margin="0,0,0,12" />
+                <TextBlock Text="{Binding PeriodReportText}" Style="{StaticResource HubBodyStyle}" />
+                <WrapPanel Margin="0,14,0,0">
+                    <Button Content="生成本周总结"
+                            Style="{StaticResource PrimaryButtonStyle}"
+                            Command="{Binding GenerateWeeklyReportCommand}"
+                            Margin="0,0,10,0" />
+                    <Button Content="近 30 天总结"
+                            Style="{StaticResource SecondaryButtonStyle}"
+                            Command="{Binding GenerateMonthlyReportCommand}" />
+                </WrapPanel>
+            </StackPanel>
+        </Border>
+    </DataTemplate>
+</ResourceDictionary>

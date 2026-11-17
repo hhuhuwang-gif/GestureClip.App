@@ -97,6 +97,7 @@
                                  Background="Transparent" VerticalContentAlignment="Center"
                                  Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"
                                  Padding="8,0" Tag="搜索动作、分类或用途…"
+                                 IsEnabled="{Binding CanSelectAction}"
                                  AutomationProperties.Name="搜索快捷动作" />
                     </DockPanel>
                 </Border>
@@ -123,6 +124,7 @@
                             </DockPanel>
                             <Grid Grid.Row="1">
                                 <ListBox x:Name="ActionList" ItemsSource="{Binding FilteredActions}"
+                                         IsEnabled="{Binding CanSelectAction}"
                                          FocusVisualStyle="{StaticResource CommandFocusVisual}"
                                          SelectedItem="{Binding SelectedAction}"
                                          ItemContainerStyle="{StaticResource GlassListBoxItemStyle}"

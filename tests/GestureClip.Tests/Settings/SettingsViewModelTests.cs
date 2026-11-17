@@ -905,7 +905,7 @@ public sealed class SettingsViewModelTests
             return GetSnapshotAsync(cancellationToken);
         }
     }
-    private sealed class FakeClipboardRepository : IClipboardRepository
+    private sealed class FakeClipboardRepository : Support.UnsupportedClipboardSearchIndex, IClipboardRepository
     {
         public int Count { get; set; }
         public int ClearAllCount { get; private set; }
@@ -1099,7 +1099,7 @@ public sealed class SettingsViewModelTests
         }
     }
 
-    private sealed class FakeClipboardService : IClipboardService
+    private sealed class FakeClipboardService : Support.UnsupportedClipboardSearchIndex, IClipboardService
     {
         public bool IsCaptureEnabled => true;
         public DateTimeOffset? SuppressCaptureUntil => null;

@@ -95,6 +95,25 @@ public sealed partial class ClipboardOverlayViewModelTests
 
         public List<Guid> GetByIdRequests { get; } = [];
 
+        public List<IReadOnlyList<Guid>> DisplayItemRequests { get; } = [];
+
+        public async Task<IReadOnlyList<ClipboardSearchEntry>> ReadSearchIndexAsync(
+            ClipboardSearchIndexPage page, CancellationToken cancellationToken)
+        {
+            var items = await SearchAsync("", page.Limit, page.Offset, page.Filter, cancellationToken);
+            return items.Select(ClipboardSearchEntry.FromItem).ToArray();
+        }
+
+        public Task<IReadOnlyList<ClipboardItem>> GetDisplayItemsAsync(
+            IReadOnlyList<Guid> ids, CancellationToken cancellationToken)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            DisplayItemRequests.Add(ids.ToArray());
+            var byId = _items.Where(item => !DeletedIds.Contains(item.Id)).ToDictionary(item => item.Id);
+            return Task.FromResult<IReadOnlyList<ClipboardItem>>(ids.Where(byId.ContainsKey)
+                .Select(id => byId[id]).Select(item => item.IsImage ? item with { TextContent = null } : item).ToArray());
+        }
+
         public List<(Guid Id, bool IsPinned)> PinnedUpdates { get; } = [];
 
         public List<(Guid Id, bool IsFavorite)> FavoriteUpdates { get; } = [];

@@ -8,7 +8,7 @@ namespace GestureClip.App.Services;
 /// Derives the accent color override set (Color* resource keys) from a single base accent.
 /// Pure math so it can be unit-tested without a running Application.
 /// </summary>
-public static class AccentPalette
+public static partial class AccentPalette
 {
     /// <summary>Dark-surface tone used to soften accents in dark mode; matches ColorSurfaceDark in Colors.Dark.xaml.</summary>
     private static readonly Color DarkSurface = Color.FromRgb(0x15, 0x1C, 0x2C);
@@ -58,10 +58,14 @@ public static class AccentPalette
     public static IReadOnlyDictionary<string, Color> BuildColorOverrides(Color accent, bool isDark)
     {
         var bright = BrightAccent(accent, isDark);
+        var buttonFill = ButtonFill(accent);
         return isDark
             ? new Dictionary<string, Color>
             {
                 ["ColorPrimaryBright"] = bright,
+                ["ColorPrimaryFill"] = buttonFill,
+                ["ColorPrimaryFillHover"] = Darken(buttonFill, ButtonHoverDarkening),
+                ["ColorPrimaryFillPressed"] = Darken(buttonFill, ButtonPressedDarkening),
                 ["ColorPrimarySoft"] = WithAlpha(accent, 0x33),
                 ["ColorFocusRing"] = WithAlpha(bright, 0x55),
                 ["ColorAccentSoft"] = Blend(accent, DarkSurface, 0.70),
@@ -72,6 +76,9 @@ public static class AccentPalette
             : new Dictionary<string, Color>
             {
                 ["ColorPrimaryBright"] = accent,
+                ["ColorPrimaryFill"] = buttonFill,
+                ["ColorPrimaryFillHover"] = Darken(buttonFill, ButtonHoverDarkening),
+                ["ColorPrimaryFillPressed"] = Darken(buttonFill, ButtonPressedDarkening),
                 ["ColorPrimarySoft"] = WithAlpha(accent, 0x1A),
                 ["ColorFocusRing"] = WithAlpha(accent, 0x40),
                 ["ColorAccentSoft"] = WithAlpha(Lighten(accent, 0.78), 0xB8),

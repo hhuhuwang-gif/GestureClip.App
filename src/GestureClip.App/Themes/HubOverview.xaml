@@ -1,0 +1,68 @@
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:controls="clr-namespace:GestureClip.App.Controls">
+    <DataTemplate x:Key="HubOverviewBody">
+        <StackPanel>
+            <UniformGrid Columns="3" Margin="0,0,-16,24">
+                <Border Style="{StaticResource BoardCardStyle}" Margin="0,0,16,0">
+                    <StackPanel>
+                        <TextBlock Text="今日已赚" Style="{StaticResource HubMetricLabelStyle}" />
+                        <TextBlock Text="{Binding TodayEarnedText}" FontSize="32" FontWeight="SemiBold"
+                                   Foreground="{DynamicResource BrushTextPrimary}" Margin="0,12,0,8" />
+                        <TextBlock Text="{Binding SalaryHintText}" Style="{StaticResource HubMetricLabelStyle}" TextWrapping="Wrap" />
+                    </StackPanel>
+                </Border>
+                <Border Style="{StaticResource BoardCardStyle}" Margin="0,0,16,0">
+                    <StackPanel>
+                        <TextBlock Text="距离下班" Style="{StaticResource HubMetricLabelStyle}" />
+                        <TextBlock Text="{Binding OffWorkCountdownText}" FontSize="30" FontWeight="SemiBold"
+                                   Foreground="{DynamicResource BrushTextPrimary}" Margin="0,12,0,8" />
+                        <TextBlock Text="{Binding OffWorkProgressText}" Style="{StaticResource HubMetricLabelStyle}" TextWrapping="Wrap" />
+                    </StackPanel>
+                </Border>
+                <Border Style="{StaticResource BoardCardStyle}" Margin="0,0,16,0">
+                    <Grid>
+                        <Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="72" /></Grid.ColumnDefinitions>
+                        <StackPanel VerticalAlignment="Center" Margin="0,0,8,0">
+                            <TextBlock Text="今日进度" Style="{StaticResource HubMetricLabelStyle}" />
+                            <TextBlock Text="{Binding WorkdayProgressPercent, StringFormat={}{0:0}%}"
+                                       FontSize="30" FontWeight="SemiBold" Margin="0,12,0,8"
+                                       Foreground="{DynamicResource BrushTextPrimary}" />
+                            <TextBlock Text="{Binding SavedClicksText}" Style="{StaticResource HubMetricLabelStyle}" TextWrapping="Wrap" />
+                        </StackPanel>
+                        <controls:RingProgress Grid.Column="1" Width="64" Height="64" VerticalAlignment="Center"
+                                               Progress="{Binding WorkdayProgressPercent}" StrokeThickness="5"
+                                               TrackBrush="{DynamicResource BrushSeparator}"
+                                               ProgressBrush="{DynamicResource BrushPrimarySolid}"
+                                               ToolTip="{Binding WorkdayProgressText}" />
+                    </Grid>
+                </Border>
+            </UniformGrid>
+            <Border x:Name="HeroCard" Style="{StaticResource BoardCardStyle}" Margin="0,0,0,24"
+                    BorderBrush="{Binding FishingBorderBrush}" BorderThickness="{Binding FishingBorderThickness}">
+                <StackPanel>
+                    <Grid>
+                        <Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="Auto" /></Grid.ColumnDefinitions>
+                        <StackPanel Margin="0,0,24,0">
+                            <TextBlock Text="{Binding CurrentStateText}" Style="{StaticResource BoardHeadingStyle}" />
+                            <TextBlock Text="{Binding BearLineText}" Style="{StaticResource BoardBodyStyle}" Margin="0,8,0,0" />
+                        </StackPanel>
+                        <Border Grid.Column="1" Background="{Binding StageSoftBrush}" CornerRadius="12"
+                                Padding="12,8" VerticalAlignment="Top">
+                            <TextBlock Text="{Binding BearStatusText}" FontSize="13" FontWeight="SemiBold"
+                                       Foreground="{DynamicResource BrushTextPrimary}" />
+                        </Border>
+                    </Grid>
+                    <ProgressBar Style="{StaticResource HubThinProgressBarStyle}" Height="4" Margin="0,20,0,0"
+                                 Value="{Binding OffWorkProgress, Mode=OneWay}" Foreground="{DynamicResource BrushPrimarySolid}"
+                                 ToolTip="{Binding OffWorkProgressText}" />
+                    <TextBlock Text="{Binding OvertimeText}" Style="{StaticResource BoardBodyStyle}"
+                               Foreground="{DynamicResource BrushDanger}" Margin="0,12,0,0"
+                               Visibility="{Binding HasOvertime, Converter={StaticResource BooleanToVisibilityConverter}}" />
+                    <TextBlock Text="{Binding FishingStatusBanner}" Style="{StaticResource BoardBodyStyle}" Margin="0,12,0,0"
+                               Visibility="{Binding IsFishing, Converter={StaticResource BooleanToVisibilityConverter}}" />
+                </StackPanel>
+            </Border>
+        </StackPanel>
+    </DataTemplate>
+</ResourceDictionary>

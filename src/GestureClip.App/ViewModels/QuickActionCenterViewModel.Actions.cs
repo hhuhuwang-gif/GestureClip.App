@@ -45,15 +45,16 @@ public sealed partial class QuickActionCenterViewModel
 
     private async Task RunSelectedAsync(AssistantOutputKind outputKind)
     {
-        if (SelectedAction is null || IsBusy) return;
+        var action = SelectedAction;
+        if (action is null || IsBusy) return;
         try
         {
             IsBusy = true;
             StatusText = "执行中…";
             RefreshInputHint();
-            var request = new AssistantActionRequest(SelectedAction.Id, OutputOverride: outputKind);
+            var request = new AssistantActionRequest(action.Id, OutputOverride: outputKind);
             var result = await _executor.ExecuteAsync(request, CancellationToken.None);
-            ApplyResult(result);
+            ApplyResult(action, result);
             RefreshInputHint();
         }
         catch (Exception)
@@ -66,13 +67,17 @@ public sealed partial class QuickActionCenterViewModel
         }
     }
 
-    private void ApplyResult(AssistantActionResult result)
+    private void ApplyResult(AssistantActionDefinition action, AssistantActionResult result)
     {
-        StatusText = result.Message ?? (result.Success ? "完成" : "失败");
-        PreviewText = result.PreviewText ?? "";
-        if (result.Success && SelectedAction?.RequiredInput == AssistantInputKind.None)
+        var message = result.Message ?? (result.Success ? "完成" : "失败");
+        StatusText = $"{action.DisplayName}：{message}";
+        if (!ReferenceEquals(SelectedAction, action))
         {
-            PreviewText = "";
+            return;
         }
+
+        PreviewText = result.Success && action.RequiredInput == AssistantInputKind.None
+            ? ""
+            : result.PreviewText ?? "";
     }
 }

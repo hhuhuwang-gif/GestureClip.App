@@ -20,7 +20,10 @@
 [CmdletBinding()]
 param(
     [string]$PublishDir = "",
-    [switch]$SkipPublish
+    [switch]$SkipPublish,
+    # 发布正式版本时必须拿到 Setup.exe；本机缺少 Inno Setup 时直接失败，
+    # 避免再出现“release 只有两个 zip、没有安装包”的情况。
+    [switch]$RequireSetup
 )
 
 $ErrorActionPreference = "Stop"
@@ -150,7 +153,13 @@ if ($iscc) {
         "-NoProfile", "-ExecutionPolicy", "Bypass", "-File", $signScript, "-Path", $setupExe
     ) "sign-release.ps1"
 } else {
-    Write-Host "Inno Setup (iscc) not found; Setup.zip is ready; install Inno Setup to also produce Setup.exe."
+    $message = "Inno Setup (iscc) not found. Install it (winget install JRSoftware.InnoSetup) " +
+        "to produce Setup.exe; the Setup zip is still usable."
+    if ($RequireSetup) {
+        throw $message
+    }
+
+    Write-Host "$message Skipping Setup.exe."
 }
 
 # Update SHA256SUMS to include setup package(s) while keeping portable zip line.

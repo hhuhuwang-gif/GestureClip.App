@@ -49,13 +49,17 @@ public sealed partial class MouseGestureService : IMouseGestureService
         lock (_syncRoot) { _lastPattern = pattern; }
         _logger.LogDebug("Recognized Pattern: {Pattern} TargetHwnd={TargetHwnd}", pattern, pendingGesture.TargetWindowHandle);
         var context = new GestureExecutionContext(pattern, pendingGesture.IsLeftButtonModified,
-            pendingGesture.TargetWindowHandle, pendingGesture.TargetProcessName);
+            pendingGesture.TargetWindowHandle, pendingGesture.TargetProcessName)
+        {
+            GestureStartedAt = pendingGesture.GestureStartedAt,
+            GestureEndedAt = pendingGesture.GestureEndedAt
+        };
         var action = _presetProvider.GetAction(pendingGesture.Preset, context);
         if (pendingGesture.ShowOverlay)
         {
             await _gestureOverlayService.CompleteGestureAsync(
                 _hudInfoProvider.GetInfo(pendingGesture.Preset, context), CancellationToken.None);
-            if (IsPasteFamilyAction(action))
+            if (IsPasteFamilyAction(action) || IsMacroControlAction(action))
             {
                 await _gestureOverlayService.HideAsync(CancellationToken.None);
             }
@@ -115,4 +119,7 @@ public sealed partial class MouseGestureService : IMouseGestureService
     {
         lock (_syncRoot) { _suppressRightButtonUntil = DateTimeOffset.UtcNow.AddMilliseconds(500); }
     }
+
+    private static bool IsMacroControlAction(BuiltInGestureAction action)
+        => action is BuiltInGestureAction.MacroToggleRecording or BuiltInGestureAction.MacroTogglePlayback;
 }

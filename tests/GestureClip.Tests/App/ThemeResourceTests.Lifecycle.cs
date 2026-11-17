@@ -18,6 +18,28 @@ public sealed partial class ThemeResourceTests
     }
 
     [Fact]
+    public void Startup_keeps_main_window_as_cheap_wpf_warmup()
+    {
+        var app = File.ReadAllText(FindRepositoryFile("src", "GestureClip.App", "App.xaml.cs"));
+
+        // A/B 实测：保留 MainWindow 启动 759 ms，去掉 835 ms（设置窗要自己付首次建窗的钱）。
+        // 所以它必须留在启动路径上，并继续单独计时。
+        Assert.Contains("GetRequiredService<MainWindow>()", app);
+        Assert.Contains("main window", app);
+    }
+
+    [Fact]
+    public void Tray_menu_is_built_on_first_open_instead_of_at_startup()
+    {
+        var tray = File.ReadAllText(FindRepositoryFile(
+            "src", "GestureClip.App", "Services", "TrayIconService.cs"));
+
+        // Opening 每次都会 RebuildMenu，启动时再预建一遍是白做。
+        Assert.Contains("_menu.Opening += (_, _) => RebuildMenu();", tray);
+        Assert.DoesNotMatch(@"(?m)^\s+RebuildMenu\(\);", tray);
+    }
+
+    [Fact]
     public void App_supports_smoke_exit_after_startup_for_release_verification()
     {
         var appPath = FindRepositoryFile("src", "GestureClip.App", "App.xaml.cs");

@@ -144,6 +144,7 @@ public sealed partial class SettingsViewModel : INotifyPropertyChanged
     private bool _workerLevelShowLevelInHud;
     private bool _hudFunTextEnabled;
     private bool _hudStatusLevelEnabled;
+    private int _hudMotionLevel = 1;
     private string _lastDiagnosticsExportText = "尚未导出诊断包";
     private GestureBindingCardViewModel? _selectedGestureBindingCard;
     private readonly DispatcherTimer _diagnosticsTimer;
@@ -273,6 +274,8 @@ public sealed partial class SettingsViewModel : INotifyPropertyChanged
         _workerLevelShowLevelInHud = _settingsService.Get(SettingKeys.WorkerLevelShowLevelInHud, true);
         _hudFunTextEnabled = _settingsService.Get(SettingKeys.HudFunTextEnabled, true);
         _hudStatusLevelEnabled = _settingsService.Get(SettingKeys.HudStatusLevelEnabled, true);
+        _hudMotionLevel = HudMotionLevels.Normalize(
+            _settingsService.Get(SettingKeys.UiHudMotionLevel, HudMotionLevels.Balanced));
         _openClipboardHotkeyText = HotkeyDefinition.ParseOrDefault(_settingsService.Get(
             SettingKeys.HotkeyOpenClipboardOverlayKey,
             HotkeyDefinition.DefaultOpenClipboardOverlay)).DisplayText;
@@ -580,6 +583,32 @@ public sealed partial class SettingsViewModel : INotifyPropertyChanged
             _ = _settingsService.SetAsync(SettingKeys.HudStatusLevelEnabled, value, CancellationToken.None);
         }
     }
+
+    /// <summary>手势 HUD 动效强度：0 完整 / 1 均衡 / 2 极简（静态渐变，零动画）。</summary>
+    public int HudMotionLevel
+    {
+        get => _hudMotionLevel;
+        set
+        {
+            var normalized = HudMotionLevels.Normalize(value);
+            if (_hudMotionLevel == normalized)
+            {
+                return;
+            }
+
+            _hudMotionLevel = normalized;
+            OnPropertyChanged();
+            OnPropertyChanged(nameof(HudMotionLevelDescription));
+            _ = _settingsService.SetAsync(SettingKeys.UiHudMotionLevel, normalized, CancellationToken.None);
+        }
+    }
+
+    public string HudMotionLevelDescription => _hudMotionLevel switch
+    {
+        HudMotionLevels.Full => "完整：全部流动层与扫描光，观感最强，占用最高",
+        HudMotionLevels.Minimal => "极简：静态渐变，零动画开销，最省电",
+        _ => "均衡：流动层降帧，扫描光保留（默认）"
+    };
 
     public ObservableCollection<AppBlacklistItemViewModel> AppBlacklistItems { get; } = [];
     public ObservableCollection<AppSmartPasteRuleViewModel> AppSmartPasteRules { get; } = [];

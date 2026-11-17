@@ -86,6 +86,8 @@ public enum BuiltInGestureAction
     InsertDateTime = 81,
     InsertSnippet1 = 82,
     InsertSnippet2 = 83,
-    InsertSnippet3 = 84
+    InsertSnippet3 = 84,
+    MacroToggleRecording = 85,
+    MacroTogglePlayback = 86
 }
 

@@ -54,6 +54,11 @@ public partial class App : System.Windows.Application
             e.Args.Contains("--trace-ui", StringComparer.OrdinalIgnoreCase),
             message => logger.LogInformation("UiTiming {Message}", message));
 
+        if (e.Args.Contains("--trace-mem", StringComparer.OrdinalIgnoreCase))
+        {
+            MemoryTrace.Start(logger, TimeSpan.FromSeconds(15));
+        }
+
         try
         {
             var appVersion = typeof(App).Assembly
@@ -71,10 +76,23 @@ public partial class App : System.Windows.Application
                 await seeder.SeedAsync(connection, CancellationToken.None);
             }
 
+            var blacklistAt = UiTrace.Restart();
             await _serviceProvider.GetRequiredService<IAppBlacklistService>().RefreshAsync(CancellationToken.None);
-            _serviceProvider.GetRequiredService<AppThemeService>().InitializeFromSettings();
+            var blacklistMs = UiTrace.ElapsedMillisecondsSince(blacklistAt);
 
+            var themeAt = UiTrace.Restart();
+            _serviceProvider.GetRequiredService<AppThemeService>().InitializeFromSettings();
+            var themeMs = UiTrace.ElapsedMillisecondsSince(themeAt);
+
+            // MainWindow 从不 Show、也没人读 Application.MainWindow，看上去是纯浪费，但 A/B 实测相反：
+            // 保留它 startup 759 ms（建窗 155 / 显示 388），去掉后 835 ms（建窗 207 / 显示 514）。
+            // 它其实是最便宜的一次 WPF「首次建窗」预热；省掉它，231KB 的设置窗就得自己付这笔钱，更贵。
+            // 所以这里继续构造，只是把耗时单独埋点，防止以后又被当成冗余删掉。
+            var mainWindowAt = UiTrace.Restart();
             MainWindow = _serviceProvider.GetRequiredService<MainWindow>();
+            var mainWindowMs = UiTrace.ElapsedMillisecondsSince(mainWindowAt);
+            UiTrace.Report($"Startup blacklist {blacklistMs} ms, theme {themeMs} ms, main window {mainWindowMs} ms");
+
             _trayIconService = _serviceProvider.GetRequiredService<TrayIconService>();
             _trayIconService.Initialize();
 

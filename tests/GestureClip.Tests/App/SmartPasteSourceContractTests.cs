@@ -59,16 +59,17 @@ public sealed class SmartPasteSourceContractTests
         var xaml = File.ReadAllText(xamlPath);
 
         Assert.Contains("FeatureMapCard", xaml);
-        Assert.Contains("FeatureMapItemCardStyle", xaml);
+        Assert.Contains("FeatureMapButtonStyle", xaml);
         Assert.Contains("我能帮你做什么", xaml);
         Assert.Contains("先看这些入口", xaml);
         Assert.Contains("智能粘贴", xaml);
         Assert.Contains("鼠标手势", xaml);
         Assert.Contains("左键增强 / 设计动作", xaml);
         Assert.Contains("剪贴板历史", xaml);
-        Assert.Contains("快捷入口", xaml);
+        Assert.Contains("MacroRecorderCard", xaml);
+        Assert.Contains("快捷操作宏", xaml);
         Assert.Contains("本地安全", xaml);
-        Assert.Contains("FeatureMapCard_MouseLeftButtonUp", xaml); // navigation via click
+        Assert.Contains("FeatureMapCard_Click", xaml); // navigation via click
         Assert.Contains("打开手势页", xaml);
         Assert.Contains("打开剪贴板页", xaml);
         Assert.Contains("打开隐私页", xaml);

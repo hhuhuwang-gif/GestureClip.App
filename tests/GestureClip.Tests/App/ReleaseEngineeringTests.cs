@@ -67,19 +67,26 @@ public sealed class ReleaseEngineeringTests
     public void Launcher_rebuilds_instead_of_starting_a_stale_binary()
     {
         var launcher = File.ReadAllText(FindRepositoryFile("Start-GestureClip.bat"));
-        var quickScript = File.ReadAllText(FindRepositoryFile("scripts", "build-debug-quick.ps1"));
+        var quickScript = File.ReadAllText(FindRepositoryFile("scripts", "build-quick.ps1"));
 
         // 源码比产物新时要先重建，不能像旧实现那样打印警告后照样启动旧 exe
         Assert.Contains("check-build-freshness.ps1", launcher);
         Assert.Contains("if /i \"%STATE%\"==\"FRESH\" goto launch", launcher);
-        Assert.Contains("choice /c 123", launcher);
-        Assert.Contains("build-debug-quick.ps1", launcher);
+        Assert.Contains("build-quick.ps1", launcher);
         Assert.Contains("publish-win-x64.ps1", launcher);
         Assert.Contains("--quick", launcher);
-        Assert.Contains("--no-check", launcher);
+        Assert.Contains("--no-build", launcher);
+        Assert.Contains("--packaged", launcher);
         Assert.DoesNotContain("timeout /t 5", launcher);
 
-        Assert.Contains("@(\"build\", $project, \"-c\", \"Debug\"", quickScript);
+        // 一键启动：默认路径不能卡在交互菜单上，--ask 才显示选择菜单
+        Assert.Contains("--ask", launcher);
+        var defaultFlow = launcher.Substring(0, launcher.IndexOf(":ask_menu", StringComparison.Ordinal));
+        Assert.DoesNotContain("choice /c", defaultFlow);
+        Assert.DoesNotContain("pause", defaultFlow);
+
+        Assert.Contains("$Configuration = \"Debug\"", quickScript);
+        Assert.Contains("\"build\", $project, \"-c\", $Configuration", quickScript);
     }
 
     [Fact]

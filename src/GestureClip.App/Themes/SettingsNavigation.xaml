@@ -1,0 +1,95 @@
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <Style x:Key="NavGroupTitleStyle" TargetType="TextBlock">
+        <Setter Property="FontSize" Value="12" />
+        <Setter Property="FontWeight" Value="SemiBold" />
+        <Setter Property="Foreground" Value="{DynamicResource BrushTextMuted}" />
+        <Setter Property="Margin" Value="20,20,14,8" />
+    </Style>
+    <Style x:Key="NavItemButtonStyle" TargetType="RadioButton">
+        <Setter Property="Height" Value="42" />
+        <Setter Property="Margin" Value="10,0,10,4" />
+        <Setter Property="Padding" Value="12,0" />
+        <Setter Property="FontSize" Value="13" />
+        <Setter Property="Foreground" Value="{DynamicResource BrushTextSecondary}" />
+        <Setter Property="Background" Value="Transparent" />
+        <Setter Property="FocusVisualStyle" Value="{StaticResource KeyboardFocusStyle}" />
+        <Setter Property="Cursor" Value="Hand" />
+        <Setter Property="GroupName" Value="SettingsNav" />
+        <Setter Property="AutomationProperties.Name" Value="{Binding Content, RelativeSource={RelativeSource Self}}" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="RadioButton">
+                    <Border x:Name="Root" CornerRadius="10" Padding="{TemplateBinding Padding}"
+                            Background="{TemplateBinding Background}" BorderThickness="1"
+                            BorderBrush="Transparent" SnapsToDevicePixels="True">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="26" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <Border x:Name="NavIndicator" Width="3" Height="18" CornerRadius="2"
+                                    HorizontalAlignment="Left" Margin="-12,0,0,0" Background="Transparent" />
+                            <TextBlock x:Name="Glyph" FontFamily="Segoe MDL2 Assets" FontSize="16"
+                                       VerticalAlignment="Center" Text="&#xE80F;" IsHitTestVisible="False" />
+                            <ContentPresenter Grid.Column="1" VerticalAlignment="Center" />
+                        </Grid>
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="Tag" Value="clipboard"><Setter TargetName="Glyph" Property="Text" Value="&#xE8C8;" /></Trigger>
+                        <Trigger Property="Tag" Value="gestures"><Setter TargetName="Glyph" Property="Text" Value="&#xE7C9;" /></Trigger>
+                        <Trigger Property="Tag" Value="bindings"><Setter TargetName="Glyph" Property="Text" Value="&#xE713;" /></Trigger>
+                        <Trigger Property="Tag" Value="macro"><Setter TargetName="Glyph" Property="Text" Value="&#xE7C8;" /></Trigger>
+                        <Trigger Property="Tag" Value="privacy"><Setter TargetName="Glyph" Property="Text" Value="&#xE72E;" /></Trigger>
+                        <Trigger Property="Tag" Value="startup"><Setter TargetName="Glyph" Property="Text" Value="&#xE7E8;" /></Trigger>
+                        <Trigger Property="Tag" Value="workbear"><Setter TargetName="Glyph" Property="Text" Value="&#xE8D4;" /></Trigger>
+                        <Trigger Property="Tag" Value="diagnostics"><Setter TargetName="Glyph" Property="Text" Value="&#xE9D9;" /></Trigger>
+                        <Trigger Property="Tag" Value="about"><Setter TargetName="Glyph" Property="Text" Value="&#xE946;" /></Trigger>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="Root" Property="Background" Value="{DynamicResource BrushControlHover}" />
+                            <Setter Property="Foreground" Value="{DynamicResource BrushTextPrimary}" />
+                        </Trigger>
+                        <Trigger Property="IsChecked" Value="True">
+                            <Setter TargetName="Root" Property="Background" Value="{DynamicResource BrushPrimarySoft}" />
+                            <Setter TargetName="Root" Property="BorderBrush" Value="{DynamicResource BrushPrimarySoft}" />
+                            <Setter TargetName="NavIndicator" Property="Background" Value="{DynamicResource BrushPrimaryBright}" />
+                            <Setter Property="Foreground" Value="{DynamicResource BrushPrimary}" />
+                            <Setter Property="FontWeight" Value="SemiBold" />
+                        </Trigger>
+                        <Trigger Property="IsKeyboardFocused" Value="True">
+                            <Setter TargetName="Root" Property="BorderBrush" Value="{DynamicResource BrushPrimaryBright}" />
+                        </Trigger>
+                        <Trigger Property="IsPressed" Value="True"><Setter TargetName="Root" Property="Opacity" Value="0.75" /></Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+    <Style x:Key="SearchResultItemStyle" TargetType="Button">
+        <Setter Property="Padding" Value="12,10" />
+        <Setter Property="MinHeight" Value="54" />
+        <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+        <Setter Property="Cursor" Value="Hand" />
+        <Setter Property="FocusVisualStyle" Value="{StaticResource KeyboardFocusStyle}" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="Button">
+                    <Border x:Name="Root" Background="Transparent" Padding="{TemplateBinding Padding}"
+                            CornerRadius="8" BorderBrush="Transparent" BorderThickness="1">
+                        <ContentPresenter />
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="Root" Property="Background" Value="{DynamicResource BrushControlHover}" />
+                        </Trigger>
+                        <Trigger Property="IsKeyboardFocused" Value="True">
+                            <Setter TargetName="Root" Property="Background" Value="{DynamicResource BrushPrimarySoft}" />
+                            <Setter TargetName="Root" Property="BorderBrush" Value="{DynamicResource BrushPrimaryBright}" />
+                        </Trigger>
+                        <Trigger Property="IsPressed" Value="True"><Setter TargetName="Root" Property="Opacity" Value="0.75" /></Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+</ResourceDictionary>

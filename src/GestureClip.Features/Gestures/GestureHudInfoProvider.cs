@@ -72,6 +72,8 @@ public sealed class GestureHudInfoProvider : IGestureHudInfoProvider
     {
         return action switch
         {
+            BuiltInGestureAction.MacroToggleRecording => "录制 / 停止并保存",
+            BuiltInGestureAction.MacroTogglePlayback => "回放 / 中止回放",
             BuiltInGestureAction.Copy => "复制",
             BuiltInGestureAction.Paste => "粘贴",
             BuiltInGestureAction.PastePlainText => "纯文本粘贴",

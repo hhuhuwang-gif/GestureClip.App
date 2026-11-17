@@ -6,6 +6,8 @@ public static class GestureActionText
 {
     public static string Name(BuiltInGestureAction action) => action switch
     {
+        BuiltInGestureAction.MacroToggleRecording => "录制 / 停止并保存",
+        BuiltInGestureAction.MacroTogglePlayback => "回放 / 中止回放",
         BuiltInGestureAction.None => "未绑定",
         BuiltInGestureAction.Copy => "复制",
         BuiltInGestureAction.Paste => "粘贴",

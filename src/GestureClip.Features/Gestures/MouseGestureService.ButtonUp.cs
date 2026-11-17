@@ -106,10 +106,10 @@ public sealed partial class MouseGestureService : IMouseGestureService
             return null;
         }
 
-        return CreateReleasedGesture();
+        return CreateReleasedGesture(mouseEvent.Time);
     }
 
-    private PendingGesture CreateReleasedGesture()
+    private PendingGesture CreateReleasedGesture(DateTimeOffset endedAt)
     {
         var isLeftButtonModified = _leftButtonModifier;
         if (_leftClickConfirmDown)
@@ -125,7 +125,11 @@ public sealed partial class MouseGestureService : IMouseGestureService
             isLeftButtonModified,
             PatternOverride: null,
             TargetWindowHandle: _gestureTargetHwnd,
-            TargetProcessName: _gestureTargetProcessName);
+            TargetProcessName: _gestureTargetProcessName)
+        {
+            GestureStartedAt = _gestureStartedAt!.Value,
+            GestureEndedAt = endedAt
+        };
         ResetState("StateReset");
         return pendingGesture;
     }

@@ -12,15 +12,17 @@ public sealed partial class ThemeResourceTests
         var brushes = File.ReadAllText(FindRepositoryFile("src", "GestureClip.App", "Themes", "Brushes.xaml"));
         var glass = File.ReadAllText(FindRepositoryFile("src", "GestureClip.App", "Themes", "GlassStyles.xaml"));
         var settings = File.ReadAllText(FindRepositoryFile("src", "GestureClip.App", "SettingsWindow.xaml"));
+        var navigation = File.ReadAllText(FindRepositoryFile("src", "GestureClip.App", "Themes", "SettingsNavigation.xaml"));
 
         // 卡片和分组列表共用同一个“顶部受光”的细边，避免一页里出现两种描边质感
         Assert.Contains("x:Key=\"BrushCardRim\"", brushes);
         Assert.Contains("BrushCardRim", glass);
         Assert.Contains("CornerRadius=\"14\"", glass);
 
-        // 左侧导航选中态是渐变胶囊 + 同款细边，而不是纯色块
-        Assert.Contains("BrushTabSelectedGradient", settings);
-        Assert.Contains("x:Name=\"NavIndicator\"", settings);
+        // 导航提取为独立主题，选中指示与键盘焦点分别可见。
+        Assert.Contains("Themes/SettingsNavigation.xaml", settings);
+        Assert.Contains("x:Name=\"NavIndicator\"", navigation);
+        Assert.Contains("IsKeyboardFocused", navigation);
         Assert.DoesNotContain("TargetName=\"Root\" Property=\"Background\" Value=\"{DynamicResource BrushTabSelected}\"", settings);
     }
 
@@ -125,7 +127,7 @@ public sealed partial class ThemeResourceTests
         Assert.Contains("WorkstationPageIntro", xaml);
         Assert.Contains("DiagnosticsPageIntro", xaml);
         Assert.Contains("AboutPageIntro", xaml);
-        Assert.Contains("确认权限、数据位置与运行状态", xaml);
+        Assert.Contains("常用功能与运行状态", xaml);
         Assert.Contains("控制是否记录历史", xaml);
         Assert.Contains("去设计 / 更换动作", xaml);
         Assert.Contains("规则只在本机生效", xaml);

@@ -14,6 +14,7 @@
     </Style>
 
     <Style x:Key="BaseButtonStyle" TargetType="Button">
+        <Setter Property="FocusVisualStyle" Value="{StaticResource KeyboardFocusStyle}" />
         <Setter Property="Height" Value="32" />
         <Setter Property="MinWidth" Value="88" />
         <Setter Property="Padding" Value="14,0" />
@@ -87,7 +88,7 @@
                             BorderBrush="{TemplateBinding BorderBrush}"
                             BorderThickness="{TemplateBinding BorderThickness}"
                             Padding="{TemplateBinding Padding}"
-                            TextElement.Foreground="#FFFFFF"
+                            TextElement.Foreground="{TemplateBinding Foreground}"
                             SnapsToDevicePixels="True">
                         <ContentPresenter x:Name="ContentHost"
                                           HorizontalAlignment="Center"
@@ -95,7 +96,7 @@
                                           RecognizesAccessKey="True">
                             <ContentPresenter.Resources>
                                 <Style TargetType="TextBlock">
-                                    <Setter Property="Foreground" Value="#FFFFFF" />
+                                    <Setter Property="Foreground" Value="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" />
                                     <Setter Property="FontWeight" Value="SemiBold" />
                                     <Setter Property="FontSize" Value="{Binding FontSize, RelativeSource={RelativeSource AncestorType=Button}}" />
                                 </Style>
@@ -110,7 +111,8 @@
                             <Setter TargetName="Root" Property="Background" Value="{DynamicResource BrushPrimarySolidPressed}" />
                         </Trigger>
                         <Trigger Property="IsEnabled" Value="False">
-                            <Setter TargetName="Root" Property="Background" Value="#99A9C7" />
+                            <Setter TargetName="Root" Property="Background" Value="{DynamicResource BrushControlDisabled}" />
+                            <Setter Property="Foreground" Value="{DynamicResource BrushTextMuted}" />
                             <Setter TargetName="Root" Property="Opacity" Value="0.85" />
                         </Trigger>
                     </ControlTemplate.Triggers>
@@ -150,7 +152,7 @@
                     </Border>
                     <ControlTemplate.Triggers>
                         <Trigger Property="IsMouseOver" Value="True">
-                            <Setter TargetName="Root" Property="Background" Value="#FFD8D6" />
+                            <Setter TargetName="Root" Property="Background" Value="{DynamicResource BrushDangerHover}" />
                         </Trigger>
                         <Trigger Property="IsPressed" Value="True">
                             <Setter TargetName="Root" Property="Opacity" Value="0.9" />
@@ -252,6 +254,9 @@
                             </MultiTrigger.Conditions>
                             <Setter TargetName="Root" Property="Background" Value="{DynamicResource BrushListSelectedHover}" />
                         </MultiTrigger>
+                    <Trigger Property="IsKeyboardFocusWithin" Value="True">
+                            <Setter TargetName="Root" Property="BorderBrush" Value="{DynamicResource BrushPrimaryBright}" />
+                        </Trigger>
                     </ControlTemplate.Triggers>
                 </ControlTemplate>
             </Setter.Value>
@@ -413,6 +418,7 @@
 
     <!-- Content-only TabControl: headers driven by external nav -->
     <Style x:Key="GlassTabControlStyle" TargetType="TabControl">
+        <Setter Property="Foreground" Value="{DynamicResource BrushTextPrimary}" />
         <Setter Property="Background" Value="Transparent" />
         <Setter Property="BorderThickness" Value="0" />
         <Setter Property="Padding" Value="0" />
@@ -440,6 +446,7 @@
                                 ClipToBounds="True">
                             <ContentPresenter x:Name="PART_SelectedContentHost"
                                               ContentSource="SelectedContent"
+                                              TextElement.Foreground="{TemplateBinding Foreground}"
                                               Margin="0"
                                               HorizontalAlignment="Stretch"
                                               VerticalAlignment="Stretch"
@@ -525,56 +532,7 @@
         <Setter Property="SnapsToDevicePixels" Value="True" />
     </Style>
 
-    <!-- Compact switch-like checkbox for setting rows (no label) -->
-    <Style x:Key="SettingsToggleCheckBoxStyle" TargetType="CheckBox" BasedOn="{StaticResource GlassCheckBoxStyle}">
-        <Setter Property="Padding" Value="0" />
-        <Setter Property="Margin" Value="0" />
-        <Setter Property="MinWidth" Value="44" />
-        <Setter Property="MinHeight" Value="28" />
-        <Setter Property="HorizontalAlignment" Value="Right" />
-        <Setter Property="VerticalAlignment" Value="Center" />
-        <Setter Property="FocusVisualStyle" Value="{x:Null}" />
-        <Setter Property="Template">
-            <Setter.Value>
-                <ControlTemplate TargetType="CheckBox">
-                    <Grid Width="44" Height="26" Background="Transparent" SnapsToDevicePixels="True">
-                        <Border x:Name="Track"
-                                CornerRadius="13"
-                                Background="{DynamicResource BrushButtonFill}"
-                                BorderBrush="{DynamicResource BrushBorder}"
-                                BorderThickness="1" />
-                        <Ellipse x:Name="Thumb"
-                                 Width="20" Height="20"
-                                 HorizontalAlignment="Left"
-                                 Margin="3,0,0,0"
-                                 Fill="White"
-                                 Stroke="{DynamicResource BrushBorder}"
-                                 StrokeThickness="1"
-                                 VerticalAlignment="Center">
-                            <Ellipse.Effect>
-                                <DropShadowEffect Color="#000000" BlurRadius="4" ShadowDepth="1" Opacity="0.12" Direction="270" />
-                            </Ellipse.Effect>
-                        </Ellipse>
-                    </Grid>
-                    <ControlTemplate.Triggers>
-                        <Trigger Property="IsChecked" Value="True">
-                            <Setter TargetName="Track" Property="Background" Value="{DynamicResource BrushPrimaryBright}" />
-                            <Setter TargetName="Track" Property="BorderBrush" Value="{DynamicResource BrushPrimaryBright}" />
-                            <Setter TargetName="Thumb" Property="HorizontalAlignment" Value="Right" />
-                            <Setter TargetName="Thumb" Property="Margin" Value="0,0,3,0" />
-                        </Trigger>
-                        <Trigger Property="IsEnabled" Value="False">
-                            <Setter Property="Opacity" Value="0.5" />
-                        </Trigger>
-                        <Trigger Property="IsMouseOver" Value="True">
-                            <Setter TargetName="Track" Property="Opacity" Value="0.92" />
-                        </Trigger>
-                    </ControlTemplate.Triggers>
-                </ControlTemplate>
-            </Setter.Value>
-        </Setter>
-    </Style>
-
+    <!-- Switch template is separated from input and list styles. -->
     <Style TargetType="CheckBox" BasedOn="{StaticResource GlassCheckBoxStyle}" />
 
 

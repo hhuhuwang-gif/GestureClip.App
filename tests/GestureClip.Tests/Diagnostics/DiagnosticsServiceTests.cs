@@ -78,7 +78,7 @@ public sealed class DiagnosticsServiceTests
         public PermissionStatus GetCurrentStatus() => PermissionStatus.Normal;
     }
 
-    private sealed class FakeClipboardService : IClipboardService
+    private sealed class FakeClipboardService : Support.UnsupportedClipboardSearchIndex, IClipboardService
     {
         public bool IsCaptureEnabled => true;
         public DateTimeOffset? SuppressCaptureUntil => null;

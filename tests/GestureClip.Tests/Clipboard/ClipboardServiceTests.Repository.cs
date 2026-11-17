@@ -12,7 +12,7 @@ namespace GestureClip.Tests.Clipboard;
 public sealed partial class ClipboardServiceTests
 {
 
-    private sealed class FakeClipboardRepository : IClipboardRepository
+    private sealed class FakeClipboardRepository : Support.UnsupportedClipboardSearchIndex, IClipboardRepository
     {
         public List<ClipboardItem> Items { get; } = [];
         public string? BlockedProcessName { get; set; }

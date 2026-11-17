@@ -1,0 +1,18 @@
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <!-- White recorder workspace, including when the surrounding shell is dark. -->
+    <SolidColorBrush x:Key="BrushTextPrimary" Color="#172338" />
+    <SolidColorBrush x:Key="BrushTextSecondary" Color="#586880" />
+    <SolidColorBrush x:Key="BrushTextMuted" Color="#63738A" />
+    <SolidColorBrush x:Key="BrushBorder" Color="#DCE3ED" />
+    <SolidColorBrush x:Key="BrushButtonFill" Color="White" />
+    <SolidColorBrush x:Key="BrushButtonHover" Color="#F0F5FD" />
+    <SolidColorBrush x:Key="BrushControlHover" Color="#F0F5FD" />
+    <SolidColorBrush x:Key="BrushControlDisabled" Color="#F2F4F7" />
+    <SolidColorBrush x:Key="BrushComboBoxDropDown" Color="White" />
+    <SolidColorBrush x:Key="BrushGlass" Color="White" />
+    <SolidColorBrush x:Key="BrushGlassStrong" Color="White" />
+    <SolidColorBrush x:Key="BrushGlassCard" Color="White" />
+    <SolidColorBrush x:Key="BrushDanger" Color="#BA3545" />
+    <SolidColorBrush x:Key="BrushDangerSoft" Color="#FFF0F2" />
+</ResourceDictionary>

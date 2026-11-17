@@ -1,6 +1,7 @@
 using System.Diagnostics;
 using System.Windows;
 using System.Windows.Threading;
+using GestureClip.App.Diagnostics;
 using GestureClip.Core.Abstractions;
 using GestureClip.Core.Settings;
 using Microsoft.Extensions.DependencyInjection;
@@ -34,6 +35,7 @@ public sealed class ClipboardOverlayService : IClipboardOverlayService
     public async Task ShowAsync()
     {
         DebugPerf("CLIPBOARD_HOTKEY");
+        var watch = Stopwatch.StartNew();
         await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
         {
             var window = EnsureWindow();
@@ -44,6 +46,7 @@ public sealed class ClipboardOverlayService : IClipboardOverlayService
             RecordOpenInBackground();
             _ = LoadHistoryWithPerfAsync(window);
         });
+        UiTrace.Report($"Clipboard overlay shown in {watch.ElapsedMilliseconds} ms");
     }
 
     public async Task ToggleAsync()
@@ -137,6 +140,7 @@ public sealed class ClipboardOverlayService : IClipboardOverlayService
         finally
         {
             watch.Stop();
+            UiTrace.Report($"Clipboard overlay warm-up {watch.ElapsedMilliseconds} ms");
             if (_perfLogEnabled)
             {
                 _logger.LogInformation("ClipboardPerf OverlayWarmUpMs ElapsedMs={ElapsedMs}", watch.ElapsedMilliseconds);

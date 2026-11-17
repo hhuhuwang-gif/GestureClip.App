@@ -176,5 +176,9 @@ public sealed partial class MouseGestureService : IMouseGestureService
         bool IsLeftButtonModified = false,
         string? PatternOverride = null,
         nint TargetWindowHandle = 0,
-        string? TargetProcessName = null);
+        string? TargetProcessName = null)
+    {
+        public DateTimeOffset GestureStartedAt { get; init; } = Points[0].Time;
+        public DateTimeOffset GestureEndedAt { get; init; } = Points[^1].Time;
+    }
 }

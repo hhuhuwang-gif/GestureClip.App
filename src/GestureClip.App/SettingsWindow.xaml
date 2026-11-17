@@ -19,6 +19,7 @@
         TextOptions.TextFormattingMode="Display"
         TextOptions.TextRenderingMode="Grayscale"
         TextOptions.TextHintingMode="Fixed"
+        PreviewKeyDown="SettingsWindow_SearchShortcut"
         PreviewMouseWheel="SettingsWindow_PreviewMouseWheel">
     <shell:WindowChrome.WindowChrome>
         <!-- Keeps the window a normal DWM-composited surface (no layered fallback)
@@ -30,6 +31,11 @@
                             UseAeroCaptionButtons="False" />
     </shell:WindowChrome.WindowChrome>
     <Window.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="Themes/SettingsNavigation.xaml" />
+                <ResourceDictionary Source="Themes/SettingsCards.xaml" />
+            </ResourceDictionary.MergedDictionaries>
         <Style TargetType="{x:Type controls:SmoothScrollViewer}" BasedOn="{StaticResource GlassScrollViewerStyle}" />
         <Style x:Key="SettingsSurfaceCardStyle" TargetType="Border" BasedOn="{StaticResource GlassCardStyle}">
             <Setter Property="Effect" Value="{x:Null}" />
@@ -57,20 +63,6 @@
         <Style x:Key="SettingsCompactFormRowStyle" TargetType="Border" BasedOn="{StaticResource SettingsFormRowStyle}">
             <Setter Property="Padding" Value="20,16" />
             <Setter Property="Margin" Value="0" />
-        </Style>
-        <Style x:Key="FeatureMapItemCardStyle" TargetType="Border">
-            <Setter Property="Padding" Value="18,16" />
-            <Setter Property="Margin" Value="0,0,14,14" />
-            <Setter Property="MinHeight" Value="112" />
-            <Setter Property="Background" Value="{DynamicResource BrushGlassCard}" />
-            <Setter Property="BorderBrush" Value="{DynamicResource BrushBorder}" />
-            <Setter Property="BorderThickness" Value="1" />
-            <Setter Property="CornerRadius" Value="14" />
-            <Setter Property="Effect" Value="{x:Null}" />
-            <Setter Property="ClipToBounds" Value="True" />
-            <Setter Property="HorizontalAlignment" Value="Stretch" />
-            <Setter Property="SnapsToDevicePixels" Value="True" />
-            <Setter Property="Focusable" Value="False" />
         </Style>
         <Style x:Key="SettingsHotkeyBoxStyle" TargetType="TextBox" BasedOn="{StaticResource GlassTextBoxStyle}">
             <Setter Property="MinWidth" Value="200" />
@@ -103,49 +95,49 @@
             <Setter Property="Width" Value="120" />
             <Setter Property="Height" Value="32" />
             <Setter Property="Margin" Value="0,0,8,8" />
-            <Setter Property="Focusable" Value="False" />
+            <Setter Property="Focusable" Value="True" />
         </Style>
         <Style x:Key="SettingsSecondaryActionButtonStyle" TargetType="Button" BasedOn="{StaticResource SecondaryButtonStyle}">
             <Setter Property="MinWidth" Value="0" />
             <Setter Property="Width" Value="120" />
             <Setter Property="Height" Value="32" />
             <Setter Property="Margin" Value="0,0,8,8" />
-            <Setter Property="Focusable" Value="False" />
+            <Setter Property="Focusable" Value="True" />
         </Style>
         <Style x:Key="SettingsPrimaryActionButtonStyle" TargetType="Button" BasedOn="{StaticResource PrimaryButtonStyle}">
             <Setter Property="MinWidth" Value="0" />
             <Setter Property="Width" Value="128" />
             <Setter Property="Height" Value="32" />
             <Setter Property="Margin" Value="0,0,8,8" />
-            <Setter Property="Focusable" Value="False" />
+            <Setter Property="Focusable" Value="True" />
         </Style>
         <Style x:Key="SettingsDangerActionButtonStyle" TargetType="Button" BasedOn="{StaticResource DangerButtonStyle}">
             <Setter Property="MinWidth" Value="0" />
             <Setter Property="Width" Value="128" />
             <Setter Property="Height" Value="32" />
             <Setter Property="Margin" Value="0,0,8,8" />
-            <Setter Property="Focusable" Value="False" />
+            <Setter Property="Focusable" Value="True" />
         </Style>
         <Style x:Key="SettingsCompactActionButtonStyle" TargetType="Button" BasedOn="{StaticResource SecondaryButtonStyle}">
             <Setter Property="MinWidth" Value="0" />
             <Setter Property="Width" Value="108" />
             <Setter Property="Height" Value="30" />
             <Setter Property="Margin" Value="0,0,8,8" />
-            <Setter Property="Focusable" Value="False" />
+            <Setter Property="Focusable" Value="True" />
         </Style>
         <Style x:Key="SettingsGestureDirectionButtonStyle" TargetType="Button" BasedOn="{StaticResource SecondaryButtonStyle}">
             <Setter Property="MinWidth" Value="0" />
             <Setter Property="Width" Value="60" />
             <Setter Property="Height" Value="32" />
             <Setter Property="Margin" Value="0,0,8,8" />
-            <Setter Property="Focusable" Value="False" />
+            <Setter Property="Focusable" Value="True" />
         </Style>
         <Style x:Key="SettingsGestureTemplateButtonStyle" TargetType="Button" BasedOn="{StaticResource SecondaryButtonStyle}">
             <Setter Property="MinWidth" Value="0" />
             <Setter Property="Width" Value="168" />
             <Setter Property="Height" Value="32" />
             <Setter Property="Margin" Value="0,0,8,8" />
-            <Setter Property="Focusable" Value="False" />
+            <Setter Property="Focusable" Value="True" />
         </Style>
         <Style x:Key="SettingsDangerZoneStyle" TargetType="Border" BasedOn="{StaticResource SettingsFormRowStyle}">
             <Setter Property="Background" Value="Transparent" />
@@ -166,97 +158,7 @@
             <Setter Property="Margin" Value="0,0,0,8" />
         </Style>
 
-        <Style x:Key="NavGroupTitleStyle" TargetType="TextBlock">
-            <Setter Property="FontSize" Value="11" />
-            <Setter Property="FontWeight" Value="SemiBold" />
-            <Setter Property="Foreground" Value="{DynamicResource BrushTextMuted}" />
-            <Setter Property="Margin" Value="14,14,14,6" />
-            <Setter Property="LineHeight" Value="14" />
-        </Style>
-        <Style x:Key="NavItemButtonStyle" TargetType="RadioButton">
-            <Setter Property="Height" Value="38" />
-            <Setter Property="Margin" Value="10,0,10,2" />
-            <Setter Property="Padding" Value="12,0" />
-            <Setter Property="FontSize" Value="13" />
-            <Setter Property="Foreground" Value="{DynamicResource BrushTextPrimary}" />
-            <Setter Property="Background" Value="Transparent" />
-            <Setter Property="BorderThickness" Value="0" />
-            <Setter Property="FocusVisualStyle" Value="{x:Null}" />
-            <Setter Property="Cursor" Value="Hand" />
-            <Setter Property="HorizontalContentAlignment" Value="Left" />
-            <Setter Property="VerticalContentAlignment" Value="Center" />
-            <Setter Property="GroupName" Value="SettingsNav" />
-            <Setter Property="Template">
-                <Setter.Value>
-                    <ControlTemplate TargetType="RadioButton">
-                        <Border x:Name="Root"
-                                CornerRadius="8"
-                                Background="{TemplateBinding Background}"
-                                BorderBrush="Transparent"
-                                BorderThickness="1"
-                                Padding="{TemplateBinding Padding}"
-                                SnapsToDevicePixels="True">
-                            <Grid>
-                                <Border x:Name="NavIndicator"
-                                        Width="3"
-                                        Height="18"
-                                        CornerRadius="2"
-                                        Margin="-9,0,0,0"
-                                        HorizontalAlignment="Left"
-                                        VerticalAlignment="Center"
-                                        Background="Transparent" />
-                                <ContentPresenter VerticalAlignment="Center" HorizontalAlignment="Left" />
-                            </Grid>
-                        </Border>
-                        <ControlTemplate.Triggers>
-                            <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="Root" Property="Background" Value="{DynamicResource BrushControlHover}" />
-                            </Trigger>
-                            <Trigger Property="IsChecked" Value="True">
-                                <!-- Lit pill: gradient fill plus a hairline rim reads as a raised
-                                     chip instead of a flat tint, which is what made the sidebar
-                                     look cheap next to the cards. -->
-                                <Setter TargetName="Root" Property="Background" Value="{DynamicResource BrushTabSelectedGradient}" />
-                                <Setter TargetName="Root" Property="BorderBrush" Value="{DynamicResource BrushCardRim}" />
-                                <Setter TargetName="NavIndicator" Property="Background" Value="{DynamicResource BrushPrimaryBright}" />
-                                <Setter Property="FontWeight" Value="SemiBold" />
-                                <Setter Property="Foreground" Value="{DynamicResource BrushPrimary}" />
-                            </Trigger>
-                            <MultiTrigger>
-                                <MultiTrigger.Conditions>
-                                    <Condition Property="IsChecked" Value="True" />
-                                    <Condition Property="IsMouseOver" Value="True" />
-                                </MultiTrigger.Conditions>
-                                <Setter TargetName="Root" Property="Background" Value="{DynamicResource BrushTabSelectedGradient}" />
-                                <Setter TargetName="Root" Property="BorderBrush" Value="{DynamicResource BrushPrimarySoft}" />
-                            </MultiTrigger>
-                        </ControlTemplate.Triggers>
-                    </ControlTemplate>
-                </Setter.Value>
-            </Setter>
-        </Style>
-        <Style x:Key="SearchResultItemStyle" TargetType="Button">
-            <Setter Property="Background" Value="Transparent" />
-            <Setter Property="BorderThickness" Value="0" />
-            <Setter Property="Padding" Value="12,10" />
-            <Setter Property="HorizontalContentAlignment" Value="Stretch" />
-            <Setter Property="Cursor" Value="Hand" />
-            <Setter Property="FocusVisualStyle" Value="{x:Null}" />
-            <Setter Property="Template">
-                <Setter.Value>
-                    <ControlTemplate TargetType="Button">
-                        <Border x:Name="Root" Background="{TemplateBinding Background}" Padding="{TemplateBinding Padding}" CornerRadius="8">
-                            <ContentPresenter />
-                        </Border>
-                        <ControlTemplate.Triggers>
-                            <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="Root" Property="Background" Value="{DynamicResource BrushControlHover}" />
-                            </Trigger>
-                        </ControlTemplate.Triggers>
-                    </ControlTemplate>
-                </Setter.Value>
-            </Setter>
-        </Style>
+        </ResourceDictionary>
     </Window.Resources>
     <Border CornerRadius="14"
             Background="{DynamicResource BrushAppBackground}"
@@ -325,12 +227,14 @@
                                 <ColumnDefinition Width="*" />
                                 <ColumnDefinition Width="Auto" />
                             </Grid.ColumnDefinitions>
-                            <TextBlock Text="⌕"
+                            <TextBlock Text="&#xE721;" FontFamily="Segoe MDL2 Assets"
                                        FontSize="14"
                                        VerticalAlignment="Center"
                                        Margin="0,0,8,0"
                                        Foreground="{DynamicResource BrushTextMuted}" />
                             <TextBox x:Name="SettingsSearchBox"
+                                     AutomationProperties.Name="搜索设置"
+                                     AutomationProperties.HelpText="Ctrl+F 聚焦，输入后按上下键选择，Enter 打开，Esc 关闭"
                                      Grid.Column="1"
                                      Style="{x:Null}"
                                      BorderThickness="0"
@@ -347,12 +251,13 @@
                                      GotKeyboardFocus="SettingsSearchBox_GotKeyboardFocus" />
                             <TextBlock x:Name="SearchPlaceholder"
                                        Grid.Column="1"
-                                       Text="搜索设置…"
+                                       Text="搜索设置…  Ctrl + F"
                                        FontSize="12"
                                        VerticalAlignment="Center"
                                        IsHitTestVisible="False"
                                        Foreground="{DynamicResource BrushTextMuted}" />
                             <Button x:Name="ClearSearchButton"
+                                    AutomationProperties.Name="清除设置搜索"
                                     Grid.Column="2"
                                     Content="×"
                                     Width="22"
@@ -420,6 +325,7 @@
                             <RadioButton x:Name="NavClipboard" Content="剪贴板" Style="{StaticResource NavItemButtonStyle}" Tag="clipboard" Checked="NavItem_Checked" />
                             <RadioButton x:Name="NavGestures" Content="手势" Style="{StaticResource NavItemButtonStyle}" Tag="gestures" Checked="NavItem_Checked" />
                             <RadioButton x:Name="NavBindings" Content="动作绑定" Style="{StaticResource NavItemButtonStyle}" Tag="bindings" Checked="NavItem_Checked" />
+                            <RadioButton x:Name="NavMacro" Content="录制" Style="{StaticResource NavItemButtonStyle}" Tag="macro" Checked="NavItem_Checked" />
 
                             <TextBlock Text="系统" Style="{StaticResource NavGroupTitleStyle}" />
                             <RadioButton x:Name="NavPrivacy" Content="隐私" Style="{StaticResource NavItemButtonStyle}" Tag="privacy" Checked="NavItem_Checked" />
@@ -462,6 +368,7 @@
                     <TabControl.Resources>
                         <!-- Headers hidden by GlassTabControlStyle template; keep items measurable -->
                         <Style TargetType="TabItem">
+                            <Setter Property="Foreground" Value="{DynamicResource BrushTextPrimary}" />
                             <Setter Property="Height" Value="0" />
                             <Setter Property="Padding" Value="0" />
                             <Setter Property="Margin" Value="0" />
@@ -475,7 +382,7 @@
                             <Border x:Name="HomePageIntro" Style="{StaticResource SettingsIntroCardStyle}">
                                 <StackPanel>
                                     <TextBlock Text="总览" Style="{StaticResource SettingsIntroTitleStyle}" />
-                                    <TextBlock Text="确认权限、数据位置与运行状态。这里不改变功能，只帮你判断 GestureClip 当前是否正常。"
+                                    <TextBlock Text="让复制、粘贴和每一次鼠标操作更顺手。常用功能与运行状态，尽在这里。"
                                                Style="{StaticResource SettingsPageSubtitleStyle}" />
                                 </StackPanel>
                             </Border>
@@ -540,24 +447,8 @@
                                     ClipToBounds="True"
                                     HorizontalAlignment="Stretch"
                                     SnapsToDevicePixels="True">
-                                <StackPanel>
-                                    <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
-                                        <TextBlock Text="v0.6.45 新功能"
-                                                   FontSize="16"
-                                                   FontWeight="SemiBold"
-                                                   Foreground="{DynamicResource BrushTextPrimary}"
-                                                   VerticalAlignment="Center" />
-                                        <Border Style="{StaticResource StatusBadgeStyle}"
-                                                Margin="10,0,0,0"
-                                                VerticalAlignment="Center">
-                                            <TextBlock Text="NEW"
-                                                       FontSize="11"
-                                                       LineHeight="14"
-                                                       VerticalAlignment="Center"
-                                                       Foreground="{DynamicResource BrushPrimaryBright}"
-                                                       FontWeight="SemiBold" />
-                                        </Border>
-                                    </StackPanel>
+                                <Expander Header="本次更新 · 5 项新功能" Style="{StaticResource SettingsUpdateExpanderStyle}">
+                                    <StackPanel>
                                     <TextBlock Text="🖱 滚轮手势：按住右键滚滚轮 = 上一个 / 下一个标签页，滚一格切一次，松开不弹菜单。想换动作或关闭：设置 → 手势。"
                                                Style="{StaticResource MutedTextStyle}" FontSize="13" LineHeight="20" TextWrapping="Wrap" Margin="0,0,0,8" />
                                     <TextBlock Text="📋 剪贴板历史（Ctrl + `）右键新招：「以文件形式复制」把文字 / 图片变 .txt / .png 直接粘到文件夹；选中按 F2 就地编辑；「生成二维码」手机扫码带走（本机生成，不上传）。"
@@ -569,6 +460,7 @@
                                     <TextBlock Text="🧸 迷你挂件：Hub 底部点「迷你挂件」→ 桌面常驻小胶囊，实时跳「已赚 + 下班倒计时」；右键可换成你自己的桌宠图（GIF 会动，可去 codex-pet.org 之类的桌宠站下载素材）。"
                                                Style="{StaticResource MutedTextStyle}" FontSize="13" LineHeight="20" TextWrapping="Wrap" />
                                 </StackPanel>
+                                </Expander>
                             </Border>
 
                             <TextBlock Text="我能帮你做什么"
@@ -580,23 +472,23 @@
                                        FontSize="13" />
 
                             <UniformGrid Columns="2" Margin="0,0,-16,-16" HorizontalAlignment="Stretch">
-                                <Border Style="{StaticResource FeatureMapItemCardStyle}"
+                                <Button Style="{StaticResource FeatureMapButtonStyle}"
                                         Cursor="Hand"
                                         Tag="clipboard"
-                                        MouseLeftButtonUp="FeatureMapCard_MouseLeftButtonUp"
+                                        Click="FeatureMapCard_Click"
                                         ToolTip="前往剪贴板设置">
                                     <StackPanel>
                                         <TextBlock Text="智能粘贴" FontSize="14" FontWeight="SemiBold" />
-                                        <TextBlock Text="在微信 / 飞书 / Word / 浏览器粘贴时自动选择合适方式。"
+                                        <TextBlock Text="保留原始格式，按需配置应用粘贴规则。"
                                                    Style="{StaticResource MutedTextStyle}" Margin="0,6,0,0" FontSize="12" />
                                         <TextBlock Text="打开剪贴板页 →"
                                                    Foreground="{DynamicResource BrushPrimaryBright}"
                                                    FontSize="12" FontWeight="Medium" Margin="0,10,0,0" />
                                     </StackPanel>
-                                </Border>
-                                <Border Style="{StaticResource FeatureMapItemCardStyle}"
+                                </Button>
+                                <Button Style="{StaticResource FeatureMapButtonStyle}"
                                         Cursor="Hand" Tag="gestures"
-                                        MouseLeftButtonUp="FeatureMapCard_MouseLeftButtonUp"
+                                        Click="FeatureMapCard_Click"
                                         ToolTip="前往手势设置">
                                     <StackPanel>
                                         <TextBlock Text="鼠标手势" FontSize="14" FontWeight="SemiBold" />
@@ -606,10 +498,10 @@
                                                    Foreground="{DynamicResource BrushPrimaryBright}"
                                                    FontSize="12" FontWeight="Medium" Margin="0,10,0,0" />
                                     </StackPanel>
-                                </Border>
-                                <Border Style="{StaticResource FeatureMapItemCardStyle}"
+                                </Button>
+                                <Button Style="{StaticResource FeatureMapButtonStyle}"
                                         Cursor="Hand" Tag="bindings"
-                                        MouseLeftButtonUp="FeatureMapCard_MouseLeftButtonUp"
+                                        Click="FeatureMapCard_Click"
                                         ToolTip="前往动作绑定">
                                     <StackPanel>
                                         <TextBlock Text="左键增强 / 设计动作" FontSize="14" FontWeight="SemiBold" />
@@ -619,10 +511,10 @@
                                                    Foreground="{DynamicResource BrushPrimaryBright}"
                                                    FontSize="12" FontWeight="Medium" Margin="0,10,0,0" />
                                     </StackPanel>
-                                </Border>
-                                <Border Style="{StaticResource FeatureMapItemCardStyle}"
+                                </Button>
+                                <Button Style="{StaticResource FeatureMapButtonStyle}"
                                         Cursor="Hand" Tag="clipboard"
-                                        MouseLeftButtonUp="FeatureMapCard_MouseLeftButtonUp"
+                                        Click="FeatureMapCard_Click"
                                         ToolTip="前往剪贴板历史">
                                     <StackPanel>
                                         <TextBlock Text="剪贴板历史" FontSize="14" FontWeight="SemiBold" />
@@ -632,20 +524,20 @@
                                                    Foreground="{DynamicResource BrushPrimaryBright}"
                                                    FontSize="12" FontWeight="Medium" Margin="0,10,0,0" />
                                     </StackPanel>
-                                </Border>
-                                <Border Style="{StaticResource FeatureMapItemCardStyle}">
+                                </Button>
+                                <Button x:Name="MacroRecorderCard" Style="{StaticResource FeatureMapButtonStyle}" Click="OpenMacroRecorder_Click" ToolTip="打开快捷操作宏录制面板">
                                     <StackPanel>
-                                        <TextBlock Text="快捷入口 / 系统工具" FontSize="14" FontWeight="SemiBold" />
-                                        <TextBlock Text="快速打开常用工具，不用翻开始菜单。"
+                                        <TextBlock Text="快捷操作宏" FontSize="14" FontWeight="SemiBold" />
+                                        <TextBlock Text="录下鼠标键盘操作，按原时序回放。"
                                                    Style="{StaticResource MutedTextStyle}" Margin="0,6,0,0" FontSize="12" />
-                                        <TextBlock Text="设置内按需开启"
+                                        <TextBlock Text="打开录制面板 →"
                                                    Foreground="{DynamicResource BrushTextSecondary}"
                                                    FontSize="12" FontWeight="Medium" Margin="0,10,0,0" />
                                     </StackPanel>
-                                </Border>
-                                <Border Style="{StaticResource FeatureMapItemCardStyle}"
+                                </Button>
+                                <Button Style="{StaticResource FeatureMapButtonStyle}"
                                         Cursor="Hand" Tag="privacy"
-                                        MouseLeftButtonUp="FeatureMapCard_MouseLeftButtonUp"
+                                        Click="FeatureMapCard_Click"
                                         ToolTip="前往隐私设置">
                                     <StackPanel>
                                         <TextBlock Text="本地安全" FontSize="14" FontWeight="SemiBold" />
@@ -655,7 +547,7 @@
                                                    Foreground="{DynamicResource BrushPrimaryBright}"
                                                    FontSize="12" FontWeight="Medium" Margin="0,10,0,0" />
                                     </StackPanel>
-                                </Border>
+                                </Button>
                             </UniformGrid>
 
                             <TextBlock x:Name="SectionSystemInfo" Text="系统信息" Style="{StaticResource SettingsGroupTitleStyle}" Margin="0,28,0,10" />
@@ -1092,6 +984,29 @@
                                                 <CheckBox Content="HUD 状态等级" IsChecked="{Binding HudStatusLevelEnabled, Mode=TwoWay}" />
                                             </WrapPanel>
                                         </StackPanel>
+                                    </Border>
+
+                                    <Border Style="{StaticResource SettingsCompactFormRowStyle}">
+                                        <Grid>
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="150" />
+                                                <ColumnDefinition Width="*" />
+                                            </Grid.ColumnDefinitions>
+                                            <TextBlock Text="HUD 动效强度" FontWeight="SemiBold" VerticalAlignment="Center" />
+                                            <StackPanel Grid.Column="1">
+                                                <ComboBox Width="240"
+                                                          HorizontalAlignment="Left"
+                                                          SelectedIndex="{Binding HudMotionLevel, Mode=TwoWay}">
+                                                    <ComboBoxItem Content="完整（全部流动层）" />
+                                                    <ComboBoxItem Content="均衡（默认，流动层降帧）" />
+                                                    <ComboBoxItem Content="极简（静态渐变，最省电）" />
+                                                </ComboBox>
+                                                <TextBlock Text="{Binding HudMotionLevelDescription}"
+                                                           Style="{StaticResource MutedTextStyle}"
+                                                           Margin="0,6,0,0"
+                                                           TextWrapping="Wrap" />
+                                            </StackPanel>
+                                        </Grid>
                                     </Border>
 
                                     <Border Style="{StaticResource SettingsCompactFormRowStyle}">
@@ -2020,6 +1935,10 @@
                     </controls:SmoothScrollViewer>
                 </TabItem>
 
+                <TabItem Header="录制">
+                    <controls:MacroRecorderControl x:Name="MacroRecorderPage" Loaded="MacroRecorderPage_Loaded" />
+                </TabItem>
+
                 <TabItem Header="隐私">
                     <controls:SmoothScrollViewer VerticalScrollBarVisibility="Auto"
                                   HorizontalScrollBarVisibility="Disabled"
@@ -2605,57 +2524,56 @@
                                                Style="{StaticResource MutedTextStyle}" />
                                 </StackPanel>
                             </Border>
-                            <TextBlock Text="关于" Style="{StaticResource SettingsGroupTitleStyle}" Margin="2,20,0,10" />
-                            <Border Style="{StaticResource SettingsListContainerStyle}" HorizontalAlignment="Stretch">
+                            <Border Style="{StaticResource BoardCardStyle}" Margin="0,24,0,24">
                                 <StackPanel>
-                                    <TextBlock TextWrapping="Wrap"
-                                               Style="{StaticResource MutedTextStyle}"
-                                               Text="GestureClip 是本地优先的 Windows 剪贴板历史与右键手势工具。剪贴板文本存储在本机 SQLite，日志不记录剪贴板正文。MVP 不保证控制管理员权限窗口，如需控制管理员窗口，请以管理员身份运行 GestureClip。" />
-                                    <Border Style="{StaticResource SoftStatusCardStyle}" Margin="0,14,0,0">
+                                    <TextBlock Text="GestureClip" FontSize="24" FontWeight="SemiBold" />
+                                    <TextBlock Text="让复制、粘贴与鼠标操作更顺手。" Style="{StaticResource BoardBodyStyle}" Margin="0,12,0,0" />
+                                    <TextBlock Text="Windows 剪贴板历史与右键手势工具，数据保存在本机 SQLite，日志不记录剪贴板正文。"
+                                               Style="{StaticResource BoardBodyStyle}" Margin="0,8,0,0" />
+                                </StackPanel>
+                            </Border>
+                            <Border Style="{StaticResource BoardCardStyle}" Margin="0,0,0,24">
+                                <StackPanel>
+                                    <Grid>
+                                        <Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="Auto" /></Grid.ColumnDefinitions>
                                         <StackPanel>
-                                            <TextBlock Text="当前版本" FontWeight="SemiBold" />
-                                            <TextBlock Text="{Binding AppVersionText}"
-                                                       FontSize="18"
-                                                       FontWeight="SemiBold"
-                                                       Foreground="{DynamicResource BrushPrimaryBright}"
-                                                       Margin="0,6,0,0" />
+                                            <TextBlock Text="版本与更新" Style="{StaticResource BoardHeadingStyle}" />
+                                            <TextBlock Text="当前版本" Style="{StaticResource BoardBodyStyle}" Margin="0,8,0,0" />
                                         </StackPanel>
-                                    </Border>
-                                    <WrapPanel Margin="0,14,0,0">
-                                        <Button Content="检查更新"
-                                                Style="{StaticResource SettingsSecondaryActionButtonStyle}"
-                                                Click="CheckUpdateButton_Click" />
-                                        <Button Content="一键覆盖更新"
-                                                Style="{StaticResource SettingsPrimaryActionButtonStyle}"
-                                                Click="UpdateButton_Click" />
-                                        <Button Content="打开 Release 页面"
-                                                Style="{StaticResource SettingsSecondaryActionButtonStyle}"
-                                                Click="OpenReleaseButton_Click" />
+                                        <TextBlock Grid.Column="1" Text="{Binding AppVersionText}" FontSize="24" FontWeight="SemiBold"
+                                                   Foreground="{DynamicResource BrushTextPrimary}" VerticalAlignment="Center" Margin="24,0,0,0" />
+                                    </Grid>
+                                    <WrapPanel Margin="0,24,-12,0">
+                                        <Button Content="检查更新" Style="{StaticResource BoardActionStyle}" Click="CheckUpdateButton_Click" />
+                                        <Button Content="一键覆盖更新" Style="{StaticResource BoardPrimaryActionStyle}" Click="UpdateButton_Click" />
+                                        <Button Content="打开 Release 页面" Style="{StaticResource BoardActionStyle}" Click="OpenReleaseButton_Click" />
                                     </WrapPanel>
-                                    <TextBlock Text="检查更新会比较当前版本和 GitHub Latest Release。网络不佳时会自动尝试：系统代理 → 直连 → 镜像加速。一键覆盖更新下载最新 zip 后覆盖重启，本地历史与设置保留。仍失败时可打开 Release 手动下载。"
-                                               Style="{StaticResource MutedTextStyle}"
-                                               TextWrapping="Wrap"
-                                               Margin="0,8,0,0" />
+                                    <TextBlock Text="覆盖更新会重启程序，本地历史与设置会保留。" Style="{StaticResource BoardBodyStyle}" Margin="0,8,0,0" />
                                 </StackPanel>
                             </Border>
-
-                            <TextBlock Text="更新日志" Style="{StaticResource SettingsGroupTitleStyle}" Margin="2,20,0,10" />
-                            <Border Style="{StaticResource SettingsListContainerStyle}" HorizontalAlignment="Stretch">
-                                <StackPanel>
-                                    <TextBlock Text="本地 CHANGELOG（发布包会附带）。也可以用“检查更新”查看 GitHub 最新 Release Notes。"
-                                               Style="{StaticResource MutedTextStyle}"
-                                               TextWrapping="Wrap"
-                                               Margin="0,0,0,10" />
-                                    <TextBox Text="{Binding ChangelogText, Mode=OneWay}"
-                                             IsReadOnly="True"
-                                             TextWrapping="Wrap"
-                                             AcceptsReturn="True"
-                                             VerticalScrollBarVisibility="Auto"
-                                             MinHeight="280"
-                                             MaxHeight="480"
-                                             Padding="12" />
-                                </StackPanel>
-                            </Border>
+                            <Expander Header="更新方式与权限说明" Style="{StaticResource BoardHubDetailStyle}" Content="{Binding}">
+                                <Expander.ContentTemplate>
+                                    <DataTemplate>
+                                        <StackPanel Margin="24,0,24,16">
+                                            <TextBlock Text="检查更新会比较当前版本与 GitHub Latest Release。网络不佳时会依次尝试系统代理、直连与镜像加速；也可从 Release 页面手动下载。"
+                                                       Style="{StaticResource BoardBodyStyle}" />
+                                            <TextBlock Text="控制管理员权限窗口时，请以管理员身份运行 GestureClip。" Style="{StaticResource BoardBodyStyle}" Margin="0,16,0,0" />
+                                        </StackPanel>
+                                    </DataTemplate>
+                                </Expander.ContentTemplate>
+                            </Expander>
+                            <Expander Header="更新日志" Style="{StaticResource BoardHubDetailStyle}" Content="{Binding}">
+                                <Expander.ContentTemplate>
+                                    <DataTemplate>
+                                        <StackPanel Margin="24,0,24,16">
+                                            <TextBlock Text="发布包附带的本地 CHANGELOG。" Style="{StaticResource BoardBodyStyle}" Margin="0,0,0,16" />
+                                            <TextBox Text="{Binding ChangelogText, Mode=OneWay}" IsReadOnly="True"
+                                                     TextWrapping="Wrap" AcceptsReturn="True" VerticalScrollBarVisibility="Auto"
+                                                     MinHeight="240" MaxHeight="400" Padding="16" />
+                                        </StackPanel>
+                                    </DataTemplate>
+                                </Expander.ContentTemplate>
+                            </Expander>
                         </StackPanel>
                     </controls:SmoothScrollViewer>
                 </TabItem>

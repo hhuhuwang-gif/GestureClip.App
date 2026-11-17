@@ -42,6 +42,7 @@ public partial class ClipboardOverlayWindow : Window
     {
         if (e.NewValue is not true)
         {
+            _viewModel.ReleaseSearchCache();
             return;
         }
 
@@ -102,9 +103,11 @@ public partial class ClipboardOverlayWindow : Window
         Topmost = enabled;
         if (AlwaysVisibleButton is not null)
         {
-            AlwaysVisibleButton.Content = enabled ? "📍" : "📌";
             AlwaysVisibleButton.ToolTip = enabled ? "常显中：点击关闭（点外部不关）" : "点击开启常显";
             AlwaysVisibleButton.FontWeight = enabled ? FontWeights.SemiBold : FontWeights.Normal;
+            AlwaysVisibleButton.SetResourceReference(System.Windows.Controls.Control.BackgroundProperty, enabled ? "BrushPrimarySoft" : "BrushFillTertiary");
+            AlwaysVisibleButton.SetResourceReference(System.Windows.Controls.Control.ForegroundProperty, enabled ? "BrushPrimaryBright" : "BrushTextPrimary");
+            System.Windows.Automation.AutomationProperties.SetItemStatus(AlwaysVisibleButton, enabled ? "常显已开启" : "常显已关闭");
         }
     }
 

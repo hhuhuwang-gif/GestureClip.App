@@ -61,7 +61,7 @@ public sealed partial class PlainTextPasteServiceTests
         }
     }
 
-    private sealed class CaptureControl : IClipboardService
+    private sealed class CaptureControl : Support.UnsupportedClipboardSearchIndex, IClipboardService
     {
         public bool IsCaptureEnabled => true;
         public DateTimeOffset? SuppressCaptureUntil { get; private set; }

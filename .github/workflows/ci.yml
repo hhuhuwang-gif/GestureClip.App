@@ -41,3 +41,11 @@ jobs:
         run: |
           .\scripts\tests\Test-ReleaseVerification.ps1
           .\scripts\tests\Test-InstallCommand.ps1
+          .\scripts\tests\Test-UiPerformanceParsing.ps1
+
+      # 需要交互式桌面才能真实启动 WPF 窗口，因此默认关闭。
+      # 在仓库 Variables 里设置 RUN_UI_PERF=true 即可启用。
+      - name: UI performance budgets
+        if: vars.RUN_UI_PERF == 'true'
+        shell: powershell
+        run: .\scripts\check-ui-performance.ps1 -Runs 2

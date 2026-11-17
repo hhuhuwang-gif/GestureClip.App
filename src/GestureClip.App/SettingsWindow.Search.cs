@@ -35,6 +35,7 @@ public partial class SettingsWindow
 
     private static readonly SettingsSearchEntry[] SearchIndex =
     [
+        new("操作宏录制", "录制 / 操作宏", "宏 宏录制 录制 回放 鼠标 键盘 F8 F9", "macro", "MacroRecorderPage"),
         new("总览", "首页", "总览 首页 状态 权限", "home", "HomePageIntro"),
         new("智能粘贴", "首页 / 智能粘贴", "智能粘贴 推荐 纯文本 净化 Ctrl+V 粘贴", "home", "SmartPasteRecommendationCard"),
         new("外观主题", "首页 / 系统信息", "深色 浅色 跟随系统 主题色 强调色 外观 主题 夜间 模式", "home", "SectionSystemInfo"),
@@ -84,6 +85,12 @@ new("推荐手势", "动作绑定 / 推荐", "推荐 手势 一键应用", "bind
 
     private void SettingsSearchBox_PreviewKeyDown(object sender, WpfKeyEventArgs e)
     {
+        if (FocusSearchResult(e.Key))
+        {
+            e.Handled = true;
+            return;
+        }
+
         if (e.Key == WpfKey.Escape)
         {
             ClearSearchButton_Click(sender, e);
@@ -176,6 +183,7 @@ new("推荐手势", "动作绑定 / 推荐", "推荐 手势 一键应用", "bind
                 Foreground = (WpfBrush)FindResource("BrushTextMuted")
             });
             btn.Content = stack;
+            ConfigureSearchResult(btn, entry);
             btn.Click += SearchResult_Click;
             SearchResultsPanel.Children.Add(btn);
         }

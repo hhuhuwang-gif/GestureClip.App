@@ -129,6 +129,7 @@ public static class SettingKeys
     public const string WorkerLevelLastLevelUpAt = "WorkerLevel.LastLevelUpAt";
     public const string WorkerLevelShowLevelUpPopup = "WorkerLevel.ShowLevelUpPopup";
     public const string WorkerLevelShowLevelInHud = "WorkerLevel.ShowLevelInHud";
+    public const string UiHudMotionLevel = "Ui.Hud.MotionLevel";
     public const string HudFunTextEnabled = "Hud.FunTextEnabled";
     public const string HudStatusLevelEnabled = "Hud.StatusLevelEnabled";
     public const string WellnessWaterReminderEnabled = "Wellness.Water.Enabled";

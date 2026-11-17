@@ -91,8 +91,8 @@ public sealed partial class ClipboardOverlayViewModel
 
         var candidates = await GetSmartSearchPoolAsync(
             new SmartSearchPoolRequest(request.Revision, filter, request.Progress), cancellationToken);
-        var supplemented = AppendPinyinMatches(
-            new PinyinSearchRequest(primary, candidates, keyword.Trim()), cancellationToken);
+        var supplemented = await AppendPinyinMatchesAsync(
+            new PinyinSearchRequest(primary, candidates, keyword.Trim()) { Revision = request.Revision }, cancellationToken);
         return new SearchPage(supplemented.Items, primary.Count, primary.Count == PageSize, supplemented.Status);
     }
 

@@ -244,21 +244,32 @@ v0.6.37 起历史再复制会统一写成纯文本；也可用「复制为纯文
 
 安装 .NET 8 SDK，双击 `build-exe.bat` 完成测试和便携版构建，双击 `Start-GestureClip.bat` 启动。
 
-`Start-GestureClip.bat` 启动前会比对源码与可执行文件的时间戳：源码更新过就提示选择「快速 Debug 编译并启动 / 完整重建发布包 / 仍然启动旧版本」，不会再静默跑旧代码。命令行参数：
+`Start-GestureClip.bat` 是**一键启动**：双击即可。它会先比对源码与可执行文件的时间戳——
+产物是新的就直接启动（约 1 秒），源码更新过就静默做一次增量 Release 编译（约 10 秒）再启动，
+不弹菜单、不用按键，也不会静默跑旧代码。
 
 ```powershell
-.\Start-GestureClip.bat --quick      # 增量编译 Debug 并启动，改 UI 时最快
-.\Start-GestureClip.bat --rebuild    # 无条件完整重建发布包后启动
-.\Start-GestureClip.bat --no-check   # 跳过新鲜度检查，直接启动现有产物
+.\Start-GestureClip.bat                 # 一键启动：需要时先增量编译 Release，再启动
+.\Start-GestureClip.bat --quick         # 改用 Debug 增量编译，改 UI 时最快
+.\Start-GestureClip.bat --packaged      # 启动 artifacts\release 里的便携版（不编译）
+.\Start-GestureClip.bat --publish       # 完整出包：restore + 全部测试 + publish（分钟级）
+.\Start-GestureClip.bat --rebuild       # 无条件重建当前目标后启动
+.\Start-GestureClip.bat --no-build      # 不检查不编译，直接启动现有产物
+.\Start-GestureClip.bat --ask           # 仅在产物陈旧时显示旧的三选一菜单
 .\Start-GestureClip.bat --trace-scroll  # 其余参数原样转发给 GestureClip.exe
-.\Start-GestureClip.bat --trace-ui      # 记录设置窗口构造与切页耗时
+.\Start-GestureClip.bat --trace-ui      # 记录设置窗口构造、XAML 载入与切页耗时
+.\Start-GestureClip.bat --trace-mem     # 每 15 秒输出一次内存构成（工作集/私有/托管堆/位图缓存/窗口数）
 ```
 
 ```powershell
 # 构建便携版 + 安装包（包含测试；每次测试限时 60 秒）
 powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\build-setup.ps1
+# 正式发版：本机缺 Inno Setup 时直接失败，避免产出没有 Setup.exe 的 release
+powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\build-setup.ps1 -RequireSetup
 # 校验 SHA256、包内程序一致性与本地数据排除
 powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\check-release.ps1 -RequireSetup
+# UI 性能护栏：启动/建窗/显示耗时超预算即返回非零（需先退出正在运行的实例）
+powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\check-ui-performance.ps1
 ```
 
 产物统一在 `artifacts\release\`，可执行文件为 `GestureClip\GestureClip.exe`。开发命令、目录职责见 [开发指南](docs/DEVELOPMENT.md)。

@@ -19,8 +19,19 @@ public sealed class ImageBase64ToSourceConverter : IValueConverter
     private static readonly Dictionary<ImageCacheKey, BitmapImage> Cache = [];
     private static readonly Queue<ImageCacheKey> CacheOrder = [];
 
-    private sealed record ImageCacheKey(string Base64, int DecodePixelWidth)
+    /// <summary>Number of decoded bitmaps currently retained by the shared thumbnail cache.</summary>
+    public static int CachedImageCount
     {
+        get
+        {
+            lock (CacheLock)
+            {
+                return Cache.Count;
+            }
+        }
+    }
+
+    private sealed record ImageCacheKey(string Base64, int DecodePixelWidth)    {
         public override int GetHashCode()
         {
             var sampleLength = Math.Min(CacheKeySampleLength, Base64.Length);

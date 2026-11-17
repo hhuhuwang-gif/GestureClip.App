@@ -87,6 +87,7 @@ public sealed partial class QuickActionCenterViewModel : INotifyPropertyChanged
             }
 
             _selectedAction = value;
+            PreviewText = "";
             OnPropertyChanged();
             OnPropertyChanged(nameof(SelectedDescription));
             OnPropertyChanged(nameof(CanPasteSelected));
@@ -154,12 +155,15 @@ public sealed partial class QuickActionCenterViewModel : INotifyPropertyChanged
 
             _isBusy = value;
             OnPropertyChanged();
+            OnPropertyChanged(nameof(CanSelectAction));
             NotifyCommandAvailability();
         }
     }
 
     public bool CanPasteSelected =>
         SelectedAction is { RequiredInput: AssistantInputKind.ClipboardText or AssistantInputKind.SelectedText };
+
+    public bool CanSelectAction => !IsBusy;
 
     public bool HasFilteredActions => FilteredActions.Count > 0;
 
@@ -183,7 +187,7 @@ public sealed partial class QuickActionCenterViewModel : INotifyPropertyChanged
 
     public void MoveSelection(int delta)
     {
-        if (FilteredActions.Count == 0)
+        if (IsBusy || FilteredActions.Count == 0)
         {
             return;
         }

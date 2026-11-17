@@ -1,0 +1,20 @@
+<Window x:Class="GestureClip.App.MacroPlaybackStatusWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="正在回放 · GestureClip" Width="400" Height="106" WindowStyle="None"
+        ResizeMode="NoResize" ShowInTaskbar="False" ShowActivated="False" Topmost="True"
+        Background="White" Foreground="#172338" MouseLeftButtonDown="DragHeader">
+    <Window.Resources><ResourceDictionary><ResourceDictionary.MergedDictionaries><ResourceDictionary Source="Themes/MacroLight.xaml" /></ResourceDictionary.MergedDictionaries></ResourceDictionary></Window.Resources>
+    <Border BorderBrush="#C9D8EE" BorderThickness="1" Padding="16">
+        <Grid>
+            <Grid.ColumnDefinitions><ColumnDefinition /><ColumnDefinition Width="108" /></Grid.ColumnDefinitions>
+            <Grid.RowDefinitions><RowDefinition Height="Auto" /><RowDefinition Height="12" /><RowDefinition Height="Auto" /></Grid.RowDefinitions>
+            <StackPanel>
+                <TextBlock Text="正在回放" FontSize="16" FontWeight="SemiBold" AutomationProperties.LiveSetting="Polite" />
+                <TextBlock Text="{Binding PlaybackTime}" Foreground="#586880" FontSize="12" Margin="0,4,0,0" />
+            </StackPanel>
+            <Button Grid.Column="1" Content="中止  Esc" Click="Stop_Click" Style="{StaticResource DangerButtonStyle}" Height="40" MinWidth="0" Margin="8,0,0,0" />
+            <ProgressBar Grid.Row="2" Grid.ColumnSpan="2" Height="4" Value="{Binding PlaybackPercent, Mode=OneWay}" Maximum="100" Background="#EEF3FA" Foreground="#3B82F6" AutomationProperties.Name="已执行事件进度" />
+        </Grid>
+    </Border>
+</Window>

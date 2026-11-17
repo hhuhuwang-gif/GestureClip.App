@@ -95,7 +95,7 @@ public sealed class FeatureToggleServiceTests
         public void RefreshSettings() { }
     }
 
-    private sealed class FakeClipboardService : IClipboardService
+    private sealed class FakeClipboardService : Support.UnsupportedClipboardSearchIndex, IClipboardService
     {
         public bool IsCaptureEnabled { get; private set; } = true;
         public DateTimeOffset? SuppressCaptureUntil => null;

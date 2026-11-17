@@ -71,6 +71,8 @@ public sealed class GesturePresetProvider : IGesturePresetProvider
 
     public BuiltInGestureAction GetAction(GesturePreset preset, string pattern)
     {
+        if (pattern == "<") return BuiltInGestureAction.MacroToggleRecording;
+        if (pattern == ">") return BuiltInGestureAction.MacroTogglePlayback;
         var map = GetBindings(preset);
         return map.TryGetValue(pattern, out var action) ? action : BuiltInGestureAction.None;
     }

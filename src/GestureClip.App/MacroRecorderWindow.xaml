@@ -1,0 +1,9 @@
+<Window x:Class="GestureClip.App.MacroRecorderWindow"
+ xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+ xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+ xmlns:controls="clr-namespace:GestureClip.App.Controls"
+ Title="{Binding ElapsedText, StringFormat=快捷操作宏 · {0}}" Icon="Assets/GestureClip.ico"
+ Width="720" Height="690" MinWidth="640" MinHeight="600"
+ Background="White" WindowStartupLocation="CenterScreen">
+ <controls:MacroRecorderControl x:Name="Recorder" />
+</Window>

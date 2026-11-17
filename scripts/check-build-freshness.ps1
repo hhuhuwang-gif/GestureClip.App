@@ -4,9 +4,9 @@
   Print STALE when source files are newer than the published executable.
 
 .DESCRIPTION
-  Start-GestureClip.bat runs artifacts\release\GestureClip\GestureClip.exe. That copy is only
-  refreshed by build-exe.bat (scripts\publish-win-x64.ps1), so it can silently lag behind the
-  working tree. This helper lets the launcher warn instead of running an outdated build.
+  Start-GestureClip.bat starts a build of the working tree (Release by default, Debug with
+  --quick), so any copy can silently lag behind the sources. This helper lets the launcher
+  decide between "launch now" and "rebuild first" with one cheap timestamp comparison.
 
   Output is a single token on stdout: STALE, FRESH or UNKNOWN.
 #>

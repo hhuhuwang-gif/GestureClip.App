@@ -1,5 +1,25 @@
 # CHANGELOG
 
+## 未发布
+
+本轮聚焦「观感统一 + 可测量的性能」。安装包与发布说明待下一次版本号升级时补。
+
+- `Start-GestureClip.bat` 改为真正的一键启动：双击后不再弹「快速 Debug / 完整重建 / 照旧启动」菜单，也不再默认走分钟级的完整出包。产物新鲜就直接启动（约 1 秒），源码更新过则静默做一次增量 Release 编译（约 10 秒）再启动；编译失败才停住并打印日志尾部。新增 `--packaged`（启动 `artifacts\release` 便携版）与 `--publish`（完整出包），`--no-check` 由 `--no-build` 取代，旧菜单保留在 `--ask` 后面。
+
+- 手势 HUD 新增「动效强度」三档（完整 / 均衡 / 极简）：均衡档把 18s、26s 的方块流动层降到 10fps；插拔电源后自动跟随（电池供电 8fps 并关闭斜向副流）；极简档只保留静态渐变，一条动画都不跑，零渲染开销。
+- HUD 动效统一走「先取消、再按条件重启」的路径：窗口隐藏、切强度、切换到电池都复用同一条取消逻辑，不再残留动画。
+- HUD 跟随强调色：设置里选了强调色后，方块流动层与扫描光柱用强调色重新生成（首尾同为透明、可无缝平移），未选时保持原有青紫默认配色。
+- 新增 `--trace-mem`：每 15 秒输出工作集、私有内存、托管堆、堆碎片、缩略图缓存条目数、窗口数、句柄与线程数，便于判断常驻内存花在哪里。
+- 新增 `scripts/check-ui-performance.ps1`：以 `--trace-ui --smoke-exit-after-startup` 多次采样，按预算判定启动、设置窗构建、首次显示与最慢切页耗时，超预算返回非零；解析逻辑有独立测试（`scripts/tests/Test-UiPerformanceParsing.ps1`）。CI 中通过仓库变量 `RUN_UI_PERF=true` 启用。
+- 剪贴板浮层与各深色弹窗的描边改为顶部受光、底部隐没的渐变细边（`BrushCardRimDark`），与设置页浅色卡片统一为同一套「受光边」语言。
+- 剪贴板浮层的预热与首次显示耗时接入 `--trace-ui`；预热后的浮层关闭时只 `Hide()`，再次打开复用同一实例，不必重建 66KB 的 XAML。
+- `build-setup.ps1` 新增 `-RequireSetup`，本机缺少 Inno Setup 时直接失败；`release.yml` 改用该参数，避免再产出没有 `Setup.exe` 的 release。
+- 设置窗构造新增 XAML 载入耗时埋点。实测（Release，3 次采样）：XAML 载入 82~88 ms、整窗构造 172~184 ms、首次显示 414~437 ms、启动 855~863 ms。XAML 只占建窗一半，**拆页面的收益上限约 90 ms**，与牵动 49 处 `x:Name` 的风险不成比例，因此本轮不做该重构。启动剩余空间只在「重排启动顺序」——把 DB 与剪贴板监听挪到首帧之后，预计再省约 200 ms。
+- 启动路径补全分段埋点：`Startup blacklist/theme/main window` 与 `Tray menu/icon/notify icon` 两类 `UiTiming` 行，配合既有埋点可把 `starting → started` 完整拆到毫秒。实测（4 次采样中位）：DB 迁移 96 ms、播种 25 ms、黑名单+主题 26 ms、托盘 78 ms、剪贴板监听 80 ms、热键+边缘触发 12 ms、建窗 155 ms、首次布局 233 ms，合计约 705 ms（总计 759 ms）——**没有单点巨坑**，此前「440 ms 是数据库」的判断被推翻（实际只有 121 ms）。
+- 托盘菜单不再在 `Initialize` 里预建：`ContextMenuStrip.Opening` 每次都会重建，启动时那次是纯重复劳动；改为首次右键时按当时的设置快照生成。
+- 对 `MainWindow` 做了 A/B：它从不 `Show()`、也没人读 `Application.MainWindow`，但删除后启动反而从 759 ms 涨到 835 ms（设置窗要自己付 WPF 首次建窗的钱），因此保留并加注释与独立计时，避免以后再被当成冗余删掉。
+
+
 ## GestureClip v0.6.45 Beta
 
 2026-10-24：设置页改为 DWM 合成窗口，滚动从软件渲染的约 50fps 提升到 60fps，修复最大化遮挡任务栏；手势 HUD 重做为数码方块流动渐变，设置界面整体精修。安装包与下载说明见 [Release 说明](docs/github-release-v0.6.45-beta.md)。

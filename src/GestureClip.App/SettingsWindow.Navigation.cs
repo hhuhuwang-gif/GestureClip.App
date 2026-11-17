@@ -107,6 +107,7 @@ public partial class SettingsWindow
             "clipboard" or "剪贴板" or "smartpaste" or "智能粘贴" => "clipboard",
             "gestures" or "手势" or "edge" or "边缘" => "gestures",
             "bindings" or "动作" or "动作绑定" or "绑定" or "designer" => "bindings",
+            "macro" or "录制" or "操作宏" => "macro",
             "privacy" or "隐私" or "数据" => "privacy",
             "startup" or "自启" => "startup",
             "workbear" or "小熊" or "工位" => "workbear",
@@ -122,6 +123,7 @@ public partial class SettingsWindow
         "clipboard" => "剪贴板",
         "gestures" => "手势",
         "bindings" => "动作绑定",
+        "macro" => "录制",
         "privacy" => "隐私",
         "startup" => "自启",
         "workbear" => "小熊",
@@ -141,6 +143,7 @@ public partial class SettingsWindow
                 "clipboard" => NavClipboard,
                 "gestures" => NavGestures,
                 "bindings" => NavBindings,
+                "macro" => NavMacro,
                 "privacy" => NavPrivacy,
                 "startup" => NavStartup,
                 "workbear" => NavWorkbear,
@@ -270,7 +273,7 @@ public partial class SettingsWindow
         }), System.Windows.Threading.DispatcherPriority.Loaded);
     }
 
-    private void FeatureMapCard_MouseLeftButtonUp(object sender, MouseButtonEventArgs e)
+    private void FeatureMapCard_Click(object sender, RoutedEventArgs e)
     {
         if (sender is FrameworkElement { Tag: string tag })
         {

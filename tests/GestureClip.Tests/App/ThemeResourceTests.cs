@@ -35,23 +35,22 @@ public sealed partial class ThemeResourceTests
         var dark = File.ReadAllText(darkPath);
         var brushes = File.ReadAllText(brushesPath);
 
-        // Light glass: snow / cloud / slate / sky-blue
-        Assert.Contains("#F4F7FB", colors);
-        Assert.Contains("#E8ECF1", colors);
-        Assert.Contains("#94A3B8", colors);
+        // Semantic surface tokens support theme switching; contrast is measured separately.
+        Assert.Contains("ColorContentTop", colors);
+        Assert.Contains("ColorCardBottom", colors);
+        Assert.Contains("ColorPrimaryFill", colors);
         Assert.Contains("#3B82F6", colors);
-        Assert.Contains("#0F172A", colors);
+        Assert.Contains("ColorTextPrimaryDark", colors);
         Assert.Contains("ColorBrandSnow", colors);
         Assert.Contains("ColorBrandCloud", colors);
         Assert.Contains("ColorBrandSlate", colors);
         Assert.Contains("ColorBrandSky", colors);
         Assert.Contains("ColorGlassLight", colors);
         Assert.Contains("ColorContentBackground", colors);
-        // Dark high-contrast slate palette (readable body text)
-        Assert.Contains("#0B1220", dark);
-        Assert.Contains("#151C2C", dark);
-        Assert.Contains("#60A5FA", dark);
-        Assert.Contains("#F3F6FC", dark);
+        Assert.Contains("ColorContentTop", dark);
+        Assert.Contains("ColorCardBottom", dark);
+        Assert.Contains("ColorPrimaryFill", dark);
+        Assert.Contains("ColorTextPrimaryDark", dark);
         Assert.Contains("ColorAppBg0", colors);
         Assert.Contains("ColorCardElevated", colors);
         Assert.Contains("ColorTabSelected", colors);

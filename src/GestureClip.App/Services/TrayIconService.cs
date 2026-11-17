@@ -1,6 +1,7 @@
 using System.Drawing;
 using System.Diagnostics;
 using System.IO;
+using GestureClip.App.Diagnostics;
 using GestureClip.Core.Abstractions;
 using GestureClip.Core.Settings;
 using GestureClip.Core.Workstation;
@@ -22,6 +23,7 @@ public sealed class TrayIconService : IDisposable
     private readonly IDiagnosticsService _diagnosticsService;
     private readonly AppPathProvider _paths;
     private readonly ILogger<TrayIconService> _logger;
+    private readonly MacroRecorderService _macroRecorder;
     private Forms.NotifyIcon? _notifyIcon;
     private Forms.ContextMenuStrip? _menu;
     private WorkstationDashboardSnapshot? _lastWorkBearSnapshot;
@@ -36,7 +38,8 @@ public sealed class TrayIconService : IDisposable
         IWorkBearShareCardService workBearShareCardService,
         IDiagnosticsService diagnosticsService,
         AppPathProvider paths,
-        ILogger<TrayIconService> logger)
+        ILogger<TrayIconService> logger,
+        MacroRecorderService macroRecorder)
     {
         _appLifecycleService = appLifecycleService;
         _clipboardOverlayService = clipboardOverlayService;
@@ -48,6 +51,7 @@ public sealed class TrayIconService : IDisposable
         _diagnosticsService = diagnosticsService;
         _paths = paths;
         _logger = logger;
+        _macroRecorder = macroRecorder;
     }
 
     public void Initialize()
@@ -57,17 +61,28 @@ public sealed class TrayIconService : IDisposable
             return;
         }
 
+        // 托盘菜单在启动路径上，实测占启动耗时的大头之一，所以逐段计时，
+        // 方便以后判断变慢到底是 WinForms 首次初始化、图标解码还是菜单项构建。
+        var menuAt = UiTrace.Restart();
         _menu = new Forms.ContextMenuStrip();
+        // 不在这里预建菜单项：Opening 每次都会重建（RebuildMenu 先 Clear），
+        // 启动时建一遍等于白做，首次右键时再按当时的设置快照生成。
         _menu.Opening += (_, _) => RebuildMenu();
-        RebuildMenu();
+        var menuMs = UiTrace.ElapsedMillisecondsSince(menuAt);
 
+        var iconAt = UiTrace.Restart();
+        var icon = LoadAppIcon();
+        var iconMs = UiTrace.ElapsedMillisecondsSince(iconAt);
+
+        var notifyAt = UiTrace.Restart();
         _notifyIcon = new Forms.NotifyIcon
         {
             Text = "GestureClip",
-            Icon = LoadAppIcon(),
+            Icon = icon,
             ContextMenuStrip = _menu,
             Visible = true
         };
+        var notifyMs = UiTrace.ElapsedMillisecondsSince(notifyAt);
         _notifyIcon.MouseClick += (_, args) =>
         {
             if (args.Button == Forms.MouseButtons.Left)
@@ -77,6 +92,7 @@ public sealed class TrayIconService : IDisposable
         };
 
         _logger.LogInformation("Tray icon initialized.");
+        UiTrace.Report($"Tray menu {menuMs} ms, icon {iconMs} ms, notify icon {notifyMs} ms");
     }
 
     public void Dispose()
@@ -177,6 +193,7 @@ public sealed class TrayIconService : IDisposable
                 }
             });
         _menu.Items.Add(new Forms.ToolStripSeparator());
+        _menu.Items.Add("快捷操作宏（录制 / 回放）…", null, (_, _) => _macroRecorder.ShowWindow());
         _menu.Items.Add("卸载 GestureClip…", null, (_, _) => LaunchUninstall());
         _menu.Items.Add("查看日志", null, (_, _) => OpenDirectory(_paths.LogDirectory));
         _menu.Items.Add("打开数据目录", null, (_, _) => OpenDirectory(Path.GetDirectoryName(_paths.DatabasePath) ?? _paths.LogDirectory));

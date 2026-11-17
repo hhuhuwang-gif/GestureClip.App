@@ -92,9 +92,61 @@ public sealed class QuickActionCenterViewModelTests
 
         Assert.False(vm.RunSelectedCommand.CanExecute(null));
         Assert.False(vm.RunAndPasteCommand.CanExecute(null));
+        Assert.False(vm.CanSelectAction);
         executor.Release.SetResult();
         await WaitForAsync(() => !vm.IsBusy);
         Assert.True(vm.RunSelectedCommand.CanExecute(null));
+        Assert.True(vm.CanSelectAction);
+    }
+
+    [Fact]
+    public async Task Changing_selection_clears_previous_preview()
+    {
+        var vm = CreateViewModel();
+        vm.SelectedAction = vm.AllActions.First(action => action.Id == BuiltInAssistantActionCatalog.TrimId);
+        await vm.RunDefaultAsync();
+        Assert.Equal("sample", vm.PreviewText);
+
+        vm.SelectedAction = vm.AllActions.First(action => action.Id != BuiltInAssistantActionCatalog.TrimId);
+
+        Assert.Empty(vm.PreviewText);
+    }
+
+    [Fact]
+    public async Task Completed_result_is_attributed_to_executed_action_after_selection_changes()
+    {
+        var executor = new BlockingExecutor();
+        var vm = CreateViewModel(executor);
+        var executedAction = vm.AllActions.First(action => action.Id == BuiltInAssistantActionCatalog.TrimId);
+        vm.SelectedAction = executedAction;
+        var execution = vm.RunDefaultAsync();
+        await executor.Started.Task;
+        vm.SelectedAction = vm.AllActions.First(action => action.Id != executedAction.Id);
+
+        executor.Release.SetResult();
+        await execution;
+
+        Assert.Empty(vm.PreviewText);
+        Assert.Equal($"{executedAction.DisplayName}：完成", vm.StatusText);
+        Assert.False(vm.IsBusy);
+    }
+
+    [Fact]
+    public async Task Arrow_navigation_keeps_selection_during_execution()
+    {
+        var executor = new BlockingExecutor();
+        var vm = CreateViewModel(executor);
+        var selectedAction = vm.SelectedAction;
+        var execution = vm.RunDefaultAsync();
+        await executor.Started.Task;
+
+        vm.MoveSelection(1);
+
+        Assert.Same(selectedAction, vm.SelectedAction);
+        executor.Release.SetResult();
+        await execution;
+        vm.MoveSelection(1);
+        Assert.NotSame(selectedAction, vm.SelectedAction);
     }
 
     private static QuickActionCenterViewModel CreateViewModel(IAssistantActionExecutor? executor = null)

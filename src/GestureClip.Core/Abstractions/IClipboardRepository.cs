@@ -2,7 +2,7 @@ using GestureClip.Core.Clipboard;
 
 namespace GestureClip.Core.Abstractions;
 
-public interface IClipboardRepository
+public interface IClipboardRepository : IClipboardSearchIndex
 {
     Task<ClipboardItem?> FindByHashAsync(string hash, CancellationToken cancellationToken);
 

@@ -22,7 +22,7 @@
             Margin="16"
             Padding="20"
             Background="{DynamicResource BrushOverlayPanel}"
-            BorderBrush="{DynamicResource BrushBorder}"
+            BorderBrush="{DynamicResource BrushCardRimDark}"
             BorderThickness="1">
         <!-- Avoid a large software-rendered blur on the transparent overlay. -->
         <Grid>
@@ -40,22 +40,22 @@
                             VerticalAlignment="Center">
                     <Button x:Name="ScrollTopButton"
                             Style="{StaticResource IconToolbarButtonStyle}"
-                            Content="↑"
+                            FontFamily="Segoe MDL2 Assets" Content="&#xE74A;"
                             ToolTip="回到最新（Home）"
                             Click="ScrollTopButton_Click" />
                     <Button x:Name="ClearSearchButton"
                             Style="{StaticResource IconToolbarButtonStyle}"
-                            Content="↺"
+                            FontFamily="Segoe MDL2 Assets" Content="&#xE72C;"
                             ToolTip="重置视图"
                             Click="ClearSearchButton_Click" />
                     <Button x:Name="ShortcutHelpButton"
                             Style="{StaticResource IconToolbarButtonStyle}"
-                            Content="?"
+                            FontFamily="Segoe MDL2 Assets" Content="&#xE897;"
                             ToolTip="快捷键（F1）"
                             Click="ShortcutHelpButton_Click" />
                     <Button x:Name="AlwaysVisibleButton"
                             Style="{StaticResource IconToolbarButtonStyle}"
-                            Content="📌"
+                            FontFamily="Segoe MDL2 Assets" Content="&#xE718;"
                             ToolTip="常显 / 取消常显"
                             Click="AlwaysVisibleButton_Click" />
                     <Border Style="{StaticResource AccentChipStyle}" Margin="4,0,0,0">
@@ -217,7 +217,7 @@
                     <DataTemplate>
                         <Border x:Name="ItemCard"
                                 Background="{DynamicResource BrushCardElevated}"
-                                BorderBrush="{DynamicResource BrushBorder}"
+                                BorderBrush="{DynamicResource BrushCardRimDark}"
                                 BorderThickness="1"
                                 CornerRadius="16"
                                 Padding="12,10"
@@ -262,7 +262,7 @@
                                         Height="26"
                                         CornerRadius="8"
                                         Background="{DynamicResource BrushFillTertiary}"
-                                        BorderBrush="{DynamicResource BrushBorder}"
+                                        BorderBrush="{DynamicResource BrushCardRimDark}"
                                         BorderThickness="1"
                                         VerticalAlignment="Top"
                                         Margin="0,0,8,0">
@@ -752,7 +752,7 @@
                         Padding="14,8"
                         CornerRadius="14"
                         Background="{DynamicResource BrushGlassStrong}"
-                        BorderBrush="{DynamicResource BrushBorder}"
+                        BorderBrush="{DynamicResource BrushCardRimDark}"
                         BorderThickness="1"
                         IsHitTestVisible="False">
                     <Border.Style>
@@ -832,7 +832,7 @@
                         Padding="20"
                         CornerRadius="18"
                         Background="{DynamicResource BrushOverlayPanel}"
-                        BorderBrush="{DynamicResource BrushBorder}"
+                        BorderBrush="{DynamicResource BrushCardRimDark}"
                         BorderThickness="1"
                         HorizontalAlignment="Center"
                         VerticalAlignment="Center"
@@ -882,7 +882,7 @@
                         Padding="20"
                         CornerRadius="18"
                         Background="{DynamicResource BrushOverlayPanel}"
-                        BorderBrush="{DynamicResource BrushBorder}"
+                        BorderBrush="{DynamicResource BrushCardRimDark}"
                         BorderThickness="1"
                         HorizontalAlignment="Center"
                         VerticalAlignment="Center">
@@ -940,7 +940,7 @@
                         Padding="20"
                         CornerRadius="18"
                         Background="{DynamicResource BrushOverlayPanel}"
-                        BorderBrush="{DynamicResource BrushBorder}"
+                        BorderBrush="{DynamicResource BrushCardRimDark}"
                         BorderThickness="1"
                         HorizontalAlignment="Center"
                         VerticalAlignment="Center">
@@ -990,7 +990,7 @@
                         Padding="20"
                         CornerRadius="18"
                         Background="{DynamicResource BrushOverlayPanel}"
-                        BorderBrush="{DynamicResource BrushBorder}"
+                        BorderBrush="{DynamicResource BrushCardRimDark}"
                         BorderThickness="1"
                         HorizontalAlignment="Center"
                         VerticalAlignment="Center">

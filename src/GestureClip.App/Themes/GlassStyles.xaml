@@ -2,8 +2,9 @@
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
     <!-- Elevated card: soft shadow, hairline border (Apple sheet style) -->
     <Style x:Key="GlassCardStyle" TargetType="Border">
-        <Setter Property="CornerRadius" Value="14" />
+        <Setter Property="CornerRadius" Value="16" />
         <Setter Property="Padding" Value="20" />
+        <Setter Property="Margin" Value="0,0,0,2" />
         <Setter Property="Background" Value="{DynamicResource BrushGlassCard}" />
         <Setter Property="BorderBrush" Value="{DynamicResource BrushCardRim}" />
         <Setter Property="BorderThickness" Value="1" />
@@ -13,13 +14,13 @@
                 <!-- A wider, lower-opacity shadow separates the card from the page tint
                      without the hard edge that a small blur produces. Performance bias keeps
                      the extra render pass cheap; these cards are all over the settings pages. -->
-                <DropShadowEffect Color="#0B1B34" BlurRadius="26" ShadowDepth="3" Opacity="0.07" Direction="270" RenderingBias="Performance" />
+                <DropShadowEffect Color="#0B1B34" BlurRadius="32" ShadowDepth="4" Opacity="0.06" Direction="270" RenderingBias="Performance" />
             </Setter.Value>
         </Setter>
     </Style>
 
     <Style x:Key="GlassPanelStyle" TargetType="Border" BasedOn="{StaticResource GlassCardStyle}">
-        <Setter Property="CornerRadius" Value="14" />
+        <Setter Property="CornerRadius" Value="16" />
         <Setter Property="Padding" Value="0" />
         <Setter Property="Background" Value="{DynamicResource BrushGlassPanel}" />
         <Setter Property="BorderBrush" Value="{DynamicResource BrushBorder}" />
@@ -89,6 +90,8 @@
         <Setter Property="BorderBrush" Value="{DynamicResource BrushBorder}" />
         <Setter Property="Margin" Value="0,0,8,0" />
         <Setter Property="Cursor" Value="Hand" />
+        <Setter Property="FocusVisualStyle" Value="{StaticResource KeyboardFocusStyle}" />
+        <Setter Property="AutomationProperties.Name" Value="{Binding ToolTip, RelativeSource={RelativeSource Self}}" />
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="Button">
@@ -110,6 +113,9 @@
                         <Trigger Property="IsPressed" Value="True">
                             <Setter TargetName="Root" Property="Opacity" Value="0.9" />
                         </Trigger>
+                    <Trigger Property="IsEnabled" Value="False">
+                            <Setter Property="Opacity" Value="0.45" />
+                        </Trigger>
                     </ControlTemplate.Triggers>
                 </ControlTemplate>
             </Setter.Value>
@@ -126,6 +132,8 @@
         <Setter Property="FontWeight" Value="SemiBold" />
         <Setter Property="Foreground" Value="{DynamicResource BrushTextSecondary}" />
         <Setter Property="Cursor" Value="Hand" />
+        <Setter Property="FocusVisualStyle" Value="{StaticResource KeyboardFocusStyle}" />
+        <Setter Property="AutomationProperties.Name" Value="{Binding ToolTip, RelativeSource={RelativeSource Self}}" />
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="RadioButton">
@@ -153,6 +161,9 @@
                                 </Setter.Value>
                             </Setter>
                         </Trigger>
+                    <Trigger Property="IsEnabled" Value="False">
+                            <Setter Property="Opacity" Value="0.45" />
+                        </Trigger>
                     </ControlTemplate.Triggers>
                 </ControlTemplate>
             </Setter.Value>
@@ -168,7 +179,7 @@
     </Style>
 
     <Style x:Key="EmptyStatePanelStyle" TargetType="Border">
-        <Setter Property="CornerRadius" Value="14" />
+        <Setter Property="CornerRadius" Value="16" />
         <Setter Property="Padding" Value="28,36" />
         <Setter Property="Background" Value="{DynamicResource BrushFillTertiary}" />
         <Setter Property="BorderBrush" Value="{DynamicResource BrushBorder}" />
@@ -260,13 +271,13 @@
         <Setter Property="Background" Value="Transparent" />
         <Setter Property="BorderBrush" Value="{DynamicResource BrushSeparator}" />
         <Setter Property="BorderThickness" Value="0,0,0,1" />
-        <Setter Property="MinHeight" Value="64" />
+        <Setter Property="MinHeight" Value="68" />
         <Setter Property="HorizontalAlignment" Value="Stretch" />
         <Setter Property="SnapsToDevicePixels" Value="True" />
     </Style>
 
     <Style x:Key="SettingsListContainerStyle" TargetType="Border">
-        <Setter Property="CornerRadius" Value="14" />
+        <Setter Property="CornerRadius" Value="16" />
         <Setter Property="Background" Value="{DynamicResource BrushGlassCard}" />
         <Setter Property="BorderBrush" Value="{DynamicResource BrushCardRim}" />
         <Setter Property="BorderThickness" Value="1" />
@@ -274,7 +285,7 @@
         <Setter Property="ClipToBounds" Value="True" />
         <Setter Property="Effect">
             <Setter.Value>
-                <DropShadowEffect Color="#0B1B34" BlurRadius="22" ShadowDepth="3" Opacity="0.06" Direction="270" RenderingBias="Performance" />
+                <DropShadowEffect Color="#0B1B34" BlurRadius="28" ShadowDepth="4" Opacity="0.07" Direction="270" RenderingBias="Performance" />
             </Setter.Value>
         </Setter>
         <Setter Property="HorizontalAlignment" Value="Stretch" />
@@ -282,11 +293,11 @@
     </Style>
 
     <Style x:Key="SettingsPageTitleStyle" TargetType="TextBlock">
-        <Setter Property="FontSize" Value="26" />
+        <Setter Property="FontSize" Value="28" />
         <Setter Property="FontWeight" Value="SemiBold" />
         <Setter Property="Foreground" Value="{DynamicResource BrushTextPrimary}" />
         <Setter Property="Margin" Value="0,0,0,8" />
-        <Setter Property="LineHeight" Value="34" />
+        <Setter Property="LineHeight" Value="38" />
         <Setter Property="LineStackingStrategy" Value="BlockLineHeight" />
         <Setter Property="VerticalAlignment" Value="Center" />
     </Style>
