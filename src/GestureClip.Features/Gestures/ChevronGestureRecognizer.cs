@@ -15,16 +15,14 @@ internal readonly record struct ChevronStrokeGeometry
 internal static class ChevronGestureRecognizer
 {
     private const double MinimumLegFraction = 0.5;
-    private const double EndpointAlignmentFraction = 0.5;
     private const double MaximumLegSlopeRatio = 4;
     private const double RelativeLineTolerance = 0.08;
     private const double SegmentNoiseFraction = 0.5;
+    private const double LinearSegmentIntegralDivisor = 3;
 
     public static string? Recognize(IReadOnlyList<GesturePoint> points, GestureOptions options, ChevronStrokeGeometry geometry)
     {
-        var width = geometry.RightTip.X - geometry.LeftTip.X;
         if (Math.Abs((double)geometry.End.Y - geometry.Start.Y) < options.TriggerThreshold) return null;
-        if (Math.Abs((double)geometry.End.X - geometry.Start.X) > width * EndpointAlignmentFraction) return null;
         if (Matches(points, options, new ChevronCandidate(geometry.Start, geometry.End)
             { Tip = geometry.LeftTip, TipIndex = geometry.LeftTipIndex })) return "<";
         return Matches(points, options, new ChevronCandidate(geometry.Start, geometry.End)
@@ -60,17 +58,35 @@ internal static class ChevronGestureRecognizer
         var length = Math.Sqrt(dx * dx + dy * dy);
         var tolerance = Math.Max(options.SegmentThreshold * SegmentNoiseFraction, length * RelativeLineTolerance);
         var furthest = 0d;
-        for (var index = leg.StartIndex + 1; index < leg.EndIndex; index++)
+        var previousPoint = leg.Start;
+        var previousDeviation = 0d;
+        var pathLength = 0d;
+        var deviationIntegral = 0d;
+        for (var index = leg.StartIndex + 1; index <= leg.EndIndex; index++)
         {
             var point = points[index];
             var px = (double)point.X - leg.Start.X;
             var py = (double)point.Y - leg.Start.Y;
             var along = (px * dx + py * dy) / length;
-            var deviation = Math.Abs(px * dy - py * dx) / length;
-            if (deviation > tolerance || along < furthest - tolerance || along > length + tolerance) return false;
+            var deviation = (px * dy - py * dx) / length;
+            if (along < furthest - tolerance || along > length + tolerance) return false;
+            var segmentLength = Distance(previousPoint, point);
+            deviationIntegral += segmentLength * (previousDeviation * previousDeviation
+                + previousDeviation * deviation + deviation * deviation) / LinearSegmentIntegralDivisor;
+            pathLength += segmentLength;
+            previousPoint = point;
+            previousDeviation = deviation;
             furthest = Math.Max(furthest, along);
         }
-        return true;
+        // Integrate along the actual path so jitter is not rejected by one point or weighted by sampling density.
+        return deviationIntegral <= tolerance * tolerance * pathLength;
+    }
+
+    private static double Distance(GesturePoint start, GesturePoint end)
+    {
+        var dx = (double)end.X - start.X;
+        var dy = (double)end.Y - start.Y;
+        return Math.Sqrt(dx * dx + dy * dy);
     }
 
     private readonly record struct ChevronCandidate(GesturePoint Start, GesturePoint End)

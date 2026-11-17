@@ -14,8 +14,8 @@ public sealed partial class MouseGestureService : IMouseGestureService
             return;
         }
 
-        var overflow = _points.Count - MaxTrackedPoints;
-        _points.RemoveRange(0, overflow);
+        // Preserve the stroke endpoints and remove redundant detail instead of its first leg.
+        _points.RemoveAt(FindLeastSignificantPoint());
     }
 
     private static string? NormalizePreviewPattern(string? pattern)

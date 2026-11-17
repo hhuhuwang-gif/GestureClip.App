@@ -12,7 +12,7 @@ public sealed partial class ThemeResourceTests
         var path = FindRepositoryFile("src", "GestureClip.Features", "Gestures", "MouseGestureService.cs");
         var source = RepositorySource.ReadClassSources(path);
 
-        Assert.Contains("RemoveRange(0, overflow)", source);
+
         Assert.DoesNotContain(".Insert(0", source);
         Assert.DoesNotContain("_startPoint.Value", source);
     }

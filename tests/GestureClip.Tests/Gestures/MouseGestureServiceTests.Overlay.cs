@@ -155,7 +155,7 @@ public sealed partial class MouseGestureServiceTests
         Assert.Empty(executor.Actions);
         Assert.Equal(GestureRuntimeState.Idle, service.Diagnostics.State);
         Assert.All(overlay.PointCounts, count => Assert.InRange(count, 1, 96));
-        Assert.Contains(overlay.PointSnapshots, points => points.Count == 96 && (points[0].X != 100 || points[0].Y != 100));
+        Assert.Contains(overlay.PointSnapshots, points => points.Count == 96 && points[0].X == 100 && points[0].Y == 100);
     }
 
     [Fact]

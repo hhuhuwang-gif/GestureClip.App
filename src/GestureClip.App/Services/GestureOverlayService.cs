@@ -1,8 +1,6 @@
 using System.Windows;
-using System.Globalization;
 using System.Windows.Media;
 using System.Windows.Media.Animation;
-using System.Windows.Threading;
 using GestureClip.App.ViewModels;
 using GestureClip.Core.Abstractions;
 using GestureClip.Core.Gestures;
@@ -11,7 +9,7 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace GestureClip.App.Services;
 
-public sealed class GestureOverlayService : IGestureOverlayService
+public sealed partial class GestureOverlayService : IGestureOverlayService
 {
     private const int MaxVisiblePointCount = 96;
     private const int HideFadeMilliseconds = 90;
@@ -51,11 +49,14 @@ public sealed class GestureOverlayService : IGestureOverlayService
 
     public async Task ShowGestureStartAsync(GesturePoint point, GestureHudInfo hudInfo, CancellationToken cancellationToken)
     {
-        Interlocked.Increment(ref _generation);
+        var generation = BeginPresentation();
         await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
         {
             cancellationToken.ThrowIfCancellationRequested();
-            ClearPendingUpdate();
+            if (generation != Volatile.Read(ref _generation))
+            {
+                return;
+            }
             EnsureWindow();
             PositionWindow();
             _hideCts?.Cancel();
@@ -69,10 +70,10 @@ public sealed class GestureOverlayService : IGestureOverlayService
     {
         cancellationToken.ThrowIfCancellationRequested();
         points = TrimVisiblePoints(points);
-        var generation = Volatile.Read(ref _generation);
-
+        int generation;
         lock (_updateSyncRoot)
         {
+            generation = _generation;
             _pendingUpdatePoints = points;
             _pendingUpdateHudInfo = hudInfo;
             if (_updateQueued)
@@ -89,11 +90,14 @@ public sealed class GestureOverlayService : IGestureOverlayService
 
     public async Task CompleteGestureAsync(GestureHudInfo hudInfo, CancellationToken cancellationToken)
     {
-        Interlocked.Increment(ref _generation);
+        var generation = BeginPresentation();
         await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
         {
             cancellationToken.ThrowIfCancellationRequested();
-            ClearPendingUpdate();
+            if (generation != Volatile.Read(ref _generation))
+            {
+                return;
+            }
             EnsureWindow();
             var isUnbound = IsUnboundHud(hudInfo);
             ApplyHudInfo(hudInfo, refreshStyle: false);
@@ -108,11 +112,14 @@ public sealed class GestureOverlayService : IGestureOverlayService
 
     public async Task ShowPatternAsync(string pattern, CancellationToken cancellationToken)
     {
-        Interlocked.Increment(ref _generation);
+        var generation = BeginPresentation();
         await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
         {
             cancellationToken.ThrowIfCancellationRequested();
-            ClearPendingUpdate();
+            if (generation != Volatile.Read(ref _generation))
+            {
+                return;
+            }
             EnsureWindow();
             PositionWindow();
             _viewModel!.DirectionText = pattern;
@@ -128,11 +135,14 @@ public sealed class GestureOverlayService : IGestureOverlayService
 
     public async Task HideAsync(CancellationToken cancellationToken)
     {
-        Interlocked.Increment(ref _generation);
+        var generation = BeginPresentation();
         await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
         {
             cancellationToken.ThrowIfCancellationRequested();
-            ClearPendingUpdate();
+            if (generation != Volatile.Read(ref _generation))
+            {
+                return;
+            }
             _hideCts?.Cancel();
             if (_window is not null)
             {
@@ -142,68 +152,6 @@ public sealed class GestureOverlayService : IGestureOverlayService
 
             FadeOutAndHideWindow();
         });
-    }
-
-    private async Task QueuePendingUpdateAsync(int generation)
-    {
-        try
-        {
-            var elapsedMs = (DateTimeOffset.UtcNow - _lastUpdateAt).TotalMilliseconds;
-            var delayMs = Math.Max(0, HudFrameIntervalMs - (int)elapsedMs);
-            if (delayMs > 0)
-            {
-                await Task.Delay(delayMs).ConfigureAwait(false);
-            }
-
-            var dispatcher = System.Windows.Application.Current?.Dispatcher;
-            if (dispatcher is null)
-            {
-                ClearPendingUpdate();
-                return;
-            }
-
-            await dispatcher.InvokeAsync(
-                () => FlushPendingUpdate(generation),
-                DispatcherPriority.Render);
-        }
-        catch (Exception ex)
-        {
-            ClearPendingUpdate();
-            System.Diagnostics.Trace.TraceError("Gesture HUD frame update failed: {0}", ex);
-        }
-    }
-
-    private void FlushPendingUpdate(int generation)
-    {
-#if DEBUG
-        var hudWatch = System.Diagnostics.Stopwatch.StartNew();
-#endif
-        IReadOnlyList<GesturePoint>? points;
-        GestureHudInfo? hudInfo;
-        lock (_updateSyncRoot)
-        {
-            points = _pendingUpdatePoints;
-            hudInfo = _pendingUpdateHudInfo;
-            _pendingUpdatePoints = null;
-            _pendingUpdateHudInfo = null;
-            _updateQueued = false;
-        }
-
-        if (points is null || hudInfo is null || generation != Volatile.Read(ref _generation))
-        {
-            return;
-        }
-
-        _lastUpdateAt = DateTimeOffset.UtcNow;
-        EnsureWindow();
-        ApplyHudInfo(hudInfo, refreshStyle: false);
-        _viewModel!.Points = ToPointCollection(points);
-        ShowWindow();
-#if DEBUG
-        hudWatch.Stop();
-        System.Diagnostics.Trace.WriteLine(
-            $"GesturePerf HudUpdateDurationMs ElapsedMs={hudWatch.ElapsedMilliseconds} PointCount={points.Count}");
-#endif
     }
 
     private void ShowWindow()
@@ -242,16 +190,6 @@ public sealed class GestureOverlayService : IGestureOverlayService
         };
 
         window.BeginAnimation(UIElement.OpacityProperty, fade);
-    }
-
-    private void ClearPendingUpdate()
-    {
-        lock (_updateSyncRoot)
-        {
-            _pendingUpdatePoints = null;
-            _pendingUpdateHudInfo = null;
-            _updateQueued = false;
-        }
     }
 
     private void EnsureWindow()
@@ -301,68 +239,6 @@ public sealed class GestureOverlayService : IGestureOverlayService
             || string.Equals(hudInfo.ActionName, "未绑定", StringComparison.Ordinal);
     }
 
-    private void QueueWorkstationSnapshotRefresh(GestureHudInfo hudInfo)
-    {
-        var now = DateTimeOffset.UtcNow;
-        if ((now - _lastWorkstationSnapshotAt).TotalMilliseconds < 750)
-        {
-            return;
-        }
-
-        if (System.Threading.Interlocked.Exchange(ref _workstationSnapshotQueued, 1) == 1)
-        {
-            return;
-        }
-
-        _lastWorkstationSnapshotAt = now;
-        _ = Task.Run(async () =>
-        {
-            try
-            {
-                var snapshot = await _workstationHudService.BuildSnapshotAsync(hudInfo, 0, DateTimeOffset.Now, CancellationToken.None);
-                var dispatcher = System.Windows.Application.Current?.Dispatcher;
-                if (dispatcher is null)
-                {
-                    return;
-                }
-
-                await dispatcher.InvokeAsync(() =>
-                {
-                    if (_viewModel is null)
-                    {
-                        return;
-                    }
-
-                    _viewModel.WorkStatusText = snapshot.WorkStatusText;
-                    _viewModel.FunText = snapshot.FunText;
-                    _viewModel.GainedXpText = snapshot.GainedXpText;
-                    _viewModel.LevelText = snapshot.LevelText;
-                    _viewModel.XpText = snapshot.XpText;
-                    _viewModel.XpProgressPercent = snapshot.XpProgressPercent;
-                    _viewModel.WorkSummaryText = snapshot.WorkSummaryText;
-                    _viewModel.StatsText = snapshot.StatsText;
-                    _viewModel.GestureCountText = snapshot.GestureCount.ToString();
-                    _viewModel.CopyCountText = snapshot.CopyCount.ToString();
-                    _viewModel.PasteCountText = snapshot.PasteCount.ToString();
-                    _viewModel.SavedClicksCountText = snapshot.EstimatedSavedClicks.ToString();
-                    _viewModel.HudBackgroundBrush = GetHudBackgroundBrush(
-                        snapshot.HudThemeKey,
-                        snapshot.HudStartColor,
-                        snapshot.HudEndColor);
-                    _viewModel.HudAccentBrush = GetHudAccentBrush(snapshot.HudAccentColor);
-                });
-            }
-            catch
-            {
-                // HUD data is auxiliary; gesture drawing must stay smooth if stats cannot load.
-            }
-            finally
-            {
-                System.Threading.Interlocked.Exchange(ref _workstationSnapshotQueued, 0);
-            }
-        });
-    }
-
     private void PositionWindow()
     {
         if (_window is null)
@@ -385,149 +261,6 @@ public sealed class GestureOverlayService : IGestureOverlayService
         _window.Top = bounds.Top;
         _window.Width = bounds.Width;
         _window.Height = bounds.Height;
-    }
-
-    private PointCollection ToPointCollection(IReadOnlyList<GesturePoint> points)
-    {
-        var collection = new PointCollection(points.Count);
-        foreach (var point in points)
-        {
-            collection.Add(ToOverlayPoint(point));
-        }
-
-        collection.Freeze();
-        return collection;
-    }
-
-    private System.Windows.Point ToOverlayPoint(GesturePoint point)
-    {
-        if (_window is null)
-        {
-            return new System.Windows.Point(point.X, point.Y);
-        }
-
-        // Hook coordinates are physical screen pixels, while WPF renders in device-independent units.
-        // PointFromScreen keeps the trail attached to the cursor under DPI scaling and multi-monitor layouts.
-        return _window.PointFromScreen(new System.Windows.Point(point.X, point.Y));
-    }
-
-    private static IReadOnlyList<GesturePoint> TrimVisiblePoints(IReadOnlyList<GesturePoint> points)
-    {
-        if (points.Count <= MaxVisiblePointCount)
-        {
-            return points;
-        }
-
-        return points.Skip(points.Count - MaxVisiblePointCount).ToArray();
-    }
-
-    private System.Windows.Media.Brush GetStrokeBrush(string colorText)
-    {
-        if (_lastStrokeBrush is not null &&
-            string.Equals(_lastStrokeColorText, colorText, StringComparison.OrdinalIgnoreCase))
-        {
-            return _lastStrokeBrush;
-        }
-
-        _lastStrokeColorText = colorText;
-        _lastStrokeBrush = CreateStrokeBrush(colorText);
-        return _lastStrokeBrush;
-    }
-
-    private static System.Windows.Media.Brush CreateStrokeBrush(string colorText)
-    {
-        try
-        {
-            var brush = (SolidColorBrush)new BrushConverter().ConvertFromString(colorText)!;
-            brush.Freeze();
-            return brush;
-        }
-        catch
-        {
-            var fallback = new SolidColorBrush(System.Windows.Media.Color.FromRgb(140, 200, 255));
-            fallback.Freeze();
-            return fallback;
-        }
-    }
-
-    private System.Windows.Media.Brush GetHudBackgroundBrush(string themeKey, string startColor, string endColor)
-    {
-        if (_lastHudBackgroundBrush is not null &&
-            string.Equals(_lastHudThemeKey, themeKey, StringComparison.OrdinalIgnoreCase))
-        {
-            return _lastHudBackgroundBrush;
-        }
-
-        _lastHudThemeKey = themeKey;
-        _lastHudBackgroundBrush = CreateHudGradientBrush(startColor, endColor);
-        return _lastHudBackgroundBrush;
-    }
-
-    private System.Windows.Media.Brush GetHudAccentBrush(string colorText)
-    {
-        if (_lastHudAccentBrush is not null &&
-            string.Equals(_lastHudAccentColorText, colorText, StringComparison.OrdinalIgnoreCase))
-        {
-            return _lastHudAccentBrush;
-        }
-
-        _lastHudAccentColorText = colorText;
-        _lastHudAccentBrush = CreateSolidBrush(colorText, System.Windows.Media.Color.FromRgb(147, 197, 253));
-        return _lastHudAccentBrush;
-    }
-
-    private static System.Windows.Media.Brush CreateHudGradientBrush(string startColor, string endColor)
-    {
-        var start = ParseColor(startColor, System.Windows.Media.Color.FromArgb(220, 17, 23, 36));
-        var end = ParseColor(endColor, System.Windows.Media.Color.FromArgb(220, 30, 41, 59));
-        var brush = new LinearGradientBrush(start, end, 0)
-        {
-            StartPoint = new System.Windows.Point(0, 0),
-            EndPoint = new System.Windows.Point(1, 1)
-        };
-        brush.Freeze();
-        return brush;
-    }
-
-    private static System.Windows.Media.Brush CreateSolidBrush(string colorText, System.Windows.Media.Color fallbackColor)
-    {
-        var brush = new SolidColorBrush(ParseColor(colorText, fallbackColor));
-        brush.Freeze();
-        return brush;
-    }
-
-    private static System.Windows.Media.Color ParseColor(string colorText, System.Windows.Media.Color fallback)
-    {
-        try
-        {
-            return (System.Windows.Media.Color)System.Windows.Media.ColorConverter.ConvertFromString(colorText);
-        }
-        catch
-        {
-            return fallback;
-        }
-    }
-
-    private static string FormatDuration(TimeSpan value)
-    {
-        if (value <= TimeSpan.Zero)
-        {
-            return "已下班";
-        }
-
-        return value.TotalHours >= 1
-            ? $"{(int)value.TotalHours}小时{value.Minutes:D2}分"
-            : $"{Math.Max(0, value.Minutes)}分钟";
-    }
-
-    private static string FormatMoney(decimal value)
-    {
-        return string.Create(CultureInfo.InvariantCulture, $"￥{value:0.00}");
-    }
-
-    private static string FormatPaydayCountdown(int days)
-    {
-        return days <= 0 ? "今天" : $"{days} 天";
     }
 
     private async Task HideLaterAsync(CancellationToken cancellationToken)

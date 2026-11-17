@@ -10,7 +10,7 @@ public sealed partial class GestureOverlayWindowTests
         var viewModelPath = FindRepositoryFile("src", "GestureClip.App", "ViewModels", "GestureOverlayViewModel.cs");
         var servicePath = FindRepositoryFile("src", "GestureClip.App", "Services", "GestureOverlayService.cs");
         var viewModel = File.ReadAllText(viewModelPath);
-        var service = File.ReadAllText(servicePath);
+        var service = ReadOverlayServiceSource();
         Assert.Contains("PaydayCountdownText", viewModel);
         Assert.Contains("WorkSummaryText", viewModel);
         Assert.Contains("BuildSnapshotAsync", service);
@@ -40,7 +40,7 @@ public sealed partial class GestureOverlayWindowTests
     public void GestureOverlayService_caps_visible_trace_points_without_readding_start()
     {
         var path = FindRepositoryFile("src", "GestureClip.App", "Services", "GestureOverlayService.cs");
-        var source = File.ReadAllText(path);
+        var source = ReadOverlayServiceSource();
         Assert.Contains("MaxVisiblePointCount = 96", source);
         Assert.Contains("points.Skip(points.Count - MaxVisiblePointCount).ToArray()", source);
         Assert.DoesNotContain("Prepend(points[0])", source);
@@ -50,7 +50,7 @@ public sealed partial class GestureOverlayWindowTests
     public void GestureOverlayService_fades_overlay_before_hiding()
     {
         var path = FindRepositoryFile("src", "GestureClip.App", "Services", "GestureOverlayService.cs");
-        var source = File.ReadAllText(path);
+        var source = ReadOverlayServiceSource();
         Assert.Contains("DoubleAnimation", source);
         Assert.Contains("OpacityProperty", source);
         Assert.Contains("HideFadeMilliseconds", source);
@@ -60,7 +60,7 @@ public sealed partial class GestureOverlayWindowTests
     public void GestureOverlayService_uses_dpi_aware_screen_coordinate_conversion()
     {
         var path = FindRepositoryFile("src", "GestureClip.App", "Services", "GestureOverlayService.cs");
-        var source = File.ReadAllText(path);
+        var source = ReadOverlayServiceSource();
         Assert.Contains("_window.PointFromScreen", source);
         Assert.Contains("physical screen pixels", source);
         Assert.DoesNotContain("point.X - originX", source);
@@ -71,7 +71,7 @@ public sealed partial class GestureOverlayWindowTests
     public void GestureOverlayService_throttles_trace_updates_and_backgrounds_workstation_snapshot()
     {
         var path = FindRepositoryFile("src", "GestureClip.App", "Services", "GestureOverlayService.cs");
-        var source = File.ReadAllText(path);
+        var source = ReadOverlayServiceSource();
         Assert.Contains("HudFrameIntervalMs", source);
         Assert.Contains("QueuePendingUpdateAsync", source);
         Assert.Contains("DispatcherPriority.Render", source);
@@ -84,5 +84,11 @@ public sealed partial class GestureOverlayWindowTests
         var applyEnd = source.IndexOf("private static bool IsUnboundHud", applyStart, StringComparison.Ordinal);
         var applyMethod = source[applyStart..applyEnd];
         Assert.DoesNotContain("QueueWorkstationSnapshotRefresh", applyMethod);
+    }
+    private static string ReadOverlayServiceSource()
+    {
+        var path = FindRepositoryFile("src", "GestureClip.App", "Services", "GestureOverlayService.cs");
+        return string.Join("\n", Directory.GetFiles(Path.GetDirectoryName(path)!, "GestureOverlayService*.cs")
+            .OrderBy(file => file).Select(File.ReadAllText));
     }
 }

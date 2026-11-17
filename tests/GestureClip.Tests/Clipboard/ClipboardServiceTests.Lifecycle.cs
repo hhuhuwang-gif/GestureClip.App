@@ -51,7 +51,7 @@ public sealed partial class ClipboardServiceTests
             Environment.NewLine,
             RepositorySource.ReadClassSources(FindRepositoryFile("src", "GestureClip.Features", "Clipboard", "ClipboardService.cs")),
             RepositorySource.ReadClassSources(FindRepositoryFile("src", "GestureClip.App", "ViewModels", "ClipboardOverlayViewModel.cs")),
-            File.ReadAllText(FindRepositoryFile("src", "GestureClip.App", "Services", "GestureOverlayService.cs")));
+            RepositorySource.ReadClassSources(FindRepositoryFile("src", "GestureClip.App", "Services", "GestureOverlayService.cs")));
 
         Assert.Contains("ClipboardCopyDurationMs", source);
         Assert.Contains("DbUpdateDurationMs", source);

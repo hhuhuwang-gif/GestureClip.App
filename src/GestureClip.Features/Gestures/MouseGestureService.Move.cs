@@ -34,7 +34,6 @@ public sealed partial class MouseGestureService : IMouseGestureService
         {
             _points.Add(movePoint);
             TrimTrackedPoints();
-            _traceDirty = true;
         }
 
         if (_state == GestureRuntimeState.Tracking &&
@@ -49,8 +48,19 @@ public sealed partial class MouseGestureService : IMouseGestureService
             }
         }
 
+        _traceDirty |= DistanceSquared(lastPoint, movePoint) > 0;
         RefreshMoveFeedback(mouseEvent, distanceSquaredFromStart);
         return null;
+    }
+
+    private IReadOnlyList<GesturePoint> CreateTrailSnapshot(GesturePoint pointer)
+    {
+        var appendPointer = DistanceSquared(_points[^1], pointer) > 0;
+        var count = Math.Min(_points.Count, MaxTrackedPoints - (appendPointer ? 1 : 0));
+        var snapshot = new GesturePoint[count + (appendPointer ? 1 : 0)];
+        _points.CopyTo(_points.Count - count, snapshot, 0, count);
+        if (appendPointer) snapshot[^1] = pointer;
+        return snapshot;
     }
 
     private void RefreshMoveFeedback(MouseHookEvent mouseEvent, double distanceSquaredFromStart)
@@ -77,7 +87,7 @@ public sealed partial class MouseGestureService : IMouseGestureService
                 : _hudInfoProvider.GetInfo(_activeSettings.Preset, new GestureExecutionContext(previewPattern, _leftButtonModifier, _gestureTargetHwnd, _gestureTargetProcessName));
             _lastHudRefreshAt = mouseEvent.Time;
             _traceDirty = false;
-            _ = _gestureOverlayService.UpdateGestureAsync([.. _points], hudInfo, CancellationToken.None);
+            _ = _gestureOverlayService.UpdateGestureAsync(CreateTrailSnapshot(ToPoint(mouseEvent)), hudInfo, CancellationToken.None);
         }
 
     }
