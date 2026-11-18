@@ -49,7 +49,7 @@
                     </StackPanel>
                     <StackPanel Grid.Column="2" VerticalAlignment="Center" HorizontalAlignment="Right">
                         <TextBlock Text="{Binding GreetingText}" Style="{StaticResource HubBodyStyle}" HorizontalAlignment="Right" />
-                        <TextBlock Text="v0.6.45 · 本地" Style="{StaticResource HubMetricLabelStyle}" HorizontalAlignment="Right" Margin="0,8,0,0" />
+                        <TextBlock Text="v0.6.47 · 本地" Style="{StaticResource HubMetricLabelStyle}" HorizontalAlignment="Right" Margin="0,8,0,0" />
                     </StackPanel>
                 </Grid>
             </Border>

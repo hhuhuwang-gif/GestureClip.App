@@ -23,9 +23,9 @@
 <p align="center">
   <a href="https://github.com/hhuhuwang-gif/GestureClip.App/releases/latest"><strong>⬇ 下载最新版（Latest）</strong></a>
   ·
-  <a href="https://github.com/hhuhuwang-gif/GestureClip.App/releases/download/v0.6.45-beta/GestureClip-v0.6.45-beta-win-x64.zip"><strong>v0.6.45 Beta zip</strong></a>
+  <a href="https://github.com/hhuhuwang-gif/GestureClip.App/releases/download/v0.6.47-beta/GestureClip-v0.6.47-beta-win-x64.zip"><strong>v0.6.47 Beta zip</strong></a>
   ·
-  <a href="https://github.com/hhuhuwang-gif/GestureClip.App/releases/tag/v0.6.45-beta">Release 说明</a>
+  <a href="https://github.com/hhuhuwang-gif/GestureClip.App/releases/tag/v0.6.47-beta">Release 说明</a>
   ·
   <a href="CHANGELOG.md">更新日志</a>
 </p>
@@ -37,7 +37,7 @@
 ## 目录
 
 - [30 秒上手](#30-秒上手)
-- [当前版本](#当前版本v0645-beta)
+- [当前版本](#当前版本v0647-beta)
 - [核心功能](#核心功能)
 - [数据与隐私](#数据与隐私)
 - [安装与更新](#安装与更新)
@@ -63,28 +63,28 @@
 
 ---
 
-## 当前版本：v0.6.45 Beta
+## 当前版本：v0.6.47 Beta
 
 | 资源 | 链接 |
 | --- | --- |
 | **推荐下载（Latest）** | [Releases / latest](https://github.com/hhuhuwang-gif/GestureClip.App/releases/latest) |
-| 安装包 | [GestureClip-Setup-v0.6.45-beta-win-x64.zip](https://github.com/hhuhuwang-gif/GestureClip.App/releases/download/v0.6.45-beta/GestureClip-Setup-v0.6.45-beta-win-x64.zip) |
-| 便携包 | [GestureClip-v0.6.45-beta-win-x64.zip](https://github.com/hhuhuwang-gif/GestureClip.App/releases/download/v0.6.45-beta/GestureClip-v0.6.45-beta-win-x64.zip) |
-| 校验文件 | [SHA256SUMS.txt](https://github.com/hhuhuwang-gif/GestureClip.App/releases/download/v0.6.45-beta/SHA256SUMS.txt) |
+| 安装包 | [GestureClip-Setup-v0.6.47-beta-win-x64.zip](https://github.com/hhuhuwang-gif/GestureClip.App/releases/download/v0.6.47-beta/GestureClip-Setup-v0.6.47-beta-win-x64.zip) |
+| 便携包 | [GestureClip-v0.6.47-beta-win-x64.zip](https://github.com/hhuhuwang-gif/GestureClip.App/releases/download/v0.6.47-beta/GestureClip-v0.6.47-beta-win-x64.zip) |
+| 校验文件 | [SHA256SUMS.txt](https://github.com/hhuhuwang-gif/GestureClip.App/releases/download/v0.6.47-beta/SHA256SUMS.txt) |
 | 历史版本 | 旧版在 Releases 里标记为 **Pre-release**，默认请用 Latest |
 
-### 本版亮点（v0.6.45）
+### 本版亮点（v0.6.47）
 
-- **滚动真正顺滑**：设置窗口改为 DWM 合成窗口，不再被 WPF 强制软件渲染；平均帧间隔从 18~20ms 降到 16~17ms，滚轮按下立即响应，不再有"顿一下再滑"。
+- **手势宏**：新增宏录制与手势触发播放，录好的宏可绑定手势一键回放；长宏与自然方向手势识别更准。
+- **轨迹更跟手**：鼠标采样按移动速率自适应，HUD 拖尾独立渲染，快速划动不丢采样点。
+- **HUD 动效分档**：完整 / 均衡 / 极简三档，电池供电自动降帧，极简档零动画；方块渐变跟随强调色。
+- **一键启动与可测量性能**：`Start-GestureClip.bat` 双击即启动，新增 `--trace-mem` 内存诊断与 UI 性能预算校验。详见 [v0.6.47 Release 说明](docs/github-release-v0.6.47-beta.md)。
+
+### 延续功能（v0.6.45）
+
+- **滚动真正顺滑**：设置窗口改为 DWM 合成窗口，不再被 WPF 强制软件渲染；平均帧间隔从 18~20ms 降到 16~17ms，滚轮按下立即响应。
 - **手势提示更好看**：HUD 改为数码方块流动渐变，方块内青→靛→紫→品红缓慢流动，配斜向副数据流与扫描光柱。
-- **最大化不再挡任务栏**：最大化尺寸约束在显示器工作区内。
-- **文本更清晰**：改用 Display 排版与灰度抗锯齿，滚动中字形不抖动。详见 [v0.6.45 Release 说明](docs/github-release-v0.6.45-beta.md)。
-
-### 延续功能（v0.6.44）
-
-- **滚动回弹修复**：滚轮输入统一累积到目标偏移，反向滚动不再丢弃已累积行程，落点准确。
-- **滚动开销更低**：移除每帧字符串分配与边界无效布局，长页面翻动更跟手。
-- **界面细节**：胶囊滚动条、卡片层次与导航选中态统一，浅色/深色主题观感一致。详见 [v0.6.44 Release 说明](docs/github-release-v0.6.44-beta.md)。
+- **最大化不再挡任务栏**：最大化尺寸约束在显示器工作区内。详见 [v0.6.45 Release 说明](docs/github-release-v0.6.45-beta.md)。
 
 ### 延续功能（v0.6.43）
 
@@ -234,7 +234,7 @@ v0.6.37 起历史再复制会统一写成纯文本；也可用「复制为纯文
 可手动到 [Latest](https://github.com/hhuhuwang-gif/GestureClip.App/releases/latest) 下载。
 
 **为什么 GitHub 上还有很多旧版本？**  
-历史包仍保留下载；已标为 Pre-release。日常请只用 **Latest = v0.6.45 Beta**。
+历史包仍保留下载；已标为 Pre-release。日常请只用 **Latest = v0.6.47 Beta**。
 
 ---
 

@@ -15,7 +15,7 @@ public sealed partial class ThemeResourceTests
             .Concat(Directory.GetFiles(themes, "Hub*.xaml")).Select(File.ReadAllText));
 
         Assert.Contains("工位小熊", xaml);
-        Assert.Contains("v0.6.45 · 本地", xaml);
+        Assert.Contains("v0.6.47 · 本地", xaml);
         Assert.Contains("UniformGrid", xaml);
         Assert.Contains("OffWorkCountdownText", xaml);
         Assert.Contains("TodayEarnedText", xaml);
