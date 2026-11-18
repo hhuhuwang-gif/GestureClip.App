@@ -39,7 +39,7 @@ function Format-WorkflowAnnotation {
 }
 
 function Get-TrxFailureSummary {
-    # 从 TRX 里挑出失败测试名与断言信息，避免整段堆栈淹没注解。
+    # 从 TRX 里挑出失败测试名、实际耗时与断言/堆栈信息，避免整段堆栈淹没注解。
     param([string]$Directory, [int]$MaxLength = 3500)
     if (-not (Test-Path -LiteralPath $Directory)) { return "" }
     $lines = New-Object System.Collections.Generic.List[string]
@@ -47,14 +47,23 @@ function Get-TrxFailureSummary {
         try { [xml]$document = Get-Content -LiteralPath $file.FullName -Raw } catch { continue }
         $results = @($document.TestRun.Results.UnitTestResult)
         foreach ($result in $results) {
-            if ($result.outcome -ne 'Failed') { continue }
+            if ($result.outcome -ne 'Failed' -and $result.outcome -ne 'Error') { continue }
             $message = ""
+            $frames = @()
             if ($result.Output -and $result.Output.ErrorInfo) {
                 $message = [string]$result.Output.ErrorInfo.Message
+                if ($result.Output.ErrorInfo.StackTrace) {
+                    $frames = @(([string]$result.Output.ErrorInfo.StackTrace) -split "`r?`n" |
+                        Where-Object { $_.Trim() } | Select-Object -First 3)
+                }
             }
             $message = ($message -replace '\s+', ' ').Trim()
-            if ($message.Length -gt 600) { $message = $message.Substring(0, 600) + "..." }
-            $lines.Add("$($result.testName) :: $message")
+            if ($message.Length -gt 400) { $message = $message.Substring(0, 400) + "..." }
+            $entry = "$($result.outcome) [$($result.duration)] $($result.testName) :: $message"
+            if ($frames.Count -gt 0) {
+                $entry += " @ " + (($frames | ForEach-Object { $_.Trim() }) -join " <- ")
+            }
+            $lines.Add($entry)
         }
     }
     if ($lines.Count -eq 0) { return "" }
