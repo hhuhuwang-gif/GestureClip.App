@@ -55,6 +55,8 @@ public sealed class SmoothScrollViewer : ScrollViewer
     // 的滚动，避免把“自己迟到的帧”误判成外部滚动而清掉累积目标（表现是丢一档行程）。
     private readonly System.Collections.Generic.Queue<double> _recentSubmissions = new();
     private const int RecentSubmissionCapacity = 16;
+    // _visualOffset 是否代表一个已知的真实位置（我们提交过，或接管过外部滚动）。
+    private bool _hasPosition;
     private bool _isRunning;
     private long _lastTick;
     private TimeSpan? _lastRenderingTime;
@@ -192,6 +194,7 @@ public sealed class SmoothScrollViewer : ScrollViewer
                 _targetOffset = e.VerticalOffset;
                 _submittedOffset = e.VerticalOffset;
                 _hasSubmitted = true;
+                _hasPosition = true;
                 _recentSubmissions.Clear();
                 _recentSubmissions.Enqueue(e.VerticalOffset);
                 Log($"takeover actual={e.VerticalOffset:F3} "
@@ -326,6 +329,7 @@ public sealed class SmoothScrollViewer : ScrollViewer
         _visualOffset = offset;
         _submittedOffset = offset;
         _hasSubmitted = true;
+        _hasPosition = true;
         _recentSubmissions.Enqueue(offset);
         while (_recentSubmissions.Count > RecentSubmissionCapacity)
         {
@@ -372,11 +376,15 @@ public sealed class SmoothScrollViewer : ScrollViewer
 
     private void ResetToViewport()
     {
-        var offset = VerticalOffset;
+        // ScrollToVerticalOffset 要等下一次布局才生效，动画关闭时连续几档滚轮会在同一次
+        // 布局内到齐；此时读 VerticalOffset 拿到的还是旧值，会把上一档的行程丢掉。
+        // 有可信位置时沿用最后一次提交的偏移，只有从未定位过才回落到 VerticalOffset。
+        var offset = _hasPosition ? _visualOffset : VerticalOffset;
         _visualOffset = offset;
         _targetOffset = offset;
         _submittedOffset = offset;
         _hasSubmitted = false;
+        _hasPosition = true;
     }
 
     private void OnScrollBarDragStarted(object sender, DragStartedEventArgs e) => StopScrolling();
