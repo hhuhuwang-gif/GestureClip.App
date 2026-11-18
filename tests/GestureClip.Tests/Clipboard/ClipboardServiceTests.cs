@@ -92,7 +92,8 @@ public sealed partial class ClipboardServiceTests
 
     private static async Task WaitForAsync(Func<bool> condition)
     {
-        var deadline = DateTimeOffset.UtcNow.AddSeconds(2);
+        // 冷启动的 CI runner 上图像解码与仓储写入远超 2 秒；这里只是等待轮询，不是性能断言。
+        var deadline = DateTimeOffset.UtcNow.AddSeconds(30);
         while (DateTimeOffset.UtcNow < deadline)
         {
             if (condition())

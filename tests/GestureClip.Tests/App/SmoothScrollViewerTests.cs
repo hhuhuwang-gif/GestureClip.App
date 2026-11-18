@@ -74,16 +74,30 @@ public sealed partial class SmoothScrollViewerTests
             PumpUntilSettled(viewer);
             var lines = SystemParameters.WheelScrollLines;
             var expected = 2 * (lines < 0 ? viewer.ViewportHeight : lines * 16);
-            Assert.Equal(expected, viewer.VerticalOffset, 1);
+            AssertOffset(viewer, expected, "两个下滚档位");
             if (SystemParameters.ClientAreaAnimation && expected > 0)
                 Assert.Contains(offsets, offset => offset > 0 && offset < expected);
             Wheel(viewer, 120);
             var upwardOffsets = SampleOffsets(viewer);
             PumpUntilSettled(viewer);
-            Assert.Equal(expected / 2, viewer.VerticalOffset, 1);
+            AssertOffset(viewer, expected / 2, "回滚一档后");
             Assert.True(upwardOffsets.Zip(upwardOffsets.Skip(1), (first, next) => next <= first).All(value => value));
         }
         finally { window.Close(); }
+    }
+
+    /// <summary>
+    /// 断言最终偏移。失败时把 extent/viewport/scrollable 一起带出来：慢 runner 上的偏差
+    /// 究竟是“行程被吞”还是“内容到底了被 clamp”，只能靠这些数字区分。
+    /// </summary>
+    private static void AssertOffset(SmoothScrollViewer viewer, double expected, string context)
+    {
+        var actual = viewer.VerticalOffset;
+        Assert.True(Math.Abs(actual - expected) <= 1,
+            $"{context}: expected={expected:F1} actual={actual:F1} "
+            + $"scrollable={viewer.ScrollableHeight:F1} viewport={viewer.ViewportHeight:F1} "
+            + $"extent={viewer.ExtentHeight:F1} step={WheelStep(viewer):F1} "
+            + $"animation={SystemParameters.ClientAreaAnimation}");
     }
 
     /// <summary>

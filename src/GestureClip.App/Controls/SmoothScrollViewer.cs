@@ -50,6 +50,11 @@ public sealed class SmoothScrollViewer : ScrollViewer
     private double _visualOffset;
     private double _submittedOffset;
     private bool _hasSubmitted;
+    // ScrollViewer 的 ScrollToVerticalOffset 要等下一次布局才真正生效，慢机器上可能一次布局
+    // 吞掉我们连续提交的几帧。记住最近提交过的值，回报时只要落在其中任何一个上，就仍算自己
+    // 的滚动，避免把“自己迟到的帧”误判成外部滚动而清掉累积目标（表现是丢一档行程）。
+    private readonly System.Collections.Generic.Queue<double> _recentSubmissions = new();
+    private const int RecentSubmissionCapacity = 16;
     private bool _isRunning;
     private long _lastTick;
     private TimeSpan? _lastRenderingTime;
@@ -165,6 +170,18 @@ public sealed class SmoothScrollViewer : ScrollViewer
             var isOwnScroll = _hasSubmitted
                 && Math.Abs(e.VerticalOffset - _submittedOffset) <= ExternalChangeEpsilon;
 
+            if (!isOwnScroll && _hasSubmitted)
+            {
+                foreach (var submitted in _recentSubmissions)
+                {
+                    if (Math.Abs(e.VerticalOffset - submitted) <= ExternalChangeEpsilon)
+                    {
+                        isOwnScroll = true;
+                        break;
+                    }
+                }
+            }
+
             if (!isOwnScroll)
             {
                 // Scrollbar drag, keyboard paging, BringIntoView or code moved
@@ -175,6 +192,8 @@ public sealed class SmoothScrollViewer : ScrollViewer
                 _targetOffset = e.VerticalOffset;
                 _submittedOffset = e.VerticalOffset;
                 _hasSubmitted = true;
+                _recentSubmissions.Clear();
+                _recentSubmissions.Enqueue(e.VerticalOffset);
                 Log($"takeover actual={e.VerticalOffset:F3} "
                     + $"extent={e.ExtentHeight:F3} viewport={e.ViewportHeight:F3}");
             }
@@ -307,6 +326,11 @@ public sealed class SmoothScrollViewer : ScrollViewer
         _visualOffset = offset;
         _submittedOffset = offset;
         _hasSubmitted = true;
+        _recentSubmissions.Enqueue(offset);
+        while (_recentSubmissions.Count > RecentSubmissionCapacity)
+        {
+            _recentSubmissions.Dequeue();
+        }
 
         if (!DiagnosticsEnabled)
         {

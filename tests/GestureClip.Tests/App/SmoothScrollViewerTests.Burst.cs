@@ -30,7 +30,7 @@ public sealed partial class SmoothScrollViewerTests
                 PumpUntilSettled(viewer);
                 var lines = SystemParameters.WheelScrollLines;
                 var step = lines < 0 ? viewer.ViewportHeight : lines * 16;
-                Assert.Equal(RecordedBurstTimes.Length * step, viewer.VerticalOffset, 1);
+                AssertOffset(viewer, RecordedBurstTimes.Length * step, "连发 8 档");
                 if (!SystemParameters.ClientAreaAnimation || step == 0) return;
                 Assert.True(duringInput > 0);
                 Assert.True(requests.Count > 2);
