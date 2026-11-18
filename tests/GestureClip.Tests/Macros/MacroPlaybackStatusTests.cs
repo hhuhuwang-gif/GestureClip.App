@@ -10,14 +10,13 @@ using GestureClip.Core.Macros;
 using GestureClip.Features.Macros;
 using GestureClip.Infrastructure.Macros;
 using GestureClip.Infrastructure.Paths;
+using GestureClip.Tests.Support;
 using Xunit;
 
 namespace GestureClip.Tests.Macros;
 
 public sealed class MacroPlaybackStatusTests
 {
-    private const int TestTimeoutSeconds = 5;
-
     [Fact]
     public async Task Status_progress_can_bind_to_the_actual_readonly_service_property()
     {
@@ -29,7 +28,7 @@ public sealed class MacroPlaybackStatusTests
         });
         thread.SetApartmentState(ApartmentState.STA);
         thread.Start();
-        await completion.Task.WaitAsync(TimeSpan.FromSeconds(TestTimeoutSeconds));
+        await completion.Task.WaitAsync(TestPlatformTimeouts.UiThread);
     }
 
     private static void VerifyRuntimeBinding()

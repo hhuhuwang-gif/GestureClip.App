@@ -24,6 +24,7 @@ public sealed partial class SmoothScrollViewerTests
                 // Three notches down, then one notch up before the animation settles.
                 ReplayWheel(viewer, [-120, -120, -120, 120], intervalMilliseconds: 10);
                 SampleOffsets(viewer);
+                PumpUntilSettled(viewer);
 
                 // Down three notches and up one notch must land on two notches of travel.
                 Assert.Equal(2 * step, viewer.VerticalOffset, 0);
@@ -47,6 +48,7 @@ public sealed partial class SmoothScrollViewerTests
                 var offsets = new List<double>();
                 viewer.ScrollChanged += (_, e) => offsets.Add(e.VerticalOffset);
                 ReplayWheel(viewer, [-120, -120, -120, 120], intervalMilliseconds: 10);
+                PumpUntilSettled(viewer);
 
                 // The down run must peak before the up wheel moves back a single step.
                 var peak = offsets.Count == 0 ? 0 : offsets.Max();
@@ -73,6 +75,7 @@ public sealed partial class SmoothScrollViewerTests
                 ReplayWheel(viewer,
                     [-120, -120, 120, 120, -120, -120, 120, 120],
                     intervalMilliseconds: 10);
+                PumpUntilSettled(viewer);
 
                 Assert.True(viewer.VerticalOffset < 2, $"final={viewer.VerticalOffset:F2}");
                 var span = frameOffsets.Count == 0 ? 0 : frameOffsets.Max() - frameOffsets.Min();

@@ -27,6 +27,7 @@ public sealed partial class SmoothScrollViewerTests
                 viewer.FrameLogging = true;
                 viewer.DiagnosticLog = line => CollectFrame(line, requests);
                 var duringInput = ReplayBurst(viewer);
+                PumpUntilSettled(viewer);
                 var lines = SystemParameters.WheelScrollLines;
                 var step = lines < 0 ? viewer.ViewportHeight : lines * 16;
                 Assert.Equal(RecordedBurstTimes.Length * step, viewer.VerticalOffset, 1);

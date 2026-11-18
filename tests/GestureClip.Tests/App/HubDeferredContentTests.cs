@@ -3,6 +3,7 @@ using System.Windows.Controls;
 using System.Windows.Markup;
 using System.Windows.Media;
 using System.Xml.Linq;
+using GestureClip.Tests.Support;
 using Xunit;
 
 namespace GestureClip.Tests.App;
@@ -20,7 +21,7 @@ public sealed class HubDeferredContentTests
         });
         thread.SetApartmentState(ApartmentState.STA);
         thread.Start();
-        await completion.Task.WaitAsync(TimeSpan.FromSeconds(5));
+        await completion.Task.WaitAsync(TestPlatformTimeouts.UiThread);
     }
 
     private static void VerifyContentLifecycle()

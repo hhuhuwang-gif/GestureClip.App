@@ -1,8 +1,10 @@
+using System.Diagnostics;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Threading;
 using GestureClip.App.Controls;
+using GestureClip.Tests.Support;
 using Xunit;
 
 namespace GestureClip.Tests.App;
@@ -51,24 +53,61 @@ public sealed partial class SmoothScrollViewerTests
         });
         thread.SetApartmentState(ApartmentState.STA);
         thread.Start();
-        await completion.Task.WaitAsync(TimeSpan.FromSeconds(5));
+        await completion.Task.WaitAsync(TestPlatformTimeouts.UiThread);
     }
 
     private static void VerifyWheelScrolling()
     {
         var viewer = CreateViewer(new Border { Height = 4000, Width = 300 });
-        Wheel(viewer, -120);
-        Wheel(viewer, -120);
-        var offsets = SampleOffsets(viewer);
-        var lines = SystemParameters.WheelScrollLines;
-        var expected = 2 * (lines < 0 ? viewer.ViewportHeight : lines * 16);
-        Assert.Equal(expected, viewer.VerticalOffset, 1);
-        if (SystemParameters.ClientAreaAnimation && expected > 0)
-            Assert.Contains(offsets, offset => offset > 0 && offset < expected);
-        Wheel(viewer, 120);
-        var upwardOffsets = SampleOffsets(viewer);
-        Assert.Equal(expected / 2, viewer.VerticalOffset, 1);
-        Assert.True(upwardOffsets.Zip(upwardOffsets.Skip(1), (first, next) => next <= first).All(value => value));
+        var window = new Window { Content = viewer, Width = 400, Height = 400, ShowActivated = false };
+        try
+        {
+            // 放进窗口并先等布局落定：没有渲染源时 ScrollViewer 的 extent/viewport 会被后续
+            // 布局重新计算，Takeover 逻辑随即把已经滚出去的行程吞掉，最终偏移就正好少一档。
+            window.Show();
+            viewer.UpdateLayout();
+            PumpUntilSettled(viewer);
+
+            Wheel(viewer, -120);
+            Wheel(viewer, -120);
+            var offsets = SampleOffsets(viewer);
+            PumpUntilSettled(viewer);
+            var lines = SystemParameters.WheelScrollLines;
+            var expected = 2 * (lines < 0 ? viewer.ViewportHeight : lines * 16);
+            Assert.Equal(expected, viewer.VerticalOffset, 1);
+            if (SystemParameters.ClientAreaAnimation && expected > 0)
+                Assert.Contains(offsets, offset => offset > 0 && offset < expected);
+            Wheel(viewer, 120);
+            var upwardOffsets = SampleOffsets(viewer);
+            PumpUntilSettled(viewer);
+            Assert.Equal(expected / 2, viewer.VerticalOffset, 1);
+            Assert.True(upwardOffsets.Zip(upwardOffsets.Skip(1), (first, next) => next <= first).All(value => value));
+        }
+        finally { window.Close(); }
+    }
+
+    /// <summary>
+    /// 平滑滚动由 CompositionTarget.Rendering 驱动，慢机器上帧率低，采样结束时可能还差一档没落位。
+    /// 断言最终偏移前先泵帧到位置稳定，避免把“还没滑完”误判成“行程丢失”。
+    /// </summary>
+    private static void PumpUntilSettled(SmoothScrollViewer viewer, int maxMilliseconds = 4000)
+    {
+        var frame = new DispatcherFrame();
+        var elapsed = Stopwatch.StartNew();
+        var last = double.NaN;
+        var stableTicks = 0;
+        var timer = new DispatcherTimer(DispatcherPriority.Input) { Interval = TimeSpan.FromMilliseconds(16) };
+        timer.Tick += (_, _) =>
+        {
+            viewer.UpdateLayout();
+            var current = viewer.VerticalOffset;
+            stableTicks = Math.Abs(current - last) < 0.5 ? stableTicks + 1 : 0;
+            last = current;
+            if (stableTicks >= 4 || elapsed.ElapsedMilliseconds >= maxMilliseconds) frame.Continue = false;
+        };
+        timer.Start();
+        Dispatcher.PushFrame(frame);
+        timer.Stop();
     }
 
     private static SmoothScrollViewer CreateViewer(UIElement content)
