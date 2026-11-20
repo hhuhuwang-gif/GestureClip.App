@@ -131,7 +131,7 @@
 - **贴图置顶**：历史图片一键贴到桌面变置顶参考图（拖动 / 滚轮缩放 / 双击关闭，可贴多张）
 - 可暂停记录；数据在本机 SQLite
 
-![剪贴板](docs/images/settings-clipboard.png)
+![紧凑剪贴板历史，选中项右侧显示快捷操作](docs/images/clipboard-history.png)
 
 ### 2. 快捷键
 
@@ -168,16 +168,22 @@
 
 ![动作绑定](docs/images/gesture-bindings.png)
 
-### 5. 手势 HUD + 工位小熊（可选）
+### 5. 快捷操作宏
 
-划手势时显示当前动作；可打开工位小熊看今日收益估算、下班倒计时、复制/粘贴统计与等级。**可关闭。**
+在设置左侧打开「录制」。切换到目标应用后，按 `F8` 或按住右键画 `<` 开始录制鼠标、键盘和滚轮，再操作一次停止并保存。选中已保存的宏后，按 `F9` 或画 `>` 回放。回放右上角显示进度，用 `Esc` 或再画一次 `>` 中止。
+
+![按住右键画小于号录制或停止，画大于号回放或中止](docs/images/macro-gestures.png)
+
+### 6. 手势 HUD + 工位小熊（可选）
+
+划手势时，浮层显示方向、动作和快捷键，底色随工作时段切换。工位小熊可查看今日收益估算、下班倒计时、复制和粘贴统计。两项都可在设置中关闭。
 
 - **今日已赚每秒跳动** + 距周末 / 法定节假日倒计时（本地内置假日表）
 - **活动驱动休息判断**：离开电脑 5 分钟自动算休息，人在休息不弹提醒（只看键鼠空闲，不识别应用）
 - 过了下班点显示**加班账**：已加班时长 ≈ 白送老板多少钱
 - **迷你挂件**：桌面常驻置顶小胶囊（已赚 + 倒计时），可拖动、可换自定义桌宠图（GIF 会动）
 
-![手势 HUD](docs/images/gesture-hud-workbear.png)
+![下午暖红色手势浮层：上划复制](docs/images/gesture-hud-workbear.png)
 
 ![工位小熊](docs/images/workbear-panel.png)
 
@@ -280,7 +286,9 @@ powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\check-ui-performan
 
 ## 截图
 
-| 首页 | 剪贴板 |
+以下界面来自 v0.6.48，使用示例数据。
+
+| 首页 | 剪贴板设置 |
 | --- | --- |
 | ![首页](docs/images/settings-home.png) | ![剪贴板](docs/images/settings-clipboard.png) |
 
@@ -288,7 +296,7 @@ powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\check-ui-performan
 | --- | --- |
 | ![手势](docs/images/settings-gestures.png) | ![绑定](docs/images/gesture-bindings.png) |
 
-| HUD | 工位小熊 |
+| 手势浮层 | 工位小熊 |
 | --- | --- |
 | ![HUD](docs/images/gesture-hud-workbear.png) | ![小熊](docs/images/workbear-panel.png) |
 

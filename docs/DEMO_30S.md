@@ -1,6 +1,6 @@
 # GestureClip 30 秒上手演示
 
-> 本地优先：剪贴板历史 + 鼠标手势 + 可选工位小熊。不登录、不上传。
+> 本地优先：剪贴板历史、鼠标手势、快捷操作宏与可选工位小熊。不登录、不上传。
 
 ## 1. 安装（约 10 秒）
 
@@ -14,7 +14,7 @@
 
 图片会尝试本地 OCR，可在历史里用关键字搜图中文字。固定/收藏条目不会被定时清理。
 
-![设置 · 剪贴板](images/settings-clipboard.png)
+![新版剪贴板历史](images/clipboard-history.png)
 
 1. 按 `Ctrl + \`` 打开历史  
 2. 搜索刚才复制的内容  
@@ -30,9 +30,15 @@
 
 ![手势绑定](images/gesture-bindings.png)
 
-## 4. 可选：工位小熊
+## 4. 录制重复操作
 
-![工位小熊](images/workbear-hub-v0.6.0-beta.png)
+按住右键画 `<` 开始录制，再画一次停止并保存。画 `>` 回放已选宏，再画一次或按 `Esc` 中止。也可用 `F8` 录制、`F9` 回放。
+
+![录制、停止、回放和中止的手势](images/macro-gestures.png)
+
+## 5. 可选：工位小熊
+
+![新版工位小熊 Hub](images/workbear-panel.png)
 
 托盘 → 工位小熊：填月薪与上下班时间，看「还要熬多久」。
 
@@ -41,10 +47,12 @@
 | 画面 | 文件 |
 | --- | --- |
 | 设置首页 | [settings-home.png](images/settings-home.png) |
+| 剪贴板历史 | [clipboard-history.png](images/clipboard-history.png) |
 | 剪贴板设置 | [settings-clipboard.png](images/settings-clipboard.png) |
 | 手势设置 | [settings-gestures.png](images/settings-gestures.png) |
 | 动作绑定 | [gesture-bindings.png](images/gesture-bindings.png) |
-| HUD / 小熊 | [gesture-hud-workbear.png](images/gesture-hud-workbear.png) |
+| 手势浮层 | [gesture-hud-workbear.png](images/gesture-hud-workbear.png) |
+| 录制手势 | [macro-gestures.png](images/macro-gestures.png) |
 
 ## 录制真实 GIF（可选）
 
