@@ -53,6 +53,7 @@ public sealed partial class MouseGestureService : IMouseGestureService
         _activeSettings = null;
         _points = [];
         _startPoint = null;
+        _lastRawMove = null;
         _gestureStartedAt = null;
         _synthesizeRightClickOnNextRightButtonUp = false;
         _pendingSyntheticClickButton = GestureTriggerButton.Right;

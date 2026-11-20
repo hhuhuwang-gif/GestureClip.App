@@ -6,22 +6,22 @@
          深色底 + 千秋青环境光 + 青→靛→紫→品红的方块数据流
          =================================================================== -->
     <LinearGradientBrush x:Key="HudSurfaceGradient" StartPoint="0,0" EndPoint="1,1">
-        <GradientStop Color="#FF101722" Offset="0" />
-        <GradientStop Color="#FF172334" Offset="0.36" />
-        <GradientStop Color="#FF1A2638" Offset="0.72" />
-        <GradientStop Color="#FF101722" Offset="1" />
+        <GradientStop Color="#FF14121B" Offset="0" />
+        <GradientStop Color="#FF1E1927" Offset="0.36" />
+        <GradientStop Color="#FF211C2B" Offset="0.72" />
+        <GradientStop Color="#FF14121B" Offset="1" />
     </LinearGradientBrush>
 
     <RadialGradientBrush x:Key="HudAmbientGradient" Center="0.78,0.02" GradientOrigin="0.78,0.02"
                          RadiusX="0.9" RadiusY="1.7">
-        <GradientStop Color="#305CCDD3" Offset="0" />
-        <GradientStop Color="#001B3C4B" Offset="1" />
+        <GradientStop Color="#248C769C" Offset="0" />
+        <GradientStop Color="#00241C2C" Offset="1" />
     </RadialGradientBrush>
 
     <LinearGradientBrush x:Key="HudSurfaceRim" StartPoint="0,0" EndPoint="0.8,1">
-        <GradientStop Color="#9CBBDCF0" Offset="0" />
-        <GradientStop Color="#1C4C6384" Offset="0.52" />
-        <GradientStop Color="#5C38E0D0" Offset="1" />
+        <GradientStop Color="#54B3A1BD" Offset="0" />
+        <GradientStop Color="#302E2637" Offset="0.52" />
+        <GradientStop Color="#4A9A8295" Offset="1" />
     </LinearGradientBrush>
 
     <!-- 细密像素底噪：只提供一层几乎看不见的数码肌理 -->
@@ -90,11 +90,6 @@
         <GradientStop Color="#00FFFFFF" Offset="1" />
     </LinearGradientBrush>
 
-    <LinearGradientBrush x:Key="HudChipGradient" StartPoint="0,0" EndPoint="0,1">
-        <GradientStop Color="#18FFFFFF" Offset="0" />
-        <GradientStop Color="#05FFFFFF" Offset="1" />
-    </LinearGradientBrush>
-
     <Style TargetType="TextBlock">
         <Setter Property="FontFamily" Value="Microsoft YaHei UI, Segoe UI, Segoe UI Emoji, Segoe UI Symbol" />
         <Setter Property="Foreground" Value="#FFF1F5F9" />
@@ -106,7 +101,7 @@
     </Style>
 
     <Style x:Key="HudLabel" TargetType="TextBlock" BasedOn="{StaticResource {x:Type TextBlock}}">
-        <Setter Property="Foreground" Value="#FF94A3B8" />
+        <Setter Property="Foreground" Value="#FFC2B7CB" />
         <Setter Property="FontSize" Value="11" />
     </Style>
 
@@ -114,15 +109,6 @@
         <Setter Property="FontFamily" Value="Cascadia Mono, Consolas, Microsoft YaHei UI, Segoe UI" />
         <Setter Property="FontSize" Value="11" />
         <Setter Property="Typography.NumeralAlignment" Value="Tabular" />
-    </Style>
-
-    <Style x:Key="HudStatChip" TargetType="Border">
-        <Setter Property="Background" Value="Transparent" />
-        <Setter Property="CornerRadius" Value="7" />
-        <Setter Property="Padding" Value="8,4" />
-        <Setter Property="Margin" Value="0,0,6,0" />
-        <Setter Property="BorderBrush" Value="#10FFFFFF" />
-        <Setter Property="BorderThickness" Value="1" />
     </Style>
 
     <Style x:Key="HudStatLabel" TargetType="TextBlock" BasedOn="{StaticResource HudLabel}">
@@ -133,15 +119,37 @@
     <Style x:Key="HudStatValue" TargetType="TextBlock" BasedOn="{StaticResource HudMonoText}">
         <Setter Property="FontSize" Value="12" />
         <Setter Property="FontWeight" Value="SemiBold" />
+        <Setter Property="Margin" Value="0,0,10,0" />
         <Setter Property="VerticalAlignment" Value="Center" />
     </Style>
 
+    <Style x:Key="HudActionTitle" TargetType="TextBlock" BasedOn="{StaticResource {x:Type TextBlock}}">
+        <Setter Property="Text" Value="{Binding ActionName}" />
+        <Setter Property="FontSize" Value="22" />
+        <Setter Property="FontWeight" Value="SemiBold" />
+        <Style.Triggers>
+            <DataTrigger Binding="{Binding Pattern}" Value="-">
+                <Setter Property="Text" Value="正在识别手势" />
+            </DataTrigger>
+        </Style.Triggers>
+    </Style>
+
+    <Style x:Key="HudActionDetails" TargetType="StackPanel">
+        <Style.Triggers>
+            <DataTrigger Binding="{Binding ActionName}" Value="未绑定">
+                <Setter Property="Visibility" Value="Collapsed" />
+            </DataTrigger>
+            <DataTrigger Binding="{Binding Pattern}" Value="-">
+                <Setter Property="Visibility" Value="Collapsed" />
+            </DataTrigger>
+        </Style.Triggers>
+    </Style>
     <Style x:Key="HudReleaseHint" TargetType="TextBlock" BasedOn="{StaticResource HudLabel}">
         <Setter Property="Text" Value="松开右键执行" />
         <Style.Triggers>
             <DataTrigger Binding="{Binding ActionName}" Value="未绑定">
-                <Setter Property="Text" Value="未绑定动作" />
-                <Setter Property="Foreground" Value="#FFFBBF24" />
+                <Setter Property="Text" Value="可在设置中绑定" />
+                <Setter Property="Foreground" Value="#FFEAC8A8" />
             </DataTrigger>
             <DataTrigger Binding="{Binding Pattern}" Value="-">
                 <Setter Property="Text" Value="划动以识别手势" />

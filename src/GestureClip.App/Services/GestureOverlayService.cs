@@ -60,6 +60,7 @@ public sealed partial class GestureOverlayService : IGestureOverlayService
             EnsureWindow();
             PositionWindow();
             _hideCts?.Cancel();
+            ApplyHudTimePalette(DateTimeOffset.Now);
             ApplyHudInfo(hudInfo, refreshStyle: true);
             _viewModel!.Points = ToPointCollection([point]);
             ShowWindow();
@@ -99,6 +100,7 @@ public sealed partial class GestureOverlayService : IGestureOverlayService
                 return;
             }
             EnsureWindow();
+            ApplyHudTimePalette(DateTimeOffset.Now);
             var isUnbound = IsUnboundHud(hudInfo);
             ApplyHudInfo(hudInfo, refreshStyle: false);
             ShowWindow();

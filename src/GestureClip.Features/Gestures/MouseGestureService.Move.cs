@@ -32,6 +32,7 @@ public sealed partial class MouseGestureService : IMouseGestureService
         var segmentThresholdSquared = Square(_activeSettings.Options.SegmentThreshold);
         if (DistanceSquared(lastPoint, movePoint) >= segmentThresholdSquared)
         {
+            PreserveCompactChevronTip(movePoint, _activeSettings.Options);
             _points.Add(movePoint);
             TrimTrackedPoints();
         }
@@ -48,6 +49,7 @@ public sealed partial class MouseGestureService : IMouseGestureService
             }
         }
 
+        _lastRawMove = movePoint;
         _traceDirty |= DistanceSquared(lastPoint, movePoint) > 0;
         RefreshMoveFeedback(mouseEvent, distanceSquaredFromStart);
         return null;

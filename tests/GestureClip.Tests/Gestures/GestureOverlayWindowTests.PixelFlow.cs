@@ -90,17 +90,9 @@ public sealed partial class GestureOverlayWindowTests
         var window = LoadHudDocuments()[0];
         var documents = LoadHudDocuments();
 
-        // 标题前的 2x2 渐变色块图标
         var icon = FindNamedElement(window, "HudMarkIcon");
-        var markGrid = icon.Elements().Single(element => element.Name.LocalName == "Grid.RowDefinitions");
-        Assert.Equal(2, markGrid.Elements().Count());
-        Assert.Equal(4, icon.Elements().Count(element => element.Name.LocalName == "Border"));
-        Assert.Equal(4, icon.Elements()
-            .Where(element => element.Name.LocalName == "Border")
-            .Select(element => (string?)element.Attribute("Background"))
-            .Distinct()
-            .Count());
-
+        Assert.Equal("Image", icon.Name.LocalName);
+        Assert.Equal("Assets/GestureClip.ico", (string?)icon.Attribute("Source"));
         // 标题下 1px 渐变分隔线 + 顶部镜面高光
         var divider = documents.SelectMany(document => document.Descendants()).Single(element =>
             (string?)element.Attribute(XamlNamespace + "Key") == "HudDividerBrush");

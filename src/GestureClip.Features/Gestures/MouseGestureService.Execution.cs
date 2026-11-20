@@ -55,11 +55,20 @@ public sealed partial class MouseGestureService : IMouseGestureService
             GestureEndedAt = pendingGesture.GestureEndedAt
         };
         var action = _presetProvider.GetAction(pendingGesture.Preset, context);
+        if (IsMacroControlAction(action))
+        {
+            lock (_syncRoot) { _suppressRightButtonUntil = DateTimeOffset.UtcNow.AddMilliseconds(450); }
+            var execution = ExecuteGestureAsync(context);
+            var hide = pendingGesture.ShowOverlay ? _gestureOverlayService.HideAsync(CancellationToken.None) : Task.CompletedTask;
+            await Task.WhenAll(execution, hide);
+            return;
+        }
+
         if (pendingGesture.ShowOverlay)
         {
             await _gestureOverlayService.CompleteGestureAsync(
                 _hudInfoProvider.GetInfo(pendingGesture.Preset, context), CancellationToken.None);
-            if (IsPasteFamilyAction(action) || IsMacroControlAction(action))
+            if (IsPasteFamilyAction(action))
             {
                 await _gestureOverlayService.HideAsync(CancellationToken.None);
             }

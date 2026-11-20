@@ -17,7 +17,7 @@ public sealed partial class MacroRecorderService(IMacroCapture capture, MacroPla
     private bool _transition;
     private bool _recording;
     private bool _playing;
-    private string _status = "切换到目标应用后按 F8 录制，结束时再按 F8。";
+    private string _status = "按 F8 或按住右键画 < 开始录制，再操作一次停止并保存。";
     private string? _selectedPath;
     private RecordedMacro? _pendingRecording;
     private readonly Stopwatch _watch = new();
@@ -63,10 +63,12 @@ public sealed partial class MacroRecorderService(IMacroCapture capture, MacroPla
         else
         {
             if (_pendingRecording is not null) await SaveRecordingCoreAsync();
+            _idleHeading = "正在启动录制";
+            SetStatus("正在连接鼠标和键盘…");
             await capture.StartAsync(_hostHandle);
             _recording = true;
             _watch.Restart();
-            SetStatus("正在记录键盘、鼠标和滚轮。F8 停止并保存；面板内操作不会录入。");
+            SetStatus("正在记录鼠标、键盘和滚轮。按 F8 或按住右键画 < 停止并保存。");
         }
     });
 
@@ -86,7 +88,7 @@ public sealed partial class MacroRecorderService(IMacroCapture capture, MacroPla
         var events = await capture.StopAsync();
         _recording = false;
         _watch.Stop();
-        _idleHeading = "录制已保存";
+        _idleHeading = "正在保存录制";
         SetStatus("正在保存…");
         _pendingRecording = new RecordedMacro { Name = RecordName.Trim(), Events = events };
         await SaveRecordingCoreAsync();
@@ -101,6 +103,7 @@ public sealed partial class MacroRecorderService(IMacroCapture capture, MacroPla
         _pendingRecording = null;
         await RefreshFilesAsync();
         SelectedPath = path;
+        _idleHeading = "录制已保存";
         SetStatus($"已保存 {macro.Events.Count} 个事件 · {TimeSpan.FromTicks(macro.Events.LastOrDefault().OffsetTicks).TotalSeconds:F1} 秒。切换到目标应用后按 F9 回放。");
     }
 

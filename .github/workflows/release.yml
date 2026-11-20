@@ -76,4 +76,5 @@ jobs:
             artifacts/release/*.zip
             artifacts/release/*.exe
             artifacts/release/SHA256SUMS.txt
+          body_path: docs/github-release-${{ github.ref_name }}.md
           generate_release_notes: true

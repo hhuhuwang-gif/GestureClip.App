@@ -35,13 +35,16 @@ internal static class ChevronGestureRecognizer
         var firstVertical = (double)candidate.Tip.Y - candidate.Start.Y;
         var lastVertical = (double)candidate.End.Y - candidate.Tip.Y;
         if (Math.Sign(firstVertical) != Math.Sign(lastVertical)) return false;
-        var minimumLegTravel = Math.Max(options.SegmentThreshold, options.TriggerThreshold * MinimumLegFraction);
+        var minimumLegTravel = GetMinimumLegTravel(options);
         if (!IsDiagonal(candidate.Start, candidate.Tip, minimumLegTravel)) return false;
         if (!IsDiagonal(candidate.Tip, candidate.End, minimumLegTravel)) return false;
         var first = new ChevronLeg(candidate.Start, candidate.Tip) { StartIndex = 0, EndIndex = candidate.TipIndex };
         var last = new ChevronLeg(candidate.Tip, candidate.End) { StartIndex = candidate.TipIndex, EndIndex = points.Count - 1 };
         return FitsLeg(points, options, first) && FitsLeg(points, options, last);
     }
+
+    internal static double GetMinimumLegTravel(GestureOptions options) =>
+        Math.Max(options.SegmentThreshold, options.TriggerThreshold) * MinimumLegFraction;
 
     private static bool IsDiagonal(GesturePoint start, GesturePoint end, double minimumTravel)
     {

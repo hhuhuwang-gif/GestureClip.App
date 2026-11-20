@@ -86,11 +86,15 @@ public sealed partial class MouseGestureService : IMouseGestureService
         var upPoint = ToPoint(mouseEvent);
         if (DistanceSquared(_points[^1], upPoint) >= 1)
         {
+            PreserveCompactChevronTip(upPoint, _activeSettings.Options);
             _points.Add(upPoint);
             TrimTrackedPoints();
         }
 
-        if (_state != GestureRuntimeState.GestureActive || IsExpired(mouseEvent.Time, _activeSettings))
+        var reachedThresholdOnRelease = _points.Count >= 3 && _startPoint is { } start
+            && DistanceSquared(start, upPoint) >= Square(_activeSettings.Options.TriggerThreshold);
+        if ((_state != GestureRuntimeState.GestureActive && !reachedThresholdOnRelease)
+            || IsExpired(mouseEvent.Time, _activeSettings))
         {
             var expired = IsExpired(mouseEvent.Time, _activeSettings);
             var shouldHideOverlay = _state == GestureRuntimeState.GestureActive || expired;

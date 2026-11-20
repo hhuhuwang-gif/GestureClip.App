@@ -2,13 +2,28 @@ using System.Windows;
 using System.Windows.Media;
 using System.Windows.Media.Animation;
 using System.Windows.Threading;
+using GestureClip.Core.Abstractions;
 using GestureClip.Core.Gestures;
+using GestureClip.Core.Settings;
 using GestureClip.Core.Workstation;
+using GestureClip.Features.Workstation;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace GestureClip.App.Services;
 
 public sealed partial class GestureOverlayService
 {
+    private void ApplyHudTimePalette(DateTimeOffset now)
+    {
+        var enabled = WorkTimeStageThemeProvider.IsTimeColorEnabled(_settingsService);
+        var theme = enabled
+            ? _serviceProvider.GetRequiredService<IWorkTimeStageService>().GetSnapshot(now).Theme
+            : WorkTimeStageThemeProvider.GetTheme(WorkTimeStage.OffWork);
+
+        _viewModel!.HudBackgroundBrush = GetHudBackgroundBrush(theme.Key, theme.StartColor, theme.EndColor);
+        _viewModel.HudAccentBrush = GetHudAccentBrush(theme.AccentColor);
+    }
+
     private void QueueWorkstationSnapshotRefresh(GestureHudInfo hudInfo)
     {
         var now = DateTimeOffset.UtcNow;
@@ -67,11 +82,5 @@ public sealed partial class GestureOverlayService
         _viewModel.CopyCountText = snapshot.CopyCount.ToString();
         _viewModel.PasteCountText = snapshot.PasteCount.ToString();
         _viewModel.SavedClicksCountText = snapshot.EstimatedSavedClicks.ToString();
-        _viewModel.HudBackgroundBrush = GetHudBackgroundBrush(
-            snapshot.HudThemeKey,
-            snapshot.HudStartColor,
-            snapshot.HudEndColor);
-        _viewModel.HudAccentBrush = GetHudAccentBrush(snapshot.HudAccentColor);
-
     }
 }

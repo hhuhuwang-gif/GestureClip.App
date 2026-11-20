@@ -149,6 +149,8 @@
         <GradientStop Color="#FF6B5A" Offset="1" />
     </LinearGradientBrush>
 
+    <SolidColorBrush x:Key="BrushClipboardOverlayPanel" Color="{StaticResource ColorClipboardOverlayPanel}" />
+
     <LinearGradientBrush x:Key="BrushOverlayPanel" StartPoint="0,0" EndPoint="0,1">
         <GradientStop Color="{StaticResource ColorOverlayTop}" Offset="0" />
         <GradientStop Color="{StaticResource ColorOverlayBottom}" Offset="1" />

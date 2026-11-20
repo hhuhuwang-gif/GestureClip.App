@@ -5,7 +5,7 @@
 </p>
 
 <p align="center">
-  <strong>Windows 本地优先</strong>的剪贴板历史 + 鼠标手势 + 本地文本助手
+  <strong>Windows 本地优先</strong>的剪贴板历史、鼠标手势与快捷操作宏
 </p>
 
 <p align="center">
@@ -16,16 +16,16 @@
 </p>
 
 <p align="center">
-  复制过的文字 / 图片能找回来 · 右键一划完成常用操作 · 本地文本处理<br />
+  找回复制过的文字和图片 · 右键一划执行常用操作 · 录制并回放重复操作<br />
   <strong>不登录 · 不上传 · 不云同步</strong>
 </p>
 
 <p align="center">
   <a href="https://github.com/hhuhuwang-gif/GestureClip.App/releases/latest"><strong>⬇ 下载最新版（Latest）</strong></a>
   ·
-  <a href="https://github.com/hhuhuwang-gif/GestureClip.App/releases/download/v0.6.47-beta/GestureClip-v0.6.47-beta-win-x64.zip"><strong>v0.6.47 Beta zip</strong></a>
+  <a href="https://github.com/hhuhuwang-gif/GestureClip.App/releases/download/v0.6.48-beta/GestureClip-v0.6.48-beta-win-x64.zip"><strong>v0.6.48 Beta zip</strong></a>
   ·
-  <a href="https://github.com/hhuhuwang-gif/GestureClip.App/releases/tag/v0.6.47-beta">Release 说明</a>
+  <a href="https://github.com/hhuhuwang-gif/GestureClip.App/releases/tag/v0.6.48-beta">Release 说明</a>
   ·
   <a href="CHANGELOG.md">更新日志</a>
 </p>
@@ -37,7 +37,7 @@
 ## 目录
 
 - [30 秒上手](#30-秒上手)
-- [当前版本](#当前版本v0647-beta)
+- [当前版本](#当前版本v0648-beta)
 - [核心功能](#核心功能)
 - [数据与隐私](#数据与隐私)
 - [安装与更新](#安装与更新)
@@ -56,6 +56,7 @@
 | 打开剪贴板历史 | `Ctrl + \`` |
 | 找回刚复制过的文字 / 图片 | 历史里搜索 → 双击复制，或 Enter 粘贴 |
 | 右键手势 | **按住右键**上划复制、下划粘贴、左划后退、右划前进 |
+| 录制操作宏 | 按住右键画 `<` 开始或停止，画 `>` 回放或中止。也可用 `F8` / `F9` |
 | 本地文本处理 | `Ctrl + Shift + Q` 打开快捷动作 |
 | 工位小熊（可选） | 托盘 → 工位小熊 → 填月薪与上下班时间 |
 
@@ -63,22 +64,23 @@
 
 ---
 
-## 当前版本：v0.6.47 Beta
+## 当前版本：v0.6.48 Beta
 
 | 资源 | 链接 |
 | --- | --- |
 | **推荐下载（Latest）** | [Releases / latest](https://github.com/hhuhuwang-gif/GestureClip.App/releases/latest) |
-| 安装包 | [GestureClip-Setup-v0.6.47-beta-win-x64.zip](https://github.com/hhuhuwang-gif/GestureClip.App/releases/download/v0.6.47-beta/GestureClip-Setup-v0.6.47-beta-win-x64.zip) |
-| 便携包 | [GestureClip-v0.6.47-beta-win-x64.zip](https://github.com/hhuhuwang-gif/GestureClip.App/releases/download/v0.6.47-beta/GestureClip-v0.6.47-beta-win-x64.zip) |
-| 校验文件 | [SHA256SUMS.txt](https://github.com/hhuhuwang-gif/GestureClip.App/releases/download/v0.6.47-beta/SHA256SUMS.txt) |
+| 安装包 | [GestureClip-Setup-v0.6.48-beta-win-x64.zip](https://github.com/hhuhuwang-gif/GestureClip.App/releases/download/v0.6.48-beta/GestureClip-Setup-v0.6.48-beta-win-x64.zip) |
+| 便携包 | [GestureClip-v0.6.48-beta-win-x64.zip](https://github.com/hhuhuwang-gif/GestureClip.App/releases/download/v0.6.48-beta/GestureClip-v0.6.48-beta-win-x64.zip) |
+| 校验文件 | [SHA256SUMS.txt](https://github.com/hhuhuwang-gif/GestureClip.App/releases/download/v0.6.48-beta/SHA256SUMS.txt) |
 | 历史版本 | 旧版在 Releases 里标记为 **Pre-release**，默认请用 Latest |
 
-### 本版亮点（v0.6.47）
+### 本版亮点（v0.6.48）
 
-- **手势宏**：新增宏录制与手势触发播放，录好的宏可绑定手势一键回放；长宏与自然方向手势识别更准。
-- **轨迹更跟手**：鼠标采样按移动速率自适应，HUD 拖尾独立渲染，快速划动不丢采样点。
-- **HUD 动效分档**：完整 / 均衡 / 极简三档，电池供电自动降帧，极简档零动画；方块渐变跟随强调色。
-- **一键启动与可测量性能**：`Start-GestureClip.bat` 双击即启动，新增 `--trace-mem` 内存诊断与 UI 性能预算校验。详见 [v0.6.47 Release 说明](docs/github-release-v0.6.47-beta.md)。
+- **紧凑剪贴板**：窗口默认宽度从 860 缩到 700，首屏能看到更多记录。选中或悬停时显示复制、粘贴、置顶和删除。
+- **更灵敏的录制手势**：快速划动时保留实际采到的拐点，松键时补齐终点。录制指令无需等待浮层关闭。
+- **随时段换色的手势浮层**：显示方向、动作和快捷键，恢复工作时段渐变。应用、窗口与托盘统一使用渐变 G 图标。
+
+详见 [v0.6.48 Release 说明](docs/github-release-v0.6.48-beta.md)。
 
 ### 延续功能（v0.6.45）
 
@@ -234,7 +236,7 @@ v0.6.37 起历史再复制会统一写成纯文本；也可用「复制为纯文
 可手动到 [Latest](https://github.com/hhuhuwang-gif/GestureClip.App/releases/latest) 下载。
 
 **为什么 GitHub 上还有很多旧版本？**  
-历史包仍保留下载；已标为 Pre-release。日常请只用 **Latest = v0.6.47 Beta**。
+历史包仍保留下载；已标为 Pre-release。日常请只用 **Latest = v0.6.48 Beta**。
 
 ---
 

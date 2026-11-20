@@ -4,10 +4,10 @@
     <TargetFramework>net8.0-windows10.0.19041.0</TargetFramework>
     <AssemblyName>GestureClip</AssemblyName>
     <Product>GestureClip</Product>
-    <Version>0.6.47-beta</Version>
-    <FileVersion>0.6.47.0</FileVersion>
-    <AssemblyVersion>0.6.47.0</AssemblyVersion>
-    <InformationalVersion>0.6.47 Beta</InformationalVersion>
+    <Version>0.6.48-beta</Version>
+    <FileVersion>0.6.48.0</FileVersion>
+    <AssemblyVersion>0.6.48.0</AssemblyVersion>
+    <InformationalVersion>0.6.48 Beta</InformationalVersion>
     <UseWPF>true</UseWPF>
     <UseWindowsForms>true</UseWindowsForms>
     <ApplicationIcon>Assets\GestureClip.ico</ApplicationIcon>

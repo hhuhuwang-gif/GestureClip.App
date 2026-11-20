@@ -4,6 +4,24 @@ namespace GestureClip.Features.Gestures;
 
 public sealed partial class MouseGestureService
 {
+    private void PreserveCompactChevronTip(GesturePoint next, GestureOptions options)
+    {
+        if (_lastRawMove is not { } tip) return;
+        var previous = _points[^1];
+        var firstX = (double)tip.X - previous.X;
+        var secondX = (double)next.X - tip.X;
+        var firstY = (double)tip.Y - previous.Y;
+        var secondY = (double)next.Y - tip.Y;
+        var minimum = ChevronGestureRecognizer.GetMinimumLegTravel(options);
+
+        // Keep a real reversal that would otherwise fall between normal distance samples.
+        if (firstX * secondX >= 0 || firstY * secondY <= 0) return;
+        if (Math.Min(Math.Abs(firstX), Math.Abs(secondX)) < minimum ||
+            Math.Min(Math.Abs(firstY), Math.Abs(secondY)) < minimum) return;
+        _points.Add(tip);
+        TrimTrackedPoints();
+    }
+
     private int FindLeastSignificantPoint()
     {
         var selected = 1;

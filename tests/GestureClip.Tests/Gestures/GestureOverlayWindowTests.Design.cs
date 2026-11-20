@@ -22,7 +22,7 @@ public sealed partial class GestureOverlayWindowTests
         Assert.All(stops, color => Assert.StartsWith("#FF", color));
         var wash = FindNamedElement(documents[0], "HudThemeWash");
         Assert.Equal("{Binding HudBackgroundBrush}", (string?)wash.Attribute("Background"));
-        Assert.Equal("0.12", (string?)wash.Attribute("Opacity"));
+        Assert.Equal("0.43", (string?)wash.Attribute("Opacity"));
         Assert.Contains(panel, wash.Ancestors());
         Assert.Null(wash.Attribute("Grid.Column"));
         Assert.DoesNotContain(documents[0].Descendants(), element =>
@@ -48,7 +48,7 @@ public sealed partial class GestureOverlayWindowTests
             (string?)element.Attribute("Property") == "Text" &&
             (string?)element.Attribute("Value") == "松开右键执行");
         var triggers = style.Descendants().Where(element => element.Name.LocalName == "DataTrigger").ToArray();
-        AssertHintTrigger(triggers, ("{Binding ActionName}", "未绑定", "未绑定动作"));
+        AssertHintTrigger(triggers, ("{Binding ActionName}", "未绑定", "可在设置中绑定"));
         AssertHintTrigger(triggers, ("{Binding Pattern}", "-", "划动以识别手势"));
         Assert.Equal("{Binding Pattern}", (string?)triggers.Last().Attribute("Binding"));
     }
@@ -61,7 +61,7 @@ public sealed partial class GestureOverlayWindowTests
             .Select(element => (string?)element.Attribute("Text")).ToArray();
         foreach (var property in new[]
         {
-            "DirectionText", "ActionName", "ShortcutText", "PresetName", "Pattern", "WorkStatusText",
+            "DirectionText", "ShortcutText", "PresetName", "Pattern", "WorkStatusText",
             "GainedXpText", "FunText", "LevelText", "XpText", "WorkSummaryText", "GestureCountText",
             "CopyCountText", "PasteCountText", "SavedClicksCountText"
         }) Assert.Contains("{Binding " + property + "}", textBindings);
@@ -74,6 +74,9 @@ public sealed partial class GestureOverlayWindowTests
         Assert.Equal("{Binding StrokeBrush}", (string?)FindNamedElement(window, "TrailLine").Attribute("Stroke"));
         Assert.Equal("{Binding StrokeBrush}", (string?)FindNamedElement(window, "TrailGlowLine").Attribute("Stroke"));
         Assert.DoesNotContain(window.Descendants(), element => element.Name.LocalName == "Button" || element.Attribute("Command") is not null);
+        Assert.Contains(FindStyle(LoadHudDocuments(), "HudActionTitle").Elements(), element =>
+            (string?)element.Attribute("Property") == "Text" &&
+            (string?)element.Attribute("Value") == "{Binding ActionName}");
         AssertXpProgressStyleRange();
     }
 

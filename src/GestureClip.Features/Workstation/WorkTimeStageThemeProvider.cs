@@ -1,9 +1,15 @@
+using GestureClip.Core.Abstractions;
+using GestureClip.Core.Settings;
 using GestureClip.Core.Workstation;
 
 namespace GestureClip.Features.Workstation;
 
 public static class WorkTimeStageThemeProvider
 {
+    public static bool IsTimeColorEnabled(ISettingsService settings) =>
+        settings.Get(SettingKeys.EnableWorkBearHudThemeColor,
+            settings.Get(SettingKeys.WorkstationEnableHudTimeColor, true));
+
     public static WorkTimeHudTheme GetTheme(WorkTimeStage stage) => stage switch
     {
         WorkTimeStage.EarlyWork => new("GreenGradient", "#063B32", "#0F766E", "#A7F3D0", "开工状态", "绿色"),

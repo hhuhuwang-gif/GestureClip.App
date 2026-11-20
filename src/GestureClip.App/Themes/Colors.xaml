@@ -42,6 +42,7 @@
     <Color x:Key="ColorAppBg1">#FAF9F8</Color>
     <Color x:Key="ColorAppBg2">#EDECEB</Color>
     <Color x:Key="ColorAppBg3">#F7F6F5</Color>
+    <Color x:Key="ColorClipboardOverlayPanel">#FFF9FAFC</Color>
     <Color x:Key="ColorOverlayTop">#F0FFFFFF</Color>
     <Color x:Key="ColorOverlayBottom">#E6FEFEFE</Color>
     <Color x:Key="ColorGlassTop">#F5FEFDFB</Color>

@@ -69,7 +69,7 @@ public partial class ClipboardOverlayWindow : Window
         var refreshed = await _viewModel.LoadAsync(force);
         if (refreshed)
         {
-            ScrollToTopAndSelectLatest();
+            FindScrollViewer(HistoryList)?.ScrollToVerticalOffset(0);
         }
 
         return refreshed;

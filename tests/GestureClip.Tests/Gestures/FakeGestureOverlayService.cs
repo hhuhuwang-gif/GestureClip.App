@@ -11,6 +11,8 @@ internal sealed class FakeGestureOverlayService : IGestureOverlayService
     private readonly ConcurrentQueue<int> _pointCounts = [];
     private readonly ConcurrentQueue<IReadOnlyList<GesturePoint>> _pointSnapshots = [];
 
+    public Task HideCompletion { get; init; } = Task.CompletedTask;
+
     public IReadOnlyList<string> Events => _events.ToArray();
 
     public IReadOnlyList<GestureHudInfo> HudInfos => _hudInfos.ToArray();
@@ -49,6 +51,6 @@ internal sealed class FakeGestureOverlayService : IGestureOverlayService
     public Task HideAsync(CancellationToken cancellationToken)
     {
         _events.Enqueue("hide");
-        return Task.CompletedTask;
+        return HideCompletion;
     }
 }

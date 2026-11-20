@@ -32,6 +32,7 @@ public sealed partial class MouseGestureService : IMouseGestureService
     private GestureSettings? _activeSettings;
     private List<GesturePoint> _points = [];
     private GesturePoint? _startPoint;
+    private GesturePoint? _lastRawMove;
     private DateTimeOffset? _gestureStartedAt;
     private DateTimeOffset _ignoreInjectedUntil = DateTimeOffset.MinValue;
     /// <summary>

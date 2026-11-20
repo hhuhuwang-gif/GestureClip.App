@@ -33,4 +33,55 @@ public sealed partial class MouseGestureServiceTests
         }
         finally { await service.StopAsync(CancellationToken.None); }
     }
+
+    [Theory]
+    [InlineData(16, 11, false)]
+    [InlineData(11, 10, false)]
+    [InlineData(11, 10, true)]
+    public async Task Fast_compact_chevron_uses_the_raw_turn_and_release_position(int horizontal, int vertical, bool finalMove)
+    {
+        var hook = new FakeLowLevelMouseHook();
+        var executor = new FakeMouseGestureActionExecutor();
+        var service = CreateService(hook, executor, showOverlay: false);
+        await service.StartAsync(CancellationToken.None);
+        try
+        {
+            var started = DateTimeOffset.UtcNow;
+            hook.Raise(MouseHookEventType.RightButtonDown, horizontal, 0, time: started);
+            hook.Raise(MouseHookEventType.Move, 0, vertical, time: started.AddMilliseconds(5));
+            if (finalMove)
+                hook.Raise(MouseHookEventType.Move, horizontal, vertical * 2, time: started.AddMilliseconds(10));
+            hook.Raise(MouseHookEventType.RightButtonUp, horizontal, vertical * 2, time: started.AddMilliseconds(12));
+
+            await WaitForAsync(() => !executor.Contexts.IsEmpty);
+            Assert.Equal(BuiltInGestureAction.MacroToggleRecording, Assert.Single(executor.Actions));
+        }
+        finally { await service.StopAsync(CancellationToken.None); }
+    }
+
+    [Fact]
+    public async Task Recording_starts_while_the_overlay_is_still_closing()
+    {
+        var hidden = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var overlay = new FakeGestureOverlayService { HideCompletion = hidden.Task };
+        var hook = new FakeLowLevelMouseHook();
+        var executor = new FakeMouseGestureActionExecutor();
+        var service = CreateService(hook, executor, overlay: overlay);
+        await service.StartAsync(CancellationToken.None);
+        try
+        {
+            var start = DateTimeOffset.UtcNow;
+            hook.Raise(MouseHookEventType.RightButtonDown, 60, 0, time: start);
+            hook.Raise(MouseHookEventType.Move, 0, 60, time: start.AddMilliseconds(10));
+            hook.Raise(MouseHookEventType.RightButtonUp, 60, 120, time: start.AddMilliseconds(20));
+            await WaitForAsync(() => !executor.Contexts.IsEmpty && overlay.Events.Contains("hide"));
+            Assert.Equal(BuiltInGestureAction.MacroToggleRecording, Assert.Single(executor.Actions));
+            Assert.False(hidden.Task.IsCompleted);
+        }
+        finally
+        {
+            hidden.SetResult();
+            await service.StopAsync(CancellationToken.None);
+        }
+    }
 }

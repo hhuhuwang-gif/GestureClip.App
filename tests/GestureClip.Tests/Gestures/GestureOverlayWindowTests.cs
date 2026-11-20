@@ -23,8 +23,7 @@ public sealed partial class GestureOverlayWindowTests
         var xaml = ReadHudXaml();
         Assert.Contains("VerticalAlignment=\"Bottom\"", xaml);
         Assert.Contains("HorizontalAlignment=\"Center\"", xaml);
-        Assert.Contains("MinWidth=\"720\"", xaml);
-        Assert.Contains("MinHeight=\"184\"", xaml);
+        Assert.Contains("MaxWidth=\"580\"", xaml);
         Assert.Contains("BorderThickness=\"1\"", xaml);
         Assert.Contains("CornerRadius=\"20\"", xaml);
         Assert.DoesNotContain("Canvas.Left=\"24\"", xaml);
@@ -41,7 +40,6 @@ public sealed partial class GestureOverlayWindowTests
         Assert.Contains("TodayStatsLine", xaml);
         Assert.Contains("松开右键执行", xaml);
         AssertNormalRightClickNeedsMovement();
-        Assert.Contains("MinHeight=\"184\"", xaml);
         Assert.DoesNotContain("MaxHeight=", xaml);
         Assert.DoesNotContain("GESTURE HUD", xaml);
         Assert.DoesNotContain("MiniStatusMetricsRow", xaml);
@@ -93,8 +91,7 @@ public sealed partial class GestureOverlayWindowTests
         Assert.DoesNotContain("按住右键拖动", xaml);
         Assert.DoesNotContain("Text=\"按...\"", xaml);
         Assert.DoesNotContain("MaxHeight=", xaml);
-        Assert.Contains("MinWidth=\"720\"", xaml);
-        Assert.Contains("MinHeight=\"184\"", xaml);
+        Assert.Contains("MaxWidth=\"580\"", xaml);
     }
 
     [Fact]
@@ -102,8 +99,7 @@ public sealed partial class GestureOverlayWindowTests
     {
         var path = FindRepositoryFile("src", "GestureClip.App", "GestureOverlayWindow.xaml");
         var xaml = ReadHudXaml();
-        Assert.Contains("MinHeight=\"184\"", xaml);
-        Assert.Contains("MinWidth=\"720\"", xaml);
+        Assert.Contains("MaxWidth=\"580\"", xaml);
         Assert.DoesNotContain("Height=\"150\"", xaml);
     }
 

@@ -7,16 +7,15 @@ public sealed partial class ThemeResourceTests
 {
 
     [Fact]
-    public void ClipboardOverlayWindow_uses_glass_panel_styling()
+    public void ClipboardOverlayWindow_uses_compact_opaque_panel_styling()
     {
         var path = FindRepositoryFile("src", "GestureClip.App", "ClipboardOverlayWindow.xaml");
         var xaml = File.ReadAllText(path);
 
-        Assert.Contains("Width=\"860\"", xaml);
+        Assert.Contains("Width=\"700\"", xaml);
         Assert.Contains("Height=\"760\"", xaml);
-        Assert.Contains("AllowsTransparency=\"True\"", xaml);
-        Assert.Contains("CornerRadius=\"18\"", xaml);
-        Assert.Contains("Background=\"{DynamicResource BrushOverlayPanel}\"", xaml);
+        Assert.Contains("AllowsTransparency=\"False\"", xaml);
+        Assert.Contains("Background=\"{DynamicResource BrushClipboardOverlayPanel}\"", xaml);
         Assert.Contains("IsSelected", xaml);
         Assert.Contains("ShortcutNumberConverter", xaml);
         Assert.Contains("VirtualizingPanel.IsVirtualizing=\"True\"", xaml);
@@ -25,7 +24,6 @@ public sealed partial class ThemeResourceTests
         Assert.Contains("ScrollViewer.IsDeferredScrollingEnabled=\"True\"", xaml);
         Assert.Contains("<VirtualizingStackPanel />", xaml);
         Assert.Contains("Binding ThumbnailContent, IsAsync=True", xaml);
-        Assert.Contains("Binding SelectedItem.ThumbnailContent, IsAsync=True", xaml);
     }
 
 
@@ -42,16 +40,18 @@ public sealed partial class ThemeResourceTests
     }
 
     [Fact]
-    public void ClipboardOverlayWindow_exposes_detail_action_buttons()
+    public void ClipboardOverlayWindow_keeps_context_actions_without_building_hidden_detail_panel()
     {
         var path = FindRepositoryFile("src", "GestureClip.App", "ClipboardOverlayWindow.xaml");
         var xaml = File.ReadAllText(path);
 
-        Assert.Contains("x:Name=\"DetailCopyButton\"", xaml);
-        Assert.Contains("x:Name=\"DetailPasteButton\"", xaml);
-        Assert.Contains("x:Name=\"DetailPinButton\"", xaml);
-        Assert.Contains("x:Name=\"DetailFavoriteButton\"", xaml);
-        Assert.Contains("x:Name=\"DetailDeleteButton\"", xaml);
+        Assert.DoesNotContain("DetailCopyButton", xaml);
+        Assert.DoesNotContain("SelectedImagePreviewPanel", xaml);
+        Assert.Contains("CopySelectedMenuItem_Click", xaml);
+        Assert.Contains("PasteSelectedMenuItem_Click", xaml);
+        Assert.Contains("TogglePinnedMenuItem_Click", xaml);
+        Assert.Contains("ToggleFavoriteMenuItem_Click", xaml);
+        Assert.Contains("DeleteSelectedMenuItem_Click", xaml);
     }
 
     [Fact]
@@ -138,21 +138,18 @@ public sealed partial class ThemeResourceTests
     }
 
     [Fact]
-    public void ClipboardOverlay_uses_large_image_preview_cards_without_base64_text_for_images()
+    public void ClipboardOverlay_loads_thumbnails_only_for_image_rows()
     {
         var path = FindRepositoryFile("src", "GestureClip.App", "ClipboardOverlayWindow.xaml");
         var xaml = File.ReadAllText(path);
         var codeBehind = ReadClipboardOverlaySources();
 
-        Assert.Contains("图片缩略图", xaml);
-        Assert.Contains("双击复制并关闭，可放回系统剪贴板", xaml);
+        Assert.Contains("ClipboardRowThumbnail", xaml);
+        Assert.Contains("图片记录", xaml);
         Assert.Contains("CopySelectedAsync(GetSelectedItems())", codeBehind);
-        Assert.Contains("SelectedImagePreviewPanel", xaml);
+        Assert.DoesNotContain("SelectedImagePreviewPanel", xaml);
         Assert.Contains("ImageItemPreviewTextBlock", xaml);
-        Assert.Contains("Height=\"260\"", xaml);
-        Assert.Contains("IsSelectedImage", xaml);
         Assert.Contains("Image Source=\"{Binding ThumbnailContent, IsAsync=True", xaml);
-        Assert.Contains("Image Source=\"{Binding SelectedItem.ThumbnailContent, IsAsync=True", xaml);
         Assert.DoesNotContain("Image Source=\"{Binding TextContent", xaml);
         Assert.DoesNotContain("Image Source=\"{Binding SelectedItem.TextContent", xaml);
         Assert.DoesNotContain("_viewModel.SelectedItem?.IsImage == true", codeBehind);

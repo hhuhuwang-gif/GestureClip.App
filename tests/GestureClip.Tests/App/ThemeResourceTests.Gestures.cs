@@ -171,14 +171,14 @@ public sealed partial class ThemeResourceTests
         var xaml = File.ReadAllText(path);
 
         Assert.Contains("Background=\"{StaticResource HudSurfaceGradient}\"", xaml);
-        Assert.Contains("手势码", xaml);
+        Assert.Contains("Text=\"{Binding Pattern}\"", xaml);
         Assert.Contains("Microsoft YaHei UI", xaml);
         Assert.Contains("TextRenderingMode=\"Grayscale\"", xaml);
         Assert.Contains("GestureCountText", xaml);
         Assert.Contains("CopyCountText", xaml);
         Assert.Contains("PasteCountText", xaml);
         Assert.Contains("SavedClicksCountText", xaml);
-        Assert.Contains("HudStatChip", xaml);
+        Assert.Contains("HudStatValue", xaml);
         Assert.Contains("TodayStatsLine", xaml);
         Assert.DoesNotContain("Pattern: ", xaml);
     }

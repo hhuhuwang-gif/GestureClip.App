@@ -44,6 +44,7 @@ public sealed partial class MouseGestureService : IMouseGestureService
         _startPoint = ToPoint(mouseEvent);
         _gestureStartedAt = mouseEvent.Time;
         _points = [_startPoint];
+        _lastRawMove = null;
         // Capture focus target immediately — HUD/overlay must not steal paste destination.
         _gestureTargetHwnd = WindowNativeMethods.GetForegroundWindow();
         _gestureTargetProcessName = foreground.ProcessName;

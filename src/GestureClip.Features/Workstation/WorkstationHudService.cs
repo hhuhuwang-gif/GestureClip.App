@@ -51,9 +51,7 @@ public sealed class WorkstationHudService : IWorkstationHudService
             _settingsService.Get(SettingKeys.WorkerLevelShowLevelInHud, true);
         var stageSnapshot = _workTimeStageService.GetSnapshot(now);
         var showStatusText = _settingsService.Get(SettingKeys.EnableWorkBearHudStatusText, true);
-        var enableTimeColor = _settingsService.Get(
-            SettingKeys.EnableWorkBearHudThemeColor,
-            _settingsService.Get(SettingKeys.WorkstationEnableHudTimeColor, true));
+        var enableTimeColor = WorkTimeStageThemeProvider.IsTimeColorEnabled(_settingsService);
         var theme = enableTimeColor
             ? stageSnapshot.Theme
             : WorkTimeStageThemeProvider.GetTheme(WorkTimeStage.OffWork);
