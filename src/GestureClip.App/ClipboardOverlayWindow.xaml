@@ -315,12 +315,10 @@
                                 </Grid.ColumnDefinitions>
                                 <!-- Type accent bar: blue/text · purple/image · orange/pin · green = 本会话已复制 -->
                                 <Border x:Name="TypeAccentBar"
-                                        Width="3"
                                         CornerRadius="2"
-                                        Background="{DynamicResource BrushPrimaryBright}"
                                         Margin="0,2,6,2"
                                         VerticalAlignment="Stretch"
-                                        ToolTip="左侧色条：蓝=文本 紫=图片 橙=置顶 绿=本会话已从历史复制">
+                                        ToolTip="左侧色条：蓝=文本 紫=图片 橙=置顶 绿=本次运行中已从历史复制或粘贴">
                                     <Border.Style>
                                         <Style TargetType="Border">
                                             <Setter Property="Background" Value="{DynamicResource BrushPrimaryBright}" />

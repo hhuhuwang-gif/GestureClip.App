@@ -24,6 +24,15 @@ public sealed partial class ThemeResourceTests
         Assert.Contains("ScrollViewer.IsDeferredScrollingEnabled=\"True\"", xaml);
         Assert.Contains("<VirtualizingStackPanel />", xaml);
         Assert.Contains("Binding ThumbnailContent, IsAsync=True", xaml);
+        var accent = System.Xml.Linq.XDocument.Parse(xaml).Descendants().Single(node =>
+            (string?)node.Attribute(System.Xml.Linq.XName.Get("Name", "http://schemas.microsoft.com/winfx/2006/xaml")) == "TypeAccentBar");
+        Assert.Null(accent.Attribute("Background"));
+        Assert.Null(accent.Attribute("Width"));
+        Assert.Contains(accent.Descendants(), node =>
+            (string?)node.Attribute("Binding") == "{Binding IsSessionCopied}" &&
+            node.Elements().Any(setter => (string?)setter.Attribute("Property") == "Background" &&
+                (string?)setter.Attribute("Value") == "{DynamicResource BrushSuccess}"));
+
     }
 
 
